@@ -2,95 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Executive Dashboard Theme - Dark Mode Optimized for TV */
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 222 30% 14%;
+    --card-foreground: 210 40% 98%;
+    --card-elevated: 222 25% 18%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 222 30% 14%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 8%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 222 20% 22%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 222 20% 20%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 222 47% 8%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Status Colors */
+    --status-completed: 142 76% 36%;
+    --status-in-progress: 142 69% 58%;
+    --status-not-started: 215 14% 45%;
+    --status-cancelled: 0 72% 51%;
 
-    --radius: 0.5rem;
+    /* Dashboard specific */
+    --header-bg: 222 40% 10%;
+    --header-border: 222 30% 18%;
+    --card-highlight: 217 91% 60%;
+    --card-shadow: 222 50% 5%;
 
-    --sidebar-background: 0 0% 98%;
+    --border: 222 30% 20%;
+    --input: 222 30% 20%;
+    --ring: 217 91% 60%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --radius: 0.75rem;
 
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar (keeping defaults) */
+    --sidebar-background: 222 40% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 222 25% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 217 91% 60%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Already dark by default */
   }
 }
 
@@ -101,5 +73,126 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* Dashboard Header Stats */
+  .stat-card {
+    @apply flex flex-col items-center justify-center px-6 py-3 rounded-xl;
+    @apply bg-secondary/50 backdrop-blur-sm border border-border/50;
+    @apply transition-all duration-300 hover:bg-secondary/70;
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold text-foreground;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  .stat-label {
+    @apply text-sm font-medium text-muted-foreground uppercase tracking-wider;
+  }
+
+  /* Client Cards */
+  .client-card {
+    @apply relative flex flex-col rounded-2xl overflow-hidden;
+    @apply bg-card border border-border/30;
+    @apply transition-all duration-300 ease-out cursor-pointer;
+    box-shadow: 0 4px 24px -4px hsl(var(--card-shadow) / 0.5);
+  }
+
+  .client-card:hover {
+    @apply border-primary/30;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px -4px hsl(var(--card-shadow) / 0.6);
+  }
+
+  .client-card.selected {
+    @apply border-primary ring-2 ring-primary/40;
+    box-shadow: 0 0 40px -8px hsl(var(--primary) / 0.4);
+  }
+
+  .client-card-header {
+    @apply flex items-center gap-3 px-4 py-3;
+    background-color: hsl(var(--card-elevated) / 0.5);
+  }
+
+  .client-card-logo {
+    @apply flex items-center justify-center bg-secondary rounded-xl;
+    @apply text-muted-foreground font-semibold;
+  }
+
+  .client-card-indicators {
+    @apply flex items-center justify-between px-4 py-3 gap-2;
+    @apply border-t border-border/20;
+  }
+
+  /* Indicator Pills */
+  .indicator-pill {
+    @apply flex items-center gap-1.5 px-3 py-1.5 rounded-lg;
+    @apply bg-secondary/70 text-foreground font-semibold text-sm;
+  }
+
+  .indicator-pill-label {
+    @apply text-muted-foreground font-medium;
+  }
+
+  /* Demand Status Chips */
+  .demand-chip {
+    @apply flex items-center justify-center min-w-[28px] h-6 px-2 rounded-md;
+    @apply text-xs font-bold text-white;
+  }
+
+  .demand-chip.completed {
+    background-color: hsl(var(--status-completed));
+  }
+
+  .demand-chip.in-progress {
+    background-color: hsl(var(--status-in-progress));
+  }
+
+  .demand-chip.not-started {
+    background-color: hsl(var(--status-not-started));
+  }
+
+  .demand-chip.cancelled {
+    background-color: hsl(var(--status-cancelled));
+  }
+
+  /* Presentation Mode */
+  .presentation-mode .presentation-hide {
+    @apply opacity-0 pointer-events-none;
+  }
+
+  /* Fluid Grid for Cards */
+  .client-grid {
+    @apply grid gap-4 p-4 w-full h-full;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-auto-rows: 1fr;
+  }
+
+  /* Priority Badge */
+  .priority-badge {
+    @apply absolute top-2 right-2 w-6 h-6 flex items-center justify-center;
+    @apply text-yellow-400;
+  }
+
+  /* Toggle Button */
+  .mode-toggle {
+    @apply px-4 py-2 rounded-lg font-medium text-sm;
+    @apply bg-primary text-primary-foreground;
+    @apply transition-all duration-200 hover:opacity-90;
+    @apply flex items-center gap-2;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }
