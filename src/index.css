@@ -98,38 +98,22 @@
     @apply text-sm font-medium text-muted-foreground uppercase tracking-wider;
   }
 
-  /* Client Cards */
-  .client-card {
-    @apply relative flex flex-col rounded-2xl overflow-hidden;
+  /* Client Cards - Compact Version */
+  .client-card-compact {
+    @apply relative flex flex-col rounded-xl overflow-hidden;
     @apply bg-card border border-border/30;
-    @apply transition-all duration-300 ease-out cursor-pointer;
-    box-shadow: 0 4px 24px -4px hsl(var(--card-shadow) / 0.5);
+    @apply transition-all duration-200 ease-out cursor-pointer;
+    box-shadow: 0 2px 8px -2px hsl(var(--card-shadow) / 0.4);
   }
 
-  .client-card:hover {
-    @apply border-primary/30;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px -4px hsl(var(--card-shadow) / 0.6);
+  .client-card-compact:hover {
+    @apply border-primary/40;
+    box-shadow: 0 4px 16px -2px hsl(var(--card-shadow) / 0.5);
   }
 
-  .client-card.selected {
-    @apply border-primary ring-2 ring-primary/40;
-    box-shadow: 0 0 40px -8px hsl(var(--primary) / 0.4);
-  }
-
-  .client-card-header {
-    @apply flex items-center gap-3 px-4 py-3;
-    background-color: hsl(var(--card-elevated) / 0.5);
-  }
-
-  .client-card-logo {
-    @apply flex items-center justify-center bg-secondary rounded-xl;
-    @apply text-muted-foreground font-semibold;
-  }
-
-  .client-card-indicators {
-    @apply flex items-center justify-between px-4 py-3 gap-2;
-    @apply border-t border-border/20;
+  .client-card-compact.selected {
+    @apply border-primary ring-2 ring-primary/50;
+    box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.5);
   }
 
   /* Indicator Pills */
@@ -142,25 +126,25 @@
     @apply text-muted-foreground font-medium;
   }
 
-  /* Demand Status Chips */
-  .demand-chip {
-    @apply flex items-center justify-center min-w-[28px] h-6 px-2 rounded-md;
-    @apply text-xs font-bold text-white;
+  /* Demand Status Chips - Small version */
+  .demand-chip-small {
+    @apply flex items-center justify-center min-w-[18px] h-5 px-1 rounded;
+    @apply text-[10px] font-bold text-white;
   }
 
-  .demand-chip.completed {
+  .demand-chip-small.completed {
     background-color: hsl(var(--status-completed));
   }
 
-  .demand-chip.in-progress {
+  .demand-chip-small.in-progress {
     background-color: hsl(var(--status-in-progress));
   }
 
-  .demand-chip.not-started {
+  .demand-chip-small.not-started {
     background-color: hsl(var(--status-not-started));
   }
 
-  .demand-chip.cancelled {
+  .demand-chip-small.cancelled {
     background-color: hsl(var(--status-cancelled));
   }
 

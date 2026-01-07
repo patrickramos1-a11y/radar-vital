@@ -38,7 +38,6 @@ const Index = () => {
           clients={mockClients}
           selectedClientId={selectedClientId}
           onSelectClient={handleSelectClient}
-          compact={isPresentationMode}
         />
       </main>
     </div>

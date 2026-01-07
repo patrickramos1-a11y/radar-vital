@@ -4,40 +4,31 @@ interface ClientGridProps {
   clients: ClientData[];
   selectedClientId: string | null;
   onSelectClient: (id: string) => void;
-  compact?: boolean;
+  onLogoClick?: (id: string) => void;
 }
 
 export function ClientGrid({ 
   clients, 
   selectedClientId, 
   onSelectClient,
-  compact 
+  onLogoClick
 }: ClientGridProps) {
-  // Calculate optimal grid sizing based on client count
-  const count = clients.length;
-  const isCompact = compact || count > 20;
-  
-  const getMinWidth = () => {
-    if (count <= 6) return "320px";
-    if (count <= 12) return "280px";
-    if (count <= 24) return "240px";
-    return "200px";
-  };
-
+  // Fixed grid for 40 clients: 8 columns x 5 rows
   return (
     <div 
-      className="grid gap-3 p-4 w-full h-full overflow-hidden auto-rows-fr"
+      className="grid gap-2 p-3 w-full h-full overflow-hidden"
       style={{ 
-        gridTemplateColumns: `repeat(auto-fit, minmax(${getMinWidth()}, 1fr))`,
+        gridTemplateColumns: 'repeat(8, 1fr)',
+        gridTemplateRows: 'repeat(5, 1fr)',
       }}
     >
-      {clients.map((client) => (
+      {clients.slice(0, 40).map((client) => (
         <ClientCard
           key={client.id}
           client={client}
           isSelected={selectedClientId === client.id}
           onSelect={onSelectClient}
-          compact={isCompact}
+          onLogoClick={onLogoClick}
         />
       ))}
     </div>
