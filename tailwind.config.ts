@@ -46,6 +46,7 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          elevated: "hsl(var(--card-elevated))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -56,6 +57,17 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        },
+        // Dashboard specific colors
+        header: {
+          bg: "hsl(var(--header-bg))",
+          border: "hsl(var(--header-border))",
+        },
+        status: {
+          completed: "hsl(var(--status-completed))",
+          "in-progress": "hsl(var(--status-in-progress))",
+          "not-started": "hsl(var(--status-not-started))",
+          cancelled: "hsl(var(--status-cancelled))",
         },
       },
       borderRadius: {
@@ -80,10 +92,19 @@ export default {
             height: "0",
           },
         },
+        "pulse-glow": {
+          "0%, 100%": {
+            boxShadow: "0 0 20px -8px hsl(var(--primary) / 0.3)",
+          },
+          "50%": {
+            boxShadow: "0 0 30px -4px hsl(var(--primary) / 0.5)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
       },
     },
   },

@@ -1,12 +1,46 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useMemo } from "react";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { ClientGrid } from "@/components/dashboard/ClientGrid";
+import { mockClients, calculateTotals } from "@/data/mockClients";
 
 const Index = () => {
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
+
+  const totals = useMemo(() => calculateTotals(mockClients), []);
+
+  const handleSelectClient = (id: string) => {
+    setSelectedClientId(prev => prev === id ? null : id);
+  };
+
+  const togglePresentationMode = () => {
+    setIsPresentationMode(prev => !prev);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className={`
+      flex flex-col h-screen w-screen overflow-hidden
+      ${isPresentationMode ? 'presentation-mode' : ''}
+    `}>
+      {/* Header */}
+      <DashboardHeader
+        totalClients={totals.totalClients}
+        totalProcesses={totals.totalProcesses}
+        totalLicenses={totals.totalLicenses}
+        totalDemands={totals.totalDemands}
+        isPresentationMode={isPresentationMode}
+        onTogglePresentationMode={togglePresentationMode}
+      />
+
+      {/* Main Content - Client Grid */}
+      <main className="flex-1 overflow-hidden">
+        <ClientGrid
+          clients={mockClients}
+          selectedClientId={selectedClientId}
+          onSelectClient={handleSelectClient}
+          compact={isPresentationMode}
+        />
+      </main>
     </div>
   );
 };
