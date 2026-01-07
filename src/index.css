@@ -6,63 +6,59 @@
 
 @layer base {
   :root {
-    /* Executive Dashboard Theme - Dark Mode Optimized for TV */
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
+    /* Tema Claro Esverdeado */
+    --background: 120 20% 97%;
+    --foreground: 150 30% 15%;
 
-    --card: 222 30% 14%;
-    --card-foreground: 210 40% 98%;
-    --card-elevated: 222 25% 18%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 30% 15%;
+    --card-elevated: 120 15% 95%;
 
-    --popover: 222 30% 14%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 150 30% 15%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 8%;
+    --primary: 152 60% 40%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 20% 22%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 120 15% 90%;
+    --secondary-foreground: 150 30% 20%;
 
-    --muted: 222 20% 20%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 120 10% 92%;
+    --muted-foreground: 150 15% 45%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 222 47% 8%;
+    --accent: 152 60% 40%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Status Colors */
+    /* Status Colors - Mantendo conforme solicitado */
     --status-completed: 142 76% 36%;
     --status-in-progress: 142 69% 58%;
-    --status-not-started: 215 14% 45%;
+    --status-not-started: 215 14% 55%;
     --status-cancelled: 0 72% 51%;
 
     /* Dashboard specific */
-    --header-bg: 222 40% 10%;
-    --header-border: 222 30% 18%;
-    --card-highlight: 217 91% 60%;
-    --card-shadow: 222 50% 5%;
+    --header-bg: 120 20% 98%;
+    --header-border: 120 15% 88%;
+    --card-highlight: 152 60% 40%;
+    --card-shadow: 150 20% 70%;
 
-    --border: 222 30% 20%;
-    --input: 222 30% 20%;
-    --ring: 217 91% 60%;
+    --border: 120 15% 85%;
+    --input: 120 15% 90%;
+    --ring: 152 60% 40%;
 
     --radius: 0.75rem;
 
-    /* Sidebar (keeping defaults) */
-    --sidebar-background: 222 40% 10%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 47% 8%;
-    --sidebar-accent: 222 25% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 217 91% 60%;
-  }
-
-  .dark {
-    /* Already dark by default */
+    /* Sidebar */
+    --sidebar-background: 120 20% 98%;
+    --sidebar-foreground: 150 30% 15%;
+    --sidebar-primary: 152 60% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 120 15% 92%;
+    --sidebar-accent-foreground: 150 30% 20%;
+    --sidebar-border: 120 15% 88%;
+    --sidebar-ring: 152 60% 40%;
   }
 }
 
@@ -85,8 +81,9 @@
   /* Dashboard Header Stats */
   .stat-card {
     @apply flex flex-col items-center justify-center px-6 py-3 rounded-xl;
-    @apply bg-secondary/50 backdrop-blur-sm border border-border/50;
-    @apply transition-all duration-300 hover:bg-secondary/70;
+    @apply bg-card backdrop-blur-sm border border-border;
+    @apply transition-all duration-300 hover:border-primary/30;
+    box-shadow: 0 2px 8px -2px hsl(var(--card-shadow) / 0.15);
   }
 
   .stat-value {
@@ -101,25 +98,25 @@
   /* Client Cards - Compact Version */
   .client-card-compact {
     @apply relative flex flex-col rounded-xl overflow-hidden;
-    @apply bg-card border border-border/30;
+    @apply bg-card border border-border;
     @apply transition-all duration-200 ease-out cursor-pointer;
-    box-shadow: 0 2px 8px -2px hsl(var(--card-shadow) / 0.4);
+    box-shadow: 0 2px 8px -2px hsl(var(--card-shadow) / 0.15);
   }
 
   .client-card-compact:hover {
-    @apply border-primary/40;
-    box-shadow: 0 4px 16px -2px hsl(var(--card-shadow) / 0.5);
+    @apply border-primary/50;
+    box-shadow: 0 4px 16px -2px hsl(var(--card-shadow) / 0.25);
   }
 
   .client-card-compact.selected {
-    @apply border-primary ring-2 ring-primary/50;
-    box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.5);
+    @apply border-primary ring-2 ring-primary/30;
+    box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.3);
   }
 
   /* Indicator Pills */
   .indicator-pill {
     @apply flex items-center gap-1.5 px-3 py-1.5 rounded-lg;
-    @apply bg-secondary/70 text-foreground font-semibold text-sm;
+    @apply bg-secondary text-foreground font-semibold text-sm;
   }
 
   .indicator-pill-label {
@@ -163,7 +160,7 @@
   /* Priority Badge */
   .priority-badge {
     @apply absolute top-2 right-2 w-6 h-6 flex items-center justify-center;
-    @apply text-yellow-400;
+    @apply text-yellow-500;
   }
 
   /* Toggle Button */
@@ -172,6 +169,38 @@
     @apply bg-primary text-primary-foreground;
     @apply transition-all duration-200 hover:opacity-90;
     @apply flex items-center gap-2;
+  }
+
+  /* Admin page specific */
+  .admin-card {
+    @apply bg-card border border-border rounded-xl p-4;
+    box-shadow: 0 2px 8px -2px hsl(var(--card-shadow) / 0.1);
+  }
+
+  .admin-input {
+    @apply w-full px-3 py-2 rounded-lg border border-border bg-background;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary;
+    @apply transition-all duration-200;
+  }
+
+  .admin-label {
+    @apply block text-sm font-medium text-foreground mb-1;
+  }
+
+  .admin-button {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200;
+  }
+
+  .admin-button-primary {
+    @apply admin-button bg-primary text-primary-foreground hover:opacity-90;
+  }
+
+  .admin-button-secondary {
+    @apply admin-button bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+
+  .admin-button-danger {
+    @apply admin-button bg-destructive text-destructive-foreground hover:opacity-90;
   }
 }
 
