@@ -1,13 +1,15 @@
 import { useState, useMemo } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
-import { mockClients, calculateTotals } from "@/data/mockClients";
+import { useClients } from "@/contexts/ClientContext";
+import { calculateTotals } from "@/types/client";
 
 const Index = () => {
+  const { activeClients } = useClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
 
-  const totals = useMemo(() => calculateTotals(mockClients), []);
+  const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
   const handleSelectClient = (id: string) => {
     setSelectedClientId(prev => prev === id ? null : id);
@@ -35,7 +37,7 @@ const Index = () => {
       {/* Main Content - Client Grid */}
       <main className="flex-1 overflow-hidden">
         <ClientGrid
-          clients={mockClients}
+          clients={activeClients}
           selectedClientId={selectedClientId}
           onSelectClient={handleSelectClient}
         />

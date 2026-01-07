@@ -1,41 +1,15 @@
 import { Star } from "lucide-react";
-
-export interface DemandBreakdown {
-  completed: number;
-  inProgress: number;
-  notStarted: number;
-  cancelled: number;
-}
-
-export interface ClientData {
-  id: string;
-  name: string;
-  number: number;
-  logoUrl?: string;
-  isPriority?: boolean;
-  processes: number;
-  licenses: number;
-  demands: DemandBreakdown;
-}
+import { Client, calculateTotalDemands } from "@/types/client";
 
 interface ClientCardProps {
-  client: ClientData;
+  client: Client;
+  displayNumber: number;
   isSelected: boolean;
   onSelect: (id: string) => void;
-  onLogoClick?: (id: string) => void;
 }
 
-export function ClientCard({ client, isSelected, onSelect, onLogoClick }: ClientCardProps) {
-  const totalDemands = 
-    client.demands.completed + 
-    client.demands.inProgress + 
-    client.demands.notStarted + 
-    client.demands.cancelled;
-
-  const handleLogoClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onLogoClick?.(client.id);
-  };
+export function ClientCard({ client, displayNumber, isSelected, onSelect }: ClientCardProps) {
+  const totalDemands = calculateTotalDemands(client.demands);
 
   return (
     <div
@@ -44,26 +18,23 @@ export function ClientCard({ client, isSelected, onSelect, onLogoClick }: Client
     >
       {/* Priority Badge */}
       {client.isPriority && (
-        <div className="absolute top-1 right-1 text-yellow-400 z-10">
+        <div className="absolute top-1 right-1 text-yellow-500 z-10">
           <Star className="w-3 h-3 fill-current" />
         </div>
       )}
 
       {/* Header - Number + Name */}
-      <div className="flex items-center gap-1.5 px-2 py-1 bg-card-elevated/50 border-b border-border/20">
+      <div className="flex items-center gap-1.5 px-2 py-1 bg-card-elevated border-b border-border">
         <div className="flex items-center justify-center w-5 h-5 rounded bg-primary text-primary-foreground text-[10px] font-bold shrink-0">
-          {client.number.toString().padStart(2, '0')}
+          {displayNumber.toString().padStart(2, '0')}
         </div>
         <span className="text-[10px] font-medium text-foreground truncate flex-1">
           {client.name}
         </span>
       </div>
 
-      {/* Logo Area - Compact */}
-      <div 
-        className="flex items-center justify-center p-1.5 cursor-pointer hover:bg-secondary/30 transition-colors h-10"
-        onClick={handleLogoClick}
-      >
+      {/* Logo Area */}
+      <div className="flex items-center justify-center p-1.5 h-10 bg-muted/30">
         {client.logoUrl ? (
           <img 
             src={client.logoUrl} 
@@ -71,14 +42,14 @@ export function ClientCard({ client, isSelected, onSelect, onLogoClick }: Client
             className="max-h-8 max-w-full object-contain rounded"
           />
         ) : (
-          <div className="flex items-center justify-center w-full h-full rounded border border-dashed border-muted-foreground/30 text-muted-foreground/40 text-[8px] uppercase tracking-wider">
-            Logo
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold">
+            {client.initials}
           </div>
         )}
       </div>
 
       {/* Indicators Row - P, L, D with chips */}
-      <div className="px-1.5 py-1 border-t border-border/20 bg-card-elevated/30">
+      <div className="px-1.5 py-1 border-t border-border bg-card-elevated/50">
         <div className="flex items-center justify-between gap-0.5">
           {/* P - Processos */}
           <div className="flex flex-col items-center min-w-[20px]">
@@ -109,7 +80,7 @@ export function ClientCard({ client, isSelected, onSelect, onLogoClick }: Client
       </div>
 
       {/* Click hint */}
-      <div className="text-[6px] text-center text-muted-foreground/30 py-0.5 uppercase tracking-wider leading-none">
+      <div className="text-[6px] text-center text-muted-foreground/50 py-0.5 uppercase tracking-wider leading-none">
         Clique para destacar
       </div>
     </div>

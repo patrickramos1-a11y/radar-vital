@@ -1,4 +1,5 @@
-import { Users, FileText, Shield, ClipboardList, Maximize2, Minimize2 } from "lucide-react";
+import { Users, FileText, Shield, ClipboardList, Maximize2, Minimize2, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface DashboardHeaderProps {
   totalClients: number;
@@ -65,23 +66,33 @@ export function DashboardHeader({
         />
       </div>
 
-      {/* Presentation Mode Toggle */}
-      <button
-        onClick={onTogglePresentationMode}
-        className="mode-toggle"
-      >
-        {isPresentationMode ? (
-          <>
-            <Minimize2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Sair</span>
-          </>
-        ) : (
-          <>
-            <Maximize2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Apresentação</span>
-          </>
-        )}
-      </button>
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        <Link
+          to="/config"
+          className={`mode-toggle bg-secondary text-secondary-foreground hover:bg-secondary/80 ${isPresentationMode ? 'hidden' : ''}`}
+        >
+          <Settings className="w-4 h-4" />
+          <span className="hidden sm:inline">Configurar</span>
+        </Link>
+        
+        <button
+          onClick={onTogglePresentationMode}
+          className="mode-toggle"
+        >
+          {isPresentationMode ? (
+            <>
+              <Minimize2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </>
+          ) : (
+            <>
+              <Maximize2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Apresentação</span>
+            </>
+          )}
+        </button>
+      </div>
     </header>
   );
 }

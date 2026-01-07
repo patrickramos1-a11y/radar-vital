@@ -1,19 +1,18 @@
-import { ClientCard, ClientData } from "./ClientCard";
+import { ClientCard } from "./ClientCard";
+import { Client } from "@/types/client";
 
 interface ClientGridProps {
-  clients: ClientData[];
+  clients: Client[];
   selectedClientId: string | null;
   onSelectClient: (id: string) => void;
-  onLogoClick?: (id: string) => void;
 }
 
 export function ClientGrid({ 
   clients, 
   selectedClientId, 
   onSelectClient,
-  onLogoClick
 }: ClientGridProps) {
-  // Fixed grid for 40 clients: 8 columns x 5 rows
+  // Fixed grid for up to 40 clients: 8 columns x 5 rows
   return (
     <div 
       className="grid gap-2 p-3 w-full h-full overflow-hidden"
@@ -22,13 +21,13 @@ export function ClientGrid({
         gridTemplateRows: 'repeat(5, 1fr)',
       }}
     >
-      {clients.slice(0, 40).map((client) => (
+      {clients.slice(0, 40).map((client, index) => (
         <ClientCard
           key={client.id}
           client={client}
+          displayNumber={index + 1}
           isSelected={selectedClientId === client.id}
           onSelect={onSelectClient}
-          onLogoClick={onLogoClick}
         />
       ))}
     </div>
