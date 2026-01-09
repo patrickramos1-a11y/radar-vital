@@ -43,10 +43,15 @@ const initialClients: Client[] = Array.from({ length: 40 }, (_, i) => {
 interface ClientContextType {
   clients: Client[];
   activeClients: Client[];
+  highlightedClients: Set<string>;
   addClient: (data: ClientFormData) => void;
   updateClient: (id: string, data: Partial<ClientFormData>) => void;
   deleteClient: (id: string) => void;
+  deleteSelectedClients: (ids: string[]) => void;
+  clearAllClients: () => void;
   toggleClientActive: (id: string) => void;
+  toggleHighlight: (id: string) => void;
+  clearHighlights: () => void;
   getClient: (id: string) => Client | undefined;
 }
 
@@ -64,6 +69,8 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }
     return initialClients;
   });
+
+  const [highlightedClients, setHighlightedClients] = useState<Set<string>>(new Set());
 
   // Persistir no localStorage
   useEffect(() => {
@@ -101,6 +108,25 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
 
   const deleteClient = useCallback((id: string) => {
     setClients(prev => prev.filter(client => client.id !== id));
+    setHighlightedClients(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const deleteSelectedClients = useCallback((ids: string[]) => {
+    setClients(prev => prev.filter(client => !ids.includes(client.id)));
+    setHighlightedClients(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => next.delete(id));
+      return next;
+    });
+  }, []);
+
+  const clearAllClients = useCallback(() => {
+    setClients([]);
+    setHighlightedClients(new Set());
   }, []);
 
   const toggleClientActive = useCallback((id: string) => {
@@ -116,6 +142,22 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const toggleHighlight = useCallback((id: string) => {
+    setHighlightedClients(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearHighlights = useCallback(() => {
+    setHighlightedClients(new Set());
+  }, []);
+
   const getClient = useCallback((id: string) => {
     return clients.find(c => c.id === id);
   }, [clients]);
@@ -124,10 +166,15 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     <ClientContext.Provider value={{
       clients,
       activeClients,
+      highlightedClients,
       addClient,
       updateClient,
       deleteClient,
+      deleteSelectedClients,
+      clearAllClients,
       toggleClientActive,
+      toggleHighlight,
+      clearHighlights,
       getClient,
     }}>
       {children}

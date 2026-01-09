@@ -4,13 +4,17 @@ import { Client } from "@/types/client";
 interface ClientGridProps {
   clients: Client[];
   selectedClientId: string | null;
+  highlightedClients: Set<string>;
   onSelectClient: (id: string) => void;
+  onHighlightClient: (id: string) => void;
 }
 
 export function ClientGrid({ 
   clients, 
   selectedClientId, 
+  highlightedClients,
   onSelectClient,
+  onHighlightClient,
 }: ClientGridProps) {
   // Fixed grid for up to 40 clients: 8 columns x 5 rows
   return (
@@ -27,7 +31,9 @@ export function ClientGrid({
           client={client}
           displayNumber={index + 1}
           isSelected={selectedClientId === client.id}
+          isHighlighted={highlightedClients.has(client.id)}
           onSelect={onSelectClient}
+          onHighlight={onHighlightClient}
         />
       ))}
     </div>
