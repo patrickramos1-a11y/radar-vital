@@ -53,6 +53,9 @@ interface ClientContextType {
   toggleHighlight: (id: string) => void;
   clearHighlights: () => void;
   getClient: (id: string) => Client | undefined;
+  moveClient: (id: string, direction: 'up' | 'down') => void;
+  moveClientToPosition: (id: string, newPosition: number) => void;
+  reorderClients: () => void;
 }
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
@@ -162,6 +165,75 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     return clients.find(c => c.id === id);
   }, [clients]);
 
+  // Reorganiza a ordem de todos os clientes sequencialmente
+  const reorderClients = useCallback(() => {
+    setClients(prev => {
+      const sorted = [...prev].sort((a, b) => a.order - b.order);
+      return sorted.map((client, index) => ({
+        ...client,
+        order: index + 1,
+        updatedAt: new Date().toISOString(),
+      }));
+    });
+  }, []);
+
+  // Move cliente para cima ou para baixo na ordem
+  const moveClient = useCallback((id: string, direction: 'up' | 'down') => {
+    setClients(prev => {
+      const sorted = [...prev].sort((a, b) => a.order - b.order);
+      const currentIndex = sorted.findIndex(c => c.id === id);
+      
+      if (currentIndex === -1) return prev;
+      
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      if (targetIndex < 0 || targetIndex >= sorted.length) return prev;
+      
+      // Swap orders
+      const currentOrder = sorted[currentIndex].order;
+      const targetOrder = sorted[targetIndex].order;
+      
+      return prev.map(client => {
+        if (client.id === id) {
+          return { ...client, order: targetOrder, updatedAt: new Date().toISOString() };
+        }
+        if (client.id === sorted[targetIndex].id) {
+          return { ...client, order: currentOrder, updatedAt: new Date().toISOString() };
+        }
+        return client;
+      });
+    });
+  }, []);
+
+  // Move cliente para uma posição específica
+  const moveClientToPosition = useCallback((id: string, newPosition: number) => {
+    setClients(prev => {
+      const sorted = [...prev].sort((a, b) => a.order - b.order);
+      const currentIndex = sorted.findIndex(c => c.id === id);
+      
+      if (currentIndex === -1) return prev;
+      
+      // Limitar a posição entre 1 e o total de clientes
+      const targetPosition = Math.max(1, Math.min(newPosition, sorted.length));
+      const targetIndex = targetPosition - 1;
+      
+      if (currentIndex === targetIndex) return prev;
+      
+      // Remove o cliente da posição atual e insere na nova
+      const [movedClient] = sorted.splice(currentIndex, 1);
+      sorted.splice(targetIndex, 0, movedClient);
+      
+      // Reordena todos
+      const reordered = sorted.map((client, index) => ({
+        ...client,
+        order: index + 1,
+        updatedAt: new Date().toISOString(),
+      }));
+      
+      return reordered;
+    });
+  }, []);
+
   return (
     <ClientContext.Provider value={{
       clients,
@@ -176,6 +248,9 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       toggleHighlight,
       clearHighlights,
       getClient,
+      moveClient,
+      moveClientToPosition,
+      reorderClients,
     }}>
       {children}
     </ClientContext.Provider>

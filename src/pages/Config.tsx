@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X, AlertTriangle, CheckSquare } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X, AlertTriangle, CheckSquare, ChevronUp, ChevronDown, ArrowUpDown, RefreshCw } from "lucide-react";
 import { useClients } from "@/contexts/ClientContext";
 import { Client, ClientFormData, generateInitials, calculateTotalDemands } from "@/types/client";
 import {
@@ -15,13 +15,26 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const Config = () => {
-  const { clients, addClient, updateClient, deleteClient, deleteSelectedClients, clearAllClients, toggleClientActive } = useClients();
+  const { 
+    clients, 
+    addClient, 
+    updateClient, 
+    deleteClient, 
+    deleteSelectedClients, 
+    clearAllClients, 
+    toggleClientActive,
+    moveClient,
+    moveClientToPosition,
+    reorderClients,
+  } = useClients();
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showClearAllDialog, setShowClearAllDialog] = useState(false);
   const [showDeleteSelectedDialog, setShowDeleteSelectedDialog] = useState(false);
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set());
+  const [moveToPositionId, setMoveToPositionId] = useState<string | null>(null);
+  const [moveToPositionValue, setMoveToPositionValue] = useState<string>("");
 
   const handleSave = (data: ClientFormData) => {
     if (editingClient) {
@@ -77,6 +90,16 @@ const Config = () => {
   };
 
   const sortedClients = [...clients].sort((a, b) => a.order - b.order);
+  const activeCount = clients.filter(c => c.isActive).length;
+
+  const handleMoveToPosition = (id: string) => {
+    const position = parseInt(moveToPositionValue);
+    if (!isNaN(position) && position >= 1) {
+      moveClientToPosition(id, position);
+      setMoveToPositionId(null);
+      setMoveToPositionValue("");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -147,18 +170,35 @@ const Config = () => {
         {/* Client List */}
         <div className="admin-card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">
-              Clientes Cadastrados ({clients.length})
-            </h2>
-            {clients.length > 0 && !isCreating && !editingClient && (
-              <button
-                onClick={selectAllForDelete}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-              >
-                <CheckSquare className="w-3.5 h-3.5" />
-                {selectedForDelete.size === clients.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
-              </button>
-            )}
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                Clientes Cadastrados ({clients.length})
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {activeCount} ativos no painel • {clients.length - activeCount} ocultos
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {clients.length > 0 && !isCreating && !editingClient && (
+                <>
+                  <button
+                    onClick={reorderClients}
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded hover:bg-muted"
+                    title="Reorganizar numeração sequencial"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Reorganizar Ordem
+                  </button>
+                  <button
+                    onClick={selectAllForDelete}
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded hover:bg-muted"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    {selectedForDelete.size === clients.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           
           <div className="overflow-x-auto">
@@ -173,7 +213,7 @@ const Config = () => {
                       className="rounded border-border"
                     />
                   </th>
-                  <th className="pb-3 text-sm font-medium text-muted-foreground">#</th>
+                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Ordem</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground">Logo</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground">Nome</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">P</th>
@@ -186,8 +226,8 @@ const Config = () => {
                 </tr>
               </thead>
               <tbody>
-                {sortedClients.map((client) => (
-                  <tr key={client.id} className={`border-b border-border/50 ${!client.isActive ? 'opacity-50' : ''} ${selectedForDelete.has(client.id) ? 'bg-destructive/5' : ''}`}>
+                {sortedClients.map((client, index) => (
+                  <tr key={client.id} className={`border-b border-border/50 ${!client.isActive ? 'opacity-50 bg-muted/30' : ''} ${selectedForDelete.has(client.id) ? 'bg-destructive/5' : ''}`}>
                     <td className="py-3">
                       <input 
                         type="checkbox" 
@@ -196,7 +236,67 @@ const Config = () => {
                         className="rounded border-border"
                       />
                     </td>
-                    <td className="py-3 text-sm text-muted-foreground">{client.order}</td>
+                    {/* Order controls */}
+                    <td className="py-3">
+                      <div className="flex items-center gap-1">
+                        <div className="flex flex-col">
+                          <button
+                            onClick={() => moveClient(client.id, 'up')}
+                            disabled={index === 0}
+                            className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Mover para cima"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => moveClient(client.id, 'down')}
+                            disabled={index === sortedClients.length - 1}
+                            className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Mover para baixo"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {moveToPositionId === client.id ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={moveToPositionValue}
+                              onChange={(e) => setMoveToPositionValue(e.target.value)}
+                              className="w-12 px-1 py-0.5 text-xs border border-border rounded text-center"
+                              placeholder="#"
+                              min={1}
+                              max={clients.length}
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleMoveToPosition(client.id);
+                                if (e.key === 'Escape') {
+                                  setMoveToPositionId(null);
+                                  setMoveToPositionValue("");
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => handleMoveToPosition(client.id)}
+                              className="text-xs text-primary hover:underline"
+                            >
+                              OK
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setMoveToPositionId(client.id);
+                              setMoveToPositionValue(client.order.toString());
+                            }}
+                            className="text-sm font-medium text-foreground hover:text-primary min-w-[24px] text-center"
+                            title="Clique para mover para posição específica"
+                          >
+                            {client.order}
+                          </button>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3">
                       {client.logoUrl ? (
                         <img src={client.logoUrl} alt="" className="w-8 h-8 object-contain rounded" />
@@ -231,6 +331,7 @@ const Config = () => {
                             ? 'text-primary hover:bg-primary/10' 
                             : 'text-muted-foreground hover:bg-muted'
                         }`}
+                        title={client.isActive ? 'Clique para ocultar do painel' : 'Clique para mostrar no painel'}
                       >
                         {client.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
