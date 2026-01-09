@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X, AlertTriangle, CheckSquare } from "lucide-react";
 import { useClients } from "@/contexts/ClientContext";
 import { Client, ClientFormData, generateInitials, calculateTotalDemands } from "@/types/client";
 import {
@@ -15,10 +15,13 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const Config = () => {
-  const { clients, addClient, updateClient, deleteClient, toggleClientActive } = useClients();
+  const { clients, addClient, updateClient, deleteClient, deleteSelectedClients, clearAllClients, toggleClientActive } = useClients();
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [showClearAllDialog, setShowClearAllDialog] = useState(false);
+  const [showDeleteSelectedDialog, setShowDeleteSelectedDialog] = useState(false);
+  const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set());
 
   const handleSave = (data: ClientFormData) => {
     if (editingClient) {
@@ -42,6 +45,37 @@ const Config = () => {
     }
   };
 
+  const handleClearAll = () => {
+    clearAllClients();
+    setShowClearAllDialog(false);
+  };
+
+  const handleDeleteSelected = () => {
+    deleteSelectedClients(Array.from(selectedForDelete));
+    setSelectedForDelete(new Set());
+    setShowDeleteSelectedDialog(false);
+  };
+
+  const toggleSelectForDelete = (id: string) => {
+    setSelectedForDelete(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAllForDelete = () => {
+    if (selectedForDelete.size === clients.length) {
+      setSelectedForDelete(new Set());
+    } else {
+      setSelectedForDelete(new Set(clients.map(c => c.id)));
+    }
+  };
+
   const sortedClients = [...clients].sort((a, b) => a.order - b.order);
 
   return (
@@ -61,15 +95,39 @@ const Config = () => {
             <h1 className="text-xl font-bold text-foreground">Configuração de Clientes</h1>
           </div>
           
-          {!isCreating && !editingClient && (
-            <button
-              onClick={() => setIsCreating(true)}
-              className="admin-button-primary flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Novo Cliente
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Clear Data Actions */}
+            {clients.length > 0 && !isCreating && !editingClient && (
+              <>
+                {selectedForDelete.size > 0 && (
+                  <button
+                    onClick={() => setShowDeleteSelectedDialog(true)}
+                    className="admin-button-danger flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Excluir Selecionados ({selectedForDelete.size})
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowClearAllDialog(true)}
+                  className="admin-button flex items-center gap-2 bg-orange-500 text-white hover:bg-orange-600"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  Limpar Todos
+                </button>
+              </>
+            )}
+            
+            {!isCreating && !editingClient && (
+              <button
+                onClick={() => setIsCreating(true)}
+                className="admin-button-primary flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Novo Cliente
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -88,14 +146,33 @@ const Config = () => {
 
         {/* Client List */}
         <div className="admin-card">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Clientes Cadastrados ({clients.length})
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">
+              Clientes Cadastrados ({clients.length})
+            </h2>
+            {clients.length > 0 && !isCreating && !editingClient && (
+              <button
+                onClick={selectAllForDelete}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+              >
+                <CheckSquare className="w-3.5 h-3.5" />
+                {selectedForDelete.size === clients.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+              </button>
+            )}
+          </div>
           
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border text-left">
+                  <th className="pb-3 text-sm font-medium text-muted-foreground w-8">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedForDelete.size === clients.length && clients.length > 0}
+                      onChange={selectAllForDelete}
+                      className="rounded border-border"
+                    />
+                  </th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground">#</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground">Logo</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground">Nome</th>
@@ -110,7 +187,15 @@ const Config = () => {
               </thead>
               <tbody>
                 {sortedClients.map((client) => (
-                  <tr key={client.id} className={`border-b border-border/50 ${!client.isActive ? 'opacity-50' : ''}`}>
+                  <tr key={client.id} className={`border-b border-border/50 ${!client.isActive ? 'opacity-50' : ''} ${selectedForDelete.has(client.id) ? 'bg-destructive/5' : ''}`}>
+                    <td className="py-3">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedForDelete.has(client.id)}
+                        onChange={() => toggleSelectForDelete(client.id)}
+                        className="rounded border-border"
+                      />
+                    </td>
                     <td className="py-3 text-sm text-muted-foreground">{client.order}</td>
                     <td className="py-3">
                       {client.logoUrl ? (
@@ -187,6 +272,47 @@ const Config = () => {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear All Confirmation Dialog */}
+      <AlertDialog open={showClearAllDialog} onOpenChange={setShowClearAllDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-orange-600">
+              <AlertTriangle className="w-5 h-5" />
+              Limpar Todos os Dados
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>TODOS</strong> os {clients.length} clientes cadastrados? 
+              Esta ação não pode ser desfeita e você perderá todos os dados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearAll} className="bg-orange-500 text-white hover:bg-orange-600">
+              Sim, Limpar Tudo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Selected Confirmation Dialog */}
+      <AlertDialog open={showDeleteSelectedDialog} onOpenChange={setShowDeleteSelectedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Clientes Selecionados</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir os {selectedForDelete.size} clientes selecionados? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir Selecionados
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

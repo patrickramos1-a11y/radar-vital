@@ -5,15 +5,29 @@ interface ClientCardProps {
   client: Client;
   displayNumber: number;
   isSelected: boolean;
+  isHighlighted: boolean;
   onSelect: (id: string) => void;
+  onHighlight: (id: string) => void;
 }
 
-export function ClientCard({ client, displayNumber, isSelected, onSelect }: ClientCardProps) {
+export function ClientCard({ 
+  client, 
+  displayNumber, 
+  isSelected, 
+  isHighlighted,
+  onSelect, 
+  onHighlight 
+}: ClientCardProps) {
   const totalDemands = calculateTotalDemands(client.demands);
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onHighlight(client.id);
+  };
 
   return (
     <div
-      className={`client-card-compact ${isSelected ? 'selected' : ''}`}
+      className={`client-card-compact ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={() => onSelect(client.id)}
     >
       {/* Priority Badge */}
@@ -33,8 +47,14 @@ export function ClientCard({ client, displayNumber, isSelected, onSelect }: Clie
         </span>
       </div>
 
-      {/* Logo Area */}
-      <div className="flex items-center justify-center p-1.5 h-10 bg-muted/30">
+      {/* Logo Area - Clickable for highlight */}
+      <div 
+        className={`flex items-center justify-center p-1.5 h-10 transition-colors cursor-pointer ${
+          isHighlighted ? 'bg-yellow-400' : 'bg-muted/30 hover:bg-muted/50'
+        }`}
+        onClick={handleLogoClick}
+        title="Clique para destacar"
+      >
         {client.logoUrl ? (
           <img 
             src={client.logoUrl} 
@@ -42,7 +62,9 @@ export function ClientCard({ client, displayNumber, isSelected, onSelect }: Clie
             className="max-h-8 max-w-full object-contain rounded"
           />
         ) : (
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold">
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
+            isHighlighted ? 'bg-yellow-600 text-white' : 'bg-primary/10 text-primary'
+          }`}>
             {client.initials}
           </div>
         )}
@@ -77,11 +99,6 @@ export function ClientCard({ client, displayNumber, isSelected, onSelect }: Clie
             <DemandChip status="cancelled" count={client.demands.cancelled} />
           </div>
         </div>
-      </div>
-
-      {/* Click hint */}
-      <div className="text-[6px] text-center text-muted-foreground/50 py-0.5 uppercase tracking-wider leading-none">
-        Clique para destacar
       </div>
     </div>
   );

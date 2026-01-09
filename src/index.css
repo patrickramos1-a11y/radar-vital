@@ -113,6 +113,15 @@
     box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.3);
   }
 
+  .client-card-compact.highlighted {
+    @apply border-yellow-400 ring-2 ring-yellow-400/50;
+    box-shadow: 0 0 20px -4px rgba(250, 204, 21, 0.4);
+  }
+
+  .client-card-compact.selected.highlighted {
+    @apply border-yellow-500 ring-2 ring-yellow-500/50;
+  }
+
   /* Indicator Pills */
   .indicator-pill {
     @apply flex items-center gap-1.5 px-3 py-1.5 rounded-lg;
