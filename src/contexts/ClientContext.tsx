@@ -46,30 +46,28 @@ const OFFICIAL_COMPANIES = [
   "FARIZA",
 ];
 
-// Dados iniciais com as empresas oficiais
+// Dados iniciais com as empresas oficiais - valores zerados
 const createInitialClients = (): Client[] => {
-  const priorityIndices = [0, 2, 5, 8, 12, 18, 24, 30];
-  
   return OFFICIAL_COMPANIES.map((name, i) => ({
     id: `client-${i + 1}`,
     name,
     initials: generateInitials(name),
-    isPriority: priorityIndices.includes(i),
+    isPriority: false,
     isActive: true,
     order: i + 1,
-    processes: Math.floor(Math.random() * 15) + 1,
-    licenses: Math.floor(Math.random() * 10) + 1,
+    processes: 0,
+    licenses: 0,
     demands: {
-      completed: Math.floor(Math.random() * 20) + 5,
-      inProgress: Math.floor(Math.random() * 8) + 1,
-      notStarted: Math.floor(Math.random() * 5),
-      cancelled: Math.floor(Math.random() * 3),
+      completed: 0,
+      inProgress: 0,
+      notStarted: 0,
+      cancelled: 0,
     },
     collaborators: {
-      celine: Math.random() > 0.5,
-      gabi: Math.random() > 0.6,
-      darley: Math.random() > 0.7,
-      vanessa: Math.random() > 0.6,
+      celine: false,
+      gabi: false,
+      darley: false,
+      vanessa: false,
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

@@ -154,15 +154,12 @@
     background-color: hsl(var(--status-cancelled));
   }
 
-  /* Collaborator Chips */
-  .collaborator-chip {
-    @apply px-1 py-0.5 rounded text-[8px] font-bold uppercase tracking-tight;
-    @apply border transition-all duration-150;
+  /* Collaborator Buttons - Bottom of card */
+  .collaborator-button {
+    @apply py-1 text-[9px] font-bold uppercase tracking-tight text-center;
+    @apply border-r border-border last:border-r-0;
+    @apply transition-all duration-150;
     @apply hover:opacity-80 cursor-pointer;
-  }
-
-  .collaborator-chip.active {
-    @apply shadow-sm;
   }
 
   /* Presentation Mode */
