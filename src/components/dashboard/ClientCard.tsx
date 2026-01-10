@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import { Client, calculateTotalDemands } from "@/types/client";
+import { Client, calculateTotalDemands, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 
 interface ClientCardProps {
   client: Client;
@@ -8,6 +8,8 @@ interface ClientCardProps {
   isHighlighted: boolean;
   onSelect: (id: string) => void;
   onHighlight: (id: string) => void;
+  onTogglePriority: (id: string) => void;
+  onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
 }
 
 export function ClientCard({ 
@@ -16,7 +18,9 @@ export function ClientCard({
   isSelected, 
   isHighlighted,
   onSelect, 
-  onHighlight 
+  onHighlight,
+  onTogglePriority,
+  onToggleCollaborator,
 }: ClientCardProps) {
   const totalDemands = calculateTotalDemands(client.demands);
 
@@ -25,24 +29,42 @@ export function ClientCard({
     onHighlight(client.id);
   };
 
+  const handleStarClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onTogglePriority(client.id);
+  };
+
+  const handleCollaboratorClick = (e: React.MouseEvent, collaborator: CollaboratorName) => {
+    e.stopPropagation();
+    onToggleCollaborator(client.id, collaborator);
+  };
+
   return (
     <div
       className={`client-card-compact ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={() => onSelect(client.id)}
     >
-      {/* Priority Badge */}
-      {client.isPriority && (
-        <div className="absolute top-1 right-1 text-yellow-500 z-10">
-          <Star className="w-3 h-3 fill-current" />
-        </div>
-      )}
+      {/* Priority Star - Always visible, clickable */}
+      <button
+        onClick={handleStarClick}
+        className="absolute top-1 right-1 z-10 p-0.5 rounded transition-colors hover:bg-muted/50"
+        title={client.isPriority ? "Remover prioridade" : "Marcar como prioritário"}
+      >
+        <Star 
+          className={`w-3.5 h-3.5 transition-colors ${
+            client.isPriority 
+              ? 'text-yellow-500 fill-yellow-500' 
+              : 'text-muted-foreground/40 hover:text-yellow-400'
+          }`} 
+        />
+      </button>
 
       {/* Header - Number + Name */}
       <div className="flex items-center gap-1.5 px-2 py-1 bg-card-elevated border-b border-border">
         <div className="flex items-center justify-center w-5 h-5 rounded bg-primary text-primary-foreground text-[10px] font-bold shrink-0">
           {displayNumber.toString().padStart(2, '0')}
         </div>
-        <span className="text-[10px] font-medium text-foreground truncate flex-1">
+        <span className="text-[10px] font-medium text-foreground truncate flex-1 pr-4">
           {client.name}
         </span>
       </div>
@@ -100,6 +122,18 @@ export function ClientCard({
           </div>
         </div>
       </div>
+
+      {/* Collaborators Row */}
+      <div className="px-1 py-0.5 border-t border-border bg-card flex items-center justify-center gap-1">
+        {COLLABORATOR_NAMES.map((name) => (
+          <CollaboratorChip
+            key={name}
+            name={name}
+            isActive={client.collaborators[name]}
+            onClick={(e) => handleCollaboratorClick(e, name)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -114,5 +148,32 @@ function DemandChip({ status, count }: DemandChipProps) {
     <div className={`demand-chip-small ${status}`}>
       {count}
     </div>
+  );
+}
+
+interface CollaboratorChipProps {
+  name: CollaboratorName;
+  isActive: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}
+
+function CollaboratorChip({ name, isActive, onClick }: CollaboratorChipProps) {
+  const displayName = name.charAt(0).toUpperCase() + name.slice(1, 3);
+  const color = COLLABORATOR_COLORS[name];
+  
+  return (
+    <button
+      onClick={onClick}
+      className={`collaborator-chip ${isActive ? 'active' : ''}`}
+      style={{ 
+        '--collaborator-color': color,
+        color: isActive ? '#fff' : color,
+        backgroundColor: isActive ? color : 'transparent',
+        borderColor: color,
+      } as React.CSSProperties}
+      title={`${name.charAt(0).toUpperCase() + name.slice(1)} - Clique para ${isActive ? 'desativar' : 'ativar'}`}
+    >
+      {displayName}
+    </button>
   );
 }
