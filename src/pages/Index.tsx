@@ -15,7 +15,6 @@ const Index = () => {
     toggleCollaborator,
   } = useClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
 
@@ -67,27 +66,18 @@ const Index = () => {
     setSelectedClientId(prev => prev === id ? null : id);
   };
 
-  const togglePresentationMode = () => {
-    setIsPresentationMode(prev => !prev);
-  };
-
   const handleToggleCollaborator = (id: string, collaborator: CollaboratorName) => {
     toggleCollaborator(id, collaborator);
   };
 
   return (
-    <div className={`
-      flex flex-col h-screen w-screen overflow-hidden
-      ${isPresentationMode ? 'presentation-mode' : ''}
-    `}>
-      {/* Header */}
+    <div className="flex flex-col h-screen w-screen overflow-hidden">
+      {/* Header - Compact */}
       <DashboardHeader
         totalClients={totals.totalClients}
         totalProcesses={totals.totalProcesses}
         totalLicenses={totals.totalLicenses}
         totalDemands={totals.totalDemands}
-        isPresentationMode={isPresentationMode}
-        onTogglePresentationMode={togglePresentationMode}
       />
 
       {/* Filter Bar */}
@@ -98,7 +88,6 @@ const Index = () => {
         onSortChange={setSortBy}
         onFilterChange={setFilterBy}
         onClearHighlights={clearHighlights}
-        isPresentationMode={isPresentationMode}
       />
 
       {/* Main Content - Client Grid */}

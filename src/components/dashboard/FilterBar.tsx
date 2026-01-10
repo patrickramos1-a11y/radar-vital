@@ -11,7 +11,6 @@ interface FilterBarProps {
   onSortChange: (sort: SortOption) => void;
   onFilterChange: (filter: FilterOption) => void;
   onClearHighlights: () => void;
-  isPresentationMode: boolean;
 }
 
 export function FilterBar({
@@ -21,9 +20,7 @@ export function FilterBar({
   onSortChange,
   onFilterChange,
   onClearHighlights,
-  isPresentationMode,
 }: FilterBarProps) {
-  if (isPresentationMode) return null;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-card border-b border-border">
