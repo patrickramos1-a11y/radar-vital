@@ -12,6 +12,39 @@ interface ClientCardProps {
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
 }
 
+// Get gradient background for active collaborators
+function getCollaboratorGradient(collaborators: Client['collaborators']): string {
+  const activeColors: string[] = [];
+  
+  COLLABORATOR_NAMES.forEach((name) => {
+    if (collaborators[name]) {
+      activeColors.push(COLLABORATOR_COLORS[name]);
+    }
+  });
+  
+  if (activeColors.length === 0) {
+    return 'transparent';
+  }
+  
+  if (activeColors.length === 1) {
+    return activeColors[0];
+  }
+  
+  // Create gradient with multiple colors
+  const step = 100 / activeColors.length;
+  const gradientStops = activeColors.map((color, i) => {
+    const start = i * step;
+    const end = (i + 1) * step;
+    return `${color} ${start}%, ${color} ${end}%`;
+  }).join(', ');
+  
+  return `linear-gradient(90deg, ${gradientStops})`;
+}
+
+function hasActiveCollaborators(collaborators: Client['collaborators']): boolean {
+  return COLLABORATOR_NAMES.some(name => collaborators[name]);
+}
+
 export function ClientCard({ 
   client, 
   displayNumber, 
@@ -23,6 +56,8 @@ export function ClientCard({
   onToggleCollaborator,
 }: ClientCardProps) {
   const totalDemands = calculateTotalDemands(client.demands);
+  const hasCollaborators = hasActiveCollaborators(client.collaborators);
+  const collaboratorBg = getCollaboratorGradient(client.collaborators);
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -69,11 +104,14 @@ export function ClientCard({
         </span>
       </div>
 
-      {/* Logo Area - Clickable for highlight */}
+      {/* Logo Area - Shows collaborator colors when active */}
       <div 
         className={`flex items-center justify-center p-1.5 h-10 transition-colors cursor-pointer ${
-          isHighlighted ? 'bg-yellow-400' : 'bg-muted/30 hover:bg-muted/50'
+          isHighlighted ? 'ring-2 ring-yellow-400' : ''
         }`}
+        style={{
+          background: hasCollaborators ? collaboratorBg : (isHighlighted ? '#facc15' : 'hsl(var(--muted) / 0.3)'),
+        }}
         onClick={handleLogoClick}
         title="Clique para destacar"
       >
@@ -85,7 +123,7 @@ export function ClientCard({
           />
         ) : (
           <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
-            isHighlighted ? 'bg-yellow-600 text-white' : 'bg-primary/10 text-primary'
+            hasCollaborators || isHighlighted ? 'bg-white/80 text-gray-800' : 'bg-primary/10 text-primary'
           }`}>
             {client.initials}
           </div>
@@ -123,10 +161,10 @@ export function ClientCard({
         </div>
       </div>
 
-      {/* Collaborators Row */}
-      <div className="px-1 py-0.5 border-t border-border bg-card flex items-center justify-center gap-1">
+      {/* Collaborators Row - 4 Buttons */}
+      <div className="grid grid-cols-4 border-t border-border">
         {COLLABORATOR_NAMES.map((name) => (
-          <CollaboratorChip
+          <CollaboratorButton
             key={name}
             name={name}
             isActive={client.collaborators[name]}
@@ -151,26 +189,25 @@ function DemandChip({ status, count }: DemandChipProps) {
   );
 }
 
-interface CollaboratorChipProps {
+interface CollaboratorButtonProps {
   name: CollaboratorName;
   isActive: boolean;
   onClick: (e: React.MouseEvent) => void;
 }
 
-function CollaboratorChip({ name, isActive, onClick }: CollaboratorChipProps) {
-  const displayName = name.charAt(0).toUpperCase() + name.slice(1, 3);
+function CollaboratorButton({ name, isActive, onClick }: CollaboratorButtonProps) {
+  const displayName = name.charAt(0).toUpperCase() + name.slice(1, 4);
   const color = COLLABORATOR_COLORS[name];
   
   return (
     <button
       onClick={onClick}
-      className={`collaborator-chip ${isActive ? 'active' : ''}`}
+      className="collaborator-button"
       style={{ 
-        '--collaborator-color': color,
-        color: isActive ? '#fff' : color,
         backgroundColor: isActive ? color : 'transparent',
+        color: isActive ? '#fff' : color,
         borderColor: color,
-      } as React.CSSProperties}
+      }}
       title={`${name.charAt(0).toUpperCase() + name.slice(1)} - Clique para ${isActive ? 'desativar' : 'ativar'}`}
     >
       {displayName}

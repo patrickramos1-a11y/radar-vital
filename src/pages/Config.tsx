@@ -413,17 +413,53 @@ const Config = () => {
                       )}
                     </td>
                     <td className="py-3 text-sm font-medium text-foreground">{client.name}</td>
-                    <td className="py-3 text-sm text-center text-foreground">{client.processes}</td>
-                    <td className="py-3 text-sm text-center text-foreground">{client.licenses}</td>
+                    <td className="py-3">
+                      <InlineNumberInput
+                        value={client.processes}
+                        onChange={(val) => updateClient(client.id, { processes: val })}
+                        min={0}
+                      />
+                    </td>
+                    <td className="py-3">
+                      <InlineNumberInput
+                        value={client.licenses}
+                        onChange={(val) => updateClient(client.id, { licenses: val })}
+                        min={0}
+                      />
+                    </td>
                     <td className="py-3 text-sm text-center text-foreground font-semibold">
                       {calculateTotalDemands(client.demands)}
                     </td>
                     <td className="py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="demand-chip-small completed">{client.demands.completed}</span>
-                        <span className="demand-chip-small in-progress">{client.demands.inProgress}</span>
-                        <span className="demand-chip-small not-started">{client.demands.notStarted}</span>
-                        <span className="demand-chip-small cancelled">{client.demands.cancelled}</span>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <InlineDemandInput
+                          value={client.demands.completed}
+                          onChange={(val) => updateClient(client.id, { 
+                            demands: { ...client.demands, completed: val } 
+                          })}
+                          className="completed"
+                        />
+                        <InlineDemandInput
+                          value={client.demands.inProgress}
+                          onChange={(val) => updateClient(client.id, { 
+                            demands: { ...client.demands, inProgress: val } 
+                          })}
+                          className="in-progress"
+                        />
+                        <InlineDemandInput
+                          value={client.demands.notStarted}
+                          onChange={(val) => updateClient(client.id, { 
+                            demands: { ...client.demands, notStarted: val } 
+                          })}
+                          className="not-started"
+                        />
+                        <InlineDemandInput
+                          value={client.demands.cancelled}
+                          onChange={(val) => updateClient(client.id, { 
+                            demands: { ...client.demands, cancelled: val } 
+                          })}
+                          className="cancelled"
+                        />
                       </div>
                     </td>
                     <td className="py-3">
@@ -916,6 +952,128 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
         </button>
       </div>
     </form>
+  );
+}
+
+// Inline Number Input for P and L columns
+interface InlineNumberInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+}
+
+function InlineNumberInput({ value, onChange, min = 0, max = 999 }: InlineNumberInputProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempValue, setTempValue] = useState(value.toString());
+
+  const handleBlur = () => {
+    const parsed = parseInt(tempValue);
+    if (!isNaN(parsed) && parsed >= min && parsed <= max) {
+      onChange(parsed);
+    } else {
+      setTempValue(value.toString());
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleBlur();
+    }
+    if (e.key === 'Escape') {
+      setTempValue(value.toString());
+      setIsEditing(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <input
+        type="number"
+        value={tempValue}
+        onChange={(e) => setTempValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        className="w-12 px-1 py-0.5 text-sm text-center border border-primary rounded bg-background"
+        min={min}
+        max={max}
+        autoFocus
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={() => {
+        setTempValue(value.toString());
+        setIsEditing(true);
+      }}
+      className="w-12 py-0.5 text-sm text-center text-foreground font-medium hover:bg-muted rounded transition-colors cursor-pointer"
+      title="Clique para editar"
+    >
+      {value}
+    </button>
+  );
+}
+
+// Inline Demand Input for demand status chips
+interface InlineDemandInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  className: string;
+}
+
+function InlineDemandInput({ value, onChange, className }: InlineDemandInputProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempValue, setTempValue] = useState(value.toString());
+
+  const handleBlur = () => {
+    const parsed = parseInt(tempValue);
+    if (!isNaN(parsed) && parsed >= 0) {
+      onChange(parsed);
+    } else {
+      setTempValue(value.toString());
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleBlur();
+    }
+    if (e.key === 'Escape') {
+      setTempValue(value.toString());
+      setIsEditing(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <input
+        type="number"
+        value={tempValue}
+        onChange={(e) => setTempValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        className="w-8 px-0.5 py-0 text-[10px] text-center border border-primary rounded bg-background"
+        min={0}
+        autoFocus
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={() => {
+        setTempValue(value.toString());
+        setIsEditing(true);
+      }}
+      className={`demand-chip-small ${className} cursor-pointer hover:opacity-80 transition-opacity`}
+      title="Clique para editar"
+    >
+      {value}
+    </button>
   );
 }
 
