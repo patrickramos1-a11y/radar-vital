@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { 
   ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X, 
   AlertTriangle, CheckSquare, ChevronUp, ChevronDown, RefreshCw,
-  Download, FolderUp, RotateCcw
+  Download, FolderUp, RotateCcw, FileSpreadsheet
 } from "lucide-react";
+import { ImportWizard } from "@/components/import/ImportWizard";
 import { useClients } from "@/contexts/ClientContext";
 import { 
   Client, ClientFormData, generateInitials, calculateTotalDemands,
@@ -48,6 +49,7 @@ const Config = () => {
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set());
   const [moveToPositionId, setMoveToPositionId] = useState<string | null>(null);
   const [moveToPositionValue, setMoveToPositionValue] = useState<string>("");
+  const [showImportWizard, setShowImportWizard] = useState(false);
   
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -187,7 +189,19 @@ const Config = () => {
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Import/Export */}
+            {/* Import Excel */}
+            <button
+              onClick={() => setShowImportWizard(true)}
+              className="admin-button flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+              title="Importar demandas de planilha Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Importar Programação
+            </button>
+
+            <div className="h-6 w-px bg-border mx-1" />
+
+            {/* Import/Export JSON */}
             <input
               ref={importInputRef}
               type="file"
@@ -201,7 +215,7 @@ const Config = () => {
               title="Importar configuração de arquivo JSON"
             >
               <FolderUp className="w-4 h-4" />
-              Importar
+              Importar JSON
             </button>
             <button
               onClick={handleExport}
@@ -209,7 +223,7 @@ const Config = () => {
               title="Exportar configuração para arquivo JSON"
             >
               <Download className="w-4 h-4" />
-              Exportar
+              Exportar JSON
             </button>
 
             <div className="h-6 w-px bg-border mx-1" />
@@ -600,6 +614,14 @@ const Config = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Wizard */}
+      <ImportWizard
+        isOpen={showImportWizard}
+        onClose={() => setShowImportWizard(false)}
+        clients={clients}
+        onImportComplete={() => setShowImportWizard(false)}
+      />
     </div>
   );
 };
