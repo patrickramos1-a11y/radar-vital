@@ -80,15 +80,83 @@ export type Database = {
         }
         Relationships: []
       }
+      demands: {
+        Row: {
+          client_id: string | null
+          codigo: string | null
+          comentario: string | null
+          created_at: string
+          data: string | null
+          descricao: string
+          empresa_excel: string
+          id: string
+          imported_at: string
+          origem: string | null
+          plano: string | null
+          responsavel: string | null
+          status: Database["public"]["Enums"]["demand_status"]
+          subtopico: string | null
+          topico: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          codigo?: string | null
+          comentario?: string | null
+          created_at?: string
+          data?: string | null
+          descricao: string
+          empresa_excel: string
+          id?: string
+          imported_at?: string
+          origem?: string | null
+          plano?: string | null
+          responsavel?: string | null
+          status?: Database["public"]["Enums"]["demand_status"]
+          subtopico?: string | null
+          topico?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          codigo?: string | null
+          comentario?: string | null
+          created_at?: string
+          data?: string | null
+          descricao?: string
+          empresa_excel?: string
+          id?: string
+          imported_at?: string
+          origem?: string | null
+          plano?: string | null
+          responsavel?: string | null
+          status?: Database["public"]["Enums"]["demand_status"]
+          subtopico?: string | null
+          topico?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demands_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      recalculate_client_demands: {
+        Args: { p_client_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      demand_status: "CONCLUIDO" | "EM_EXECUCAO" | "NAO_FEITO" | "CANCELADO"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -215,6 +283,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      demand_status: ["CONCLUIDO", "EM_EXECUCAO", "NAO_FEITO", "CANCELADO"],
+    },
   },
 } as const
