@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ClientCard } from "./ClientCard";
-import { Client } from "@/types/client";
+import { Client, CollaboratorName } from "@/types/client";
 
 interface ClientGridProps {
   clients: Client[];
@@ -8,6 +8,8 @@ interface ClientGridProps {
   highlightedClients: Set<string>;
   onSelectClient: (id: string) => void;
   onHighlightClient: (id: string) => void;
+  onTogglePriority: (id: string) => void;
+  onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
 }
 
 // Calcula o layout do grid baseado na quantidade de clientes
@@ -31,6 +33,8 @@ export function ClientGrid({
   highlightedClients,
   onSelectClient,
   onHighlightClient,
+  onTogglePriority,
+  onToggleCollaborator,
 }: ClientGridProps) {
   const { columns, rows } = useMemo(() => getGridLayout(clients.length), [clients.length]);
 
@@ -51,6 +55,8 @@ export function ClientGrid({
           isHighlighted={highlightedClients.has(client.id)}
           onSelect={onSelectClient}
           onHighlight={onHighlightClient}
+          onTogglePriority={onTogglePriority}
+          onToggleCollaborator={onToggleCollaborator}
         />
       ))}
     </div>
