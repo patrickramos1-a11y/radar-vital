@@ -1,11 +1,21 @@
-import { Users, FileText, Shield, ClipboardList, Settings } from "lucide-react";
+import { Users, FileText, Shield, ClipboardList, Settings, Star, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+
+interface CollaboratorStats {
+  celine: number;
+  gabi: number;
+  darley: number;
+  vanessa: number;
+}
 
 interface DashboardHeaderProps {
   totalClients: number;
   totalProcesses: number;
   totalLicenses: number;
   totalDemands: number;
+  collaboratorStats: CollaboratorStats;
+  priorityCount: number;
+  highlightedCount: number;
 }
 
 export function DashboardHeader({
@@ -13,6 +23,9 @@ export function DashboardHeader({
   totalProcesses,
   totalLicenses,
   totalDemands,
+  collaboratorStats,
+  priorityCount,
+  highlightedCount,
 }: DashboardHeaderProps) {
   return (
     <header className="flex items-center justify-between px-4 py-2 bg-header-bg border-b border-header-border">
@@ -30,26 +43,69 @@ export function DashboardHeader({
       </div>
 
       {/* Global Stats - Compact */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 flex-wrap justify-center">
+        {/* Main stats */}
         <StatCardCompact 
-          icon={<Users className="w-4 h-4" />} 
+          icon={<Users className="w-3.5 h-3.5" />} 
           value={totalClients} 
           label="Clientes" 
         />
         <StatCardCompact 
-          icon={<FileText className="w-4 h-4" />} 
+          icon={<FileText className="w-3.5 h-3.5" />} 
           value={totalProcesses} 
           label="Processos" 
         />
         <StatCardCompact 
-          icon={<Shield className="w-4 h-4" />} 
+          icon={<Shield className="w-3.5 h-3.5" />} 
           value={totalLicenses} 
           label="Licenças" 
         />
         <StatCardCompact 
-          icon={<ClipboardList className="w-4 h-4" />} 
+          icon={<ClipboardList className="w-3.5 h-3.5" />} 
           value={totalDemands} 
           label="Demandas" 
+        />
+        
+        {/* Divider */}
+        <div className="w-px h-6 bg-border mx-1" />
+        
+        {/* Collaborator stats */}
+        <StatCardCompact 
+          value={collaboratorStats.celine} 
+          label="Celine" 
+          variant="collaborator"
+        />
+        <StatCardCompact 
+          value={collaboratorStats.gabi} 
+          label="Gabi" 
+          variant="collaborator"
+        />
+        <StatCardCompact 
+          value={collaboratorStats.darley} 
+          label="Darley" 
+          variant="collaborator"
+        />
+        <StatCardCompact 
+          value={collaboratorStats.vanessa} 
+          label="Vanessa" 
+          variant="collaborator"
+        />
+        
+        {/* Divider */}
+        <div className="w-px h-6 bg-border mx-1" />
+        
+        {/* Priority and Highlight stats */}
+        <StatCardCompact 
+          icon={<Star className="w-3.5 h-3.5" />} 
+          value={priorityCount} 
+          label="Prioridade" 
+          variant="priority"
+        />
+        <StatCardCompact 
+          icon={<Sparkles className="w-3.5 h-3.5" />} 
+          value={highlightedCount} 
+          label="Destaques" 
+          variant="highlight"
         />
       </div>
 
@@ -66,18 +122,43 @@ export function DashboardHeader({
 }
 
 interface StatCardCompactProps {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   value: number;
   label: string;
+  variant?: 'default' | 'collaborator' | 'priority' | 'highlight';
 }
 
-function StatCardCompact({ icon, value, label }: StatCardCompactProps) {
+function StatCardCompact({ icon, value, label, variant = 'default' }: StatCardCompactProps) {
+  const getVariantClasses = () => {
+    switch (variant) {
+      case 'collaborator':
+        return 'bg-secondary/50 border-secondary';
+      case 'priority':
+        return 'bg-amber-500/10 border-amber-500/30';
+      case 'highlight':
+        return 'bg-blue-500/10 border-blue-500/30';
+      default:
+        return 'bg-card border-border';
+    }
+  };
+
+  const getIconColor = () => {
+    switch (variant) {
+      case 'priority':
+        return 'text-amber-500';
+      case 'highlight':
+        return 'text-blue-500';
+      default:
+        return 'text-primary';
+    }
+  };
+
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card border border-border">
-      <span className="text-primary">{icon}</span>
+    <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border ${getVariantClasses()}`}>
+      {icon && <span className={getIconColor()}>{icon}</span>}
       <div className="flex flex-col">
-        <span className="text-lg font-bold text-foreground leading-none">{value}</span>
-        <span className="text-[9px] text-muted-foreground uppercase tracking-wide">{label}</span>
+        <span className="text-sm font-bold text-foreground leading-none">{value}</span>
+        <span className="text-[8px] text-muted-foreground uppercase tracking-wide">{label}</span>
       </div>
     </div>
   );
