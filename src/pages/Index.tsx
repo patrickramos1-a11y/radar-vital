@@ -63,6 +63,20 @@ const Index = () => {
 
   const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
+  // Calculate collaborator stats
+  const collaboratorStats = useMemo(() => ({
+    celine: activeClients.filter(c => c.collaborators.celine).length,
+    gabi: activeClients.filter(c => c.collaborators.gabi).length,
+    darley: activeClients.filter(c => c.collaborators.darley).length,
+    vanessa: activeClients.filter(c => c.collaborators.vanessa).length,
+  }), [activeClients]);
+
+  // Calculate priority count
+  const priorityCount = useMemo(() => 
+    activeClients.filter(c => c.isPriority).length, 
+    [activeClients]
+  );
+
   const handleSelectClient = (id: string) => {
     setSelectedClientId(prev => prev === id ? null : id);
   };
@@ -79,6 +93,9 @@ const Index = () => {
         totalProcesses={totals.totalProcesses}
         totalLicenses={totals.totalLicenses}
         totalDemands={totals.totalDemands}
+        collaboratorStats={collaboratorStats}
+        priorityCount={priorityCount}
+        highlightedCount={highlightedClients.size}
       />
 
       {/* Filter Bar */}
