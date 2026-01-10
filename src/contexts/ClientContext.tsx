@@ -1,88 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS } from '@/types/client';
-
-const STORAGE_KEY = 'painel-ac-clients-v2'; // Versão atualizada para forçar reset com novos nomes
-
-// Lista oficial de empresas
-const OFFICIAL_COMPANIES = [
-  "PHS DA MATA",
-  "PLASNORT - AMAZONPET",
-  "SANTA HELENA",
-  "SIMETRIA / ÍCONE",
-  "GUARÁ",
-  "NORFRUTAS / AÇAÍ PREMIUM",
-  "PARA SUPER FOODS",
-  "BREVES",
-  "NORSUL",
-  "FLORATTA",
-  "NUTRILATINO",
-  "TAPAJÓS",
-  "AÇAÍ VITANAT",
-  "CTC",
-  "DA CASA",
-  "CTC - MANACAPURU",
-  "FAZENDA BRASIL / BARU",
-  "FLOR DE AÇAÍ",
-  "LDV - J.A",
-  "NATURE AMAZON",
-  "XINGU",
-  "TEU AÇAÍ",
-  "AÇAÍ OKAY",
-  "FROM AMAZÔNIA",
-  "CEIBA",
-  "RAJÁ",
-  "KMTEC",
-  "4 ELEMENTOS",
-  "AÇAI KAA",
-  "PRENORTE",
-  "ESTRELA DALVA",
-  "ARRUDÃO",
-  "SC CONSTRUÇÃO",
-  "P S MARTINS LOBATO",
-  "VALE DO AÇAÍ",
-  "100% AMAZÔNIA",
-  "OYAMOTA",
-  "POSTO AV. BRASIL",
-  "FARIZA",
-];
-
-// Dados iniciais com as empresas oficiais - valores zerados
-const createInitialClients = (): Client[] => {
-  return OFFICIAL_COMPANIES.map((name, i) => ({
-    id: `client-${i + 1}`,
-    name,
-    initials: generateInitials(name),
-    isPriority: false,
-    isActive: true,
-    order: i + 1,
-    processes: 0,
-    licenses: 0,
-    demands: {
-      completed: 0,
-      inProgress: 0,
-      notStarted: 0,
-      cancelled: 0,
-    },
-    collaborators: {
-      celine: false,
-      gabi: false,
-      darley: false,
-      vanessa: false,
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }));
-};
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ClientContextType {
   clients: Client[];
   activeClients: Client[];
   highlightedClients: Set<string>;
-  addClient: (data: ClientFormData) => void;
-  updateClient: (id: string, data: Partial<ClientFormData>) => void;
-  deleteClient: (id: string) => void;
-  deleteSelectedClients: (ids: string[]) => void;
-  clearAllClients: () => void;
+  isLoading: boolean;
+  addClient: (data: ClientFormData) => Promise<void>;
+  updateClient: (id: string, data: Partial<ClientFormData>) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+  deleteSelectedClients: (ids: string[]) => Promise<void>;
+  clearAllClients: () => Promise<void>;
   toggleClientActive: (id: string) => void;
   togglePriority: (id: string) => void;
   toggleCollaborator: (id: string, collaborator: keyof Client['collaborators']) => void;
@@ -93,135 +23,236 @@ interface ClientContextType {
   moveClientToPosition: (id: string, newPosition: number) => void;
   reorderClients: () => void;
   exportData: () => string;
-  importData: (jsonData: string) => boolean;
-  resetToDefault: () => void;
+  importData: (jsonData: string) => Promise<boolean>;
+  resetToDefault: () => Promise<void>;
+  refetch: () => Promise<void>;
 }
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
-// Migrar dados antigos que não têm collaborators
-const migrateClient = (client: any): Client => {
-  return {
-    ...client,
-    collaborators: client.collaborators || DEFAULT_COLLABORATORS,
-  };
+// Convert database row to Client type
+const dbRowToClient = (row: any): Client => ({
+  id: row.id,
+  name: row.name,
+  initials: row.initials,
+  logoUrl: row.logo_url || undefined,
+  isPriority: row.is_priority,
+  isActive: row.is_active,
+  order: row.display_order,
+  processes: row.processes,
+  licenses: row.licenses,
+  demands: {
+    completed: row.demands_completed,
+    inProgress: row.demands_in_progress,
+    notStarted: row.demands_not_started,
+    cancelled: row.demands_cancelled,
+  },
+  collaborators: {
+    celine: row.collaborator_celine,
+    gabi: row.collaborator_gabi,
+    darley: row.collaborator_darley,
+    vanessa: row.collaborator_vanessa,
+  },
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+// Convert Client to database row format
+const clientToDbRow = (client: Partial<ClientFormData>) => {
+  const row: any = {};
+  
+  if (client.name !== undefined) row.name = client.name;
+  if (client.initials !== undefined) row.initials = client.initials;
+  if (client.logoUrl !== undefined) row.logo_url = client.logoUrl || null;
+  if (client.isPriority !== undefined) row.is_priority = client.isPriority;
+  if (client.isActive !== undefined) row.is_active = client.isActive;
+  if (client.order !== undefined) row.display_order = client.order;
+  if (client.processes !== undefined) row.processes = client.processes;
+  if (client.licenses !== undefined) row.licenses = client.licenses;
+  if (client.demands !== undefined) {
+    row.demands_completed = client.demands.completed;
+    row.demands_in_progress = client.demands.inProgress;
+    row.demands_not_started = client.demands.notStarted;
+    row.demands_cancelled = client.demands.cancelled;
+  }
+  if (client.collaborators !== undefined) {
+    row.collaborator_celine = client.collaborators.celine;
+    row.collaborator_gabi = client.collaborators.gabi;
+    row.collaborator_darley = client.collaborators.darley;
+    row.collaborator_vanessa = client.collaborators.vanessa;
+  }
+  
+  return row;
 };
 
 export function ClientProvider({ children }: { children: React.ReactNode }) {
-  const [clients, setClients] = useState<Client[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        return parsed.map(migrateClient);
-      } catch {
-        return createInitialClients();
-      }
-    }
-    return createInitialClients();
-  });
-
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [highlightedClients, setHighlightedClients] = useState<Set<string>>(new Set());
 
-  // Persistir no localStorage
+  // Fetch clients from database
+  const fetchClients = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      
+      setClients(data?.map(dbRowToClient) || []);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      toast.error('Erro ao carregar clientes');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Initial fetch
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
-  }, [clients]);
+    fetchClients();
+  }, [fetchClients]);
 
   const activeClients = clients
     .filter(c => c.isActive)
     .sort((a, b) => a.order - b.order);
 
-  const addClient = useCallback((data: ClientFormData) => {
-    const newClient: Client = {
-      ...data,
-      id: `client-${Date.now()}`,
-      initials: data.initials || generateInitials(data.name),
-      collaborators: data.collaborators || DEFAULT_COLLABORATORS,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setClients(prev => [...prev, newClient]);
+  const addClient = useCallback(async (data: ClientFormData) => {
+    try {
+      const newClient = {
+        ...data,
+        initials: data.initials || generateInitials(data.name),
+        collaborators: data.collaborators || DEFAULT_COLLABORATORS,
+      };
+      
+      const { error } = await supabase
+        .from('clients')
+        .insert(clientToDbRow(newClient));
+      
+      if (error) throw error;
+      
+      await fetchClients();
+    } catch (error) {
+      console.error('Error adding client:', error);
+      toast.error('Erro ao adicionar cliente');
+    }
+  }, [fetchClients]);
+
+  const updateClient = useCallback(async (id: string, data: Partial<ClientFormData>) => {
+    try {
+      // Update local state immediately for responsiveness
+      setClients(prev => prev.map(client => {
+        if (client.id === id) {
+          return {
+            ...client,
+            ...data,
+            initials: data.initials || (data.name ? generateInitials(data.name) : client.initials),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return client;
+      }));
+
+      // Then sync to database
+      const { error } = await supabase
+        .from('clients')
+        .update(clientToDbRow(data))
+        .eq('id', id);
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating client:', error);
+      toast.error('Erro ao atualizar cliente');
+      // Refetch to restore correct state
+      await fetchClients();
+    }
+  }, [fetchClients]);
+
+  const deleteClient = useCallback(async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setClients(prev => prev.filter(client => client.id !== id));
+      setHighlightedClients(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast.error('Erro ao excluir cliente');
+    }
   }, []);
 
-  const updateClient = useCallback((id: string, data: Partial<ClientFormData>) => {
-    setClients(prev => prev.map(client => {
-      if (client.id === id) {
-        return {
-          ...client,
-          ...data,
-          initials: data.initials || (data.name ? generateInitials(data.name) : client.initials),
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return client;
-    }));
+  const deleteSelectedClients = useCallback(async (ids: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .in('id', ids);
+      
+      if (error) throw error;
+      
+      setClients(prev => prev.filter(client => !ids.includes(client.id)));
+      setHighlightedClients(prev => {
+        const next = new Set(prev);
+        ids.forEach(id => next.delete(id));
+        return next;
+      });
+    } catch (error) {
+      console.error('Error deleting clients:', error);
+      toast.error('Erro ao excluir clientes');
+    }
   }, []);
 
-  const deleteClient = useCallback((id: string) => {
-    setClients(prev => prev.filter(client => client.id !== id));
-    setHighlightedClients(prev => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-  }, []);
-
-  const deleteSelectedClients = useCallback((ids: string[]) => {
-    setClients(prev => prev.filter(client => !ids.includes(client.id)));
-    setHighlightedClients(prev => {
-      const next = new Set(prev);
-      ids.forEach(id => next.delete(id));
-      return next;
-    });
-  }, []);
-
-  const clearAllClients = useCallback(() => {
-    setClients([]);
-    setHighlightedClients(new Set());
+  const clearAllClients = useCallback(async () => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      
+      if (error) throw error;
+      
+      setClients([]);
+      setHighlightedClients(new Set());
+    } catch (error) {
+      console.error('Error clearing clients:', error);
+      toast.error('Erro ao limpar clientes');
+    }
   }, []);
 
   const toggleClientActive = useCallback((id: string) => {
-    setClients(prev => prev.map(client => {
-      if (client.id === id) {
-        return {
-          ...client,
-          isActive: !client.isActive,
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return client;
-    }));
-  }, []);
+    const client = clients.find(c => c.id === id);
+    if (client) {
+      updateClient(id, { isActive: !client.isActive });
+    }
+  }, [clients, updateClient]);
 
   const togglePriority = useCallback((id: string) => {
-    setClients(prev => prev.map(client => {
-      if (client.id === id) {
-        return {
-          ...client,
-          isPriority: !client.isPriority,
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return client;
-    }));
-  }, []);
+    const client = clients.find(c => c.id === id);
+    if (client) {
+      updateClient(id, { isPriority: !client.isPriority });
+    }
+  }, [clients, updateClient]);
 
   const toggleCollaborator = useCallback((id: string, collaborator: keyof Client['collaborators']) => {
-    setClients(prev => prev.map(client => {
-      if (client.id === id) {
-        return {
-          ...client,
-          collaborators: {
-            ...client.collaborators,
-            [collaborator]: !client.collaborators[collaborator],
-          },
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return client;
-    }));
-  }, []);
+    const client = clients.find(c => c.id === id);
+    if (client) {
+      updateClient(id, { 
+        collaborators: {
+          ...client.collaborators,
+          [collaborator]: !client.collaborators[collaborator],
+        }
+      });
+    }
+  }, [clients, updateClient]);
 
   const toggleHighlight = useCallback((id: string) => {
     setHighlightedClients(prev => {
@@ -243,67 +274,85 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     return clients.find(c => c.id === id);
   }, [clients]);
 
-  const reorderClients = useCallback(() => {
-    setClients(prev => {
-      const sorted = [...prev].sort((a, b) => a.order - b.order);
-      return sorted.map((client, index) => ({
-        ...client,
-        order: index + 1,
-        updatedAt: new Date().toISOString(),
-      }));
-    });
-  }, []);
+  const reorderClients = useCallback(async () => {
+    const sorted = [...clients].sort((a, b) => a.order - b.order);
+    const updates = sorted.map((client, index) => ({
+      id: client.id,
+      display_order: index + 1,
+    }));
+    
+    try {
+      for (const update of updates) {
+        await supabase
+          .from('clients')
+          .update({ display_order: update.display_order })
+          .eq('id', update.id);
+      }
+      await fetchClients();
+    } catch (error) {
+      console.error('Error reordering clients:', error);
+      toast.error('Erro ao reordenar clientes');
+    }
+  }, [clients, fetchClients]);
 
-  const moveClient = useCallback((id: string, direction: 'up' | 'down') => {
-    setClients(prev => {
-      const sorted = [...prev].sort((a, b) => a.order - b.order);
-      const currentIndex = sorted.findIndex(c => c.id === id);
+  const moveClient = useCallback(async (id: string, direction: 'up' | 'down') => {
+    const sorted = [...clients].sort((a, b) => a.order - b.order);
+    const currentIndex = sorted.findIndex(c => c.id === id);
+    
+    if (currentIndex === -1) return;
+    
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    
+    if (targetIndex < 0 || targetIndex >= sorted.length) return;
+    
+    const currentOrder = sorted[currentIndex].order;
+    const targetOrder = sorted[targetIndex].order;
+    
+    try {
+      await supabase
+        .from('clients')
+        .update({ display_order: targetOrder })
+        .eq('id', id);
       
-      if (currentIndex === -1) return prev;
+      await supabase
+        .from('clients')
+        .update({ display_order: currentOrder })
+        .eq('id', sorted[targetIndex].id);
       
-      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      
-      if (targetIndex < 0 || targetIndex >= sorted.length) return prev;
-      
-      const currentOrder = sorted[currentIndex].order;
-      const targetOrder = sorted[targetIndex].order;
-      
-      return prev.map(client => {
-        if (client.id === id) {
-          return { ...client, order: targetOrder, updatedAt: new Date().toISOString() };
-        }
-        if (client.id === sorted[targetIndex].id) {
-          return { ...client, order: currentOrder, updatedAt: new Date().toISOString() };
-        }
-        return client;
-      });
-    });
-  }, []);
+      await fetchClients();
+    } catch (error) {
+      console.error('Error moving client:', error);
+      toast.error('Erro ao mover cliente');
+    }
+  }, [clients, fetchClients]);
 
-  const moveClientToPosition = useCallback((id: string, newPosition: number) => {
-    setClients(prev => {
-      const sorted = [...prev].sort((a, b) => a.order - b.order);
-      const currentIndex = sorted.findIndex(c => c.id === id);
-      
-      if (currentIndex === -1) return prev;
-      
-      const targetPosition = Math.max(1, Math.min(newPosition, sorted.length));
-      const targetIndex = targetPosition - 1;
-      
-      if (currentIndex === targetIndex) return prev;
-      
-      const [movedClient] = sorted.splice(currentIndex, 1);
-      sorted.splice(targetIndex, 0, movedClient);
-      
-      const reordered = sorted.map((client, index) => ({
-        ...client,
-        order: index + 1,
-        updatedAt: new Date().toISOString(),
-      }));
-      
-      return reordered;
-    });
-  }, []);
+  const moveClientToPosition = useCallback(async (id: string, newPosition: number) => {
+    const sorted = [...clients].sort((a, b) => a.order - b.order);
+    const currentIndex = sorted.findIndex(c => c.id === id);
+    
+    if (currentIndex === -1) return;
+    
+    const targetPosition = Math.max(1, Math.min(newPosition, sorted.length));
+    const targetIndex = targetPosition - 1;
+    
+    if (currentIndex === targetIndex) return;
+    
+    const [movedClient] = sorted.splice(currentIndex, 1);
+    sorted.splice(targetIndex, 0, movedClient);
+    
+    try {
+      for (let i = 0; i < sorted.length; i++) {
+        await supabase
+          .from('clients')
+          .update({ display_order: i + 1 })
+          .eq('id', sorted[i].id);
+      }
+      await fetchClients();
+    } catch (error) {
+      console.error('Error moving client to position:', error);
+      toast.error('Erro ao mover cliente');
+    }
+  }, [clients, fetchClients]);
 
   // Export data as JSON
   const exportData = useCallback(() => {
@@ -311,24 +360,44 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   }, [clients]);
 
   // Import data from JSON
-  const importData = useCallback((jsonData: string): boolean => {
+  const importData = useCallback(async (jsonData: string): Promise<boolean> => {
     try {
       const parsed = JSON.parse(jsonData);
-      if (Array.isArray(parsed)) {
-        setClients(parsed.map(migrateClient));
-        setHighlightedClients(new Set());
-        return true;
+      if (!Array.isArray(parsed)) return false;
+      
+      // Clear existing and insert new
+      await clearAllClients();
+      
+      for (const client of parsed) {
+        const newClient: ClientFormData = {
+          name: client.name,
+          initials: client.initials || generateInitials(client.name),
+          logoUrl: client.logoUrl,
+          isPriority: client.isPriority || false,
+          isActive: client.isActive ?? true,
+          order: client.order || 1,
+          processes: client.processes || 0,
+          licenses: client.licenses || 0,
+          demands: client.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
+          collaborators: client.collaborators || DEFAULT_COLLABORATORS,
+        };
+        
+        await supabase
+          .from('clients')
+          .insert(clientToDbRow(newClient));
       }
-      return false;
-    } catch {
+      
+      await fetchClients();
+      return true;
+    } catch (error) {
+      console.error('Error importing data:', error);
       return false;
     }
-  }, []);
+  }, [clearAllClients, fetchClients]);
 
-  // Reset to default companies
-  const resetToDefault = useCallback(() => {
-    setClients(createInitialClients());
-    setHighlightedClients(new Set());
+  // Reset to default companies (re-fetch from DB since we have them there)
+  const resetToDefault = useCallback(async () => {
+    toast.info('Use o botão "Limpar Todos" e depois reimporte os dados ou restaure o banco de dados.');
   }, []);
 
   return (
@@ -336,6 +405,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       clients,
       activeClients,
       highlightedClients,
+      isLoading,
       addClient,
       updateClient,
       deleteClient,
@@ -353,6 +423,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       exportData,
       importData,
       resetToDefault,
+      refetch: fetchClients,
     }}>
       {children}
     </ClientContext.Provider>
