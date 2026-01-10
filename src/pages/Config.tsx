@@ -1,8 +1,15 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X, AlertTriangle, CheckSquare, ChevronUp, ChevronDown, ArrowUpDown, RefreshCw } from "lucide-react";
+import { 
+  ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X, 
+  AlertTriangle, CheckSquare, ChevronUp, ChevronDown, RefreshCw,
+  Download, FolderUp, RotateCcw
+} from "lucide-react";
 import { useClients } from "@/contexts/ClientContext";
-import { Client, ClientFormData, generateInitials, calculateTotalDemands } from "@/types/client";
+import { 
+  Client, ClientFormData, generateInitials, calculateTotalDemands,
+  COLLABORATOR_NAMES, COLLABORATOR_COLORS, CollaboratorName, DEFAULT_COLLABORATORS
+} from "@/types/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const Config = () => {
   const { 
@@ -26,23 +34,32 @@ const Config = () => {
     moveClient,
     moveClientToPosition,
     reorderClients,
+    exportData,
+    importData,
+    resetToDefault,
   } = useClients();
+  
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showClearAllDialog, setShowClearAllDialog] = useState(false);
   const [showDeleteSelectedDialog, setShowDeleteSelectedDialog] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set());
   const [moveToPositionId, setMoveToPositionId] = useState<string | null>(null);
   const [moveToPositionValue, setMoveToPositionValue] = useState<string>("");
+  
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = (data: ClientFormData) => {
     if (editingClient) {
       updateClient(editingClient.id, data);
       setEditingClient(null);
+      toast.success("Cliente atualizado com sucesso!");
     } else {
       addClient(data);
       setIsCreating(false);
+      toast.success("Cliente cadastrado com sucesso!");
     }
   };
 
@@ -55,18 +72,27 @@ const Config = () => {
     if (deleteConfirmId) {
       deleteClient(deleteConfirmId);
       setDeleteConfirmId(null);
+      toast.success("Cliente excluído!");
     }
   };
 
   const handleClearAll = () => {
     clearAllClients();
     setShowClearAllDialog(false);
+    toast.success("Todos os clientes foram excluídos!");
   };
 
   const handleDeleteSelected = () => {
     deleteSelectedClients(Array.from(selectedForDelete));
     setSelectedForDelete(new Set());
     setShowDeleteSelectedDialog(false);
+    toast.success(`${selectedForDelete.size} clientes excluídos!`);
+  };
+
+  const handleReset = () => {
+    resetToDefault();
+    setShowResetDialog(false);
+    toast.success("Dados restaurados para as empresas padrão!");
   };
 
   const toggleSelectForDelete = (id: string) => {
@@ -86,6 +112,48 @@ const Config = () => {
       setSelectedForDelete(new Set());
     } else {
       setSelectedForDelete(new Set(clients.map(c => c.id)));
+    }
+  };
+
+  // Export JSON
+  const handleExport = () => {
+    const data = exportData();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `painel-ac-clientes-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Configuração exportada com sucesso!");
+  };
+
+  // Import JSON
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      const success = importData(content);
+      if (success) {
+        toast.success("Configuração importada com sucesso!");
+      } else {
+        toast.error("Erro ao importar: arquivo inválido");
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input
+    if (importInputRef.current) {
+      importInputRef.current.value = '';
     }
   };
 
@@ -118,7 +186,44 @@ const Config = () => {
             <h1 className="text-xl font-bold text-foreground">Configuração de Clientes</h1>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Import/Export */}
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+            <button
+              onClick={handleImportClick}
+              className="admin-button-secondary flex items-center gap-2"
+              title="Importar configuração de arquivo JSON"
+            >
+              <FolderUp className="w-4 h-4" />
+              Importar
+            </button>
+            <button
+              onClick={handleExport}
+              className="admin-button-secondary flex items-center gap-2"
+              title="Exportar configuração para arquivo JSON"
+            >
+              <Download className="w-4 h-4" />
+              Exportar
+            </button>
+
+            <div className="h-6 w-px bg-border mx-1" />
+
+            {/* Reset to Default */}
+            <button
+              onClick={() => setShowResetDialog(true)}
+              className="admin-button flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-600"
+              title="Restaurar lista de empresas padrão"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Restaurar Padrão
+            </button>
+
             {/* Clear Data Actions */}
             {clients.length > 0 && !isCreating && !editingClient && (
               <>
@@ -219,8 +324,9 @@ const Config = () => {
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">P</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">L</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">D</th>
-                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Status Demandas</th>
-                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Prioridade</th>
+                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Demandas</th>
+                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Equipe</th>
+                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">★</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Ativo</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-right">Ações</th>
                 </tr>
@@ -318,6 +424,24 @@ const Config = () => {
                         <span className="demand-chip-small in-progress">{client.demands.inProgress}</span>
                         <span className="demand-chip-small not-started">{client.demands.notStarted}</span>
                         <span className="demand-chip-small cancelled">{client.demands.cancelled}</span>
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center justify-center gap-0.5">
+                        {COLLABORATOR_NAMES.map((name) => (
+                          <span
+                            key={name}
+                            className={`w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center`}
+                            style={{
+                              backgroundColor: client.collaborators[name] ? COLLABORATOR_COLORS[name] : 'transparent',
+                              color: client.collaborators[name] ? '#fff' : COLLABORATOR_COLORS[name],
+                              border: `1px solid ${COLLABORATOR_COLORS[name]}`,
+                            }}
+                            title={name.charAt(0).toUpperCase() + name.slice(1)}
+                          >
+                            {name.charAt(0).toUpperCase()}
+                          </span>
+                        ))}
                       </div>
                     </td>
                     <td className="py-3 text-center">
@@ -418,6 +542,28 @@ const Config = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset to Default Confirmation Dialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+              <RotateCcw className="w-5 h-5" />
+              Restaurar Empresas Padrão
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso substituirá todos os dados atuais pelas 39 empresas padrão com valores zerados.
+              Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReset} className="bg-blue-500 text-white hover:bg-blue-600">
+              Sim, Restaurar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -443,6 +589,7 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     processes: client?.processes || 0,
     licenses: client?.licenses || 0,
     demands: client?.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
+    collaborators: client?.collaborators || DEFAULT_COLLABORATORS,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -494,6 +641,24 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
 
   const totalDemands = calculateTotalDemands(formData.demands);
 
+  const toggleCollaborator = (name: CollaboratorName) => {
+    setFormData(prev => ({
+      ...prev,
+      collaborators: {
+        ...prev.collaborators,
+        [name]: !prev.collaborators[name],
+      },
+    }));
+  };
+
+  // Zero functions
+  const zeroProcesses = () => setFormData(prev => ({ ...prev, processes: 0 }));
+  const zeroLicenses = () => setFormData(prev => ({ ...prev, licenses: 0 }));
+  const zeroDemands = () => setFormData(prev => ({ 
+    ...prev, 
+    demands: { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 } 
+  }));
+
   return (
     <form onSubmit={handleSubmit} className="admin-card">
       <h2 className="text-lg font-semibold text-foreground mb-4">
@@ -509,7 +674,7 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
             value={formData.name}
             onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
             className={`admin-input ${errors.name ? 'border-destructive' : ''}`}
-            placeholder="Ex: Mineração Vale Verde"
+            placeholder="Ex: PHS DA MATA"
           />
           {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
         </div>
@@ -522,7 +687,7 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
             value={formData.initials}
             onChange={e => setFormData(prev => ({ ...prev, initials: e.target.value.toUpperCase().slice(0, 2) }))}
             className="admin-input"
-            placeholder="MV"
+            placeholder="PH"
             maxLength={2}
           />
           <p className="text-xs text-muted-foreground mt-1">
@@ -584,7 +749,12 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
 
         {/* P - Processos */}
         <div>
-          <label className="admin-label">P (Processos)</label>
+          <label className="admin-label flex items-center justify-between">
+            P (Processos)
+            <button type="button" onClick={zeroProcesses} className="text-xs text-muted-foreground hover:text-foreground">
+              Zerar
+            </button>
+          </label>
           <input
             type="number"
             value={formData.processes}
@@ -596,7 +766,12 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
 
         {/* L - Licenças */}
         <div>
-          <label className="admin-label">L (Licenças Ativas)</label>
+          <label className="admin-label flex items-center justify-between">
+            L (Licenças Ativas)
+            <button type="button" onClick={zeroLicenses} className="text-xs text-muted-foreground hover:text-foreground">
+              Zerar
+            </button>
+          </label>
           <input
             type="number"
             value={formData.licenses}
@@ -608,7 +783,12 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
 
         {/* Demandas */}
         <div className="lg:col-span-3">
-          <label className="admin-label">D (Demandas) - Total: {totalDemands}</label>
+          <label className="admin-label flex items-center justify-between">
+            <span>D (Demandas) - Total: <strong>{totalDemands}</strong></span>
+            <button type="button" onClick={zeroDemands} className="text-xs text-muted-foreground hover:text-foreground">
+              Zerar Todas
+            </button>
+          </label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -674,6 +854,30 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
                 min={0}
               />
             </div>
+          </div>
+        </div>
+
+        {/* Collaborators */}
+        <div className="lg:col-span-3">
+          <label className="admin-label">Equipe / Colaboradores</label>
+          <div className="flex items-center gap-3">
+            {COLLABORATOR_NAMES.map((name) => (
+              <label key={name} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.collaborators[name]}
+                  onChange={() => toggleCollaborator(name)}
+                  className="w-4 h-4 rounded border-border"
+                  style={{ accentColor: COLLABORATOR_COLORS[name] }}
+                />
+                <span 
+                  className="text-sm font-medium"
+                  style={{ color: COLLABORATOR_COLORS[name] }}
+                >
+                  {name.charAt(0).toUpperCase() + name.slice(1)}
+                </span>
+              </label>
+            ))}
           </div>
         </div>
 

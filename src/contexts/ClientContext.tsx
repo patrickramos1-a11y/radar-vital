@@ -1,26 +1,56 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Client, ClientFormData, generateInitials } from '@/types/client';
+import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS } from '@/types/client';
 
 const STORAGE_KEY = 'painel-ac-clients';
 
-// Dados iniciais para demonstração
-const initialClients: Client[] = Array.from({ length: 40 }, (_, i) => {
-  const names = [
-    "Mineração Vale Verde", "Construtora Horizonte", "Agropecuária Boa Terra", "Indústria Química Nova Era",
-    "Energia Solar Brasil", "Frigorífico Bom Corte", "Logística Expressa", "Cerâmica Artesanal",
-    "Metalúrgica Forte", "Têxtil Algodão Fino", "Plásticos Recicla", "Papel e Celulose Norte",
-    "Alimentos Naturais", "Distribuidora Central", "Farmacêutica Vida", "Cosméticos Beleza Pura",
-    "Petroquímica Sul", "Madeireira Floresta", "Bebidas Refrescantes", "Laticínios Campo Bom",
-    "Cimento Estrutural", "Vidros Transparentes", "Borracha Flex", "Tintas ColorMix",
-    "Aço Inox Premium", "Embalagens Verdes", "Transportes Rápido", "Granja Feliz",
-    "Pescados do Mar", "Fertilizantes Terra", "Ração Animal Top", "Couro Natural",
-    "Móveis Rustic", "Eletrônicos Tech", "Confecções Moda", "Calçados Confort",
-    "Joias Brilhante", "Perfumes Essence", "Sabões Limpo", "Químicos Industriais"
-  ];
-  const name = names[i] || `Cliente ${i + 1}`;
-  const priorityIndices = [0, 2, 8, 14, 16, 24, 30, 35];
+// Lista oficial de empresas
+const OFFICIAL_COMPANIES = [
+  "PHS DA MATA",
+  "PLASNORT - AMAZONPET",
+  "SANTA HELENA",
+  "SIMETRIA / ÍCONE",
+  "GUARÁ",
+  "NORFRUTAS / AÇAÍ PREMIUM",
+  "PARA SUPER FOODS",
+  "BREVES",
+  "NORSUL",
+  "FLORATTA",
+  "NUTRILATINO",
+  "TAPAJÓS",
+  "AÇAÍ VITANAT",
+  "CTC",
+  "DA CASA",
+  "CTC - MANACAPURU",
+  "FAZENDA BRASIL / BARU",
+  "FLOR DE AÇAÍ",
+  "LDV - J.A",
+  "NATURE AMAZON",
+  "XINGU",
+  "TEU AÇAÍ",
+  "AÇAÍ OKAY",
+  "FROM AMAZÔNIA",
+  "CEIBA",
+  "RAJÁ",
+  "KMTEC",
+  "4 ELEMENTOS",
+  "AÇAI KAA",
+  "PRENORTE",
+  "ESTRELA DALVA",
+  "ARRUDÃO",
+  "SC CONSTRUÇÃO",
+  "P S MARTINS LOBATO",
+  "VALE DO AÇAÍ",
+  "100% AMAZÔNIA",
+  "OYAMOTA",
+  "POSTO AV. BRASIL",
+  "FARIZA",
+];
+
+// Dados iniciais com as empresas oficiais
+const createInitialClients = (): Client[] => {
+  const priorityIndices = [0, 2, 5, 8, 12, 18, 24, 30];
   
-  return {
+  return OFFICIAL_COMPANIES.map((name, i) => ({
     id: `client-${i + 1}`,
     name,
     initials: generateInitials(name),
@@ -35,10 +65,16 @@ const initialClients: Client[] = Array.from({ length: 40 }, (_, i) => {
       notStarted: Math.floor(Math.random() * 5),
       cancelled: Math.floor(Math.random() * 3),
     },
+    collaborators: {
+      celine: Math.random() > 0.5,
+      gabi: Math.random() > 0.6,
+      darley: Math.random() > 0.7,
+      vanessa: Math.random() > 0.6,
+    },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  };
-});
+  }));
+};
 
 interface ClientContextType {
   clients: Client[];
@@ -50,27 +86,41 @@ interface ClientContextType {
   deleteSelectedClients: (ids: string[]) => void;
   clearAllClients: () => void;
   toggleClientActive: (id: string) => void;
+  togglePriority: (id: string) => void;
+  toggleCollaborator: (id: string, collaborator: keyof Client['collaborators']) => void;
   toggleHighlight: (id: string) => void;
   clearHighlights: () => void;
   getClient: (id: string) => Client | undefined;
   moveClient: (id: string, direction: 'up' | 'down') => void;
   moveClientToPosition: (id: string, newPosition: number) => void;
   reorderClients: () => void;
+  exportData: () => string;
+  importData: (jsonData: string) => boolean;
+  resetToDefault: () => void;
 }
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
+
+// Migrar dados antigos que não têm collaborators
+const migrateClient = (client: any): Client => {
+  return {
+    ...client,
+    collaborators: client.collaborators || DEFAULT_COLLABORATORS,
+  };
+};
 
 export function ClientProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        return parsed.map(migrateClient);
       } catch {
-        return initialClients;
+        return createInitialClients();
       }
     }
-    return initialClients;
+    return createInitialClients();
   });
 
   const [highlightedClients, setHighlightedClients] = useState<Set<string>>(new Set());
@@ -89,6 +139,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       ...data,
       id: `client-${Date.now()}`,
       initials: data.initials || generateInitials(data.name),
+      collaborators: data.collaborators || DEFAULT_COLLABORATORS,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -145,6 +196,35 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const togglePriority = useCallback((id: string) => {
+    setClients(prev => prev.map(client => {
+      if (client.id === id) {
+        return {
+          ...client,
+          isPriority: !client.isPriority,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return client;
+    }));
+  }, []);
+
+  const toggleCollaborator = useCallback((id: string, collaborator: keyof Client['collaborators']) => {
+    setClients(prev => prev.map(client => {
+      if (client.id === id) {
+        return {
+          ...client,
+          collaborators: {
+            ...client.collaborators,
+            [collaborator]: !client.collaborators[collaborator],
+          },
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return client;
+    }));
+  }, []);
+
   const toggleHighlight = useCallback((id: string) => {
     setHighlightedClients(prev => {
       const next = new Set(prev);
@@ -165,7 +245,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     return clients.find(c => c.id === id);
   }, [clients]);
 
-  // Reorganiza a ordem de todos os clientes sequencialmente
   const reorderClients = useCallback(() => {
     setClients(prev => {
       const sorted = [...prev].sort((a, b) => a.order - b.order);
@@ -177,7 +256,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Move cliente para cima ou para baixo na ordem
   const moveClient = useCallback((id: string, direction: 'up' | 'down') => {
     setClients(prev => {
       const sorted = [...prev].sort((a, b) => a.order - b.order);
@@ -189,7 +267,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       
       if (targetIndex < 0 || targetIndex >= sorted.length) return prev;
       
-      // Swap orders
       const currentOrder = sorted[currentIndex].order;
       const targetOrder = sorted[targetIndex].order;
       
@@ -205,7 +282,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Move cliente para uma posição específica
   const moveClientToPosition = useCallback((id: string, newPosition: number) => {
     setClients(prev => {
       const sorted = [...prev].sort((a, b) => a.order - b.order);
@@ -213,17 +289,14 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       
       if (currentIndex === -1) return prev;
       
-      // Limitar a posição entre 1 e o total de clientes
       const targetPosition = Math.max(1, Math.min(newPosition, sorted.length));
       const targetIndex = targetPosition - 1;
       
       if (currentIndex === targetIndex) return prev;
       
-      // Remove o cliente da posição atual e insere na nova
       const [movedClient] = sorted.splice(currentIndex, 1);
       sorted.splice(targetIndex, 0, movedClient);
       
-      // Reordena todos
       const reordered = sorted.map((client, index) => ({
         ...client,
         order: index + 1,
@@ -232,6 +305,32 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       
       return reordered;
     });
+  }, []);
+
+  // Export data as JSON
+  const exportData = useCallback(() => {
+    return JSON.stringify(clients, null, 2);
+  }, [clients]);
+
+  // Import data from JSON
+  const importData = useCallback((jsonData: string): boolean => {
+    try {
+      const parsed = JSON.parse(jsonData);
+      if (Array.isArray(parsed)) {
+        setClients(parsed.map(migrateClient));
+        setHighlightedClients(new Set());
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Reset to default companies
+  const resetToDefault = useCallback(() => {
+    setClients(createInitialClients());
+    setHighlightedClients(new Set());
   }, []);
 
   return (
@@ -245,12 +344,17 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       deleteSelectedClients,
       clearAllClients,
       toggleClientActive,
+      togglePriority,
+      toggleCollaborator,
       toggleHighlight,
       clearHighlights,
       getClient,
       moveClient,
       moveClientToPosition,
       reorderClients,
+      exportData,
+      importData,
+      resetToDefault,
     }}>
       {children}
     </ClientContext.Provider>

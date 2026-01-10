@@ -1,7 +1,8 @@
-import { ArrowDownAZ, Star, Sparkles, X } from "lucide-react";
+import { ArrowDownAZ, Star, Sparkles, X, Users } from "lucide-react";
+import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 
-export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name';
-export type FilterOption = 'all' | 'priority' | 'highlighted';
+export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority';
+export type FilterOption = 'all' | 'priority' | 'highlighted' | CollaboratorName;
 
 interface FilterBarProps {
   sortBy: SortOption;
@@ -25,19 +26,25 @@ export function FilterBar({
   if (isPresentationMode) return null;
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-card border-b border-border">
+    <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-card border-b border-border">
       {/* Sort Options */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
           <ArrowDownAZ className="w-3.5 h-3.5" />
           Ordenar:
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
           <SortButton 
             active={sortBy === 'order'} 
             onClick={() => onSortChange('order')}
           >
             Ordem
+          </SortButton>
+          <SortButton 
+            active={sortBy === 'priority'} 
+            onClick={() => onSortChange('priority')}
+          >
+            Prioridade
           </SortButton>
           <SortButton 
             active={sortBy === 'processes'} 
@@ -67,9 +74,9 @@ export function FilterBar({
       </div>
 
       {/* Filter Options */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-medium text-muted-foreground">Filtrar:</span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
           <FilterButton 
             active={filterBy === 'all'} 
             onClick={() => onFilterChange('all')}
@@ -91,6 +98,19 @@ export function FilterBar({
           >
             Destacados
           </FilterButton>
+          
+          {/* Collaborator filters */}
+          <span className="text-xs text-muted-foreground ml-2 flex items-center gap-1">
+            <Users className="w-3 h-3" />
+          </span>
+          {COLLABORATOR_NAMES.map((name) => (
+            <CollaboratorFilterButton
+              key={name}
+              name={name}
+              active={filterBy === name}
+              onClick={() => onFilterChange(name)}
+            />
+          ))}
         </div>
 
         {highlightedCount > 0 && (
@@ -155,6 +175,35 @@ function FilterButton({ active, onClick, children, icon, badge }: FilterButtonPr
           {badge}
         </span>
       )}
+    </button>
+  );
+}
+
+interface CollaboratorFilterButtonProps {
+  name: CollaboratorName;
+  active: boolean;
+  onClick: () => void;
+}
+
+function CollaboratorFilterButton({ name, active, onClick }: CollaboratorFilterButtonProps) {
+  const color = COLLABORATOR_COLORS[name];
+  const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+  
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2 py-1 rounded text-xs font-medium transition-all border ${
+        active 
+          ? 'text-white' 
+          : 'hover:opacity-80'
+      }`}
+      style={{
+        backgroundColor: active ? color : 'transparent',
+        borderColor: color,
+        color: active ? '#fff' : color,
+      }}
+    >
+      {displayName}
     </button>
   );
 }

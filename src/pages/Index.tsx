@@ -3,10 +3,17 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, FilterOption } from "@/components/dashboard/FilterBar";
 import { useClients } from "@/contexts/ClientContext";
-import { calculateTotals, calculateTotalDemands } from "@/types/client";
+import { calculateTotals, calculateTotalDemands, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 
 const Index = () => {
-  const { activeClients, highlightedClients, toggleHighlight, clearHighlights } = useClients();
+  const { 
+    activeClients, 
+    highlightedClients, 
+    toggleHighlight, 
+    clearHighlights,
+    togglePriority,
+    toggleCollaborator,
+  } = useClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('order');
@@ -21,10 +28,18 @@ const Index = () => {
       result = result.filter(c => c.isPriority);
     } else if (filterBy === 'highlighted') {
       result = result.filter(c => highlightedClients.has(c.id));
+    } else if (COLLABORATOR_NAMES.includes(filterBy as CollaboratorName)) {
+      result = result.filter(c => c.collaborators[filterBy as CollaboratorName]);
     }
 
     // Sort
     switch (sortBy) {
+      case 'priority':
+        result.sort((a, b) => {
+          if (a.isPriority === b.isPriority) return a.order - b.order;
+          return a.isPriority ? -1 : 1;
+        });
+        break;
       case 'processes':
         result.sort((a, b) => b.processes - a.processes);
         break;
@@ -54,6 +69,10 @@ const Index = () => {
 
   const togglePresentationMode = () => {
     setIsPresentationMode(prev => !prev);
+  };
+
+  const handleToggleCollaborator = (id: string, collaborator: CollaboratorName) => {
+    toggleCollaborator(id, collaborator);
   };
 
   return (
@@ -90,6 +109,8 @@ const Index = () => {
           highlightedClients={highlightedClients}
           onSelectClient={handleSelectClient}
           onHighlightClient={toggleHighlight}
+          onTogglePriority={togglePriority}
+          onToggleCollaborator={handleToggleCollaborator}
         />
       </main>
     </div>

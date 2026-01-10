@@ -5,6 +5,13 @@ export interface DemandBreakdown {
   cancelled: number;
 }
 
+export interface Collaborators {
+  celine: boolean;
+  gabi: boolean;
+  darley: boolean;
+  vanessa: boolean;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -16,11 +23,23 @@ export interface Client {
   processes: number;
   licenses: number;
   demands: DemandBreakdown;
+  collaborators: Collaborators;
   createdAt: string;
   updatedAt: string;
 }
 
 export type ClientFormData = Omit<Client, 'id' | 'createdAt' | 'updatedAt'>;
+
+export type CollaboratorName = 'celine' | 'gabi' | 'darley' | 'vanessa';
+
+export const COLLABORATOR_COLORS: Record<CollaboratorName, string> = {
+  celine: '#8B5CF6',    // Purple/Violet
+  gabi: '#EC4899',      // Pink
+  darley: '#F59E0B',    // Amber/Orange
+  vanessa: '#06B6D4',   // Cyan/Teal
+};
+
+export const COLLABORATOR_NAMES: CollaboratorName[] = ['celine', 'gabi', 'darley', 'vanessa'];
 
 export function generateInitials(name: string): string {
   return name
@@ -46,3 +65,10 @@ export function calculateTotals(clients: Client[]) {
     ),
   };
 }
+
+export const DEFAULT_COLLABORATORS: Collaborators = {
+  celine: false,
+  gabi: false,
+  darley: false,
+  vanessa: false,
+};
