@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS } from '@/types/client';
 
-const STORAGE_KEY = 'painel-ac-clients';
+const STORAGE_KEY = 'painel-ac-clients-v2'; // Versão atualizada para forçar reset com novos nomes
 
 // Lista oficial de empresas
 const OFFICIAL_COMPANIES = [
