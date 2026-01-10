@@ -1,4 +1,4 @@
-import { Users, FileText, Shield, ClipboardList, Maximize2, Minimize2, Settings } from "lucide-react";
+import { Users, FileText, Shield, ClipboardList, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface DashboardHeaderProps {
@@ -6,8 +6,6 @@ interface DashboardHeaderProps {
   totalProcesses: number;
   totalLicenses: number;
   totalDemands: number;
-  isPresentationMode: boolean;
-  onTogglePresentationMode: () => void;
 }
 
 export function DashboardHeader({
@@ -15,103 +13,72 @@ export function DashboardHeader({
   totalProcesses,
   totalLicenses,
   totalDemands,
-  isPresentationMode,
-  onTogglePresentationMode,
 }: DashboardHeaderProps) {
   return (
-    <header className={`
-      flex items-center justify-between px-6 py-4
-      bg-header-bg border-b border-header-border
-      transition-all duration-500
-      ${isPresentationMode ? 'py-2' : 'py-4'}
-    `}>
-      {/* Logo / Title */}
-      <div className={`flex items-center gap-3 transition-all duration-300 ${isPresentationMode ? 'presentation-hide' : ''}`}>
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-          <span className="text-primary-foreground font-bold text-lg">AC</span>
+    <header className="flex items-center justify-between px-4 py-2 bg-header-bg border-b border-header-border">
+      {/* Logo / Title - Compact */}
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+          <span className="text-primary-foreground font-bold text-sm">AC</span>
         </div>
         <div>
-          <h1 className="text-xl font-bold text-foreground tracking-tight">
-            Painel de Acompanhamento
+          <h1 className="text-base font-bold text-foreground tracking-tight leading-none">
+            Painel AC
           </h1>
-          <p className="text-xs text-muted-foreground">SISRAMOS • Tempo Real</p>
+          <p className="text-[10px] text-muted-foreground">SISRAMOS</p>
         </div>
       </div>
 
-      {/* Global Stats */}
-      <div className="flex items-center gap-3">
-        <StatCard 
-          icon={<Users className="w-5 h-5" />} 
+      {/* Global Stats - Compact */}
+      <div className="flex items-center gap-2">
+        <StatCardCompact 
+          icon={<Users className="w-4 h-4" />} 
           value={totalClients} 
-          label="Clientes AC" 
-          compact={isPresentationMode}
+          label="Clientes" 
         />
-        <StatCard 
-          icon={<FileText className="w-5 h-5" />} 
+        <StatCardCompact 
+          icon={<FileText className="w-4 h-4" />} 
           value={totalProcesses} 
           label="Processos" 
-          compact={isPresentationMode}
         />
-        <StatCard 
-          icon={<Shield className="w-5 h-5" />} 
+        <StatCardCompact 
+          icon={<Shield className="w-4 h-4" />} 
           value={totalLicenses} 
           label="Licenças" 
-          compact={isPresentationMode}
         />
-        <StatCard 
-          icon={<ClipboardList className="w-5 h-5" />} 
+        <StatCardCompact 
+          icon={<ClipboardList className="w-4 h-4" />} 
           value={totalDemands} 
           label="Demandas" 
-          compact={isPresentationMode}
         />
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        <Link
-          to="/config"
-          className={`mode-toggle bg-secondary text-secondary-foreground hover:bg-secondary/80 ${isPresentationMode ? 'hidden' : ''}`}
-        >
-          <Settings className="w-4 h-4" />
-          <span className="hidden sm:inline">Configurar</span>
-        </Link>
-        
-        <button
-          onClick={onTogglePresentationMode}
-          className="mode-toggle"
-        >
-          {isPresentationMode ? (
-            <>
-              <Minimize2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Sair</span>
-            </>
-          ) : (
-            <>
-              <Maximize2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Apresentação</span>
-            </>
-          )}
-        </button>
-      </div>
+      {/* Config Button */}
+      <Link
+        to="/config"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 text-sm font-medium transition-colors"
+      >
+        <Settings className="w-4 h-4" />
+        <span className="hidden sm:inline">Configurar</span>
+      </Link>
     </header>
   );
 }
 
-interface StatCardProps {
+interface StatCardCompactProps {
   icon: React.ReactNode;
   value: number;
   label: string;
-  compact?: boolean;
 }
 
-function StatCard({ icon, value, label, compact }: StatCardProps) {
+function StatCardCompact({ icon, value, label }: StatCardCompactProps) {
   return (
-    <div className={`stat-card ${compact ? 'px-4 py-2' : ''}`}>
-      <div className="flex items-center gap-2">
-        <span className="text-primary">{icon}</span>
-        <span className={`stat-value ${compact ? 'text-2xl' : ''}`}>{value}</span>
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card border border-border">
+      <span className="text-primary">{icon}</span>
+      <div className="flex flex-col">
+        <span className="text-lg font-bold text-foreground leading-none">{value}</span>
+        <span className="text-[9px] text-muted-foreground uppercase tracking-wide">{label}</span>
       </div>
-      <span className={`stat-label ${compact ? 'text-xs' : ''}`}>{label}</span>
     </div>
   );
 }
