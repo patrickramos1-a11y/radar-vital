@@ -14,7 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          collaborator_celine: boolean
+          collaborator_darley: boolean
+          collaborator_gabi: boolean
+          collaborator_vanessa: boolean
+          created_at: string
+          demands_cancelled: number
+          demands_completed: number
+          demands_in_progress: number
+          demands_not_started: number
+          display_order: number
+          id: string
+          initials: string
+          is_active: boolean
+          is_priority: boolean
+          licenses: number
+          logo_url: string | null
+          name: string
+          processes: number
+          updated_at: string
+        }
+        Insert: {
+          collaborator_celine?: boolean
+          collaborator_darley?: boolean
+          collaborator_gabi?: boolean
+          collaborator_vanessa?: boolean
+          created_at?: string
+          demands_cancelled?: number
+          demands_completed?: number
+          demands_in_progress?: number
+          demands_not_started?: number
+          display_order?: number
+          id?: string
+          initials: string
+          is_active?: boolean
+          is_priority?: boolean
+          licenses?: number
+          logo_url?: string | null
+          name: string
+          processes?: number
+          updated_at?: string
+        }
+        Update: {
+          collaborator_celine?: boolean
+          collaborator_darley?: boolean
+          collaborator_gabi?: boolean
+          collaborator_vanessa?: boolean
+          created_at?: string
+          demands_cancelled?: number
+          demands_completed?: number
+          demands_in_progress?: number
+          demands_not_started?: number
+          display_order?: number
+          id?: string
+          initials?: string
+          is_active?: boolean
+          is_priority?: boolean
+          licenses?: number
+          logo_url?: string | null
+          name?: string
+          processes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

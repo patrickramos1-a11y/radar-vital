@@ -13,6 +13,7 @@ const Index = () => {
     clearHighlights,
     togglePriority,
     toggleCollaborator,
+    isLoading,
   } = useClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
@@ -92,15 +93,24 @@ const Index = () => {
 
       {/* Main Content - Client Grid */}
       <main className="flex-1 overflow-hidden">
-        <ClientGrid
-          clients={filteredClients}
-          selectedClientId={selectedClientId}
-          highlightedClients={highlightedClients}
-          onSelectClient={handleSelectClient}
-          onHighlightClient={toggleHighlight}
-          onTogglePriority={togglePriority}
-          onToggleCollaborator={handleToggleCollaborator}
-        />
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-muted-foreground">Carregando clientes...</p>
+            </div>
+          </div>
+        ) : (
+          <ClientGrid
+            clients={filteredClients}
+            selectedClientId={selectedClientId}
+            highlightedClients={highlightedClients}
+            onSelectClient={handleSelectClient}
+            onHighlightClient={toggleHighlight}
+            onTogglePriority={togglePriority}
+            onToggleCollaborator={handleToggleCollaborator}
+          />
+        )}
       </main>
     </div>
   );
