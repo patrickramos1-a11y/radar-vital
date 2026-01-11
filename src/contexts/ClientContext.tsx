@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN } from '@/types/client';
+import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -31,43 +31,56 @@ interface ClientContextType {
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 // Convert database row to Client type
-const dbRowToClient = (row: any): Client => ({
-  id: row.id,
-  name: row.name,
-  initials: row.initials,
-  logoUrl: row.logo_url || undefined,
-  isPriority: row.is_priority,
-  isActive: row.is_active,
-  order: row.display_order,
-  processes: row.processes,
-  licenses: (row.lic_validas_count || 0) + (row.lic_proximo_venc_count || 0), // Active = valid + near expiry
-  licenseBreakdown: {
-    validas: row.lic_validas_count || 0,
-    proximoVencimento: row.lic_proximo_venc_count || 0,
-    foraValidade: row.lic_fora_validade_count || 0,
-    proximaDataVencimento: row.lic_proxima_data_vencimento || null,
-  },
-  demands: {
-    completed: row.demands_completed,
-    inProgress: row.demands_in_progress,
-    notStarted: row.demands_not_started,
-    cancelled: row.demands_cancelled,
-  },
-  demandsByCollaborator: {
-    celine: row.demands_celine || 0,
-    gabi: row.demands_gabi || 0,
-    darley: row.demands_darley || 0,
-    vanessa: row.demands_vanessa || 0,
-  },
-  collaborators: {
-    celine: row.collaborator_celine,
-    gabi: row.collaborator_gabi,
-    darley: row.collaborator_darley,
-    vanessa: row.collaborator_vanessa,
-  },
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
+const dbRowToClient = (row: any): Client => {
+  // Calculate "em andamento" = análise órgão + análise ramos + notificado
+  const procEmAndamento = (row.proc_em_analise_orgao_count || 0) + (row.proc_em_analise_ramos_count || 0) + (row.proc_notificado_count || 0);
+  
+  return {
+    id: row.id,
+    name: row.name,
+    initials: row.initials,
+    logoUrl: row.logo_url || undefined,
+    isPriority: row.is_priority,
+    isActive: row.is_active,
+    order: row.display_order,
+    processes: procEmAndamento, // "P" = processes in progress (not deferido)
+    processBreakdown: {
+      total: row.proc_total_count || 0,
+      deferido: row.proc_deferido_count || 0,
+      emAnaliseOrgao: row.proc_em_analise_orgao_count || 0,
+      emAnaliseRamos: row.proc_em_analise_ramos_count || 0,
+      notificado: row.proc_notificado_count || 0,
+      reprovado: row.proc_reprovado_count || 0,
+    },
+    licenses: (row.lic_validas_count || 0) + (row.lic_proximo_venc_count || 0), // Active = valid + near expiry
+    licenseBreakdown: {
+      validas: row.lic_validas_count || 0,
+      proximoVencimento: row.lic_proximo_venc_count || 0,
+      foraValidade: row.lic_fora_validade_count || 0,
+      proximaDataVencimento: row.lic_proxima_data_vencimento || null,
+    },
+    demands: {
+      completed: row.demands_completed,
+      inProgress: row.demands_in_progress,
+      notStarted: row.demands_not_started,
+      cancelled: row.demands_cancelled,
+    },
+    demandsByCollaborator: {
+      celine: row.demands_celine || 0,
+      gabi: row.demands_gabi || 0,
+      darley: row.demands_darley || 0,
+      vanessa: row.demands_vanessa || 0,
+    },
+    collaborators: {
+      celine: row.collaborator_celine,
+      gabi: row.collaborator_gabi,
+      darley: row.collaborator_darley,
+      vanessa: row.collaborator_vanessa,
+    },
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+};
 
 // Convert Client to database row format
 const clientToDbRow = (client: Partial<ClientFormData>) => {
@@ -79,8 +92,15 @@ const clientToDbRow = (client: Partial<ClientFormData>) => {
   if (client.isPriority !== undefined) row.is_priority = client.isPriority;
   if (client.isActive !== undefined) row.is_active = client.isActive;
   if (client.order !== undefined) row.display_order = client.order;
-  if (client.processes !== undefined) row.processes = client.processes;
-  // Note: licenses is calculated from licenseBreakdown, don't write directly
+  // Note: processes is calculated from processBreakdown, don't write directly
+  if (client.processBreakdown !== undefined) {
+    row.proc_total_count = client.processBreakdown.total;
+    row.proc_deferido_count = client.processBreakdown.deferido;
+    row.proc_em_analise_orgao_count = client.processBreakdown.emAnaliseOrgao;
+    row.proc_em_analise_ramos_count = client.processBreakdown.emAnaliseRamos;
+    row.proc_notificado_count = client.processBreakdown.notificado;
+    row.proc_reprovado_count = client.processBreakdown.reprovado;
+  }
   if (client.licenseBreakdown !== undefined) {
     row.lic_validas_count = client.licenseBreakdown.validas;
     row.lic_proximo_venc_count = client.licenseBreakdown.proximoVencimento;
@@ -401,13 +421,13 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
           isActive: client.isActive ?? true,
           order: client.order || 1,
           processes: client.processes || 0,
+          processBreakdown: client.processBreakdown || DEFAULT_PROCESS_BREAKDOWN,
           licenses: client.licenses || 0,
+          licenseBreakdown: client.licenseBreakdown || DEFAULT_LICENSE_BREAKDOWN,
           demands: client.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
           demandsByCollaborator: client.demandsByCollaborator || DEFAULT_COLLABORATOR_DEMAND_COUNTS,
-          licenseBreakdown: client.licenseBreakdown || DEFAULT_LICENSE_BREAKDOWN,
           collaborators: client.collaborators || DEFAULT_COLLABORATORS,
         };
-        
         await supabase
           .from('clients')
           .insert(clientToDbRow(newClient));

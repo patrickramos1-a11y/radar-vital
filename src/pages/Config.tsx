@@ -7,10 +7,11 @@ import {
 } from "lucide-react";
 import { ImportWizard } from "@/components/import/ImportWizard";
 import { LicenseImportWizard } from "@/components/import/LicenseImportWizard";
+import { ProcessImportWizard } from "@/components/import/ProcessImportWizard";
 import { useClients } from "@/contexts/ClientContext";
 import { 
   Client, ClientFormData, generateInitials, calculateTotalDemands,
-  COLLABORATOR_NAMES, COLLABORATOR_COLORS, CollaboratorName, DEFAULT_COLLABORATORS
+  COLLABORATOR_NAMES, COLLABORATOR_COLORS, CollaboratorName, DEFAULT_COLLABORATORS, DEFAULT_PROCESS_BREAKDOWN
 } from "@/types/client";
 import {
   AlertDialog,
@@ -52,6 +53,7 @@ const Config = () => {
   const [moveToPositionValue, setMoveToPositionValue] = useState<string>("");
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showLicenseImportWizard, setShowLicenseImportWizard] = useState(false);
+  const [showProcessImportWizard, setShowProcessImportWizard] = useState(false);
   
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -209,6 +211,16 @@ const Config = () => {
             >
               <FileSpreadsheet className="w-4 h-4" />
               Importar Licenças
+            </button>
+
+            {/* Import Processos Excel */}
+            <button
+              onClick={() => setShowProcessImportWizard(true)}
+              className="admin-button flex items-center gap-2 bg-purple-600 text-white hover:bg-purple-700"
+              title="Importar processos de planilha Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Importar Processos
             </button>
 
             <div className="h-6 w-px bg-border mx-1" />
@@ -642,6 +654,14 @@ const Config = () => {
         clients={clients}
         onImportComplete={() => setShowLicenseImportWizard(false)}
       />
+
+      {/* Import Process Wizard */}
+      <ProcessImportWizard
+        isOpen={showProcessImportWizard}
+        onClose={() => setShowProcessImportWizard(false)}
+        clients={clients}
+        onImportComplete={() => setShowProcessImportWizard(false)}
+      />
     </div>
   );
 };
@@ -665,6 +685,7 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     isActive: client?.isActive ?? true,
     order: client?.order || nextOrder,
     processes: client?.processes || 0,
+    processBreakdown: client?.processBreakdown || DEFAULT_PROCESS_BREAKDOWN,
     licenses: client?.licenses || 0,
     licenseBreakdown: client?.licenseBreakdown || { validas: 0, proximoVencimento: 0, foraValidade: 0, proximaDataVencimento: null },
     demands: client?.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
