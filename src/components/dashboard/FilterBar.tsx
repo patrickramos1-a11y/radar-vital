@@ -1,13 +1,14 @@
-import { ArrowDownAZ, Star, Sparkles, X, Users } from "lucide-react";
+import { ArrowDownAZ, Star, Sparkles, X, CheckSquare } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 
-export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority';
-export type FilterOption = 'all' | 'priority' | 'highlighted' | CollaboratorName;
+export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority' | 'tasks';
+export type FilterOption = 'all' | 'priority' | 'highlighted' | 'tasks' | CollaboratorName;
 
 interface FilterBarProps {
   sortBy: SortOption;
   filterBy: FilterOption;
   highlightedCount: number;
+  taskCount: number;
   onSortChange: (sort: SortOption) => void;
   onFilterChange: (filter: FilterOption) => void;
   onClearHighlights: () => void;
@@ -17,6 +18,7 @@ export function FilterBar({
   sortBy,
   filterBy,
   highlightedCount,
+  taskCount,
   onSortChange,
   onFilterChange,
   onClearHighlights,
@@ -42,6 +44,12 @@ export function FilterBar({
             onClick={() => onSortChange('priority')}
           >
             Prioridade
+          </SortButton>
+          <SortButton 
+            active={sortBy === 'tasks'} 
+            onClick={() => onSortChange('tasks')}
+          >
+            Tarefas
           </SortButton>
           <SortButton 
             active={sortBy === 'processes'} 
@@ -95,19 +103,27 @@ export function FilterBar({
           >
             Destacados
           </FilterButton>
+          <FilterButton 
+            active={filterBy === 'tasks'} 
+            onClick={() => onFilterChange('tasks')}
+            icon={<CheckSquare className="w-3 h-3" />}
+            badge={taskCount > 0 ? taskCount : undefined}
+            variant="task"
+          >
+            Tarefas
+          </FilterButton>
           
-          {/* Collaborator filters */}
-          <span className="text-xs text-muted-foreground ml-2 flex items-center gap-1">
-            <Users className="w-3 h-3" />
-          </span>
-          {COLLABORATOR_NAMES.map((name) => (
-            <CollaboratorFilterButton
-              key={name}
-              name={name}
-              active={filterBy === name}
-              onClick={() => onFilterChange(name)}
-            />
-          ))}
+          {/* Collaborator filters - Color bars */}
+          <div className="flex items-center ml-2">
+            {COLLABORATOR_NAMES.map((name) => (
+              <CollaboratorFilterBar
+                key={name}
+                name={name}
+                active={filterBy === name}
+                onClick={() => onFilterChange(name)}
+              />
+            ))}
+          </div>
         </div>
 
         {highlightedCount > 0 && (
@@ -151,15 +167,22 @@ interface FilterButtonProps {
   children: React.ReactNode;
   icon?: React.ReactNode;
   badge?: number;
+  variant?: 'default' | 'task';
 }
 
-function FilterButton({ active, onClick, children, icon, badge }: FilterButtonProps) {
+function FilterButton({ active, onClick, children, icon, badge, variant = 'default' }: FilterButtonProps) {
+  const badgeColor = variant === 'task' 
+    ? 'bg-orange-400 text-orange-900'
+    : 'bg-yellow-400 text-yellow-900';
+
   return (
     <button
       onClick={onClick}
       className={`px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 ${
         active 
-          ? 'bg-primary text-primary-foreground' 
+          ? variant === 'task' 
+            ? 'bg-orange-500 text-white' 
+            : 'bg-primary text-primary-foreground'
           : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
       }`}
     >
@@ -167,7 +190,7 @@ function FilterButton({ active, onClick, children, icon, badge }: FilterButtonPr
       {children}
       {badge !== undefined && (
         <span className={`ml-0.5 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${
-          active ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-yellow-400 text-yellow-900'
+          active ? 'bg-white/20 text-white' : badgeColor
         }`}>
           {badge}
         </span>
@@ -176,31 +199,30 @@ function FilterButton({ active, onClick, children, icon, badge }: FilterButtonPr
   );
 }
 
-interface CollaboratorFilterButtonProps {
+interface CollaboratorFilterBarProps {
   name: CollaboratorName;
   active: boolean;
   onClick: () => void;
 }
 
-function CollaboratorFilterButton({ name, active, onClick }: CollaboratorFilterButtonProps) {
+function CollaboratorFilterBar({ name, active, onClick }: CollaboratorFilterBarProps) {
   const color = COLLABORATOR_COLORS[name];
-  const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+  const initial = name.charAt(0).toUpperCase();
   
   return (
     <button
       onClick={onClick}
-      className={`px-2 py-1 rounded text-xs font-medium transition-all border ${
-        active 
-          ? 'text-white' 
-          : 'hover:opacity-80'
+      className={`w-7 h-7 flex items-center justify-center transition-all border-2 first:rounded-l last:rounded-r ${
+        active ? 'ring-2 ring-offset-1' : 'hover:opacity-80'
       }`}
       style={{
-        backgroundColor: active ? color : 'transparent',
+        backgroundColor: active ? color : `${color}30`,
         borderColor: color,
         color: active ? '#fff' : color,
       }}
+      title={`${name.charAt(0).toUpperCase() + name.slice(1)}`}
     >
-      {displayName}
+      <span className="text-xs font-bold">{initial}</span>
     </button>
   );
 }

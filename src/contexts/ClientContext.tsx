@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS } from '@/types/client';
+import { Client, ClientFormData, ClientTask, generateInitials, DEFAULT_COLLABORATORS } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -7,6 +7,7 @@ interface ClientContextType {
   clients: Client[];
   activeClients: Client[];
   highlightedClients: Set<string>;
+  clientTasks: Map<string, ClientTask[]>;
   isLoading: boolean;
   addClient: (data: ClientFormData) => Promise<void>;
   updateClient: (id: string, data: Partial<ClientFormData>) => Promise<void>;
@@ -26,6 +27,13 @@ interface ClientContextType {
   importData: (jsonData: string) => Promise<boolean>;
   resetToDefault: () => Promise<void>;
   refetch: () => Promise<void>;
+  // Task functions
+  addTask: (clientId: string, text: string) => void;
+  toggleTask: (clientId: string, taskId: string) => void;
+  deleteTask: (clientId: string, taskId: string) => void;
+  getTaskCount: (clientId: string) => number;
+  getTotalTaskCount: () => number;
+  getClientsWithTasks: () => string[];
 }
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
@@ -89,6 +97,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [highlightedClients, setHighlightedClients] = useState<Set<string>>(new Set());
+  const [clientTasks, setClientTasks] = useState<Map<string, ClientTask[]>>(new Map());
 
   // Fetch clients from database
   const fetchClients = useCallback(async () => {
@@ -184,6 +193,11 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         next.delete(id);
         return next;
       });
+      setClientTasks(prev => {
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
+      });
     } catch (error) {
       console.error('Error deleting client:', error);
       toast.error('Erro ao excluir cliente');
@@ -205,6 +219,11 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         ids.forEach(id => next.delete(id));
         return next;
       });
+      setClientTasks(prev => {
+        const next = new Map(prev);
+        ids.forEach(id => next.delete(id));
+        return next;
+      });
     } catch (error) {
       console.error('Error deleting clients:', error);
       toast.error('Erro ao excluir clientes');
@@ -222,6 +241,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       
       setClients([]);
       setHighlightedClients(new Set());
+      setClientTasks(new Map());
     } catch (error) {
       console.error('Error clearing clients:', error);
       toast.error('Erro ao limpar clientes');
@@ -354,6 +374,69 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clients, fetchClients]);
 
+  // Task functions (stored locally, not in DB for now)
+  const addTask = useCallback((clientId: string, text: string) => {
+    const newTask: ClientTask = {
+      id: `task-${Date.now()}`,
+      text,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+    
+    setClientTasks(prev => {
+      const next = new Map(prev);
+      const existing = next.get(clientId) || [];
+      next.set(clientId, [...existing, newTask]);
+      return next;
+    });
+    
+    toast.success('Tarefa adicionada');
+  }, []);
+
+  const toggleTask = useCallback((clientId: string, taskId: string) => {
+    setClientTasks(prev => {
+      const next = new Map(prev);
+      const tasks = next.get(clientId) || [];
+      const updated = tasks.map(t => 
+        t.id === taskId ? { ...t, completed: !t.completed } : t
+      );
+      next.set(clientId, updated);
+      return next;
+    });
+  }, []);
+
+  const deleteTask = useCallback((clientId: string, taskId: string) => {
+    setClientTasks(prev => {
+      const next = new Map(prev);
+      const tasks = next.get(clientId) || [];
+      next.set(clientId, tasks.filter(t => t.id !== taskId));
+      return next;
+    });
+  }, []);
+
+  const getTaskCount = useCallback((clientId: string) => {
+    const tasks = clientTasks.get(clientId) || [];
+    return tasks.filter(t => !t.completed).length;
+  }, [clientTasks]);
+
+  const getTotalTaskCount = useCallback(() => {
+    let total = 0;
+    clientTasks.forEach(tasks => {
+      total += tasks.filter(t => !t.completed).length;
+    });
+    return total;
+  }, [clientTasks]);
+
+  const getClientsWithTasks = useCallback(() => {
+    const result: string[] = [];
+    clientTasks.forEach((tasks, clientId) => {
+      if (tasks.some(t => !t.completed)) {
+        result.push(clientId);
+      }
+    });
+    return result;
+  }, [clientTasks]);
+
   // Export data as JSON
   const exportData = useCallback(() => {
     return JSON.stringify(clients, null, 2);
@@ -405,6 +488,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       clients,
       activeClients,
       highlightedClients,
+      clientTasks,
       isLoading,
       addClient,
       updateClient,
@@ -424,6 +508,12 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       importData,
       resetToDefault,
       refetch: fetchClients,
+      addTask,
+      toggleTask,
+      deleteTask,
+      getTaskCount,
+      getTotalTaskCount,
+      getClientsWithTasks,
     }}>
       {children}
     </ClientContext.Provider>

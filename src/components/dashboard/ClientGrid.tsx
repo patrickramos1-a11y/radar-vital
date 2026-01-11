@@ -1,15 +1,19 @@
 import React, { useMemo } from "react";
 import { ClientCard } from "./ClientCard";
-import { Client, CollaboratorName } from "@/types/client";
+import { Client, CollaboratorName, ClientTask } from "@/types/client";
 
 interface ClientGridProps {
   clients: Client[];
   selectedClientId: string | null;
   highlightedClients: Set<string>;
+  clientTasks: Map<string, ClientTask[]>;
   onSelectClient: (id: string) => void;
   onHighlightClient: (id: string) => void;
   onTogglePriority: (id: string) => void;
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
+  onAddTask: (clientId: string, text: string) => void;
+  onToggleTask: (clientId: string, taskId: string) => void;
+  onDeleteTask: (clientId: string, taskId: string) => void;
 }
 
 // Calcula o layout do grid baseado na quantidade de clientes
@@ -31,12 +35,21 @@ export function ClientGrid({
   clients, 
   selectedClientId, 
   highlightedClients,
+  clientTasks,
   onSelectClient,
   onHighlightClient,
   onTogglePriority,
   onToggleCollaborator,
+  onAddTask,
+  onToggleTask,
+  onDeleteTask,
 }: ClientGridProps) {
   const { columns, rows } = useMemo(() => getGridLayout(clients.length), [clients.length]);
+
+  const getTaskCount = (clientId: string) => {
+    const tasks = clientTasks.get(clientId) || [];
+    return tasks.filter(t => !t.completed).length;
+  };
 
   return (
     <div 
@@ -49,14 +62,18 @@ export function ClientGrid({
       {clients.slice(0, 40).map((client, index) => (
         <ClientCard
           key={client.id}
-          client={client}
+          client={{ ...client, tasks: clientTasks.get(client.id) }}
           displayNumber={index + 1}
           isSelected={selectedClientId === client.id}
           isHighlighted={highlightedClients.has(client.id)}
+          taskCount={getTaskCount(client.id)}
           onSelect={onSelectClient}
           onHighlight={onHighlightClient}
           onTogglePriority={onTogglePriority}
           onToggleCollaborator={onToggleCollaborator}
+          onAddTask={onAddTask}
+          onToggleTask={onToggleTask}
+          onDeleteTask={onDeleteTask}
         />
       ))}
     </div>

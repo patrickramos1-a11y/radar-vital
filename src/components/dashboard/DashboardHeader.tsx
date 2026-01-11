@@ -1,5 +1,6 @@
-import { Users, FileText, Shield, ClipboardList, Settings, Star, Sparkles } from "lucide-react";
+import { Users, FileText, Shield, ClipboardList, Settings, Star, Sparkles, CheckSquare } from "lucide-react";
 import { Link } from "react-router-dom";
+import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 
 interface CollaboratorStats {
   celine: number;
@@ -16,6 +17,7 @@ interface DashboardHeaderProps {
   collaboratorStats: CollaboratorStats;
   priorityCount: number;
   highlightedCount: number;
+  taskCount: number;
 }
 
 export function DashboardHeader({
@@ -26,6 +28,7 @@ export function DashboardHeader({
   collaboratorStats,
   priorityCount,
   highlightedCount,
+  taskCount,
 }: DashboardHeaderProps) {
   return (
     <header className="flex items-center justify-between px-4 py-2 bg-header-bg border-b border-header-border">
@@ -69,32 +72,19 @@ export function DashboardHeader({
         {/* Divider */}
         <div className="w-px h-6 bg-border mx-1" />
         
-        {/* Collaborator stats */}
-        <StatCardCompact 
-          value={collaboratorStats.celine} 
-          label="Celine" 
-          variant="collaborator"
-        />
-        <StatCardCompact 
-          value={collaboratorStats.gabi} 
-          label="Gabi" 
-          variant="collaborator"
-        />
-        <StatCardCompact 
-          value={collaboratorStats.darley} 
-          label="Darley" 
-          variant="collaborator"
-        />
-        <StatCardCompact 
-          value={collaboratorStats.vanessa} 
-          label="Vanessa" 
-          variant="collaborator"
-        />
+        {/* Collaborator stats - Color bars with number */}
+        {COLLABORATOR_NAMES.map((name) => (
+          <CollaboratorStatCard
+            key={name}
+            name={name}
+            value={collaboratorStats[name]}
+          />
+        ))}
         
         {/* Divider */}
         <div className="w-px h-6 bg-border mx-1" />
         
-        {/* Priority and Highlight stats */}
+        {/* Priority, Highlight and Task stats */}
         <StatCardCompact 
           icon={<Star className="w-3.5 h-3.5" />} 
           value={priorityCount} 
@@ -106,6 +96,12 @@ export function DashboardHeader({
           value={highlightedCount} 
           label="Destaques" 
           variant="highlight"
+        />
+        <StatCardCompact 
+          icon={<CheckSquare className="w-3.5 h-3.5" />} 
+          value={taskCount} 
+          label="Tarefas" 
+          variant="task"
         />
       </div>
 
@@ -121,22 +117,50 @@ export function DashboardHeader({
   );
 }
 
+interface CollaboratorStatCardProps {
+  name: CollaboratorName;
+  value: number;
+}
+
+function CollaboratorStatCard({ name, value }: CollaboratorStatCardProps) {
+  const color = COLLABORATOR_COLORS[name];
+  const initial = name.charAt(0).toUpperCase();
+  
+  return (
+    <div 
+      className="flex items-center gap-1 px-2 py-1 rounded-lg border"
+      style={{ 
+        backgroundColor: `${color}15`,
+        borderColor: `${color}40`,
+      }}
+    >
+      <div 
+        className="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold text-white"
+        style={{ backgroundColor: color }}
+      >
+        {initial}
+      </div>
+      <span className="text-sm font-bold" style={{ color }}>{value}</span>
+    </div>
+  );
+}
+
 interface StatCardCompactProps {
   icon?: React.ReactNode;
   value: number;
   label: string;
-  variant?: 'default' | 'collaborator' | 'priority' | 'highlight';
+  variant?: 'default' | 'priority' | 'highlight' | 'task';
 }
 
 function StatCardCompact({ icon, value, label, variant = 'default' }: StatCardCompactProps) {
   const getVariantClasses = () => {
     switch (variant) {
-      case 'collaborator':
-        return 'bg-secondary/50 border-secondary';
       case 'priority':
         return 'bg-amber-500/10 border-amber-500/30';
       case 'highlight':
         return 'bg-blue-500/10 border-blue-500/30';
+      case 'task':
+        return 'bg-orange-500/10 border-orange-500/30';
       default:
         return 'bg-card border-border';
     }
@@ -148,6 +172,8 @@ function StatCardCompact({ icon, value, label, variant = 'default' }: StatCardCo
         return 'text-amber-500';
       case 'highlight':
         return 'text-blue-500';
+      case 'task':
+        return 'text-orange-500';
       default:
         return 'text-primary';
     }
