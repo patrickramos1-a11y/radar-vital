@@ -34,6 +34,10 @@ export type Database = {
           initials: string
           is_active: boolean
           is_priority: boolean
+          lic_fora_validade_count: number
+          lic_proxima_data_vencimento: string | null
+          lic_proximo_venc_count: number
+          lic_validas_count: number
           licenses: number
           logo_url: string | null
           name: string
@@ -59,6 +63,10 @@ export type Database = {
           initials: string
           is_active?: boolean
           is_priority?: boolean
+          lic_fora_validade_count?: number
+          lic_proxima_data_vencimento?: string | null
+          lic_proximo_venc_count?: number
+          lic_validas_count?: number
           licenses?: number
           logo_url?: string | null
           name: string
@@ -84,6 +92,10 @@ export type Database = {
           initials?: string
           is_active?: boolean
           is_priority?: boolean
+          lic_fora_validade_count?: number
+          lic_proxima_data_vencimento?: string | null
+          lic_proximo_venc_count?: number
+          lic_validas_count?: number
           licenses?: number
           logo_url?: string | null
           name?: string
@@ -150,6 +162,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "demands_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      licenses: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          data_emissao: string | null
+          empresa_excel: string
+          id: string
+          licenca: string | null
+          num_processo: string | null
+          status_calculado: string
+          tipo_licenca: string | null
+          updated_at: string
+          vencimento: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          empresa_excel: string
+          id?: string
+          licenca?: string | null
+          num_processo?: string | null
+          status_calculado?: string
+          tipo_licenca?: string | null
+          updated_at?: string
+          vencimento?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          empresa_excel?: string
+          id?: string
+          licenca?: string | null
+          num_processo?: string | null
+          status_calculado?: string
+          tipo_licenca?: string | null
+          updated_at?: string
+          vencimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licenses_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS } from '@/types/client';
+import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -40,7 +40,13 @@ const dbRowToClient = (row: any): Client => ({
   isActive: row.is_active,
   order: row.display_order,
   processes: row.processes,
-  licenses: row.licenses,
+  licenses: (row.lic_validas_count || 0) + (row.lic_proximo_venc_count || 0), // Active = valid + near expiry
+  licenseBreakdown: {
+    validas: row.lic_validas_count || 0,
+    proximoVencimento: row.lic_proximo_venc_count || 0,
+    foraValidade: row.lic_fora_validade_count || 0,
+    proximaDataVencimento: row.lic_proxima_data_vencimento || null,
+  },
   demands: {
     completed: row.demands_completed,
     inProgress: row.demands_in_progress,
@@ -74,7 +80,13 @@ const clientToDbRow = (client: Partial<ClientFormData>) => {
   if (client.isActive !== undefined) row.is_active = client.isActive;
   if (client.order !== undefined) row.display_order = client.order;
   if (client.processes !== undefined) row.processes = client.processes;
-  if (client.licenses !== undefined) row.licenses = client.licenses;
+  // Note: licenses is calculated from licenseBreakdown, don't write directly
+  if (client.licenseBreakdown !== undefined) {
+    row.lic_validas_count = client.licenseBreakdown.validas;
+    row.lic_proximo_venc_count = client.licenseBreakdown.proximoVencimento;
+    row.lic_fora_validade_count = client.licenseBreakdown.foraValidade;
+    row.lic_proxima_data_vencimento = client.licenseBreakdown.proximaDataVencimento;
+  }
   if (client.demands !== undefined) {
     row.demands_completed = client.demands.completed;
     row.demands_in_progress = client.demands.inProgress;
@@ -392,6 +404,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
           licenses: client.licenses || 0,
           demands: client.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
           demandsByCollaborator: client.demandsByCollaborator || DEFAULT_COLLABORATOR_DEMAND_COUNTS,
+          licenseBreakdown: client.licenseBreakdown || DEFAULT_LICENSE_BREAKDOWN,
           collaborators: client.collaborators || DEFAULT_COLLABORATORS,
         };
         
