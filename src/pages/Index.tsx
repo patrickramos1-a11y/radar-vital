@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
-import { FilterBar, SortOption, FilterOption } from "@/components/dashboard/FilterBar";
+import { FilterBar, SortOption, SortDirection, FilterOption } from "@/components/dashboard/FilterBar";
 import { useClients } from "@/contexts/ClientContext";
 import { calculateTotals, calculateTotalDemands, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,9 @@ const Index = () => {
   } = useClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
   const [collaboratorDemandStats, setCollaboratorDemandStats] = useState({
     celine: 0,
     gabi: 0,
@@ -55,47 +57,63 @@ const Index = () => {
     fetchDemandStats();
   }, []);
 
+  // Toggle collaborator filter (multi-select)
+  const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {
+    setCollaboratorFilters(prev => 
+      prev.includes(collaborator)
+        ? prev.filter(c => c !== collaborator)
+        : [...prev, collaborator]
+    );
+  };
+
   // Apply filters
   const filteredClients = useMemo(() => {
     let result = [...activeClients];
 
-    // Filter
+    // Filter by main filter option
     if (filterBy === 'priority') {
       result = result.filter(c => c.isPriority);
     } else if (filterBy === 'highlighted') {
       result = result.filter(c => highlightedClients.has(c.id));
-    } else if (COLLABORATOR_NAMES.includes(filterBy as CollaboratorName)) {
-      result = result.filter(c => c.collaborators[filterBy as CollaboratorName]);
+    }
+
+    // Filter by collaborators (if any selected - OR logic)
+    if (collaboratorFilters.length > 0) {
+      result = result.filter(c => 
+        collaboratorFilters.some(collab => c.collaborators[collab])
+      );
     }
 
     // Sort
+    const multiplier = sortDirection === 'desc' ? 1 : -1;
+    
     switch (sortBy) {
       case 'priority':
         result.sort((a, b) => {
-          if (a.isPriority === b.isPriority) return a.order - b.order;
-          return a.isPriority ? -1 : 1;
+          if (a.isPriority === b.isPriority) return (a.order - b.order) * multiplier;
+          return (a.isPriority ? -1 : 1) * multiplier;
         });
         break;
       case 'processes':
-        result.sort((a, b) => b.processes - a.processes);
+        result.sort((a, b) => (b.processes - a.processes) * multiplier);
         break;
       case 'licenses':
-        result.sort((a, b) => b.licenses - a.licenses);
+        result.sort((a, b) => (b.licenses - a.licenses) * multiplier);
         break;
       case 'demands':
-        result.sort((a, b) => calculateTotalDemands(b.demands) - calculateTotalDemands(a.demands));
+        result.sort((a, b) => (calculateTotalDemands(b.demands) - calculateTotalDemands(a.demands)) * multiplier);
         break;
       case 'name':
-        result.sort((a, b) => a.name.localeCompare(b.name));
+        result.sort((a, b) => a.name.localeCompare(b.name) * multiplier);
         break;
       case 'order':
       default:
-        result.sort((a, b) => a.order - b.order);
+        result.sort((a, b) => (a.order - b.order) * multiplier);
         break;
     }
 
     return result;
-  }, [activeClients, filterBy, sortBy, highlightedClients]);
+  }, [activeClients, filterBy, collaboratorFilters, sortBy, sortDirection, highlightedClients]);
 
   const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
@@ -138,10 +156,14 @@ const Index = () => {
       {/* Filter Bar */}
       <FilterBar
         sortBy={sortBy}
+        sortDirection={sortDirection}
         filterBy={filterBy}
+        collaboratorFilters={collaboratorFilters}
         highlightedCount={highlightedClients.size}
         onSortChange={setSortBy}
+        onSortDirectionChange={setSortDirection}
         onFilterChange={setFilterBy}
+        onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
         onClearHighlights={clearHighlights}
       />
 

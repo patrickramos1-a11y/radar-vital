@@ -1,69 +1,99 @@
-import { ArrowDownAZ, Star, Sparkles, X, Users } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, Sparkles, X, Users } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 
 export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority';
-export type FilterOption = 'all' | 'priority' | 'highlighted' | CollaboratorName;
+export type SortDirection = 'asc' | 'desc';
+export type FilterOption = 'all' | 'priority' | 'highlighted';
 
 interface FilterBarProps {
   sortBy: SortOption;
+  sortDirection: SortDirection;
   filterBy: FilterOption;
+  collaboratorFilters: CollaboratorName[];
   highlightedCount: number;
   onSortChange: (sort: SortOption) => void;
+  onSortDirectionChange: (direction: SortDirection) => void;
   onFilterChange: (filter: FilterOption) => void;
+  onCollaboratorFilterToggle: (collaborator: CollaboratorName) => void;
   onClearHighlights: () => void;
 }
 
 export function FilterBar({
   sortBy,
+  sortDirection,
   filterBy,
+  collaboratorFilters,
   highlightedCount,
   onSortChange,
+  onSortDirectionChange,
   onFilterChange,
+  onCollaboratorFilterToggle,
   onClearHighlights,
 }: FilterBarProps) {
+
+  const handleSortClick = (sort: SortOption) => {
+    if (sortBy === sort) {
+      // Toggle direction if clicking the same sort option
+      onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new sort option with default desc direction
+      onSortChange(sort);
+      onSortDirectionChange('desc');
+    }
+  };
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-card border-b border-border">
       {/* Sort Options */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-          <ArrowDownAZ className="w-3.5 h-3.5" />
+          {sortDirection === 'desc' ? (
+            <ArrowDownAZ className="w-3.5 h-3.5" />
+          ) : (
+            <ArrowUpAZ className="w-3.5 h-3.5" />
+          )}
           Ordenar:
         </span>
         <div className="flex items-center gap-1 flex-wrap">
           <SortButton 
             active={sortBy === 'order'} 
-            onClick={() => onSortChange('order')}
+            direction={sortBy === 'order' ? sortDirection : undefined}
+            onClick={() => handleSortClick('order')}
           >
             Ordem
           </SortButton>
           <SortButton 
             active={sortBy === 'priority'} 
-            onClick={() => onSortChange('priority')}
+            direction={sortBy === 'priority' ? sortDirection : undefined}
+            onClick={() => handleSortClick('priority')}
           >
             Prioridade
           </SortButton>
           <SortButton 
             active={sortBy === 'processes'} 
-            onClick={() => onSortChange('processes')}
+            direction={sortBy === 'processes' ? sortDirection : undefined}
+            onClick={() => handleSortClick('processes')}
           >
-            + Processos
+            Processos
           </SortButton>
           <SortButton 
             active={sortBy === 'licenses'} 
-            onClick={() => onSortChange('licenses')}
+            direction={sortBy === 'licenses' ? sortDirection : undefined}
+            onClick={() => handleSortClick('licenses')}
           >
-            + Licenças
+            Licenças
           </SortButton>
           <SortButton 
             active={sortBy === 'demands'} 
-            onClick={() => onSortChange('demands')}
+            direction={sortBy === 'demands' ? sortDirection : undefined}
+            onClick={() => handleSortClick('demands')}
           >
-            + Demandas
+            Demandas
           </SortButton>
           <SortButton 
             active={sortBy === 'name'} 
-            onClick={() => onSortChange('name')}
+            direction={sortBy === 'name' ? sortDirection : undefined}
+            onClick={() => handleSortClick('name')}
           >
             Nome
           </SortButton>
@@ -96,7 +126,7 @@ export function FilterBar({
             Destacados
           </FilterButton>
           
-          {/* Collaborator filters */}
+          {/* Collaborator filters - multi-select with toggle */}
           <span className="text-xs text-muted-foreground ml-2 flex items-center gap-1">
             <Users className="w-3 h-3" />
           </span>
@@ -104,8 +134,8 @@ export function FilterBar({
             <CollaboratorFilterButton
               key={name}
               name={name}
-              active={filterBy === name}
-              onClick={() => onFilterChange(name)}
+              active={collaboratorFilters.includes(name)}
+              onClick={() => onCollaboratorFilterToggle(name)}
             />
           ))}
         </div>
@@ -126,21 +156,27 @@ export function FilterBar({
 
 interface SortButtonProps {
   active: boolean;
+  direction?: SortDirection;
   onClick: () => void;
   children: React.ReactNode;
 }
 
-function SortButton({ active, onClick, children }: SortButtonProps) {
+function SortButton({ active, direction, onClick, children }: SortButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+      className={`px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 ${
         active 
           ? 'bg-primary text-primary-foreground' 
           : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
       }`}
     >
       {children}
+      {active && direction && (
+        <span className="text-[10px]">
+          {direction === 'desc' ? '↓' : '↑'}
+        </span>
+      )}
     </button>
   );
 }
