@@ -15,6 +15,7 @@ interface ClientContextType {
   clearAllClients: () => Promise<void>;
   toggleClientActive: (id: string) => void;
   togglePriority: (id: string) => void;
+  toggleChecked: (id: string) => void;
   toggleCollaborator: (id: string, collaborator: keyof Client['collaborators']) => void;
   toggleHighlight: (id: string) => void;
   clearHighlights: () => void;
@@ -42,6 +43,7 @@ const dbRowToClient = (row: any): Client => {
     logoUrl: row.logo_url || undefined,
     isPriority: row.is_priority,
     isActive: row.is_active,
+    isChecked: row.is_checked || false,
     order: row.display_order,
     processes: procEmAndamento, // "P" = processes in progress (not deferido)
     processBreakdown: {
@@ -91,6 +93,7 @@ const clientToDbRow = (client: Partial<ClientFormData>) => {
   if (client.logoUrl !== undefined) row.logo_url = client.logoUrl || null;
   if (client.isPriority !== undefined) row.is_priority = client.isPriority;
   if (client.isActive !== undefined) row.is_active = client.isActive;
+  if (client.isChecked !== undefined) row.is_checked = client.isChecked;
   if (client.order !== undefined) row.display_order = client.order;
   // Note: processes is calculated from processBreakdown, don't write directly
   if (client.processBreakdown !== undefined) {
@@ -286,6 +289,13 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clients, updateClient]);
 
+  const toggleChecked = useCallback((id: string) => {
+    const client = clients.find(c => c.id === id);
+    if (client) {
+      updateClient(id, { isChecked: !client.isChecked });
+    }
+  }, [clients, updateClient]);
+
   const toggleCollaborator = useCallback((id: string, collaborator: keyof Client['collaborators']) => {
     const client = clients.find(c => c.id === id);
     if (client) {
@@ -419,6 +429,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
           logoUrl: client.logoUrl,
           isPriority: client.isPriority || false,
           isActive: client.isActive ?? true,
+          isChecked: client.isChecked || false,
           order: client.order || 1,
           processes: client.processes || 0,
           processBreakdown: client.processBreakdown || DEFAULT_PROCESS_BREAKDOWN,
@@ -504,6 +515,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       clearAllClients,
       toggleClientActive,
       togglePriority,
+      toggleChecked,
       toggleCollaborator,
       toggleHighlight,
       clearHighlights,

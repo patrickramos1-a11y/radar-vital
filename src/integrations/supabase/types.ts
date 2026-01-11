@@ -33,6 +33,7 @@ export type Database = {
           id: string
           initials: string
           is_active: boolean
+          is_checked: boolean
           is_priority: boolean
           lic_fora_validade_count: number
           lic_proxima_data_vencimento: string | null
@@ -68,6 +69,7 @@ export type Database = {
           id?: string
           initials: string
           is_active?: boolean
+          is_checked?: boolean
           is_priority?: boolean
           lic_fora_validade_count?: number
           lic_proxima_data_vencimento?: string | null
@@ -103,6 +105,7 @@ export type Database = {
           id?: string
           initials?: string
           is_active?: boolean
+          is_checked?: boolean
           is_priority?: boolean
           lic_fora_validade_count?: number
           lic_proxima_data_vencimento?: string | null
