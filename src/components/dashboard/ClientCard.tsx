@@ -1,15 +1,18 @@
 import { Star } from "lucide-react";
 import { Client, calculateTotalDemands, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { ChecklistButton } from "@/components/checklist/ChecklistButton";
 
 interface ClientCardProps {
   client: Client;
   displayNumber: number;
   isSelected: boolean;
   isHighlighted: boolean;
+  activeTaskCount: number;
   onSelect: (id: string) => void;
   onHighlight: (id: string) => void;
   onTogglePriority: (id: string) => void;
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
+  onOpenChecklist: (id: string) => void;
 }
 
 // Get gradient background for active collaborators
@@ -50,10 +53,12 @@ export function ClientCard({
   displayNumber, 
   isSelected, 
   isHighlighted,
+  activeTaskCount,
   onSelect, 
   onHighlight,
   onTogglePriority,
   onToggleCollaborator,
+  onOpenChecklist,
 }: ClientCardProps) {
   const totalDemands = calculateTotalDemands(client.demands);
   const hasCollaborators = hasActiveCollaborators(client.collaborators);
@@ -74,25 +79,36 @@ export function ClientCard({
     onToggleCollaborator(client.id, collaborator);
   };
 
+  const handleChecklistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onOpenChecklist(client.id);
+  };
+
   return (
     <div
       className={`client-card-compact ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={() => onSelect(client.id)}
     >
-      {/* Priority Star - Always visible, clickable */}
-      <button
-        onClick={handleStarClick}
-        className="absolute top-1 right-1 z-10 p-0.5 rounded transition-colors hover:bg-muted/50"
-        title={client.isPriority ? "Remover prioridade" : "Marcar como prioritário"}
-      >
-        <Star 
-          className={`w-3.5 h-3.5 transition-colors ${
-            client.isPriority 
-              ? 'text-yellow-500 fill-yellow-500' 
-              : 'text-muted-foreground/40 hover:text-yellow-400'
-          }`} 
+      {/* Top right icons - Checklist + Priority */}
+      <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
+        <ChecklistButton
+          activeCount={activeTaskCount}
+          onClick={handleChecklistClick}
         />
-      </button>
+        <button
+          onClick={handleStarClick}
+          className="p-0.5 rounded transition-colors hover:bg-muted/50"
+          title={client.isPriority ? "Remover prioridade" : "Marcar como prioritário"}
+        >
+          <Star 
+            className={`w-3.5 h-3.5 transition-colors ${
+              client.isPriority 
+                ? 'text-yellow-500 fill-yellow-500' 
+                : 'text-muted-foreground/40 hover:text-yellow-400'
+            }`} 
+          />
+        </button>
+      </div>
 
       {/* Header - Number + Name */}
       <div className="flex items-center gap-1.5 px-2 py-1 bg-card-elevated border-b border-border">
