@@ -140,26 +140,17 @@ export function FinalPreviewStep({
     }
 
     // Update each client with aggregated stats
+    // IMPORTANTE: Apenas atualiza contadores de demandas, NÃO altera seleções de colaboradores
     for (const summary of selectedSummaries) {
       if (!summary.clientId) continue;
 
-      // Get current client stats
-      const { data: currentClient } = await supabase
-        .from('clients')
-        .select('demands_completed, demands_in_progress, demands_not_started, demands_cancelled, collaborator_celine, collaborator_gabi, collaborator_darley, collaborator_vanessa')
-        .eq('id', summary.clientId)
-        .single();
-
-      // Add new stats to existing (or set to new if overwriting)
+      // Update ONLY demand counts - do NOT touch collaborator selection flags
       const newStats = {
         demands_completed: summary.byStatus.CONCLUIDO,
         demands_in_progress: summary.byStatus.EM_EXECUCAO,
         demands_not_started: summary.byStatus.NAO_FEITO,
         demands_cancelled: summary.byStatus.CANCELADO,
-        collaborator_celine: summary.collaborators.celine || (currentClient?.collaborator_celine ?? false),
-        collaborator_gabi: summary.collaborators.gabi || (currentClient?.collaborator_gabi ?? false),
-        collaborator_darley: summary.collaborators.darley || (currentClient?.collaborator_darley ?? false),
-        collaborator_vanessa: summary.collaborators.vanessa || (currentClient?.collaborator_vanessa ?? false),
+        // collaborator_* flags are NOT modified - they represent manual user selections only
       };
 
       await supabase
