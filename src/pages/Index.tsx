@@ -9,25 +9,15 @@ const Index = () => {
   const { 
     activeClients, 
     highlightedClients, 
-    clientTasks,
     toggleHighlight, 
     clearHighlights,
     togglePriority,
     toggleCollaborator,
     isLoading,
-    addTask,
-    toggleTask,
-    deleteTask,
-    getTaskCount,
-    getTotalTaskCount,
-    getClientsWithTasks,
   } = useClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
-
-  const clientsWithTasks = useMemo(() => new Set(getClientsWithTasks()), [getClientsWithTasks]);
-  const totalTaskCount = useMemo(() => getTotalTaskCount(), [getTotalTaskCount]);
 
   // Apply filters
   const filteredClients = useMemo(() => {
@@ -38,8 +28,6 @@ const Index = () => {
       result = result.filter(c => c.isPriority);
     } else if (filterBy === 'highlighted') {
       result = result.filter(c => highlightedClients.has(c.id));
-    } else if (filterBy === 'tasks') {
-      result = result.filter(c => clientsWithTasks.has(c.id));
     } else if (COLLABORATOR_NAMES.includes(filterBy as CollaboratorName)) {
       result = result.filter(c => c.collaborators[filterBy as CollaboratorName]);
     }
@@ -50,14 +38,6 @@ const Index = () => {
         result.sort((a, b) => {
           if (a.isPriority === b.isPriority) return a.order - b.order;
           return a.isPriority ? -1 : 1;
-        });
-        break;
-      case 'tasks':
-        result.sort((a, b) => {
-          const tasksA = getTaskCount(a.id);
-          const tasksB = getTaskCount(b.id);
-          if (tasksA === tasksB) return a.order - b.order;
-          return tasksB - tasksA;
         });
         break;
       case 'processes':
@@ -79,7 +59,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, filterBy, sortBy, highlightedClients, clientsWithTasks, getTaskCount]);
+  }, [activeClients, filterBy, sortBy, highlightedClients]);
 
   const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
@@ -116,7 +96,6 @@ const Index = () => {
         collaboratorStats={collaboratorStats}
         priorityCount={priorityCount}
         highlightedCount={highlightedClients.size}
-        taskCount={totalTaskCount}
       />
 
       {/* Filter Bar */}
@@ -124,7 +103,6 @@ const Index = () => {
         sortBy={sortBy}
         filterBy={filterBy}
         highlightedCount={highlightedClients.size}
-        taskCount={totalTaskCount}
         onSortChange={setSortBy}
         onFilterChange={setFilterBy}
         onClearHighlights={clearHighlights}
@@ -144,14 +122,10 @@ const Index = () => {
             clients={filteredClients}
             selectedClientId={selectedClientId}
             highlightedClients={highlightedClients}
-            clientTasks={clientTasks}
             onSelectClient={handleSelectClient}
             onHighlightClient={toggleHighlight}
             onTogglePriority={togglePriority}
             onToggleCollaborator={handleToggleCollaborator}
-            onAddTask={addTask}
-            onToggleTask={toggleTask}
-            onDeleteTask={deleteTask}
           />
         )}
       </main>

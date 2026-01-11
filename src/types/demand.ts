@@ -1,7 +1,5 @@
 export type DemandStatus = 'CONCLUIDO' | 'EM_EXECUCAO' | 'NAO_FEITO' | 'CANCELADO';
 
-export type ImportMode = 'quick' | 'complete';
-
 export interface ExcelDemand {
   codigo?: string;
   data?: string;
@@ -42,21 +40,6 @@ export interface MatchResult {
   matchType: 'exact' | 'suggested' | 'none';
   suggestions?: { id: string; name: string; score: number }[];
   demands: ExcelDemand[];
-  selected?: boolean;
-  createNew?: boolean;
-  action?: 'import' | 'ignore' | 'link';
-}
-
-export interface CompanyStats {
-  empresa: string;
-  clientId?: string;
-  clientName?: string;
-  matchType: 'exact' | 'suggested' | 'none';
-  total: number;
-  byStatus: Record<DemandStatus, number>;
-  collaborators: string[];
-  selected: boolean;
-  createNew?: boolean;
 }
 
 export interface ImportSummary {
@@ -96,8 +79,6 @@ export const STATUS_COLORS: Record<DemandStatus, string> = {
   CANCELADO: 'bg-red-500',
 };
 
-export const KNOWN_COLLABORATORS = ['celine', 'gabi', 'darley', 'vanessa'];
-
 // Normalize text for comparison
 export function normalizeText(text: string): string {
   return text
@@ -127,11 +108,4 @@ export function similarityScore(str1: string, str2: string): number {
   const union = new Set([...words1, ...words2]);
   
   return intersection.size / union.size;
-}
-
-// Extract collaborators from responsavel field
-export function extractCollaborators(responsavel?: string): string[] {
-  if (!responsavel) return [];
-  const normalized = normalizeText(responsavel);
-  return KNOWN_COLLABORATORS.filter(c => normalized.includes(c));
 }

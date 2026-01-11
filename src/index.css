@@ -122,10 +122,6 @@
     @apply border-yellow-500 ring-2 ring-yellow-500/50;
   }
 
-  .client-card-compact.has-tasks {
-    @apply border-orange-300;
-  }
-
   /* Indicator Pills */
   .indicator-pill {
     @apply flex items-center gap-1.5 px-3 py-1.5 rounded-lg;
