@@ -28,6 +28,16 @@ export interface LicenseBreakdown {
   proximaDataVencimento: string | null; // ISO date string
 }
 
+// Process counts by status (from import data)
+export interface ProcessBreakdown {
+  total: number;
+  deferido: number;
+  emAnaliseOrgao: number;
+  emAnaliseRamos: number;
+  notificado: number;
+  reprovado: number;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -36,7 +46,8 @@ export interface Client {
   isPriority: boolean;
   isActive: boolean;
   order: number;
-  processes: number;
+  processes: number; // Calculated: em_andamento (análise + notificado)
+  processBreakdown: ProcessBreakdown; // Process counts by status
   licenses: number; // Active licenses = validas + proximoVencimento
   licenseBreakdown: LicenseBreakdown; // License counts by status
   demands: DemandBreakdown;
@@ -103,4 +114,13 @@ export const DEFAULT_LICENSE_BREAKDOWN: LicenseBreakdown = {
   proximoVencimento: 0,
   foraValidade: 0,
   proximaDataVencimento: null,
+};
+
+export const DEFAULT_PROCESS_BREAKDOWN: ProcessBreakdown = {
+  total: 0,
+  deferido: 0,
+  emAnaliseOrgao: 0,
+  emAnaliseRamos: 0,
+  notificado: 0,
+  reprovado: 0,
 };

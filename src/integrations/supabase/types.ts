@@ -41,6 +41,12 @@ export type Database = {
           licenses: number
           logo_url: string | null
           name: string
+          proc_deferido_count: number
+          proc_em_analise_orgao_count: number
+          proc_em_analise_ramos_count: number
+          proc_notificado_count: number
+          proc_reprovado_count: number
+          proc_total_count: number
           processes: number
           updated_at: string
         }
@@ -70,6 +76,12 @@ export type Database = {
           licenses?: number
           logo_url?: string | null
           name: string
+          proc_deferido_count?: number
+          proc_em_analise_orgao_count?: number
+          proc_em_analise_ramos_count?: number
+          proc_notificado_count?: number
+          proc_reprovado_count?: number
+          proc_total_count?: number
           processes?: number
           updated_at?: string
         }
@@ -99,6 +111,12 @@ export type Database = {
           licenses?: number
           logo_url?: string | null
           name?: string
+          proc_deferido_count?: number
+          proc_em_analise_orgao_count?: number
+          proc_em_analise_ramos_count?: number
+          proc_notificado_count?: number
+          proc_reprovado_count?: number
+          proc_total_count?: number
           processes?: number
           updated_at?: string
         }
@@ -212,6 +230,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "licenses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processes: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          data_protocolo: string | null
+          empresa_excel: string
+          id: string
+          numero_processo: string | null
+          status: string
+          tipo_processo: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          data_protocolo?: string | null
+          empresa_excel: string
+          id?: string
+          numero_processo?: string | null
+          status?: string
+          tipo_processo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          data_protocolo?: string | null
+          empresa_excel?: string
+          id?: string
+          numero_processo?: string | null
+          status?: string
+          tipo_processo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processes_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
