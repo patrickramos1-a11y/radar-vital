@@ -6,6 +6,7 @@ import {
   Download, FolderUp, RotateCcw, FileSpreadsheet
 } from "lucide-react";
 import { ImportWizard } from "@/components/import/ImportWizard";
+import { LicenseImportWizard } from "@/components/import/LicenseImportWizard";
 import { useClients } from "@/contexts/ClientContext";
 import { 
   Client, ClientFormData, generateInitials, calculateTotalDemands,
@@ -50,6 +51,7 @@ const Config = () => {
   const [moveToPositionId, setMoveToPositionId] = useState<string | null>(null);
   const [moveToPositionValue, setMoveToPositionValue] = useState<string>("");
   const [showImportWizard, setShowImportWizard] = useState(false);
+  const [showLicenseImportWizard, setShowLicenseImportWizard] = useState(false);
   
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -189,7 +191,7 @@ const Config = () => {
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Import Excel */}
+            {/* Import Demandas Excel */}
             <button
               onClick={() => setShowImportWizard(true)}
               className="admin-button flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
@@ -197,6 +199,16 @@ const Config = () => {
             >
               <FileSpreadsheet className="w-4 h-4" />
               Importar Programação
+            </button>
+
+            {/* Import Licenças Excel */}
+            <button
+              onClick={() => setShowLicenseImportWizard(true)}
+              className="admin-button flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
+              title="Importar licenças de planilha Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Importar Licenças
             </button>
 
             <div className="h-6 w-px bg-border mx-1" />
@@ -615,12 +627,20 @@ const Config = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Import Wizard */}
+      {/* Import Demand Wizard */}
       <ImportWizard
         isOpen={showImportWizard}
         onClose={() => setShowImportWizard(false)}
         clients={clients}
         onImportComplete={() => setShowImportWizard(false)}
+      />
+
+      {/* Import License Wizard */}
+      <LicenseImportWizard
+        isOpen={showLicenseImportWizard}
+        onClose={() => setShowLicenseImportWizard(false)}
+        clients={clients}
+        onImportComplete={() => setShowLicenseImportWizard(false)}
       />
     </div>
   );
@@ -646,6 +666,7 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     order: client?.order || nextOrder,
     processes: client?.processes || 0,
     licenses: client?.licenses || 0,
+    licenseBreakdown: client?.licenseBreakdown || { validas: 0, proximoVencimento: 0, foraValidade: 0, proximaDataVencimento: null },
     demands: client?.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
     demandsByCollaborator: client?.demandsByCollaborator || { celine: 0, gabi: 0, darley: 0, vanessa: 0 },
     collaborators: client?.collaborators || DEFAULT_COLLABORATORS,

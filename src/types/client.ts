@@ -20,6 +20,14 @@ export interface CollaboratorDemandCounts {
   vanessa: number;
 }
 
+// License counts by status (from import data)
+export interface LicenseBreakdown {
+  validas: number;
+  proximoVencimento: number;
+  foraValidade: number;
+  proximaDataVencimento: string | null; // ISO date string
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -29,7 +37,8 @@ export interface Client {
   isActive: boolean;
   order: number;
   processes: number;
-  licenses: number;
+  licenses: number; // Active licenses = validas + proximoVencimento
+  licenseBreakdown: LicenseBreakdown; // License counts by status
   demands: DemandBreakdown;
   demandsByCollaborator: CollaboratorDemandCounts; // Demand counts per collaborator (from import)
   collaborators: Collaborators; // Manual selection flags (user interaction)
@@ -87,4 +96,11 @@ export const DEFAULT_COLLABORATOR_DEMAND_COUNTS: CollaboratorDemandCounts = {
   gabi: 0,
   darley: 0,
   vanessa: 0,
+};
+
+export const DEFAULT_LICENSE_BREAKDOWN: LicenseBreakdown = {
+  validas: 0,
+  proximoVencimento: 0,
+  foraValidade: 0,
+  proximaDataVencimento: null,
 };
