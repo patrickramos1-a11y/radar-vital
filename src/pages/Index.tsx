@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, FilterOption } from "@/components/dashboard/FilterBar";
 import { useClients } from "@/contexts/ClientContext";
 import { calculateTotals, calculateTotalDemands, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { 
@@ -18,6 +19,41 @@ const Index = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [collaboratorDemandStats, setCollaboratorDemandStats] = useState({
+    celine: 0,
+    gabi: 0,
+    darley: 0,
+    vanessa: 0,
+  });
+
+  // Fetch demand stats per collaborator from database
+  useEffect(() => {
+    const fetchDemandStats = async () => {
+      const { data, error } = await supabase
+        .from('demands')
+        .select('responsavel');
+      
+      if (error) {
+        console.error('Error fetching demand stats:', error);
+        return;
+      }
+
+      // Count demands per responsavel (mapping to collaborator names)
+      const stats = { celine: 0, gabi: 0, darley: 0, vanessa: 0 };
+      
+      data?.forEach((demand) => {
+        const responsavel = demand.responsavel?.toLowerCase().trim() || '';
+        if (responsavel.includes('celine')) stats.celine++;
+        else if (responsavel.includes('gabi')) stats.gabi++;
+        else if (responsavel.includes('darley')) stats.darley++;
+        else if (responsavel.includes('vanessa')) stats.vanessa++;
+      });
+
+      setCollaboratorDemandStats(stats);
+    };
+
+    fetchDemandStats();
+  }, []);
 
   // Apply filters
   const filteredClients = useMemo(() => {
@@ -63,7 +99,7 @@ const Index = () => {
 
   const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
-  // Calculate collaborator stats
+  // Calculate collaborator stats (manual selections)
   const collaboratorStats = useMemo(() => ({
     celine: activeClients.filter(c => c.collaborators.celine).length,
     gabi: activeClients.filter(c => c.collaborators.gabi).length,
@@ -94,6 +130,7 @@ const Index = () => {
         totalLicenses={totals.totalLicenses}
         totalDemands={totals.totalDemands}
         collaboratorStats={collaboratorStats}
+        collaboratorDemandStats={collaboratorDemandStats}
         priorityCount={priorityCount}
         highlightedCount={highlightedClients.size}
       />

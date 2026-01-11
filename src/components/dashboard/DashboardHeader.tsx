@@ -1,7 +1,15 @@
 import { Users, FileText, Shield, ClipboardList, Settings, Star, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { COLLABORATOR_COLORS, CollaboratorName } from "@/types/client";
 
 interface CollaboratorStats {
+  celine: number;
+  gabi: number;
+  darley: number;
+  vanessa: number;
+}
+
+interface CollaboratorDemandStats {
   celine: number;
   gabi: number;
   darley: number;
@@ -14,6 +22,7 @@ interface DashboardHeaderProps {
   totalLicenses: number;
   totalDemands: number;
   collaboratorStats: CollaboratorStats;
+  collaboratorDemandStats: CollaboratorDemandStats;
   priorityCount: number;
   highlightedCount: number;
 }
@@ -24,9 +33,12 @@ export function DashboardHeader({
   totalLicenses,
   totalDemands,
   collaboratorStats,
+  collaboratorDemandStats,
   priorityCount,
   highlightedCount,
 }: DashboardHeaderProps) {
+  const collaborators: CollaboratorName[] = ['celine', 'gabi', 'darley', 'vanessa'];
+
   return (
     <header className="flex items-center justify-between px-4 py-2 bg-header-bg border-b border-header-border">
       {/* Logo / Title - Compact */}
@@ -69,27 +81,15 @@ export function DashboardHeader({
         {/* Divider */}
         <div className="w-px h-6 bg-border mx-1" />
         
-        {/* Collaborator stats */}
-        <StatCardCompact 
-          value={collaboratorStats.celine} 
-          label="Celine" 
-          variant="collaborator"
-        />
-        <StatCardCompact 
-          value={collaboratorStats.gabi} 
-          label="Gabi" 
-          variant="collaborator"
-        />
-        <StatCardCompact 
-          value={collaboratorStats.darley} 
-          label="Darley" 
-          variant="collaborator"
-        />
-        <StatCardCompact 
-          value={collaboratorStats.vanessa} 
-          label="Vanessa" 
-          variant="collaborator"
-        />
+        {/* Collaborator stats - with color bar and dual numbers */}
+        {collaborators.map((collab) => (
+          <CollaboratorStatCard
+            key={collab}
+            collaborator={collab}
+            demandCount={collaboratorDemandStats[collab]}
+            selectionCount={collaboratorStats[collab]}
+          />
+        ))}
         
         {/* Divider */}
         <div className="w-px h-6 bg-border mx-1" />
@@ -121,18 +121,47 @@ export function DashboardHeader({
   );
 }
 
+interface CollaboratorStatCardProps {
+  collaborator: CollaboratorName;
+  demandCount: number;
+  selectionCount: number;
+}
+
+function CollaboratorStatCard({ collaborator, demandCount, selectionCount }: CollaboratorStatCardProps) {
+  const color = COLLABORATOR_COLORS[collaborator];
+  
+  return (
+    <div className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[52px]">
+      {/* Color bar at top */}
+      <div 
+        className="h-1.5 w-full" 
+        style={{ backgroundColor: color }}
+      />
+      {/* Dual numbers */}
+      <div className="flex items-stretch divide-x divide-border">
+        <div className="flex flex-col items-center justify-center px-2 py-1 flex-1">
+          <span className="text-sm font-bold text-foreground leading-none">{demandCount}</span>
+          <span className="text-[7px] text-muted-foreground uppercase">Dem</span>
+        </div>
+        <div className="flex flex-col items-center justify-center px-2 py-1 flex-1">
+          <span className="text-sm font-bold text-foreground leading-none">{selectionCount}</span>
+          <span className="text-[7px] text-muted-foreground uppercase">Sel</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface StatCardCompactProps {
   icon?: React.ReactNode;
   value: number;
   label: string;
-  variant?: 'default' | 'collaborator' | 'priority' | 'highlight';
+  variant?: 'default' | 'priority' | 'highlight';
 }
 
 function StatCardCompact({ icon, value, label, variant = 'default' }: StatCardCompactProps) {
   const getVariantClasses = () => {
     switch (variant) {
-      case 'collaborator':
-        return 'bg-secondary/50 border-secondary';
       case 'priority':
         return 'bg-amber-500/10 border-amber-500/30';
       case 'highlight':
