@@ -71,63 +71,59 @@ export function FilterBar({
             ) : (
               <ArrowUpAZ className="w-3 h-3" />
             )}
+            Ordenar:
           </span>
           <div className="flex items-center gap-0.5 flex-wrap">
             <SortButton 
               active={sortBy === 'order'} 
               direction={sortBy === 'order' ? sortDirection : undefined}
               onClick={() => handleSortClick('order')}
-              tooltip="Ordem manual"
             >
-              #
+              Ordem
             </SortButton>
             <SortButton 
               active={sortBy === 'priority'} 
               direction={sortBy === 'priority' ? sortDirection : undefined}
               onClick={() => handleSortClick('priority')}
-              tooltip="Ordenar por prioridade"
+              icon={<Star className="w-3 h-3" />}
             >
-              <Star className="w-3 h-3" />
+              Prioridade
             </SortButton>
             <SortButton 
               active={sortBy === 'jackbox'} 
               direction={sortBy === 'jackbox' ? sortDirection : undefined}
               onClick={() => handleSortClick('jackbox')}
-              tooltip="Ordenar por tarefas (Jackbox)"
+              icon={<ListChecks className="w-3 h-3" />}
             >
-              <ListChecks className="w-3 h-3" />
+              Jackbox
             </SortButton>
             <SortButton 
               active={sortBy === 'processes'} 
               direction={sortBy === 'processes' ? sortDirection : undefined}
               onClick={() => handleSortClick('processes')}
-              tooltip="Ordenar por processos"
             >
-              P
+              Processos
             </SortButton>
             <SortButton 
               active={sortBy === 'licenses'} 
               direction={sortBy === 'licenses' ? sortDirection : undefined}
               onClick={() => handleSortClick('licenses')}
-              tooltip="Ordenar por licenças"
             >
-              L
+              Licenças
             </SortButton>
             <SortButton 
               active={sortBy === 'demands'} 
               direction={sortBy === 'demands' ? sortDirection : undefined}
               onClick={() => handleSortClick('demands')}
-              tooltip="Ordenar por demandas"
             >
-              D
+              Demandas
             </SortButton>
             <SortButton 
               active={sortBy === 'name'} 
               direction={sortBy === 'name' ? sortDirection : undefined}
               onClick={() => handleSortClick('name')}
-              tooltip="Ordenar por nome"
             >
-              Az
+              Nome
             </SortButton>
           </div>
         </div>
@@ -226,33 +222,27 @@ interface SortButtonProps {
   direction?: SortDirection;
   onClick: () => void;
   children: React.ReactNode;
-  tooltip: string;
+  icon?: React.ReactNode;
 }
 
-function SortButton({ active, direction, onClick, children, tooltip }: SortButtonProps) {
+function SortButton({ active, direction, onClick, children, icon }: SortButtonProps) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          onClick={onClick}
-          className={`min-w-[24px] h-6 px-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center gap-0.5 ${
-            active 
-              ? 'bg-primary text-primary-foreground' 
-              : 'bg-secondary/50 text-secondary-foreground hover:bg-secondary'
-          }`}
-        >
-          {children}
-          {active && direction && (
-            <span className="text-[9px] opacity-80">
-              {direction === 'desc' ? '↓' : '↑'}
-            </span>
-          )}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="text-xs">
-        {tooltip}
-      </TooltipContent>
-    </Tooltip>
+    <button
+      onClick={onClick}
+      className={`px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 ${
+        active 
+          ? 'bg-primary text-primary-foreground' 
+          : 'bg-secondary/50 text-secondary-foreground hover:bg-secondary'
+      }`}
+    >
+      {icon}
+      {children}
+      {active && direction && (
+        <span className="text-[10px] opacity-80">
+          {direction === 'desc' ? '↓' : '↑'}
+        </span>
+      )}
+    </button>
   );
 }
 
