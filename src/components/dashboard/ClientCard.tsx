@@ -201,10 +201,10 @@ function CollaboratorButton({ name, isActive, onClick }: CollaboratorButtonProps
   return (
     <button
       onClick={onClick}
-      className="h-4 w-full border transition-all hover:opacity-80"
+      className="h-2 w-full transition-all hover:opacity-70"
       style={{ 
-        backgroundColor: isActive ? color : 'transparent',
-        borderColor: color,
+        backgroundColor: color,
+        opacity: isActive ? 1 : 0.3,
       }}
       title={`${name.charAt(0).toUpperCase() + name.slice(1)} - Clique para ${isActive ? 'desativar' : 'ativar'}`}
     />
