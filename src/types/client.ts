@@ -45,6 +45,7 @@ export interface Client {
   logoUrl?: string;
   isPriority: boolean;
   isActive: boolean;
+  isChecked: boolean; // New additional check flag
   order: number;
   processes: number; // Calculated: em_andamento (análise + notificado)
   processBreakdown: ProcessBreakdown; // Process counts by status

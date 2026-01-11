@@ -683,6 +683,7 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     logoUrl: client?.logoUrl || '',
     isPriority: client?.isPriority || false,
     isActive: client?.isActive ?? true,
+    isChecked: client?.isChecked || false,
     order: client?.order || nextOrder,
     processes: client?.processes || 0,
     processBreakdown: client?.processBreakdown || DEFAULT_PROCESS_BREAKDOWN,
