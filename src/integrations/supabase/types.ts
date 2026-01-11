@@ -145,6 +145,44 @@ export type Database = {
           },
         ]
       }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          client_id: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          title: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_id: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          title: string
+        }
+        Update: {
+          assigned_to?: string | null
+          client_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

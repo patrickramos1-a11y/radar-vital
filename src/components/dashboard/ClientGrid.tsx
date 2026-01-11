@@ -6,10 +6,12 @@ interface ClientGridProps {
   clients: Client[];
   selectedClientId: string | null;
   highlightedClients: Set<string>;
+  getActiveTaskCount: (clientId: string) => number;
   onSelectClient: (id: string) => void;
   onHighlightClient: (id: string) => void;
   onTogglePriority: (id: string) => void;
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
+  onOpenChecklist: (id: string) => void;
 }
 
 // Calcula o layout do grid baseado na quantidade de clientes
@@ -31,10 +33,12 @@ export function ClientGrid({
   clients, 
   selectedClientId, 
   highlightedClients,
+  getActiveTaskCount,
   onSelectClient,
   onHighlightClient,
   onTogglePriority,
   onToggleCollaborator,
+  onOpenChecklist,
 }: ClientGridProps) {
   const { columns, rows } = useMemo(() => getGridLayout(clients.length), [clients.length]);
 
@@ -53,10 +57,12 @@ export function ClientGrid({
           displayNumber={index + 1}
           isSelected={selectedClientId === client.id}
           isHighlighted={highlightedClients.has(client.id)}
+          activeTaskCount={getActiveTaskCount(client.id)}
           onSelect={onSelectClient}
           onHighlight={onHighlightClient}
           onTogglePriority={onTogglePriority}
           onToggleCollaborator={onToggleCollaborator}
+          onOpenChecklist={onOpenChecklist}
         />
       ))}
     </div>

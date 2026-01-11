@@ -2,8 +2,10 @@ import { useState, useMemo, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, SortDirection, FilterOption } from "@/components/dashboard/FilterBar";
+import { TaskModal } from "@/components/checklist/TaskModal";
 import { useClients } from "@/contexts/ClientContext";
-import { calculateTotals, calculateTotalDemands, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { useTasks } from "@/hooks/useTasks";
+import { calculateTotals, calculateTotalDemands, COLLABORATOR_NAMES, CollaboratorName, Client } from "@/types/client";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
@@ -15,8 +17,21 @@ const Index = () => {
     togglePriority,
     toggleCollaborator,
     isLoading,
+    getClient,
   } = useClients();
+
+  const {
+    tasks,
+    getActiveTaskCount,
+    getTasksForClient,
+    addTask,
+    updateTask,
+    deleteTask,
+    toggleComplete,
+  } = useTasks();
+
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [checklistClientId, setChecklistClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
@@ -139,6 +154,12 @@ const Index = () => {
     toggleCollaborator(id, collaborator);
   };
 
+  const handleOpenChecklist = (id: string) => {
+    setChecklistClientId(id);
+  };
+
+  const checklistClient = checklistClientId ? getClient(checklistClientId) : null;
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
       {/* Header - Compact */}
@@ -181,13 +202,29 @@ const Index = () => {
             clients={filteredClients}
             selectedClientId={selectedClientId}
             highlightedClients={highlightedClients}
+            getActiveTaskCount={getActiveTaskCount}
             onSelectClient={handleSelectClient}
             onHighlightClient={toggleHighlight}
             onTogglePriority={togglePriority}
             onToggleCollaborator={handleToggleCollaborator}
+            onOpenChecklist={handleOpenChecklist}
           />
         )}
       </main>
+
+      {/* Task Modal */}
+      {checklistClient && (
+        <TaskModal
+          isOpen={!!checklistClientId}
+          onClose={() => setChecklistClientId(null)}
+          client={checklistClient}
+          tasks={getTasksForClient(checklistClientId!)}
+          onAddTask={addTask}
+          onToggleComplete={toggleComplete}
+          onUpdateTask={updateTask}
+          onDeleteTask={deleteTask}
+        />
+      )}
     </div>
   );
 };
