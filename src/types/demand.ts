@@ -1,4 +1,5 @@
 export type DemandStatus = 'CONCLUIDO' | 'EM_EXECUCAO' | 'NAO_FEITO' | 'CANCELADO';
+export type ImportMode = 'quick' | 'complete';
 
 export interface ExcelDemand {
   codigo?: string;
@@ -40,6 +41,28 @@ export interface MatchResult {
   matchType: 'exact' | 'suggested' | 'none';
   suggestions?: { id: string; name: string; score: number }[];
   demands: ExcelDemand[];
+  createNew?: boolean;
+  ignored?: boolean;
+  selected?: boolean; // For quick mode selection
+}
+
+// Summary for quick mode - aggregated stats per company
+export interface CompanySummary {
+  empresaExcel: string;
+  clientId?: string;
+  clientName?: string;
+  matchType: 'exact' | 'suggested' | 'none';
+  createNew?: boolean;
+  ignored?: boolean;
+  selected: boolean;
+  totalDemands: number;
+  byStatus: Record<DemandStatus, number>;
+  collaborators: {
+    celine: boolean;
+    gabi: boolean;
+    darley: boolean;
+    vanessa: boolean;
+  };
 }
 
 export interface ImportSummary {
@@ -108,4 +131,55 @@ export function similarityScore(str1: string, str2: string): number {
   const union = new Set([...words1, ...words2]);
   
   return intersection.size / union.size;
+}
+
+// Detect collaborators from demands
+export function detectCollaborators(demands: ExcelDemand[]): {
+  celine: boolean;
+  gabi: boolean;
+  darley: boolean;
+  vanessa: boolean;
+} {
+  const collaborators = { celine: false, gabi: false, darley: false, vanessa: false };
+  
+  for (const demand of demands) {
+    const responsavel = demand.responsavel?.toLowerCase().trim() || '';
+    if (responsavel.includes('celine')) collaborators.celine = true;
+    if (responsavel.includes('gabi')) collaborators.gabi = true;
+    if (responsavel.includes('darley')) collaborators.darley = true;
+    if (responsavel.includes('vanessa')) collaborators.vanessa = true;
+  }
+  
+  return collaborators;
+}
+
+// Create company summary from demands
+export function createCompanySummary(
+  empresaExcel: string,
+  demands: ExcelDemand[],
+  clientId?: string,
+  clientName?: string,
+  matchType: 'exact' | 'suggested' | 'none' = 'none'
+): CompanySummary {
+  const byStatus: Record<DemandStatus, number> = {
+    CONCLUIDO: 0,
+    EM_EXECUCAO: 0,
+    NAO_FEITO: 0,
+    CANCELADO: 0,
+  };
+  
+  for (const demand of demands) {
+    byStatus[demand.status]++;
+  }
+  
+  return {
+    empresaExcel,
+    clientId,
+    clientName,
+    matchType,
+    selected: matchType !== 'none',
+    totalDemands: demands.length,
+    byStatus,
+    collaborators: detectCollaborators(demands),
+  };
 }
