@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
-import { FilterBar, SortOption, SortDirection, FilterOption } from "@/components/dashboard/FilterBar";
+import { FilterBar, SortOption, SortDirection, FilterFlags } from "@/components/dashboard/FilterBar";
 import { TaskModal } from "@/components/checklist/TaskModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
-import { calculateTotals, calculateTotalDemands, COLLABORATOR_NAMES, CollaboratorName, Client } from "@/types/client";
+import { calculateTotals, calculateTotalDemands, CollaboratorName, Client } from "@/types/client";
 
 const Index = () => {
   const { 
@@ -33,11 +33,17 @@ const Index = () => {
   const [checklistClientId, setChecklistClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  
+  // Multi-select filter flags
+  const [filterFlags, setFilterFlags] = useState<FilterFlags>({
+    priority: false,
+    highlighted: false,
+    withJackbox: false,
+    withoutJackbox: false,
+  });
   const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
 
   // Calculate collaborator demand stats from client data (from imports)
-  // This is SEPARATE from selection counts (manual interaction)
   const collaboratorDemandStats = useMemo(() => {
     const stats = { celine: 0, gabi: 0, darley: 0, vanessa: 0 };
     
@@ -51,6 +57,34 @@ const Index = () => {
     return stats;
   }, [activeClients]);
 
+  // Count clients with active tasks (jackbox)
+  const jackboxCount = useMemo(() => 
+    activeClients.filter(c => getActiveTaskCount(c.id) > 0).length,
+    [activeClients, getActiveTaskCount]
+  );
+
+  // Toggle filter flag (multi-select)
+  const handleFilterFlagToggle = (flag: keyof FilterFlags) => {
+    setFilterFlags(prev => ({
+      ...prev,
+      [flag]: !prev[flag],
+      // Mutually exclusive: withJackbox and withoutJackbox
+      ...(flag === 'withJackbox' && !prev.withJackbox ? { withoutJackbox: false } : {}),
+      ...(flag === 'withoutJackbox' && !prev.withoutJackbox ? { withJackbox: false } : {}),
+    }));
+  };
+
+  // Clear all filters
+  const handleClearAllFilters = () => {
+    setFilterFlags({
+      priority: false,
+      highlighted: false,
+      withJackbox: false,
+      withoutJackbox: false,
+    });
+    setCollaboratorFilters([]);
+  };
+
   // Toggle collaborator filter (multi-select)
   const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {
     setCollaboratorFilters(prev => 
@@ -60,18 +94,31 @@ const Index = () => {
     );
   };
 
-  // Apply filters
+  // Apply filters (AND logic for multi-select)
   const filteredClients = useMemo(() => {
     let result = [...activeClients];
 
-    // Filter by main filter option
-    if (filterBy === 'priority') {
+    // Filter by priority
+    if (filterFlags.priority) {
       result = result.filter(c => c.isPriority);
-    } else if (filterBy === 'highlighted') {
+    }
+
+    // Filter by highlighted
+    if (filterFlags.highlighted) {
       result = result.filter(c => highlightedClients.has(c.id));
     }
 
-    // Filter by collaborators (if any selected - OR logic)
+    // Filter by jackbox (with tasks)
+    if (filterFlags.withJackbox) {
+      result = result.filter(c => getActiveTaskCount(c.id) > 0);
+    }
+
+    // Filter by no jackbox (without tasks)
+    if (filterFlags.withoutJackbox) {
+      result = result.filter(c => getActiveTaskCount(c.id) === 0);
+    }
+
+    // Filter by collaborators (OR logic within collaborators)
     if (collaboratorFilters.length > 0) {
       result = result.filter(c => 
         collaboratorFilters.some(collab => c.collaborators[collab])
@@ -82,6 +129,22 @@ const Index = () => {
     const multiplier = sortDirection === 'desc' ? 1 : -1;
     
     switch (sortBy) {
+      case 'jackbox':
+        result.sort((a, b) => {
+          const aTaskCount = getActiveTaskCount(a.id);
+          const bTaskCount = getActiveTaskCount(b.id);
+          // First by task count
+          if (aTaskCount !== bTaskCount) {
+            return (bTaskCount - aTaskCount) * multiplier;
+          }
+          // Then by priority
+          if (a.isPriority !== b.isPriority) {
+            return (a.isPriority ? -1 : 1) * multiplier;
+          }
+          // Then by name
+          return a.name.localeCompare(b.name);
+        });
+        break;
       case 'priority':
         result.sort((a, b) => {
           if (a.isPriority === b.isPriority) return (a.order - b.order) * multiplier;
@@ -107,7 +170,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, filterBy, collaboratorFilters, sortBy, sortDirection, highlightedClients]);
+  }, [activeClients, filterFlags, collaboratorFilters, sortBy, sortDirection, highlightedClients, getActiveTaskCount]);
 
   const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
@@ -157,14 +220,16 @@ const Index = () => {
       <FilterBar
         sortBy={sortBy}
         sortDirection={sortDirection}
-        filterBy={filterBy}
+        filterFlags={filterFlags}
         collaboratorFilters={collaboratorFilters}
         highlightedCount={highlightedClients.size}
+        jackboxCount={jackboxCount}
         onSortChange={setSortBy}
         onSortDirectionChange={setSortDirection}
-        onFilterChange={setFilterBy}
+        onFilterFlagToggle={handleFilterFlagToggle}
         onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
         onClearHighlights={clearHighlights}
+        onClearAllFilters={handleClearAllFilters}
       />
 
       {/* Main Content - Client Grid */}
