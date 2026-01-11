@@ -12,6 +12,14 @@ export interface Collaborators {
   vanessa: boolean;
 }
 
+// Demand counts per collaborator (from import data - NOT manual selections)
+export interface CollaboratorDemandCounts {
+  celine: number;
+  gabi: number;
+  darley: number;
+  vanessa: number;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -23,7 +31,8 @@ export interface Client {
   processes: number;
   licenses: number;
   demands: DemandBreakdown;
-  collaborators: Collaborators;
+  demandsByCollaborator: CollaboratorDemandCounts; // Demand counts per collaborator (from import)
+  collaborators: Collaborators; // Manual selection flags (user interaction)
   createdAt: string;
   updatedAt: string;
 }
@@ -71,4 +80,11 @@ export const DEFAULT_COLLABORATORS: Collaborators = {
   gabi: false,
   darley: false,
   vanessa: false,
+};
+
+export const DEFAULT_COLLABORATOR_DEMAND_COUNTS: CollaboratorDemandCounts = {
+  celine: 0,
+  gabi: 0,
+  darley: 0,
+  vanessa: 0,
 };

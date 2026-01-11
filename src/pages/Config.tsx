@@ -647,6 +647,7 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     processes: client?.processes || 0,
     licenses: client?.licenses || 0,
     demands: client?.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
+    demandsByCollaborator: client?.demandsByCollaborator || { celine: 0, gabi: 0, darley: 0, vanessa: 0 },
     collaborators: client?.collaborators || DEFAULT_COLLABORATORS,
   });
 

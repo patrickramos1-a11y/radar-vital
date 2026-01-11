@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { ArrowLeft, Download, Filter, Search, CheckSquare, Square, CheckCircle } from 'lucide-react';
-import { ExcelDemand, MatchResult, DemandStatus, STATUS_LABELS, STATUS_COLORS, ImportMode, CompanySummary } from '@/types/demand';
+import { ExcelDemand, MatchResult, DemandStatus, STATUS_LABELS, STATUS_COLORS, ImportMode, CompanySummary, countDemandsByCollaborator } from '@/types/demand';
 import { Client, COLLABORATOR_COLORS, CollaboratorName } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
 import { useClients } from '@/contexts/ClientContext';
@@ -144,12 +144,21 @@ export function FinalPreviewStep({
     for (const summary of selectedSummaries) {
       if (!summary.clientId) continue;
 
+      // Get the actual demands for this company to count by collaborator
+      const companyDemands = demands.filter(d => d.empresa === summary.empresaExcel);
+      const collaboratorCounts = countDemandsByCollaborator(companyDemands);
+
       // Update ONLY demand counts - do NOT touch collaborator selection flags
       const newStats = {
         demands_completed: summary.byStatus.CONCLUIDO,
         demands_in_progress: summary.byStatus.EM_EXECUCAO,
         demands_not_started: summary.byStatus.NAO_FEITO,
         demands_cancelled: summary.byStatus.CANCELADO,
+        // Demand counts per collaborator (from import data)
+        demands_celine: collaboratorCounts.celine,
+        demands_gabi: collaboratorCounts.gabi,
+        demands_darley: collaboratorCounts.darley,
+        demands_vanessa: collaboratorCounts.vanessa,
         // collaborator_* flags are NOT modified - they represent manual user selections only
       };
 

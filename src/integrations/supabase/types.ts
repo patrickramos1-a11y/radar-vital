@@ -22,9 +22,13 @@ export type Database = {
           collaborator_vanessa: boolean
           created_at: string
           demands_cancelled: number
+          demands_celine: number
           demands_completed: number
+          demands_darley: number
+          demands_gabi: number
           demands_in_progress: number
           demands_not_started: number
+          demands_vanessa: number
           display_order: number
           id: string
           initials: string
@@ -43,9 +47,13 @@ export type Database = {
           collaborator_vanessa?: boolean
           created_at?: string
           demands_cancelled?: number
+          demands_celine?: number
           demands_completed?: number
+          demands_darley?: number
+          demands_gabi?: number
           demands_in_progress?: number
           demands_not_started?: number
+          demands_vanessa?: number
           display_order?: number
           id?: string
           initials: string
@@ -64,9 +72,13 @@ export type Database = {
           collaborator_vanessa?: boolean
           created_at?: string
           demands_cancelled?: number
+          demands_celine?: number
           demands_completed?: number
+          demands_darley?: number
+          demands_gabi?: number
           demands_in_progress?: number
           demands_not_started?: number
+          demands_vanessa?: number
           display_order?: number
           id?: string
           initials?: string

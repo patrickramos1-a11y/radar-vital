@@ -133,7 +133,7 @@ export function similarityScore(str1: string, str2: string): number {
   return intersection.size / union.size;
 }
 
-// Detect collaborators from demands
+// Detect collaborators from demands (boolean flags)
 export function detectCollaborators(demands: ExcelDemand[]): {
   celine: boolean;
   gabi: boolean;
@@ -151,6 +151,26 @@ export function detectCollaborators(demands: ExcelDemand[]): {
   }
   
   return collaborators;
+}
+
+// Count demands per collaborator (numeric counts for stats)
+export function countDemandsByCollaborator(demands: ExcelDemand[]): {
+  celine: number;
+  gabi: number;
+  darley: number;
+  vanessa: number;
+} {
+  const counts = { celine: 0, gabi: 0, darley: 0, vanessa: 0 };
+  
+  for (const demand of demands) {
+    const responsavel = demand.responsavel?.toLowerCase().trim() || '';
+    if (responsavel.includes('celine')) counts.celine++;
+    else if (responsavel.includes('gabi')) counts.gabi++;
+    else if (responsavel.includes('darley')) counts.darley++;
+    else if (responsavel.includes('vanessa')) counts.vanessa++;
+  }
+  
+  return counts;
 }
 
 // Create company summary from demands
