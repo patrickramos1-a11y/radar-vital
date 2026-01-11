@@ -12,6 +12,13 @@ export interface Collaborators {
   vanessa: boolean;
 }
 
+export interface ClientTask {
+  id: string;
+  text: string;
+  completed: boolean;
+  createdAt: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -24,6 +31,7 @@ export interface Client {
   licenses: number;
   demands: DemandBreakdown;
   collaborators: Collaborators;
+  tasks?: ClientTask[];
   createdAt: string;
   updatedAt: string;
 }
@@ -37,6 +45,13 @@ export const COLLABORATOR_COLORS: Record<CollaboratorName, string> = {
   gabi: '#EC4899',      // Pink
   darley: '#F59E0B',    // Amber/Orange
   vanessa: '#06B6D4',   // Cyan/Teal
+};
+
+export const COLLABORATOR_INITIALS: Record<CollaboratorName, string> = {
+  celine: 'C',
+  gabi: 'G',
+  darley: 'D',
+  vanessa: 'V',
 };
 
 export const COLLABORATOR_NAMES: CollaboratorName[] = ['celine', 'gabi', 'darley', 'vanessa'];
