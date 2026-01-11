@@ -395,10 +395,55 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clearAllClients, fetchClients]);
 
-  // Reset to default companies (re-fetch from DB since we have them there)
+  // Default companies list
+  const DEFAULT_COMPANIES = [
+    'PHS DA MATA', 'SEARA', 'RODOBENS', 'COCATREL', 'COROMANDEL', 'USIMEC', 
+    'UBERSERRA', 'AGUAS CLARAS', 'AGUAS VIRTUOSAS', 'BRADO', 'CENTRAL PARK',
+    'CLEMENTINO', 'CONSÓRCIO LOG', 'COOXUPE', 'COOPERCAM', 'COPERCITRUS',
+    'COPLACANA', 'COPRAM', 'COPROCAFE', 'DATERRA', 'DOIS REINOS', 'ECOLAB',
+    'FRUM', 'IPANEMA', 'IRMAOS GONÇALVES', 'LAVORO', 'LIDER', 'MARCHESAN',
+    'MARTINS ATACADISTA', 'MENDONÇA ADVOGADOS', 'MONTE ALEGRE', 'NUTRADE',
+    'OURO FINO', 'PDCA', 'SAAEJ', 'SERTANEJO', 'TECHAGRO', 'TRANSCAFF', 'VERSATO'
+  ];
+
+  // Reset to default companies
   const resetToDefault = useCallback(async () => {
-    toast.info('Use o botão "Limpar Todos" e depois reimporte os dados ou restaure o banco de dados.');
-  }, []);
+    try {
+      // Clear all existing clients
+      await clearAllClients();
+      
+      // Insert default companies
+      for (let i = 0; i < DEFAULT_COMPANIES.length; i++) {
+        const name = DEFAULT_COMPANIES[i];
+        const newClient = {
+          name,
+          initials: generateInitials(name),
+          logo_url: null,
+          is_priority: false,
+          is_active: true,
+          display_order: i + 1,
+          processes: 0,
+          licenses: 0,
+          demands_completed: 0,
+          demands_in_progress: 0,
+          demands_not_started: 0,
+          demands_cancelled: 0,
+          collaborator_celine: false,
+          collaborator_gabi: false,
+          collaborator_darley: false,
+          collaborator_vanessa: false,
+        };
+        
+        await supabase.from('clients').insert(newClient);
+      }
+      
+      await fetchClients();
+      toast.success('Empresas padrão restauradas com sucesso!');
+    } catch (error) {
+      console.error('Error resetting to default:', error);
+      toast.error('Erro ao restaurar empresas padrão');
+    }
+  }, [clearAllClients, fetchClients]);
 
   return (
     <ClientContext.Provider value={{
