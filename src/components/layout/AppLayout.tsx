@@ -1,12 +1,16 @@
 import { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, ClipboardList, Shield, FileText } from "lucide-react";
+import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const { signOut, user } = useAuth();
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
       {/* Navigation Header */}
@@ -73,6 +77,24 @@ export function AppLayout({ children }: AppLayoutProps) {
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Configurar</span>
           </NavLink>
+
+          <div className="w-px h-6 bg-border mx-1" />
+
+          {/* User info and Logout */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground hidden md:inline truncate max-w-32">
+              {user?.email}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </Button>
+          </div>
         </div>
       </nav>
 
