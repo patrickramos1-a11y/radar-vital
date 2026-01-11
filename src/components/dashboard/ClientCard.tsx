@@ -196,21 +196,17 @@ interface CollaboratorButtonProps {
 }
 
 function CollaboratorButton({ name, isActive, onClick }: CollaboratorButtonProps) {
-  const displayName = name.charAt(0).toUpperCase() + name.slice(1, 4);
   const color = COLLABORATOR_COLORS[name];
   
   return (
     <button
       onClick={onClick}
-      className="collaborator-button"
+      className="h-4 w-full border transition-all hover:opacity-80"
       style={{ 
         backgroundColor: isActive ? color : 'transparent',
-        color: isActive ? '#fff' : color,
         borderColor: color,
       }}
       title={`${name.charAt(0).toUpperCase() + name.slice(1)} - Clique para ${isActive ? 'desativar' : 'ativar'}`}
-    >
-      {displayName}
-    </button>
+    />
   );
 }

@@ -129,14 +129,19 @@ interface CollaboratorStatCardProps {
 
 function CollaboratorStatCard({ collaborator, demandCount, selectionCount }: CollaboratorStatCardProps) {
   const color = COLLABORATOR_COLORS[collaborator];
+  const displayName = collaborator.charAt(0).toUpperCase() + collaborator.slice(1);
   
   return (
     <div className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[52px]">
-      {/* Color bar at top */}
+      {/* Name at top with colored background */}
       <div 
-        className="h-1.5 w-full" 
+        className="px-2 py-0.5 text-center"
         style={{ backgroundColor: color }}
-      />
+      >
+        <span className="text-[9px] font-semibold text-white uppercase tracking-wide">
+          {displayName}
+        </span>
+      </div>
       {/* Dual numbers */}
       <div className="flex items-stretch divide-x divide-border">
         <div className="flex flex-col items-center justify-center px-2 py-1 flex-1">
