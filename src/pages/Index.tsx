@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, SortDirection, FilterOption } from "@/components/dashboard/FilterBar";
@@ -6,7 +6,6 @@ import { TaskModal } from "@/components/checklist/TaskModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { calculateTotals, calculateTotalDemands, COLLABORATOR_NAMES, CollaboratorName, Client } from "@/types/client";
-import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { 
@@ -36,41 +35,21 @@ const Index = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
-  const [collaboratorDemandStats, setCollaboratorDemandStats] = useState({
-    celine: 0,
-    gabi: 0,
-    darley: 0,
-    vanessa: 0,
-  });
 
-  // Fetch demand stats per collaborator from database
-  useEffect(() => {
-    const fetchDemandStats = async () => {
-      const { data, error } = await supabase
-        .from('demands')
-        .select('responsavel');
-      
-      if (error) {
-        console.error('Error fetching demand stats:', error);
-        return;
-      }
-
-      // Count demands per responsavel (mapping to collaborator names)
-      const stats = { celine: 0, gabi: 0, darley: 0, vanessa: 0 };
-      
-      data?.forEach((demand) => {
-        const responsavel = demand.responsavel?.toLowerCase().trim() || '';
-        if (responsavel.includes('celine')) stats.celine++;
-        else if (responsavel.includes('gabi')) stats.gabi++;
-        else if (responsavel.includes('darley')) stats.darley++;
-        else if (responsavel.includes('vanessa')) stats.vanessa++;
-      });
-
-      setCollaboratorDemandStats(stats);
-    };
-
-    fetchDemandStats();
-  }, []);
+  // Calculate collaborator demand stats from client data (from imports)
+  // This is SEPARATE from selection counts (manual interaction)
+  const collaboratorDemandStats = useMemo(() => {
+    const stats = { celine: 0, gabi: 0, darley: 0, vanessa: 0 };
+    
+    activeClients.forEach((client) => {
+      stats.celine += client.demandsByCollaborator?.celine || 0;
+      stats.gabi += client.demandsByCollaborator?.gabi || 0;
+      stats.darley += client.demandsByCollaborator?.darley || 0;
+      stats.vanessa += client.demandsByCollaborator?.vanessa || 0;
+    });
+    
+    return stats;
+  }, [activeClients]);
 
   // Toggle collaborator filter (multi-select)
   const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {

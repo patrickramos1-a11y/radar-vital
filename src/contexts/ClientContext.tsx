@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS } from '@/types/client';
+import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -47,6 +47,12 @@ const dbRowToClient = (row: any): Client => ({
     notStarted: row.demands_not_started,
     cancelled: row.demands_cancelled,
   },
+  demandsByCollaborator: {
+    celine: row.demands_celine || 0,
+    gabi: row.demands_gabi || 0,
+    darley: row.demands_darley || 0,
+    vanessa: row.demands_vanessa || 0,
+  },
   collaborators: {
     celine: row.collaborator_celine,
     gabi: row.collaborator_gabi,
@@ -74,6 +80,12 @@ const clientToDbRow = (client: Partial<ClientFormData>) => {
     row.demands_in_progress = client.demands.inProgress;
     row.demands_not_started = client.demands.notStarted;
     row.demands_cancelled = client.demands.cancelled;
+  }
+  if (client.demandsByCollaborator !== undefined) {
+    row.demands_celine = client.demandsByCollaborator.celine;
+    row.demands_gabi = client.demandsByCollaborator.gabi;
+    row.demands_darley = client.demandsByCollaborator.darley;
+    row.demands_vanessa = client.demandsByCollaborator.vanessa;
   }
   if (client.collaborators !== undefined) {
     row.collaborator_celine = client.collaborators.celine;
@@ -379,6 +391,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
           processes: client.processes || 0,
           licenses: client.licenses || 0,
           demands: client.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
+          demandsByCollaborator: client.demandsByCollaborator || DEFAULT_COLLABORATOR_DEMAND_COUNTS,
           collaborators: client.collaborators || DEFAULT_COLLABORATORS,
         };
         
