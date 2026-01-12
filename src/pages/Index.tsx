@@ -246,6 +246,8 @@ const Index = () => {
           collaboratorFilters={collaboratorFilters}
           highlightedCount={highlightedClients.size}
           jackboxCount={jackboxCount}
+          visibleCount={filteredClients.length}
+          totalCount={activeClients.length}
           onSortChange={setSortBy}
           onSortDirectionChange={setSortDirection}
           onFilterFlagToggle={handleFilterFlagToggle}

@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, Sparkles, X, ListChecks, RotateCcw } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, Sparkles, X, ListChecks, RotateCcw, Users } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -20,6 +20,8 @@ interface FilterBarProps {
   collaboratorFilters: CollaboratorName[];
   highlightedCount: number;
   jackboxCount: number;
+  visibleCount: number;
+  totalCount: number;
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
   onFilterFlagToggle: (flag: keyof FilterFlags) => void;
@@ -35,6 +37,8 @@ export function FilterBar({
   collaboratorFilters,
   highlightedCount,
   jackboxCount,
+  visibleCount,
+  totalCount,
   onSortChange,
   onSortDirectionChange,
   onFilterFlagToggle,
@@ -126,6 +130,15 @@ export function FilterBar({
               Nome
             </SortButton>
           </div>
+        </div>
+
+        {/* Client Count Badge */}
+        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 border border-primary/30">
+          <Users className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-bold text-primary">{visibleCount}</span>
+          {visibleCount !== totalCount && (
+            <span className="text-[10px] text-muted-foreground">/ {totalCount}</span>
+          )}
         </div>
 
         {/* Filter Options - Multi-select with icons */}
