@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { Client, calculateTotalDemands, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import { ChecklistButton } from "@/components/checklist/ChecklistButton";
+import { CommentButton } from "@/components/comments/CommentButton";
 
 interface ClientCardProps {
   client: Client;
@@ -8,6 +9,7 @@ interface ClientCardProps {
   isSelected: boolean;
   isHighlighted: boolean;
   activeTaskCount: number;
+  commentCount: number;
   onSelect: (id: string) => void;
   onHighlight: (id: string) => void;
   onTogglePriority: (id: string) => void;
@@ -85,6 +87,7 @@ export function ClientCard({
   isSelected, 
   isHighlighted,
   activeTaskCount,
+  commentCount,
   onSelect, 
   onHighlight,
   onTogglePriority,
@@ -126,8 +129,13 @@ export function ClientCard({
       className={`client-card-compact ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={() => onSelect(client.id)}
     >
-      {/* Top right icons - Checklist + Priority */}
+      {/* Top right icons - Comments + Checklist + Priority */}
       <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
+        <CommentButton
+          clientId={client.id}
+          clientName={client.name}
+          commentCount={commentCount}
+        />
         <ChecklistButton
           activeCount={activeTaskCount}
           onClick={handleChecklistClick}

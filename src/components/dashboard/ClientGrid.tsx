@@ -7,6 +7,7 @@ interface ClientGridProps {
   selectedClientId: string | null;
   highlightedClients: Set<string>;
   getActiveTaskCount: (clientId: string) => number;
+  getCommentCount: (clientId: string) => number;
   onSelectClient: (id: string) => void;
   onHighlightClient: (id: string) => void;
   onTogglePriority: (id: string) => void;
@@ -46,6 +47,7 @@ export function ClientGrid({
   selectedClientId, 
   highlightedClients,
   getActiveTaskCount,
+  getCommentCount,
   onSelectClient,
   onHighlightClient,
   onTogglePriority,
@@ -80,6 +82,7 @@ export function ClientGrid({
           isSelected={selectedClientId === client.id}
           isHighlighted={highlightedClients.has(client.id)}
           activeTaskCount={getActiveTaskCount(client.id)}
+          commentCount={getCommentCount(client.id)}
           onSelect={onSelectClient}
           onHighlight={onHighlightClient}
           onTogglePriority={onTogglePriority}

@@ -1,12 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter } from "@/components/dashboard/FilterBar";
 import { TaskModal } from "@/components/checklist/TaskModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
+import { useAllClientsCommentCounts } from "@/hooks/useClientComments";
 import { calculateTotals, calculateTotalDemands, CollaboratorName, Client } from "@/types/client";
-import { Users, FileText, Shield, ClipboardList, Star, Sparkles } from "lucide-react";
+import { Users, FileText, Shield, ClipboardList, Star, Sparkles, MessageCircle } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
 
 const Index = () => {
@@ -32,6 +33,10 @@ const Index = () => {
     toggleComplete,
   } = useTasks();
 
+  // Comment counts for all clients
+  const commentCounts = useAllClientsCommentCounts();
+  const getCommentCount = useCallback((clientId: string) => commentCounts.get(clientId) || 0, [commentCounts]);
+
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [checklistClientId, setChecklistClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
@@ -44,6 +49,8 @@ const Index = () => {
     highlighted: false,
     withJackbox: false,
     withoutJackbox: false,
+    withComments: false,
+    withoutComments: false,
   });
   const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
 
@@ -71,14 +78,22 @@ const Index = () => {
   const acCount = useMemo(() => activeClients.filter(c => c.clientType === 'AC').length, [activeClients]);
   const avCount = useMemo(() => activeClients.filter(c => c.clientType === 'AV').length, [activeClients]);
 
+  // Count clients with comments
+  const withCommentsCount = useMemo(() => 
+    activeClients.filter(c => getCommentCount(c.id) > 0).length,
+    [activeClients, getCommentCount]
+  );
+
   // Toggle filter flag (multi-select)
   const handleFilterFlagToggle = (flag: keyof FilterFlags) => {
     setFilterFlags(prev => ({
       ...prev,
       [flag]: !prev[flag],
-      // Mutually exclusive: withJackbox and withoutJackbox
+      // Mutually exclusive pairs
       ...(flag === 'withJackbox' && !prev.withJackbox ? { withoutJackbox: false } : {}),
       ...(flag === 'withoutJackbox' && !prev.withoutJackbox ? { withJackbox: false } : {}),
+      ...(flag === 'withComments' && !prev.withComments ? { withoutComments: false } : {}),
+      ...(flag === 'withoutComments' && !prev.withoutComments ? { withComments: false } : {}),
     }));
   };
 
@@ -89,6 +104,8 @@ const Index = () => {
       highlighted: false,
       withJackbox: false,
       withoutJackbox: false,
+      withComments: false,
+      withoutComments: false,
     });
     setCollaboratorFilters([]);
     setClientTypeFilter('all');
@@ -118,6 +135,8 @@ const Index = () => {
       filterFlags.highlighted || 
       filterFlags.withJackbox || 
       filterFlags.withoutJackbox ||
+      filterFlags.withComments ||
+      filterFlags.withoutComments ||
       collaboratorFilters.length > 0;
 
     // If any filter is active, use OR logic
@@ -128,6 +147,8 @@ const Index = () => {
         const matchesHighlighted = filterFlags.highlighted && highlightedClients.has(c.id);
         const matchesWithJackbox = filterFlags.withJackbox && getActiveTaskCount(c.id) > 0;
         const matchesWithoutJackbox = filterFlags.withoutJackbox && getActiveTaskCount(c.id) === 0;
+        const matchesWithComments = filterFlags.withComments && getCommentCount(c.id) > 0;
+        const matchesWithoutComments = filterFlags.withoutComments && getCommentCount(c.id) === 0;
         const matchesCollaborator = collaboratorFilters.length > 0 && 
           collaboratorFilters.some(collab => c.collaborators[collab]);
 
@@ -136,6 +157,8 @@ const Index = () => {
                matchesHighlighted || 
                matchesWithJackbox || 
                matchesWithoutJackbox || 
+               matchesWithComments ||
+               matchesWithoutComments ||
                matchesCollaborator;
       });
     }
@@ -185,7 +208,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount]);
+  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount]);
 
   const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
@@ -246,7 +269,7 @@ const Index = () => {
           ))}
           <div className="w-px h-6 bg-border mx-1" />
           <StatCardMini icon={<Star className="w-3.5 h-3.5 text-amber-500" />} value={priorityCount} label="Prioridade" />
-          <StatCardMini icon={<Sparkles className="w-3.5 h-3.5 text-blue-500" />} value={highlightedClients.size} label="Destaques" />
+          <StatCardMini icon={<MessageCircle className="w-3.5 h-3.5 text-primary" />} value={withCommentsCount} label="Comentários" />
         </div>
 
         {/* Filter Bar */}
@@ -258,6 +281,7 @@ const Index = () => {
           clientTypeFilter={clientTypeFilter}
           highlightedCount={highlightedClients.size}
           jackboxCount={jackboxCount}
+          commentsCount={withCommentsCount}
           visibleCount={filteredClients.length}
           totalCount={activeClients.length}
           acCount={acCount}
@@ -286,6 +310,7 @@ const Index = () => {
               selectedClientId={selectedClientId}
               highlightedClients={highlightedClients}
               getActiveTaskCount={getActiveTaskCount}
+              getCommentCount={getCommentCount}
               onSelectClient={handleSelectClient}
               onHighlightClient={toggleHighlight}
               onTogglePriority={togglePriority}

@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_comments: {
+        Row: {
+          author_name: string
+          author_user_id: string | null
+          client_id: string
+          comment_text: string
+          created_at: string
+          id: string
+          is_pinned: boolean
+        }
+        Insert: {
+          author_name?: string
+          author_user_id?: string | null
+          client_id: string
+          comment_text: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+        }
+        Update: {
+          author_name?: string
+          author_user_id?: string | null
+          client_id?: string
+          comment_text?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_comments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           client_type: string
@@ -21,6 +59,7 @@ export type Database = {
           collaborator_darley: boolean
           collaborator_gabi: boolean
           collaborator_vanessa: boolean
+          comment_count: number
           created_at: string
           demands_cancelled: number
           demands_celine: number
@@ -59,6 +98,7 @@ export type Database = {
           collaborator_darley?: boolean
           collaborator_gabi?: boolean
           collaborator_vanessa?: boolean
+          comment_count?: number
           created_at?: string
           demands_cancelled?: number
           demands_celine?: number
@@ -97,6 +137,7 @@ export type Database = {
           collaborator_darley?: boolean
           collaborator_gabi?: boolean
           collaborator_vanessa?: boolean
+          comment_count?: number
           created_at?: string
           demands_cancelled?: number
           demands_celine?: number
