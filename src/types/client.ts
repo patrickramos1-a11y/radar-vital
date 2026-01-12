@@ -38,6 +38,9 @@ export interface ProcessBreakdown {
   reprovado: number;
 }
 
+// Client type: AC = Acompanhamento, AV = Avulso
+export type ClientType = 'AC' | 'AV';
+
 export interface Client {
   id: string;
   name: string;
@@ -45,7 +48,9 @@ export interface Client {
   logoUrl?: string;
   isPriority: boolean;
   isActive: boolean;
-  isChecked: boolean; // New additional check flag
+  isChecked: boolean;
+  isHighlighted: boolean;
+  clientType: ClientType;
   order: number;
   processes: number; // Calculated: em_andamento (análise + notificado)
   processBreakdown: ProcessBreakdown; // Process counts by status

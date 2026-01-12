@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
-import { FilterBar, SortOption, SortDirection, FilterFlags } from "@/components/dashboard/FilterBar";
+import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter } from "@/components/dashboard/FilterBar";
 import { TaskModal } from "@/components/checklist/TaskModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
@@ -36,6 +36,7 @@ const Index = () => {
   const [checklistClientId, setChecklistClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [clientTypeFilter, setClientTypeFilter] = useState<ClientTypeFilter>('all');
   
   // Multi-select filter flags
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
@@ -66,6 +67,10 @@ const Index = () => {
     [activeClients, getActiveTaskCount]
   );
 
+  // Count clients by type
+  const acCount = useMemo(() => activeClients.filter(c => c.clientType === 'AC').length, [activeClients]);
+  const avCount = useMemo(() => activeClients.filter(c => c.clientType === 'AV').length, [activeClients]);
+
   // Toggle filter flag (multi-select)
   const handleFilterFlagToggle = (flag: keyof FilterFlags) => {
     setFilterFlags(prev => ({
@@ -86,6 +91,7 @@ const Index = () => {
       withoutJackbox: false,
     });
     setCollaboratorFilters([]);
+    setClientTypeFilter('all');
   };
 
   // Toggle collaborator filter (multi-select)
@@ -101,7 +107,12 @@ const Index = () => {
   const filteredClients = useMemo(() => {
     let result = [...activeClients];
 
-    // Check if any filter is active
+    // First, apply client type filter (always applied)
+    if (clientTypeFilter !== 'all') {
+      result = result.filter(c => c.clientType === clientTypeFilter);
+    }
+
+    // Check if any other filter is active
     const hasAnyFilterActive = 
       filterFlags.priority || 
       filterFlags.highlighted || 
@@ -174,7 +185,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, filterFlags, collaboratorFilters, sortBy, sortDirection, highlightedClients, getActiveTaskCount]);
+  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount]);
 
   const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
@@ -244,14 +255,18 @@ const Index = () => {
           sortDirection={sortDirection}
           filterFlags={filterFlags}
           collaboratorFilters={collaboratorFilters}
+          clientTypeFilter={clientTypeFilter}
           highlightedCount={highlightedClients.size}
           jackboxCount={jackboxCount}
           visibleCount={filteredClients.length}
           totalCount={activeClients.length}
+          acCount={acCount}
+          avCount={avCount}
           onSortChange={setSortBy}
           onSortDirectionChange={setSortDirection}
           onFilterFlagToggle={handleFilterFlagToggle}
           onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
+          onClientTypeFilterChange={setClientTypeFilter}
           onClearHighlights={clearHighlights}
           onClearAllFilters={handleClearAllFilters}
         />

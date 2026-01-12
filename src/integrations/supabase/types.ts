@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       clients: {
         Row: {
+          client_type: string
           collaborator_celine: boolean
           collaborator_darley: boolean
           collaborator_gabi: boolean
@@ -34,6 +35,7 @@ export type Database = {
           initials: string
           is_active: boolean
           is_checked: boolean
+          is_highlighted: boolean
           is_priority: boolean
           lic_fora_validade_count: number
           lic_proxima_data_vencimento: string | null
@@ -52,6 +54,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_type?: string
           collaborator_celine?: boolean
           collaborator_darley?: boolean
           collaborator_gabi?: boolean
@@ -70,6 +73,7 @@ export type Database = {
           initials: string
           is_active?: boolean
           is_checked?: boolean
+          is_highlighted?: boolean
           is_priority?: boolean
           lic_fora_validade_count?: number
           lic_proxima_data_vencimento?: string | null
@@ -88,6 +92,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_type?: string
           collaborator_celine?: boolean
           collaborator_darley?: boolean
           collaborator_gabi?: boolean
@@ -106,6 +111,7 @@ export type Database = {
           initials?: string
           is_active?: boolean
           is_checked?: boolean
+          is_highlighted?: boolean
           is_priority?: boolean
           lic_fora_validade_count?: number
           lic_proxima_data_vencimento?: string | null
