@@ -163,17 +163,19 @@ export function FilterBar({
           </IconFilterButton>
 
           {/* Separator */}
-          <div className="w-px h-4 bg-border mx-0.5" />
+          <div className="w-px h-5 bg-border mx-1" />
 
-          {/* Collaborator filters - compact pills */}
-          {COLLABORATOR_NAMES.map((name) => (
-            <CollaboratorFilterPill
-              key={name}
-              name={name}
-              active={collaboratorFilters.includes(name)}
-              onClick={() => onCollaboratorFilterToggle(name)}
-            />
-          ))}
+          {/* Collaborator filters - larger colored squares */}
+          <div className="flex items-center gap-1">
+            {COLLABORATOR_NAMES.map((name) => (
+              <CollaboratorColorSquare
+                key={name}
+                name={name}
+                active={collaboratorFilters.includes(name)}
+                onClick={() => onCollaboratorFilterToggle(name)}
+              />
+            ))}
+          </div>
 
           {/* Clear filters button */}
           {hasActiveFilters && (
@@ -289,13 +291,13 @@ function IconFilterButton({ active, onClick, children, tooltip, badge, activeCol
   );
 }
 
-interface CollaboratorFilterPillProps {
+interface CollaboratorColorSquareProps {
   name: CollaboratorName;
   active: boolean;
   onClick: () => void;
 }
 
-function CollaboratorFilterPill({ name, active, onClick }: CollaboratorFilterPillProps) {
+function CollaboratorColorSquare({ name, active, onClick }: CollaboratorColorSquareProps) {
   const color = COLLABORATOR_COLORS[name];
   const initials = name.slice(0, 2).toUpperCase();
   const displayName = name.charAt(0).toUpperCase() + name.slice(1);
@@ -305,15 +307,16 @@ function CollaboratorFilterPill({ name, active, onClick }: CollaboratorFilterPil
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`min-w-[26px] h-6 px-1 rounded text-[10px] font-bold transition-all border ${
+          className={`w-8 h-8 rounded-md text-[11px] font-bold transition-all border-2 flex items-center justify-center shadow-sm hover:scale-105 ${
             active 
-              ? 'text-white' 
-              : 'opacity-50 hover:opacity-80'
+              ? 'text-white ring-2 ring-offset-1 ring-offset-background' 
+              : 'opacity-40 hover:opacity-70'
           }`}
           style={{
             backgroundColor: active ? color : 'transparent',
             borderColor: color,
             color: active ? '#fff' : color,
+            boxShadow: active ? `0 2px 8px ${color}50` : 'none',
           }}
         >
           {initials}
