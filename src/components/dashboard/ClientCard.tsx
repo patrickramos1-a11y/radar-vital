@@ -51,38 +51,94 @@ function hasActiveCollaborators(collaborators: Client['collaborators']): boolean
   return COLLABORATOR_NAMES.some(name => collaborators[name]);
 }
 
-// Calcula o tamanho ideal da fonte baseado no comprimento do nome e quantidade de clientes
-// Objetivo: o MAIOR possível sem estourar o card; nomes grandes podem quebrar em 2 linhas.
-function getOptimalFontSize(name: string, clientCount: number): string {
+// Escala de tamanho baseado na quantidade de clientes
+type CardScale = 'xlarge' | 'large' | 'medium' | 'compact';
+
+function getCardScale(clientCount: number): CardScale {
+  if (clientCount <= 5) return 'xlarge';
+  if (clientCount <= 15) return 'large';
+  if (clientCount <= 30) return 'medium';
+  return 'compact';
+}
+
+// Tamanho da fonte do nome - MUITO MAIOR para TV
+function getNameFontSize(name: string, scale: CardScale): string {
   const len = name.trim().length;
+  
+  const baseSizes: Record<CardScale, number> = {
+    xlarge: 36,
+    large: 28,
+    medium: 22,
+    compact: 18,
+  };
+  
+  const base = baseSizes[scale];
+  
+  if (len <= 8) return `${base + 8}px`;
+  if (len <= 14) return `${base + 4}px`;
+  if (len <= 22) return `${base}px`;
+  if (len <= 30) return `${base - 4}px`;
+  return `${Math.max(base - 6, 14)}px`;
+}
 
-  // Base mais agressiva (maior) para melhorar leitura no grid
-  let baseSize: number;
-  if (clientCount <= 12) {
-    baseSize = 22;
-  } else if (clientCount <= 25) {
-    baseSize = 18;
-  } else if (clientCount <= 40) {
-    baseSize = 16;
-  } else {
-    baseSize = 14;
-  }
-
-  // Ajuste por tamanho do nome
-  if (len <= 8) {
-    return `${baseSize + 6}px`;
-  }
-  if (len <= 14) {
-    return `${baseSize + 3}px`;
-  }
-  if (len <= 22) {
-    return `${baseSize}px`;
-  }
-  if (len <= 30) {
-    return `${baseSize - 2}px`;
-  }
-
-  return `${Math.max(baseSize - 3, 10)}px`;
+// Estilos por escala
+function getScaleStyles(scale: CardScale) {
+  const styles = {
+    xlarge: {
+      headerPadding: 'px-3 py-2',
+      numberSize: 'w-8 h-8 text-sm',
+      miniLogoSize: 'w-8 h-8',
+      iconSize: 'w-5 h-5',
+      nameAreaHeight: 'min-h-[100px]',
+      indicatorText: 'text-sm',
+      indicatorLabel: 'text-xs',
+      indicatorValue: 'text-lg',
+      chipSize: 'min-w-[24px] h-6 text-sm',
+      collabHeight: 'h-5',
+      collabText: 'text-xs',
+    },
+    large: {
+      headerPadding: 'px-2 py-1.5',
+      numberSize: 'w-6 h-6 text-xs',
+      miniLogoSize: 'w-6 h-6',
+      iconSize: 'w-4 h-4',
+      nameAreaHeight: 'min-h-[80px]',
+      indicatorText: 'text-xs',
+      indicatorLabel: 'text-[10px]',
+      indicatorValue: 'text-base',
+      chipSize: 'min-w-[20px] h-5 text-xs',
+      collabHeight: 'h-4',
+      collabText: 'text-[10px]',
+    },
+    medium: {
+      headerPadding: 'px-2 py-1',
+      numberSize: 'w-5 h-5 text-[10px]',
+      miniLogoSize: 'w-5 h-5',
+      iconSize: 'w-3.5 h-3.5',
+      nameAreaHeight: 'min-h-[60px]',
+      indicatorText: 'text-[10px]',
+      indicatorLabel: 'text-[8px]',
+      indicatorValue: 'text-sm',
+      chipSize: 'min-w-[18px] h-5 text-[10px]',
+      collabHeight: 'h-3.5',
+      collabText: 'text-[9px]',
+    },
+    compact: {
+      headerPadding: 'px-1.5 py-0.5',
+      numberSize: 'w-4 h-4 text-[8px]',
+      miniLogoSize: 'w-4 h-4',
+      iconSize: 'w-3 h-3',
+      nameAreaHeight: 'min-h-[50px]',
+      indicatorText: 'text-[8px]',
+      indicatorLabel: 'text-[6px]',
+      indicatorValue: 'text-xs',
+      chipSize: 'min-w-[16px] h-4 text-[9px]',
+      collabHeight: 'h-3',
+      collabText: 'text-[8px]',
+    },
+  };
+  
+  return styles[scale];
 }
 
 export function ClientCard({ 
@@ -102,13 +158,12 @@ export function ClientCard({
   const totalDemands = calculateTotalDemands(client.demands);
   const hasCollaborators = hasActiveCollaborators(client.collaborators);
   const collaboratorBg = getCollaboratorGradient(client.collaborators);
+  
+  const scale = getCardScale(clientCount);
+  const styles = getScaleStyles(scale);
+  const nameFontSize = getNameFontSize(client.name, scale);
 
-  // Tamanho da área do logo baseado na quantidade de clientes - mais compacto
-  const logoAreaHeight = clientCount <= 12 ? 'h-12' : clientCount <= 25 ? 'h-10' : clientCount <= 40 ? 'h-8' : 'h-7';
-  const logoMaxHeight = clientCount <= 12 ? 'max-h-10' : clientCount <= 25 ? 'max-h-8' : clientCount <= 40 ? 'max-h-6' : 'max-h-5';
-  const initialsSize = clientCount <= 12 ? 'w-9 h-9 text-sm' : clientCount <= 25 ? 'w-7 h-7 text-xs' : clientCount <= 40 ? 'w-6 h-6 text-[10px]' : 'w-5 h-5 text-[9px]';
-
-  const handleLogoClick = (e: React.MouseEvent) => {
+  const handleNameAreaClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onHighlight(client.id);
   };
@@ -133,105 +188,109 @@ export function ClientCard({
       className={`client-card-compact ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={() => onSelect(client.id)}
     >
-      {/* Top right icons - Comments + Checklist + Priority */}
-      <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
-        <CommentButton
-          clientId={client.id}
-          clientName={client.name}
-          commentCount={commentCount}
-        />
-        <ChecklistButton
-          activeCount={activeTaskCount}
-          onClick={handleChecklistClick}
-        />
-        <button
-          onClick={handleStarClick}
-          className="p-0.5 rounded transition-colors hover:bg-muted/50"
-          title={client.isPriority ? "Remover prioridade" : "Marcar como prioritário"}
-        >
-          <Star 
-            className={`w-3.5 h-3.5 transition-colors ${
-              client.isPriority 
-                ? 'text-yellow-500 fill-yellow-500' 
-                : 'text-muted-foreground/40 hover:text-yellow-400'
-            }`} 
-          />
-        </button>
-      </div>
-
-      {/* Header - Number + Name - mais compacto */}
-      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-card-elevated border-b border-border">
-        <div className="flex items-center justify-center w-4 h-4 rounded bg-primary text-primary-foreground text-[8px] font-bold shrink-0">
+      {/* HEADER: Número + Mini Logo + Nome truncado + Ícones */}
+      <div className={`flex items-center gap-2 ${styles.headerPadding} bg-card-elevated border-b border-border`}>
+        {/* Número */}
+        <div className={`flex items-center justify-center rounded bg-primary text-primary-foreground font-bold shrink-0 ${styles.numberSize}`}>
           {displayNumber.toString().padStart(2, '0')}
         </div>
-        <span className="text-[9px] font-medium text-foreground truncate flex-1 pr-4">
+        
+        {/* Mini Logo (se existir) */}
+        {client.logoUrl && (
+          <div className={`shrink-0 ${styles.miniLogoSize} rounded overflow-hidden bg-muted flex items-center justify-center`}>
+            <img 
+              src={client.logoUrl} 
+              alt="" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+        )}
+        
+        {/* Espaço flexível */}
+        <div className="flex-1 min-w-0" />
+        
+        {/* Ícones: Comentários + Checklist + Estrela */}
+        <div className="flex items-center gap-1 shrink-0">
+          <CommentButton
+            clientId={client.id}
+            clientName={client.name}
+            commentCount={commentCount}
+          />
+          <ChecklistButton
+            activeCount={activeTaskCount}
+            onClick={handleChecklistClick}
+          />
+          <button
+            onClick={handleStarClick}
+            className="p-0.5 rounded transition-colors hover:bg-muted/50"
+            title={client.isPriority ? "Remover prioridade" : "Marcar como prioritário"}
+          >
+            <Star 
+              className={`${styles.iconSize} transition-colors ${
+                client.isPriority 
+                  ? 'text-yellow-500 fill-yellow-500' 
+                  : 'text-muted-foreground/40 hover:text-yellow-400'
+              }`} 
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* ÁREA CENTRAL: NOME GRANDE - sempre visível, clique destaca */}
+      <div 
+        className={`flex items-center justify-center p-3 ${styles.nameAreaHeight} transition-colors cursor-pointer overflow-hidden`}
+        style={{
+          background: hasCollaborators ? collaboratorBg : 'hsl(var(--muted) / 0.3)',
+        }}
+        onClick={handleNameAreaClick}
+        title="Clique para destacar"
+      >
+        <span 
+          className={`font-bold text-center leading-tight line-clamp-2 ${
+            hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'
+          }`}
+          style={{
+            fontSize: nameFontSize,
+            wordBreak: 'break-word',
+            hyphens: 'auto',
+          }}
+        >
           {client.name}
         </span>
       </div>
 
-      {/* Logo Area - mais compacto */}
-      <div 
-        className={`flex items-center justify-center p-1 ${logoAreaHeight} transition-colors cursor-pointer overflow-hidden`}
-        style={{
-          background: hasCollaborators ? collaboratorBg : 'hsl(var(--muted) / 0.3)',
-        }}
-        onClick={handleLogoClick}
-        title="Clique para destacar"
-      >
-        {client.logoUrl ? (
-          <img 
-            src={client.logoUrl} 
-            alt={`Logo ${client.name}`} 
-            className={`${logoMaxHeight} max-w-full object-contain rounded`}
-          />
-        ) : (
-          <span 
-            className={`font-bold text-center leading-tight px-1 ${
-              hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'
-            }`}
-            style={{
-              fontSize: getOptimalFontSize(client.name, clientCount),
-              wordBreak: 'break-word',
-              hyphens: 'auto',
-            }}
-          >
-            {client.name}
-          </span>
-        )}
-      </div>
-
-      {/* Indicators Row - P, L, D with chips - mais compacto */}
-      <div className="px-1 py-0.5 border-t border-border bg-card-elevated/50">
-        <div className="flex items-center justify-between gap-0.5">
+      {/* INDICADORES: P, L, D + Chips de status - nunca overflow */}
+      <div className={`${styles.headerPadding} border-t border-border bg-card-elevated/50`}>
+        <div className="flex items-center justify-between gap-1 flex-wrap">
           {/* P - Processos */}
-          <div className="flex flex-col items-center min-w-[16px]">
-            <span className="text-[6px] text-muted-foreground font-medium leading-none">P</span>
-            <span className="text-[10px] font-bold text-foreground leading-tight">{client.processes}</span>
+          <div className="flex flex-col items-center min-w-[20px]">
+            <span className={`${styles.indicatorLabel} text-muted-foreground font-medium leading-none`}>P</span>
+            <span className={`${styles.indicatorValue} font-bold text-foreground leading-tight`}>{client.processes}</span>
           </div>
 
           {/* L - Licenças */}
-          <div className="flex flex-col items-center min-w-[16px]">
-            <span className="text-[6px] text-muted-foreground font-medium leading-none">L</span>
-            <span className="text-[10px] font-bold text-foreground leading-tight">{client.licenses}</span>
+          <div className="flex flex-col items-center min-w-[20px]">
+            <span className={`${styles.indicatorLabel} text-muted-foreground font-medium leading-none`}>L</span>
+            <span className={`${styles.indicatorValue} font-bold text-foreground leading-tight`}>{client.licenses}</span>
           </div>
 
-          {/* D - Demandas with total */}
-          <div className="flex flex-col items-center min-w-[16px]">
-            <span className="text-[6px] text-muted-foreground font-medium leading-none">D</span>
-            <span className="text-[10px] font-bold text-foreground leading-tight">{totalDemands}</span>
+          {/* D - Demandas */}
+          <div className="flex flex-col items-center min-w-[20px]">
+            <span className={`${styles.indicatorLabel} text-muted-foreground font-medium leading-none`}>D</span>
+            <span className={`${styles.indicatorValue} font-bold text-foreground leading-tight`}>{totalDemands}</span>
           </div>
 
-          {/* Status chips - menores */}
-          <div className="flex items-center gap-px">
-            <DemandChipSmall status="completed" count={client.demands.completed} />
-            <DemandChipSmall status="in-progress" count={client.demands.inProgress} />
-            <DemandChipSmall status="not-started" count={client.demands.notStarted} />
-            <DemandChipSmall status="cancelled" count={client.demands.cancelled} />
+          {/* Chips de status - flex-wrap para não estourar */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <DemandChip status="completed" count={client.demands.completed} scale={scale} />
+            <DemandChip status="in-progress" count={client.demands.inProgress} scale={scale} />
+            <DemandChip status="not-started" count={client.demands.notStarted} scale={scale} />
+            <DemandChip status="cancelled" count={client.demands.cancelled} scale={scale} />
           </div>
         </div>
       </div>
 
-      {/* Collaborators Row - 4 Buttons - altura menor */}
+      {/* COLABORADORES: 4 botões na base */}
       <div className="grid grid-cols-4 border-t border-border">
         {COLLABORATOR_NAMES.map((name) => (
           <CollaboratorButton
@@ -239,6 +298,7 @@ export function ClientCard({
             name={name}
             isActive={client.collaborators[name]}
             onClick={(e) => handleCollaboratorClick(e, name)}
+            scale={scale}
           />
         ))}
       </div>
@@ -246,12 +306,13 @@ export function ClientCard({
   );
 }
 
-interface DemandChipSmallProps {
+interface DemandChipProps {
   status: 'completed' | 'in-progress' | 'not-started' | 'cancelled';
   count: number;
+  scale: CardScale;
 }
 
-function DemandChipSmall({ status, count }: DemandChipSmallProps) {
+function DemandChip({ status, count, scale }: DemandChipProps) {
   const statusColors = {
     'completed': 'bg-green-600',
     'in-progress': 'bg-emerald-400', 
@@ -259,8 +320,15 @@ function DemandChipSmall({ status, count }: DemandChipSmallProps) {
     'cancelled': 'bg-red-500',
   };
   
+  const sizeClasses: Record<CardScale, string> = {
+    xlarge: 'min-w-[28px] h-7 px-1.5 text-sm',
+    large: 'min-w-[22px] h-6 px-1 text-xs',
+    medium: 'min-w-[18px] h-5 px-0.5 text-[10px]',
+    compact: 'min-w-[16px] h-4 px-0.5 text-[9px]',
+  };
+  
   return (
-    <div className={`flex items-center justify-center min-w-[14px] h-4 px-0.5 rounded text-[8px] font-bold text-white ${statusColors[status]}`}>
+    <div className={`flex items-center justify-center rounded font-bold text-white ${statusColors[status]} ${sizeClasses[scale]}`}>
       {count}
     </div>
   );
@@ -270,23 +338,38 @@ interface CollaboratorButtonProps {
   name: CollaboratorName;
   isActive: boolean;
   onClick: (e: React.MouseEvent) => void;
+  scale: CardScale;
 }
 
-function CollaboratorButton({ name, isActive, onClick }: CollaboratorButtonProps) {
+function CollaboratorButton({ name, isActive, onClick, scale }: CollaboratorButtonProps) {
   const color = COLLABORATOR_COLORS[name];
   const initials = name.slice(0, 2).toUpperCase();
+  
+  const heightClasses: Record<CardScale, string> = {
+    xlarge: 'h-6',
+    large: 'h-5',
+    medium: 'h-4',
+    compact: 'h-3',
+  };
+  
+  const textClasses: Record<CardScale, string> = {
+    xlarge: 'text-sm',
+    large: 'text-xs',
+    medium: 'text-[10px]',
+    compact: 'text-[8px]',
+  };
   
   return (
     <button
       onClick={onClick}
-      className="h-3 w-full transition-all hover:opacity-70 flex items-center justify-center"
+      className={`${heightClasses[scale]} w-full transition-all hover:opacity-70 flex items-center justify-center`}
       style={{ 
         backgroundColor: color,
         opacity: isActive ? 1 : 0.25,
       }}
       title={`${name.charAt(0).toUpperCase() + name.slice(1)} - Clique para ${isActive ? 'desativar' : 'ativar'}`}
     >
-      <span className="text-[7px] font-bold text-white leading-none">{initials}</span>
+      <span className={`${textClasses[scale]} font-bold text-white leading-none`}>{initials}</span>
     </button>
   );
 }
