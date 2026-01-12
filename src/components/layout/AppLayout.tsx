@@ -1,8 +1,15 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut } from "lucide-react";
+import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -40,31 +47,38 @@ export function AppLayout({ children }: AppLayoutProps) {
             <span className="hidden sm:inline">Painel AC</span>
           </NavLink>
           
-          <NavLink
-            to="/demandas"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-muted/50"
-            activeClassName="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <ClipboardList className="w-4 h-4" />
-            <span className="hidden sm:inline">Demandas</span>
-          </NavLink>
+          {/* Demandas Dropdown */}
+          <NavDropdown 
+            icon={<ClipboardList className="w-4 h-4" />}
+            label="Demandas"
+            visualRoute="/demandas-visual"
+            detailRoute="/demandas"
+          />
           
-          <NavLink
-            to="/licencas"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-muted/50"
-            activeClassName="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Shield className="w-4 h-4" />
-            <span className="hidden sm:inline">Licenças</span>
-          </NavLink>
+          {/* Licenças Dropdown */}
+          <NavDropdown 
+            icon={<Shield className="w-4 h-4" />}
+            label="Licenças"
+            visualRoute="/licencas-visual"
+            detailRoute="/licencas"
+          />
           
+          {/* Processos Dropdown */}
+          <NavDropdown 
+            icon={<FileText className="w-4 h-4" />}
+            label="Processos"
+            visualRoute="/processos-visual"
+            detailRoute="/processos"
+          />
+
+          {/* Jackbox */}
           <NavLink
-            to="/processos"
+            to="/jackbox"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-muted/50"
             activeClassName="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <FileText className="w-4 h-4" />
-            <span className="hidden sm:inline">Processos</span>
+            <Box className="w-4 h-4" />
+            <span className="hidden sm:inline">Jackbox</span>
           </NavLink>
           
           <div className="w-px h-6 bg-border mx-1" />
@@ -103,5 +117,42 @@ export function AppLayout({ children }: AppLayoutProps) {
         {children}
       </main>
     </div>
+  );
+}
+
+// Navigation Dropdown Component
+interface NavDropdownProps {
+  icon: ReactNode;
+  label: string;
+  visualRoute: string;
+  detailRoute: string;
+}
+
+function NavDropdown({ icon, label, visualRoute, detailRoute }: NavDropdownProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-muted/50">
+          {icon}
+          <span className="hidden sm:inline">{label}</span>
+          <ChevronDown className="w-3 h-3 ml-0.5 opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-48">
+        <DropdownMenuItem asChild>
+          <NavLink to={visualRoute} className="flex items-center gap-2 w-full cursor-pointer">
+            <Eye className="w-4 h-4" />
+            <span>Visão Macro</span>
+          </NavLink>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <NavLink to={detailRoute} className="flex items-center gap-2 w-full cursor-pointer">
+            <List className="w-4 h-4" />
+            <span>Detalhado</span>
+          </NavLink>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
