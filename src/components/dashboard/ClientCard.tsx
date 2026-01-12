@@ -49,6 +49,36 @@ function hasActiveCollaborators(collaborators: Client['collaborators']): boolean
   return COLLABORATOR_NAMES.some(name => collaborators[name]);
 }
 
+// Calcula o tamanho ideal da fonte baseado no comprimento do nome e quantidade de clientes
+function getOptimalFontSize(name: string, clientCount: number): string {
+  const len = name.length;
+  
+  // Base size depends on client count
+  let baseSize: number;
+  if (clientCount <= 12) {
+    baseSize = 14;
+  } else if (clientCount <= 25) {
+    baseSize = 12;
+  } else if (clientCount <= 40) {
+    baseSize = 10;
+  } else {
+    baseSize = 9;
+  }
+  
+  // Adjust based on name length
+  if (len <= 5) {
+    return `${baseSize + 4}px`;
+  } else if (len <= 10) {
+    return `${baseSize + 2}px`;
+  } else if (len <= 15) {
+    return `${baseSize}px`;
+  } else if (len <= 25) {
+    return `${baseSize - 1}px`;
+  } else {
+    return `${Math.max(baseSize - 2, 7)}px`;
+  }
+}
+
 export function ClientCard({ 
   client, 
   displayNumber, 
@@ -129,7 +159,7 @@ export function ClientCard({
 
       {/* Logo Area - mais compacto */}
       <div 
-        className={`flex items-center justify-center p-1 ${logoAreaHeight} transition-colors cursor-pointer`}
+        className={`flex items-center justify-center p-1 ${logoAreaHeight} transition-colors cursor-pointer overflow-hidden`}
         style={{
           background: hasCollaborators ? collaboratorBg : 'hsl(var(--muted) / 0.3)',
         }}
@@ -143,11 +173,18 @@ export function ClientCard({
             className={`${logoMaxHeight} max-w-full object-contain rounded`}
           />
         ) : (
-          <div className={`flex items-center justify-center ${initialsSize} rounded-full font-bold ${
-            hasCollaborators || isHighlighted ? 'bg-white/80 text-gray-800' : 'bg-primary/10 text-primary'
-          }`}>
-            {client.initials}
-          </div>
+          <span 
+            className={`font-bold text-center leading-tight px-1 ${
+              hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'
+            }`}
+            style={{
+              fontSize: getOptimalFontSize(client.name, clientCount),
+              wordBreak: 'break-word',
+              hyphens: 'auto',
+            }}
+          >
+            {client.name}
+          </span>
         )}
       </div>
 
