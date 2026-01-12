@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ClientComment } from '@/types/comment';
-import { useClientComments } from '@/hooks/useClientComments';
+import { useClientComments, triggerCommentCountRefresh } from '@/hooks/useClientComments';
 import { Pin, Trash2, Send, Loader2 } from 'lucide-react';
 
 interface CommentsModalProps {
@@ -28,9 +28,17 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
     try {
       await addComment({ commentText: newComment.trim() });
       setNewComment('');
+      // Trigger refresh of comment counts across the app
+      setTimeout(() => triggerCommentCountRefresh(), 200);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteComment(id);
+    // Trigger refresh of comment counts
+    setTimeout(() => triggerCommentCountRefresh(), 200);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -48,11 +56,14 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col" aria-describedby="comments-dialog-description">
         <DialogHeader>
           <DialogTitle className="text-lg">
             Comentários - {clientName}
           </DialogTitle>
+          <DialogDescription id="comments-dialog-description" className="sr-only">
+            Visualize e adicione comentários para este cliente
+          </DialogDescription>
         </DialogHeader>
 
         {/* New comment input */}
@@ -96,7 +107,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
                 <CommentItem
                   key={comment.id}
                   comment={comment}
-                  onDelete={() => deleteComment(comment.id)}
+                  onDelete={() => handleDelete(comment.id)}
                   onTogglePin={() => togglePinned(comment.id)}
                 />
               ))}
