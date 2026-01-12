@@ -66,10 +66,10 @@ export function ClientCard({
   const hasCollaborators = hasActiveCollaborators(client.collaborators);
   const collaboratorBg = getCollaboratorGradient(client.collaborators);
 
-  // Tamanho da área do logo baseado na quantidade de clientes
-  const logoAreaHeight = clientCount <= 12 ? 'h-16' : clientCount <= 25 ? 'h-14' : clientCount <= 40 ? 'h-12' : 'h-10';
-  const logoMaxHeight = clientCount <= 12 ? 'max-h-14' : clientCount <= 25 ? 'max-h-12' : clientCount <= 40 ? 'max-h-10' : 'max-h-8';
-  const initialsSize = clientCount <= 12 ? 'w-12 h-12 text-base' : clientCount <= 25 ? 'w-10 h-10 text-sm' : clientCount <= 40 ? 'w-9 h-9 text-xs' : 'w-8 h-8 text-xs';
+  // Tamanho da área do logo baseado na quantidade de clientes - mais compacto
+  const logoAreaHeight = clientCount <= 12 ? 'h-12' : clientCount <= 25 ? 'h-10' : clientCount <= 40 ? 'h-8' : 'h-7';
+  const logoMaxHeight = clientCount <= 12 ? 'max-h-10' : clientCount <= 25 ? 'max-h-8' : clientCount <= 40 ? 'max-h-6' : 'max-h-5';
+  const initialsSize = clientCount <= 12 ? 'w-9 h-9 text-sm' : clientCount <= 25 ? 'w-7 h-7 text-xs' : clientCount <= 40 ? 'w-6 h-6 text-[10px]' : 'w-5 h-5 text-[9px]';
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -117,19 +117,19 @@ export function ClientCard({
         </button>
       </div>
 
-      {/* Header - Number + Name */}
-      <div className="flex items-center gap-1.5 px-2 py-1 bg-card-elevated border-b border-border">
-        <div className="flex items-center justify-center w-5 h-5 rounded bg-primary text-primary-foreground text-[10px] font-bold shrink-0">
+      {/* Header - Number + Name - mais compacto */}
+      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-card-elevated border-b border-border">
+        <div className="flex items-center justify-center w-4 h-4 rounded bg-primary text-primary-foreground text-[8px] font-bold shrink-0">
           {displayNumber.toString().padStart(2, '0')}
         </div>
-        <span className="text-[10px] font-medium text-foreground truncate flex-1 pr-4">
+        <span className="text-[9px] font-medium text-foreground truncate flex-1 pr-4">
           {client.name}
         </span>
       </div>
 
-      {/* Logo Area - Shows collaborator colors when active */}
+      {/* Logo Area - mais compacto */}
       <div 
-        className={`flex items-center justify-center p-2 ${logoAreaHeight} transition-colors cursor-pointer`}
+        className={`flex items-center justify-center p-1 ${logoAreaHeight} transition-colors cursor-pointer`}
         style={{
           background: hasCollaborators ? collaboratorBg : 'hsl(var(--muted) / 0.3)',
         }}
@@ -151,38 +151,38 @@ export function ClientCard({
         )}
       </div>
 
-      {/* Indicators Row - P, L, D with chips */}
-      <div className="px-1.5 py-1 border-t border-border bg-card-elevated/50">
+      {/* Indicators Row - P, L, D with chips - mais compacto */}
+      <div className="px-1 py-0.5 border-t border-border bg-card-elevated/50">
         <div className="flex items-center justify-between gap-0.5">
           {/* P - Processos */}
-          <div className="flex flex-col items-center min-w-[20px]">
-            <span className="text-[7px] text-muted-foreground font-medium leading-none">P</span>
-            <span className="text-xs font-bold text-foreground leading-tight">{client.processes}</span>
+          <div className="flex flex-col items-center min-w-[16px]">
+            <span className="text-[6px] text-muted-foreground font-medium leading-none">P</span>
+            <span className="text-[10px] font-bold text-foreground leading-tight">{client.processes}</span>
           </div>
 
           {/* L - Licenças */}
-          <div className="flex flex-col items-center min-w-[20px]">
-            <span className="text-[7px] text-muted-foreground font-medium leading-none">L</span>
-            <span className="text-xs font-bold text-foreground leading-tight">{client.licenses}</span>
+          <div className="flex flex-col items-center min-w-[16px]">
+            <span className="text-[6px] text-muted-foreground font-medium leading-none">L</span>
+            <span className="text-[10px] font-bold text-foreground leading-tight">{client.licenses}</span>
           </div>
 
           {/* D - Demandas with total */}
-          <div className="flex flex-col items-center min-w-[20px]">
-            <span className="text-[7px] text-muted-foreground font-medium leading-none">D</span>
-            <span className="text-xs font-bold text-foreground leading-tight">{totalDemands}</span>
+          <div className="flex flex-col items-center min-w-[16px]">
+            <span className="text-[6px] text-muted-foreground font-medium leading-none">D</span>
+            <span className="text-[10px] font-bold text-foreground leading-tight">{totalDemands}</span>
           </div>
 
-          {/* Status chips */}
+          {/* Status chips - menores */}
           <div className="flex items-center gap-px">
-            <DemandChip status="completed" count={client.demands.completed} />
-            <DemandChip status="in-progress" count={client.demands.inProgress} />
-            <DemandChip status="not-started" count={client.demands.notStarted} />
-            <DemandChip status="cancelled" count={client.demands.cancelled} />
+            <DemandChipSmall status="completed" count={client.demands.completed} />
+            <DemandChipSmall status="in-progress" count={client.demands.inProgress} />
+            <DemandChipSmall status="not-started" count={client.demands.notStarted} />
+            <DemandChipSmall status="cancelled" count={client.demands.cancelled} />
           </div>
         </div>
       </div>
 
-      {/* Collaborators Row - 4 Buttons */}
+      {/* Collaborators Row - 4 Buttons - altura menor */}
       <div className="grid grid-cols-4 border-t border-border">
         {COLLABORATOR_NAMES.map((name) => (
           <CollaboratorButton
@@ -197,14 +197,21 @@ export function ClientCard({
   );
 }
 
-interface DemandChipProps {
+interface DemandChipSmallProps {
   status: 'completed' | 'in-progress' | 'not-started' | 'cancelled';
   count: number;
 }
 
-function DemandChip({ status, count }: DemandChipProps) {
+function DemandChipSmall({ status, count }: DemandChipSmallProps) {
+  const statusColors = {
+    'completed': 'bg-green-600',
+    'in-progress': 'bg-emerald-400', 
+    'not-started': 'bg-gray-400',
+    'cancelled': 'bg-red-500',
+  };
+  
   return (
-    <div className={`demand-chip-small ${status}`}>
+    <div className={`flex items-center justify-center min-w-[14px] h-4 px-0.5 rounded text-[8px] font-bold text-white ${statusColors[status]}`}>
       {count}
     </div>
   );
@@ -218,16 +225,19 @@ interface CollaboratorButtonProps {
 
 function CollaboratorButton({ name, isActive, onClick }: CollaboratorButtonProps) {
   const color = COLLABORATOR_COLORS[name];
+  const initials = name.slice(0, 2).toUpperCase();
   
   return (
     <button
       onClick={onClick}
-      className="h-2 w-full transition-all hover:opacity-70"
+      className="h-3 w-full transition-all hover:opacity-70 flex items-center justify-center"
       style={{ 
         backgroundColor: color,
-        opacity: isActive ? 1 : 0.3,
+        opacity: isActive ? 1 : 0.25,
       }}
       title={`${name.charAt(0).toUpperCase() + name.slice(1)} - Clique para ${isActive ? 'desativar' : 'ativar'}`}
-    />
+    >
+      <span className="text-[7px] font-bold text-white leading-none">{initials}</span>
+    </button>
   );
 }
