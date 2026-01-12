@@ -8,8 +8,12 @@ import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Config from "./pages/Config";
 import DemandasPanel from "./pages/DemandasPanel";
+import DemandasVisual from "./pages/DemandasVisual";
 import LicencasPanel from "./pages/LicencasPanel";
+import LicencasVisual from "./pages/LicencasVisual";
 import ProcessosPanel from "./pages/ProcessosPanel";
+import ProcessosVisual from "./pages/ProcessosVisual";
+import JackboxPanel from "./pages/JackboxPanel";
 import AuthPage from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +42,12 @@ function AuthenticatedApp() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          {/* Visual Panels (Macro) */}
+          <Route path="/demandas-visual" element={<DemandasVisual />} />
+          <Route path="/licencas-visual" element={<LicencasVisual />} />
+          <Route path="/processos-visual" element={<ProcessosVisual />} />
+          <Route path="/jackbox" element={<JackboxPanel />} />
+          {/* Detail Panels */}
           <Route path="/demandas" element={<DemandasPanel />} />
           <Route path="/licencas" element={<LicencasPanel />} />
           <Route path="/processos" element={<ProcessosPanel />} />
