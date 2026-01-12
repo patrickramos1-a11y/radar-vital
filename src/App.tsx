@@ -14,6 +14,7 @@ import LicencasVisual from "./pages/LicencasVisual";
 import ProcessosPanel from "./pages/ProcessosPanel";
 import ProcessosVisual from "./pages/ProcessosVisual";
 import JackboxPanel from "./pages/JackboxPanel";
+import JackboxDetalhado from "./pages/JackboxDetalhado";
 import AuthPage from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -47,6 +48,7 @@ function AuthenticatedApp() {
           <Route path="/licencas-visual" element={<LicencasVisual />} />
           <Route path="/processos-visual" element={<ProcessosVisual />} />
           <Route path="/jackbox" element={<JackboxPanel />} />
+          <Route path="/jackbox-detalhado" element={<JackboxDetalhado />} />
           {/* Detail Panels */}
           <Route path="/demandas" element={<DemandasPanel />} />
           <Route path="/licencas" element={<LicencasPanel />} />

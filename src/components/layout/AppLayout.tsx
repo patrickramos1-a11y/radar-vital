@@ -71,15 +71,13 @@ export function AppLayout({ children }: AppLayoutProps) {
             detailRoute="/processos"
           />
 
-          {/* Jackbox */}
-          <NavLink
-            to="/jackbox"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-muted/50"
-            activeClassName="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Box className="w-4 h-4" />
-            <span className="hidden sm:inline">Jackbox</span>
-          </NavLink>
+          {/* Jackbox Dropdown */}
+          <NavDropdown 
+            icon={<Box className="w-4 h-4" />}
+            label="Jackbox"
+            visualRoute="/jackbox"
+            detailRoute="/jackbox-detalhado"
+          />
           
           <div className="w-px h-6 bg-border mx-1" />
           

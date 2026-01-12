@@ -1,14 +1,14 @@
-import { useMemo, useState } from "react";
-import { Box, Search, User, CheckSquare } from "lucide-react";
+import { useMemo } from "react";
+import { Box, User, CheckSquare } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
-import { Input } from "@/components/ui/input";
+import { VisualPanelFilters, VisualSortOption } from "@/components/visual-panels/VisualPanelFilters";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
+import { useVisualPanelFilters } from "@/hooks/useVisualPanelFilters";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import { Task } from "@/types/task";
 
@@ -21,8 +21,35 @@ export default function JackboxPanel() {
     getActiveTaskCount,
   } = useTasks();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [collaboratorFilter, setCollaboratorFilter] = useState<CollaboratorName | null>(null);
+  // Custom sorter for jackbox
+  const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
+    if (sortBy === 'tasks') {
+      return (getActiveTaskCount(b.id) - getActiveTaskCount(a.id)) * multiplier;
+    }
+    return null;
+  };
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
+    filterFlags,
+    collaboratorFilters,
+    counts,
+    filteredClients,
+    handleFilterFlagToggle,
+    handleCollaboratorFilterToggle,
+    handleClearFilters,
+  } = useVisualPanelFilters({
+    clients: activeClients.filter(c => getActiveTaskCount(c.id) > 0),
+    highlightedClients,
+    getActiveTaskCount,
+    defaultSort: 'tasks',
+    customSorter,
+  });
 
   // KPIs
   const kpis = useMemo(() => {
@@ -37,40 +64,22 @@ export default function JackboxPanel() {
     };
   }, [tasks]);
 
-  // Filter clients with active tasks
-  const clientsWithTasks = useMemo(() => {
-    let result = activeClients.filter(c => getActiveTaskCount(c.id) > 0);
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(c => 
-        c.name.toLowerCase().includes(query) || 
-        c.initials.toLowerCase().includes(query)
+  // Filter tasks by collaborator
+  const getFilteredTasks = (clientId: string) => {
+    let clientTasks = getActiveTasksForClient(clientId);
+    if (collaboratorFilters.length > 0) {
+      clientTasks = clientTasks.filter(t => 
+        t.assigned_to && collaboratorFilters.includes(t.assigned_to)
       );
     }
+    return clientTasks;
+  };
 
-    // Collaborator filter
-    if (collaboratorFilter) {
-      result = result.filter(c => {
-        const clientTasks = getActiveTasksForClient(c.id);
-        return clientTasks.some(t => t.assigned_to === collaboratorFilter);
-      });
-    }
-
-    // Sort by: highlighted first, then by task count
-    result.sort((a, b) => {
-      const aHighlighted = highlightedClients.has(a.id) ? 1 : 0;
-      const bHighlighted = highlightedClients.has(b.id) ? 1 : 0;
-      if (aHighlighted !== bHighlighted) return bHighlighted - aHighlighted;
-
-      if (a.isPriority !== b.isPriority) return a.isPriority ? -1 : 1;
-
-      return getActiveTaskCount(b.id) - getActiveTaskCount(a.id);
-    });
-
-    return result;
-  }, [activeClients, searchQuery, collaboratorFilter, highlightedClients, getActiveTaskCount, getActiveTasksForClient]);
+  const sortOptions: { value: VisualSortOption; label: string }[] = [
+    { value: 'priority', label: 'Prioridade' },
+    { value: 'tasks', label: 'Tarefas' },
+    { value: 'name', label: 'Nome' },
+  ];
 
   return (
     <AppLayout>
@@ -80,6 +89,7 @@ export default function JackboxPanel() {
           title="Micro-Demandas (Jackbox)" 
           subtitle="Tarefas rápidas por empresa"
           icon={<Box className="w-5 h-5" />}
+          detailRoute="/jackbox-detalhado"
         >
           <KPICard icon={<CheckSquare className="w-4 h-4" />} value={kpis.totalTasks} label="Tarefas" />
           <KPICard icon={<User className="w-4 h-4" />} value={kpis.clientsWithTasks} label="Empresas" variant="info" />
@@ -90,12 +100,11 @@ export default function JackboxPanel() {
           {COLLABORATOR_NAMES.map((name) => (
             <div
               key={name}
-              className="flex items-center gap-1.5 px-2 py-1 rounded border cursor-pointer transition-colors hover:opacity-80"
+              className="flex items-center gap-1.5 px-2 py-1 rounded border"
               style={{ 
-                borderColor: collaboratorFilter === name ? COLLABORATOR_COLORS[name] : 'transparent',
+                borderColor: COLLABORATOR_COLORS[name],
                 backgroundColor: `${COLLABORATOR_COLORS[name]}15`,
               }}
-              onClick={() => setCollaboratorFilter(collaboratorFilter === name ? null : name)}
             >
               <span className="text-sm font-bold" style={{ color: COLLABORATOR_COLORS[name] }}>
                 {kpis.byCollaborator[name]}
@@ -105,46 +114,41 @@ export default function JackboxPanel() {
           ))}
         </VisualPanelHeader>
 
-        {/* Search Bar */}
-        <div className="px-6 py-3 bg-muted/30 border-b border-border flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar empresa..."
-              className="pl-10"
-            />
-          </div>
-
-          {collaboratorFilter && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCollaboratorFilter(null)}
-              className="text-xs"
-            >
-              Limpar filtro
-            </Button>
-          )}
-        </div>
+        {/* Filters */}
+        <VisualPanelFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filterFlags={filterFlags}
+          onFilterFlagToggle={handleFilterFlagToggle}
+          collaboratorFilters={collaboratorFilters}
+          onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSortChange={setSortBy}
+          onSortDirectionChange={setSortDirection}
+          onClearFilters={handleClearFilters}
+          highlightedCount={counts.highlighted}
+          jackboxCount={counts.jackbox}
+          checkedCount={counts.checked}
+          showCollaborators={true}
+          sortOptions={sortOptions}
+        />
 
         {/* Visual Grid */}
-        <VisualGrid itemCount={clientsWithTasks.length}>
-          {clientsWithTasks.map((client) => (
+        <VisualGrid itemCount={filteredClients.length}>
+          {filteredClients.map((client) => (
             <JackboxCard
               key={client.id}
               client={client}
               isHighlighted={highlightedClients.has(client.id)}
-              tasks={getActiveTasksForClient(client.id)}
-              collaboratorFilter={collaboratorFilter}
+              tasks={getFilteredTasks(client.id)}
               onToggleTask={toggleComplete}
             />
           ))}
         </VisualGrid>
 
         {/* Empty State */}
-        {clientsWithTasks.length === 0 && (
+        {filteredClients.length === 0 && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <Box className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -162,7 +166,6 @@ interface JackboxCardProps {
   client: Client;
   isHighlighted: boolean;
   tasks: Task[];
-  collaboratorFilter: CollaboratorName | null;
   onToggleTask: (taskId: string) => void;
 }
 
@@ -170,14 +173,8 @@ function JackboxCard({
   client, 
   isHighlighted, 
   tasks, 
-  collaboratorFilter,
   onToggleTask,
 }: JackboxCardProps) {
-  // Filter tasks by collaborator if filter is active
-  const filteredTasks = collaboratorFilter
-    ? tasks.filter(t => t.assigned_to === collaboratorFilter)
-    : tasks;
-
   return (
     <div
       className={cn(
@@ -214,14 +211,14 @@ function JackboxCard({
             {client.name}
           </h3>
           <span className="text-xs text-muted-foreground">
-            {filteredTasks.length} tarefa{filteredTasks.length !== 1 ? 's' : ''}
+            {tasks.length} tarefa{tasks.length !== 1 ? 's' : ''}
           </span>
         </div>
       </div>
 
       {/* Task Checklist */}
       <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-        {filteredTasks.slice(0, 11).map((task) => (
+        {tasks.slice(0, 11).map((task) => (
           <div
             key={task.id}
             className="flex items-start gap-2 group/task"
