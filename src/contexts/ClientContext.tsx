@@ -19,6 +19,7 @@ interface ClientContextType {
   toggleCollaborator: (id: string, collaborator: keyof Client['collaborators']) => void;
   toggleHighlight: (id: string) => void;
   clearHighlights: () => void;
+  toggleClientType: (id: string) => void;
   getClient: (id: string) => Client | undefined;
   moveClient: (id: string, direction: 'up' | 'down') => void;
   moveClientToPosition: (id: string, newPosition: number) => void;
@@ -44,6 +45,8 @@ const dbRowToClient = (row: any): Client => {
     isPriority: row.is_priority,
     isActive: row.is_active,
     isChecked: row.is_checked || false,
+    isHighlighted: row.is_highlighted || false,
+    clientType: row.client_type || 'AC',
     order: row.display_order,
     processes: procEmAndamento, // "P" = processes in progress (not deferido)
     processBreakdown: {
@@ -94,6 +97,8 @@ const clientToDbRow = (client: Partial<ClientFormData>) => {
   if (client.isPriority !== undefined) row.is_priority = client.isPriority;
   if (client.isActive !== undefined) row.is_active = client.isActive;
   if (client.isChecked !== undefined) row.is_checked = client.isChecked;
+  if (client.isHighlighted !== undefined) row.is_highlighted = client.isHighlighted;
+  if (client.clientType !== undefined) row.client_type = client.clientType;
   if (client.order !== undefined) row.display_order = client.order;
   // Note: processes is calculated from processBreakdown, don't write directly
   if (client.processBreakdown !== undefined) {
@@ -147,7 +152,12 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       
       if (error) throw error;
       
-      setClients(data?.map(dbRowToClient) || []);
+      const mappedClients = data?.map(dbRowToClient) || [];
+      setClients(mappedClients);
+      
+      // Sync highlightedClients Set from database
+      const highlighted = new Set(mappedClients.filter(c => c.isHighlighted).map(c => c.id));
+      setHighlightedClients(highlighted);
     } catch (error) {
       console.error('Error fetching clients:', error);
       toast.error('Erro ao carregar clientes');
@@ -309,6 +319,12 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   }, [clients, updateClient]);
 
   const toggleHighlight = useCallback((id: string) => {
+    const client = clients.find(c => c.id === id);
+    if (client) {
+      // Update in database and sync local state
+      updateClient(id, { isHighlighted: !client.isHighlighted });
+    }
+    // Also update the in-memory set for immediate UI feedback
     setHighlightedClients(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -318,11 +334,25 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       }
       return next;
     });
-  }, []);
+  }, [clients, updateClient]);
 
-  const clearHighlights = useCallback(() => {
+  const clearHighlights = useCallback(async () => {
+    // Clear all highlights in database
+    const highlightedIds = clients.filter(c => c.isHighlighted).map(c => c.id);
+    for (const id of highlightedIds) {
+      await supabase.from('clients').update({ is_highlighted: false }).eq('id', id);
+    }
     setHighlightedClients(new Set());
-  }, []);
+    await fetchClients();
+  }, [clients, fetchClients]);
+
+  const toggleClientType = useCallback((id: string) => {
+    const client = clients.find(c => c.id === id);
+    if (client) {
+      const newType = client.clientType === 'AC' ? 'AV' : 'AC';
+      updateClient(id, { clientType: newType });
+    }
+  }, [clients, updateClient]);
 
   const getClient = useCallback((id: string) => {
     return clients.find(c => c.id === id);
@@ -430,6 +460,8 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
           isPriority: client.isPriority || false,
           isActive: client.isActive ?? true,
           isChecked: client.isChecked || false,
+          isHighlighted: client.isHighlighted || false,
+          clientType: client.clientType || 'AC',
           order: client.order || 1,
           processes: client.processes || 0,
           processBreakdown: client.processBreakdown || DEFAULT_PROCESS_BREAKDOWN,
@@ -519,6 +551,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       toggleCollaborator,
       toggleHighlight,
       clearHighlights,
+      toggleClientType,
       getClient,
       moveClient,
       moveClientToPosition,

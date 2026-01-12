@@ -34,6 +34,7 @@ const Config = () => {
     deleteSelectedClients, 
     clearAllClients, 
     toggleClientActive,
+    toggleClientType,
     moveClient,
     moveClientToPosition,
     reorderClients,
@@ -359,6 +360,7 @@ const Config = () => {
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Ordem</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground">Logo</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground">Nome</th>
+                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Tipo</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">P</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">L</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">D</th>
@@ -451,6 +453,19 @@ const Config = () => {
                       )}
                     </td>
                     <td className="py-3 text-sm font-medium text-foreground">{client.name}</td>
+                    <td className="py-3 text-center">
+                      <button
+                        onClick={() => toggleClientType(client.id)}
+                        className={`px-2 py-0.5 rounded text-xs font-bold transition-colors ${
+                          client.clientType === 'AC' 
+                            ? 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30' 
+                            : 'bg-amber-500/20 text-amber-600 hover:bg-amber-500/30'
+                        }`}
+                        title={client.clientType === 'AC' ? 'Acompanhamento - clique para mudar para Avulso' : 'Avulso - clique para mudar para Acompanhamento'}
+                      >
+                        {client.clientType}
+                      </button>
+                    </td>
                     <td className="py-3">
                       <InlineNumberInput
                         value={client.processes}
@@ -684,6 +699,8 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     isPriority: client?.isPriority || false,
     isActive: client?.isActive ?? true,
     isChecked: client?.isChecked || false,
+    isHighlighted: client?.isHighlighted || false,
+    clientType: client?.clientType || 'AC',
     order: client?.order || nextOrder,
     processes: client?.processes || 0,
     processBreakdown: client?.processBreakdown || DEFAULT_PROCESS_BREAKDOWN,

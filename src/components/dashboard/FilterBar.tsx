@@ -1,9 +1,10 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, Sparkles, X, ListChecks, RotateCcw, Users } from "lucide-react";
-import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { ArrowDownAZ, ArrowUpAZ, Star, Sparkles, X, ListChecks, RotateCcw, Users, Building2, Briefcase } from "lucide-react";
+import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority' | 'jackbox';
 export type SortDirection = 'asc' | 'desc';
+export type ClientTypeFilter = 'all' | 'AC' | 'AV';
 
 // Multi-select filter flags
 export interface FilterFlags {
@@ -18,14 +19,18 @@ interface FilterBarProps {
   sortDirection: SortDirection;
   filterFlags: FilterFlags;
   collaboratorFilters: CollaboratorName[];
+  clientTypeFilter: ClientTypeFilter;
   highlightedCount: number;
   jackboxCount: number;
   visibleCount: number;
   totalCount: number;
+  acCount: number;
+  avCount: number;
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
   onFilterFlagToggle: (flag: keyof FilterFlags) => void;
   onCollaboratorFilterToggle: (collaborator: CollaboratorName) => void;
+  onClientTypeFilterChange: (type: ClientTypeFilter) => void;
   onClearHighlights: () => void;
   onClearAllFilters: () => void;
 }
@@ -35,14 +40,18 @@ export function FilterBar({
   sortDirection,
   filterFlags,
   collaboratorFilters,
+  clientTypeFilter,
   highlightedCount,
   jackboxCount,
   visibleCount,
   totalCount,
+  acCount,
+  avCount,
   onSortChange,
   onSortDirectionChange,
   onFilterFlagToggle,
   onCollaboratorFilterToggle,
+  onClientTypeFilterChange,
   onClearHighlights,
   onClearAllFilters,
 }: FilterBarProps) {
@@ -62,7 +71,8 @@ export function FilterBar({
     filterFlags.highlighted || 
     filterFlags.withJackbox || 
     filterFlags.withoutJackbox || 
-    collaboratorFilters.length > 0;
+    collaboratorFilters.length > 0 ||
+    clientTypeFilter !== 'all';
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -139,6 +149,28 @@ export function FilterBar({
           {visibleCount !== totalCount && (
             <span className="text-[10px] text-muted-foreground">/ {totalCount}</span>
           )}
+        </div>
+
+        {/* Client Type Filter (AC/AV) */}
+        <div className="flex items-center gap-0.5">
+          <ClientTypeButton
+            type="all"
+            active={clientTypeFilter === 'all'}
+            count={totalCount}
+            onClick={() => onClientTypeFilterChange('all')}
+          />
+          <ClientTypeButton
+            type="AC"
+            active={clientTypeFilter === 'AC'}
+            count={acCount}
+            onClick={() => onClientTypeFilterChange('AC')}
+          />
+          <ClientTypeButton
+            type="AV"
+            active={clientTypeFilter === 'AV'}
+            count={avCount}
+            onClick={() => onClientTypeFilterChange('AV')}
+          />
         </div>
 
         {/* Filter Options - Multi-select with icons */}
@@ -295,6 +327,56 @@ function IconFilterButton({ active, onClick, children, tooltip, badge, activeCol
               {badge}
             </span>
           )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="text-xs">
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+interface ClientTypeButtonProps {
+  type: ClientTypeFilter;
+  active: boolean;
+  count: number;
+  onClick: () => void;
+}
+
+function ClientTypeButton({ type, active, onClick, count }: ClientTypeButtonProps) {
+  const labels: Record<ClientTypeFilter, { short: string; tooltip: string; color: string }> = {
+    all: { short: 'TODOS', tooltip: 'Todos os clientes', color: 'rgb(100, 116, 139)' },
+    AC: { short: 'AC', tooltip: 'Acompanhamento Ambiental', color: 'rgb(16, 185, 129)' },
+    AV: { short: 'AV', tooltip: 'Avulso', color: 'rgb(245, 158, 11)' },
+  };
+  
+  const { short, tooltip, color } = labels[type];
+  
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          className={`px-2 py-1 rounded text-xs font-bold transition-all flex items-center gap-1 border ${
+            active 
+              ? 'text-white border-transparent' 
+              : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50 border-transparent'
+          }`}
+          style={{
+            backgroundColor: active ? color : undefined,
+          }}
+        >
+          {type === 'all' ? (
+            <Building2 className="w-3 h-3" />
+          ) : type === 'AC' ? (
+            <Building2 className="w-3 h-3" />
+          ) : (
+            <Briefcase className="w-3 h-3" />
+          )}
+          {short}
+          <span className={`text-[10px] ${active ? 'opacity-80' : 'opacity-60'}`}>
+            ({count})
+          </span>
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="text-xs">
