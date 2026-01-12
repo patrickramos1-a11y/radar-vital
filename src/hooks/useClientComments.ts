@@ -1,0 +1,168 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { ClientComment, CommentFormData } from '@/types/comment';
+import { toast } from 'sonner';
+
+interface UseClientCommentsReturn {
+  comments: ClientComment[];
+  isLoading: boolean;
+  addComment: (data: CommentFormData) => Promise<void>;
+  deleteComment: (id: string) => Promise<void>;
+  togglePinned: (id: string) => Promise<void>;
+  refetch: () => Promise<void>;
+}
+
+export function useClientComments(clientId: string): UseClientCommentsReturn {
+  const [comments, setComments] = useState<ClientComment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchComments = useCallback(async () => {
+    if (!clientId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('client_comments')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const mapped: ClientComment[] = (data || []).map(row => ({
+        id: row.id,
+        clientId: row.client_id,
+        authorUserId: row.author_user_id || undefined,
+        authorName: row.author_name,
+        commentText: row.comment_text,
+        createdAt: row.created_at,
+        isPinned: row.is_pinned,
+      }));
+
+      setComments(mapped);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      toast.error('Erro ao carregar comentários');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clientId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
+
+  const addComment = useCallback(async (data: CommentFormData) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from('client_comments')
+        .insert({
+          client_id: clientId,
+          author_user_id: userData?.user?.id || null,
+          author_name: data.authorName || 'Patrick',
+          comment_text: data.commentText,
+        });
+
+      if (error) throw error;
+
+      await fetchComments();
+      toast.success('Comentário adicionado');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Erro ao adicionar comentário');
+    }
+  }, [clientId, fetchComments]);
+
+  const deleteComment = useCallback(async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setComments(prev => prev.filter(c => c.id !== id));
+      toast.success('Comentário excluído');
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast.error('Erro ao excluir comentário');
+    }
+  }, []);
+
+  const togglePinned = useCallback(async (id: string) => {
+    const comment = comments.find(c => c.id === id);
+    if (!comment) return;
+
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ is_pinned: !comment.isPinned })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setComments(prev => prev.map(c => 
+        c.id === id ? { ...c, isPinned: !c.isPinned } : c
+      ));
+    } catch (error) {
+      console.error('Error toggling pinned:', error);
+      toast.error('Erro ao fixar comentário');
+    }
+  }, [comments]);
+
+  return {
+    comments,
+    isLoading,
+    addComment,
+    deleteComment,
+    togglePinned,
+    refetch: fetchComments,
+  };
+}
+
+// Hook to get comment counts for all clients
+export function useAllClientsCommentCounts(): Map<string, number> {
+  const [counts, setCounts] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('id, comment_count');
+
+        if (error) throw error;
+
+        const countMap = new Map<string, number>();
+        (data || []).forEach(row => {
+          countMap.set(row.id, row.comment_count || 0);
+        });
+        setCounts(countMap);
+      } catch (error) {
+        console.error('Error fetching comment counts:', error);
+      }
+    };
+
+    fetchCounts();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('client_comments_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'client_comments' },
+        () => {
+          fetchCounts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  return counts;
+}

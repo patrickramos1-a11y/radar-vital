@@ -1,8 +1,8 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, Sparkles, X, ListChecks, RotateCcw, Users, Building2, Briefcase } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, Sparkles, X, ListChecks, RotateCcw, Users, Building2, Briefcase, MessageCircle, MessageCircleOff } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority' | 'jackbox';
+export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority' | 'jackbox' | 'comments';
 export type SortDirection = 'asc' | 'desc';
 export type ClientTypeFilter = 'all' | 'AC' | 'AV';
 
@@ -12,6 +12,8 @@ export interface FilterFlags {
   highlighted: boolean;
   withJackbox: boolean;
   withoutJackbox: boolean;
+  withComments: boolean;
+  withoutComments: boolean;
 }
 
 interface FilterBarProps {
@@ -22,6 +24,7 @@ interface FilterBarProps {
   clientTypeFilter: ClientTypeFilter;
   highlightedCount: number;
   jackboxCount: number;
+  commentsCount: number;
   visibleCount: number;
   totalCount: number;
   acCount: number;
@@ -43,6 +46,7 @@ export function FilterBar({
   clientTypeFilter,
   highlightedCount,
   jackboxCount,
+  commentsCount,
   visibleCount,
   totalCount,
   acCount,
@@ -71,6 +75,8 @@ export function FilterBar({
     filterFlags.highlighted || 
     filterFlags.withJackbox || 
     filterFlags.withoutJackbox || 
+    filterFlags.withComments ||
+    filterFlags.withoutComments ||
     collaboratorFilters.length > 0 ||
     clientTypeFilter !== 'all';
 
@@ -205,6 +211,27 @@ export function FilterBar({
             activeColor="rgb(34, 197, 94)"
           >
             <ListChecks className="w-3.5 h-3.5" />
+          </IconFilterButton>
+
+          {/* Comments filter - with comments */}
+          <IconFilterButton
+            active={filterFlags.withComments}
+            onClick={() => onFilterFlagToggle('withComments')}
+            tooltip="Com comentários"
+            badge={commentsCount > 0 ? commentsCount : undefined}
+            activeColor="rgb(99, 102, 241)"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+          </IconFilterButton>
+
+          {/* Comments filter - without comments */}
+          <IconFilterButton
+            active={filterFlags.withoutComments}
+            onClick={() => onFilterFlagToggle('withoutComments')}
+            tooltip="Sem comentários"
+            activeColor="rgb(148, 163, 184)"
+          >
+            <MessageCircleOff className="w-3.5 h-3.5" />
           </IconFilterButton>
 
           {/* Separator */}
