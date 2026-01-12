@@ -52,33 +52,37 @@ function hasActiveCollaborators(collaborators: Client['collaborators']): boolean
 }
 
 // Calcula o tamanho ideal da fonte baseado no comprimento do nome e quantidade de clientes
+// Objetivo: o MAIOR possível sem estourar o card; nomes grandes podem quebrar em 2 linhas.
 function getOptimalFontSize(name: string, clientCount: number): string {
-  const len = name.length;
-  
-  // Base size depends on client count
+  const len = name.trim().length;
+
+  // Base mais agressiva (maior) para melhorar leitura no grid
   let baseSize: number;
   if (clientCount <= 12) {
-    baseSize = 14;
+    baseSize = 22;
   } else if (clientCount <= 25) {
-    baseSize = 12;
+    baseSize = 18;
   } else if (clientCount <= 40) {
-    baseSize = 10;
+    baseSize = 16;
   } else {
-    baseSize = 9;
+    baseSize = 14;
   }
-  
-  // Adjust based on name length
-  if (len <= 5) {
-    return `${baseSize + 4}px`;
-  } else if (len <= 10) {
-    return `${baseSize + 2}px`;
-  } else if (len <= 15) {
+
+  // Ajuste por tamanho do nome
+  if (len <= 8) {
+    return `${baseSize + 6}px`;
+  }
+  if (len <= 14) {
+    return `${baseSize + 3}px`;
+  }
+  if (len <= 22) {
     return `${baseSize}px`;
-  } else if (len <= 25) {
-    return `${baseSize - 1}px`;
-  } else {
-    return `${Math.max(baseSize - 2, 7)}px`;
   }
+  if (len <= 30) {
+    return `${baseSize - 2}px`;
+  }
+
+  return `${Math.max(baseSize - 3, 10)}px`;
 }
 
 export function ClientCard({ 
