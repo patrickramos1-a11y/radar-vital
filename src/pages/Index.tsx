@@ -97,35 +97,36 @@ const Index = () => {
     );
   };
 
-  // Apply filters (AND logic for multi-select)
+  // Apply filters (OR logic - shows items matching ANY selected filter)
   const filteredClients = useMemo(() => {
     let result = [...activeClients];
 
-    // Filter by priority
-    if (filterFlags.priority) {
-      result = result.filter(c => c.isPriority);
-    }
+    // Check if any filter is active
+    const hasAnyFilterActive = 
+      filterFlags.priority || 
+      filterFlags.highlighted || 
+      filterFlags.withJackbox || 
+      filterFlags.withoutJackbox ||
+      collaboratorFilters.length > 0;
 
-    // Filter by highlighted
-    if (filterFlags.highlighted) {
-      result = result.filter(c => highlightedClients.has(c.id));
-    }
+    // If any filter is active, use OR logic
+    if (hasAnyFilterActive) {
+      result = result.filter(c => {
+        // Check each condition - return true if ANY matches
+        const matchesPriority = filterFlags.priority && c.isPriority;
+        const matchesHighlighted = filterFlags.highlighted && highlightedClients.has(c.id);
+        const matchesWithJackbox = filterFlags.withJackbox && getActiveTaskCount(c.id) > 0;
+        const matchesWithoutJackbox = filterFlags.withoutJackbox && getActiveTaskCount(c.id) === 0;
+        const matchesCollaborator = collaboratorFilters.length > 0 && 
+          collaboratorFilters.some(collab => c.collaborators[collab]);
 
-    // Filter by jackbox (with tasks)
-    if (filterFlags.withJackbox) {
-      result = result.filter(c => getActiveTaskCount(c.id) > 0);
-    }
-
-    // Filter by no jackbox (without tasks)
-    if (filterFlags.withoutJackbox) {
-      result = result.filter(c => getActiveTaskCount(c.id) === 0);
-    }
-
-    // Filter by collaborators (OR logic within collaborators)
-    if (collaboratorFilters.length > 0) {
-      result = result.filter(c => 
-        collaboratorFilters.some(collab => c.collaborators[collab])
-      );
+        // OR logic: return true if ANY condition matches
+        return matchesPriority || 
+               matchesHighlighted || 
+               matchesWithJackbox || 
+               matchesWithoutJackbox || 
+               matchesCollaborator;
+      });
     }
 
     // Sort
