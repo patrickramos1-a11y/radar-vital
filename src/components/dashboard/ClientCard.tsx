@@ -13,6 +13,7 @@ interface ClientCardProps {
   onTogglePriority: (id: string) => void;
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
   onOpenChecklist: (id: string) => void;
+  clientCount?: number;
 }
 
 // Get gradient background for active collaborators
@@ -59,10 +60,16 @@ export function ClientCard({
   onTogglePriority,
   onToggleCollaborator,
   onOpenChecklist,
+  clientCount = 40,
 }: ClientCardProps) {
   const totalDemands = calculateTotalDemands(client.demands);
   const hasCollaborators = hasActiveCollaborators(client.collaborators);
   const collaboratorBg = getCollaboratorGradient(client.collaborators);
+
+  // Tamanho da área do logo baseado na quantidade de clientes
+  const logoAreaHeight = clientCount <= 12 ? 'h-16' : clientCount <= 25 ? 'h-14' : clientCount <= 40 ? 'h-12' : 'h-10';
+  const logoMaxHeight = clientCount <= 12 ? 'max-h-14' : clientCount <= 25 ? 'max-h-12' : clientCount <= 40 ? 'max-h-10' : 'max-h-8';
+  const initialsSize = clientCount <= 12 ? 'w-12 h-12 text-base' : clientCount <= 25 ? 'w-10 h-10 text-sm' : clientCount <= 40 ? 'w-9 h-9 text-xs' : 'w-8 h-8 text-xs';
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -122,7 +129,7 @@ export function ClientCard({
 
       {/* Logo Area - Shows collaborator colors when active */}
       <div 
-        className={`flex items-center justify-center p-1.5 h-10 transition-colors cursor-pointer`}
+        className={`flex items-center justify-center p-2 ${logoAreaHeight} transition-colors cursor-pointer`}
         style={{
           background: hasCollaborators ? collaboratorBg : 'hsl(var(--muted) / 0.3)',
         }}
@@ -133,10 +140,10 @@ export function ClientCard({
           <img 
             src={client.logoUrl} 
             alt={`Logo ${client.name}`} 
-            className="max-h-8 max-w-full object-contain rounded"
+            className={`${logoMaxHeight} max-w-full object-contain rounded`}
           />
         ) : (
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
+          <div className={`flex items-center justify-center ${initialsSize} rounded-full font-bold ${
             hasCollaborators || isHighlighted ? 'bg-white/80 text-gray-800' : 'bg-primary/10 text-primary'
           }`}>
             {client.initials}
