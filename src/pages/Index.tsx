@@ -5,7 +5,7 @@ import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter } f
 import { TaskModal } from "@/components/checklist/TaskModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
-import { useAllClientsCommentCounts } from "@/hooks/useClientComments";
+import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { calculateTotals, calculateTotalDemands, CollaboratorName, Client } from "@/types/client";
 import { Users, FileText, Shield, ClipboardList, Star, Sparkles, MessageCircle } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
@@ -33,8 +33,8 @@ const Index = () => {
     toggleComplete,
   } = useTasks();
 
-  // Comment counts for all clients
-  const commentCounts = useAllClientsCommentCounts();
+  // Comment counts for all clients (with manual refresh capability)
+  const [commentCounts, refreshCommentCounts] = useAllClientsCommentCountsWithRefresh();
   const getCommentCount = useCallback((clientId: string) => commentCounts.get(clientId) || 0, [commentCounts]);
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);

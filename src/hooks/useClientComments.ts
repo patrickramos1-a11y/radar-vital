@@ -125,44 +125,126 @@ export function useClientComments(clientId: string): UseClientCommentsReturn {
 // Hook to get comment counts for all clients
 export function useAllClientsCommentCounts(): Map<string, number> {
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const fetchCounts = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, comment_count');
+
+      if (error) throw error;
+
+      const countMap = new Map<string, number>();
+      (data || []).forEach(row => {
+        countMap.set(row.id, row.comment_count || 0);
+      });
+      setCounts(countMap);
+    } catch (error) {
+      console.error('Error fetching comment counts:', error);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('id, comment_count');
-
-        if (error) throw error;
-
-        const countMap = new Map<string, number>();
-        (data || []).forEach(row => {
-          countMap.set(row.id, row.comment_count || 0);
-        });
-        setCounts(countMap);
-      } catch (error) {
-        console.error('Error fetching comment counts:', error);
-      }
-    };
-
     fetchCounts();
+  }, [fetchCounts, refreshTrigger]);
 
-    // Subscribe to realtime updates
-    const channel = supabase
-      .channel('client_comments_changes')
+  useEffect(() => {
+    // Subscribe to realtime updates on client_comments table
+    const commentsChannel = supabase
+      .channel('client_comments_realtime')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'client_comments' },
         () => {
-          fetchCounts();
+          // Small delay to allow trigger to update comment_count
+          setTimeout(() => {
+            setRefreshTrigger(prev => prev + 1);
+          }, 100);
+        }
+      )
+      .subscribe();
+
+    // Also subscribe to clients table for comment_count updates
+    const clientsChannel = supabase
+      .channel('clients_comment_count_realtime')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'clients' },
+        (payload) => {
+          // Update the specific client's count directly
+          if (payload.new && 'id' in payload.new && 'comment_count' in payload.new) {
+            setCounts(prev => {
+              const newMap = new Map(prev);
+              newMap.set(payload.new.id as string, payload.new.comment_count as number);
+              return newMap;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(commentsChannel);
+      supabase.removeChannel(clientsChannel);
+    };
+  }, []);
+
+  return counts;
+}
+
+// Function to manually trigger a refresh (exported for use after adding comments)
+let globalRefreshCallback: (() => void) | null = null;
+
+export function triggerCommentCountRefresh() {
+  if (globalRefreshCallback) {
+    globalRefreshCallback();
+  }
+}
+
+// Updated hook with manual refresh capability
+export function useAllClientsCommentCountsWithRefresh(): [Map<string, number>, () => void] {
+  const [counts, setCounts] = useState<Map<string, number>>(new Map());
+
+  const fetchCounts = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, comment_count');
+
+      if (error) throw error;
+
+      const countMap = new Map<string, number>();
+      (data || []).forEach(row => {
+        countMap.set(row.id, row.comment_count || 0);
+      });
+      setCounts(countMap);
+    } catch (error) {
+      console.error('Error fetching comment counts:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCounts();
+    globalRefreshCallback = fetchCounts;
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('comment_counts_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'client_comments' },
+        () => {
+          setTimeout(fetchCounts, 150);
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
+      globalRefreshCallback = null;
     };
-  }, []);
+  }, [fetchCounts]);
 
-  return counts;
+  return [counts, fetchCounts];
 }
