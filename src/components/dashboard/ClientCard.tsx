@@ -122,11 +122,9 @@ export function ClientCard({
 
       {/* Logo Area - Shows collaborator colors when active */}
       <div 
-        className={`flex items-center justify-center p-1.5 h-10 transition-colors cursor-pointer ${
-          isHighlighted ? 'ring-2 ring-yellow-400' : ''
-        }`}
+        className={`flex items-center justify-center p-1.5 h-10 transition-colors cursor-pointer`}
         style={{
-          background: hasCollaborators ? collaboratorBg : (isHighlighted ? '#facc15' : 'hsl(var(--muted) / 0.3)'),
+          background: hasCollaborators ? collaboratorBg : 'hsl(var(--muted) / 0.3)',
         }}
         onClick={handleLogoClick}
         title="Clique para destacar"

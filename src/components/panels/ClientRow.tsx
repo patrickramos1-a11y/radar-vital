@@ -26,19 +26,17 @@ export function ClientRow({
 
   return (
     <div 
-      className={`flex items-center gap-3 p-3 rounded-lg border transition-all hover:shadow-md ${
+      className={`flex items-center gap-3 p-3 rounded-lg transition-all hover:shadow-md ${
         isHighlighted 
-          ? 'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800' 
-          : 'bg-card border-border hover:bg-muted/30'
+          ? 'bg-card border-4 border-red-500 ring-2 ring-red-500/30' 
+          : 'bg-card border border-border hover:bg-muted/30'
       }`}
     >
       {/* Client Info */}
       <div className="flex items-center gap-3 min-w-[200px]">
         {/* Logo */}
         <div 
-          className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-            isHighlighted ? 'ring-2 ring-blue-400' : ''
-          }`}
+          className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0`}
           style={{
             background: hasActiveCollaborators 
               ? getCollaboratorGradient(client.collaborators) 

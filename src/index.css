@@ -114,12 +114,14 @@
   }
 
   .client-card-compact.highlighted {
-    @apply border-yellow-400 ring-2 ring-yellow-400/50;
-    box-shadow: 0 0 20px -4px rgba(250, 204, 21, 0.4);
+    @apply border-red-500 ring-4 ring-red-500/40;
+    border-width: 3px;
+    box-shadow: 0 0 20px -4px rgba(239, 68, 68, 0.5);
   }
 
   .client-card-compact.selected.highlighted {
-    @apply border-yellow-500 ring-2 ring-yellow-500/50;
+    @apply border-red-600 ring-4 ring-red-600/50;
+    border-width: 3px;
   }
 
   /* Indicator Pills */
