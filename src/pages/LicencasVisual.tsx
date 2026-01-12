@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, CheckCircle, Clock, AlertTriangle, Search } from "lucide-react";
+import { Shield, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualCard, RiskBar, StatBadge } from "@/components/visual-panels/VisualCard";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
-import { Input } from "@/components/ui/input";
+import { VisualPanelFilters, VisualSortOption } from "@/components/visual-panels/VisualPanelFilters";
 import { useClients } from "@/contexts/ClientContext";
+import { useTasks } from "@/hooks/useTasks";
+import { useVisualPanelFilters } from "@/hooks/useVisualPanelFilters";
 import { Client } from "@/types/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -14,7 +16,51 @@ import { ptBR } from "date-fns/locale";
 export default function LicencasVisual() {
   const navigate = useNavigate();
   const { activeClients, highlightedClients } = useClients();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { getActiveTaskCount } = useTasks();
+
+  // Custom sorter for licenses
+  const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
+    switch (sortBy) {
+      case 'expired':
+        const aExpired = a.licenseBreakdown?.foraValidade || 0;
+        const bExpired = b.licenseBreakdown?.foraValidade || 0;
+        return (bExpired - aExpired) * multiplier;
+      case 'expiring':
+        const aExpiring = a.licenseBreakdown?.proximoVencimento || 0;
+        const bExpiring = b.licenseBreakdown?.proximoVencimento || 0;
+        return (bExpiring - aExpiring) * multiplier;
+      case 'licenses':
+        return (b.licenses - a.licenses) * multiplier;
+      case 'critical':
+        const aCrit = (a.licenseBreakdown?.foraValidade || 0) + (a.licenseBreakdown?.proximoVencimento || 0);
+        const bCrit = (b.licenseBreakdown?.foraValidade || 0) + (b.licenseBreakdown?.proximoVencimento || 0);
+        return (bCrit - aCrit) * multiplier;
+      default:
+        return null;
+    }
+  };
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
+    filterFlags,
+    collaboratorFilters,
+    counts,
+    filteredClients,
+    handleFilterFlagToggle,
+    handleCollaboratorFilterToggle,
+    handleClearFilters,
+  } = useVisualPanelFilters({
+    clients: activeClients,
+    highlightedClients,
+    getActiveTaskCount,
+    defaultSort: 'expired',
+    customSorter,
+  });
 
   // KPIs
   const kpis = useMemo(() => {
@@ -28,46 +74,6 @@ export default function LicencasVisual() {
       };
     }, { total: 0, validas: 0, proximoVencimento: 0, foraValidade: 0 });
   }, [activeClients]);
-
-  // Filter and sort clients by risk
-  const filteredClients = useMemo(() => {
-    let result = [...activeClients];
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(c => 
-        c.name.toLowerCase().includes(query) || 
-        c.initials.toLowerCase().includes(query)
-      );
-    }
-
-    // Sort by risk: expired first, then expiring, then by total
-    result.sort((a, b) => {
-      // Highlighted first
-      const aHighlighted = highlightedClients.has(a.id) ? 1 : 0;
-      const bHighlighted = highlightedClients.has(b.id) ? 1 : 0;
-      if (aHighlighted !== bHighlighted) return bHighlighted - aHighlighted;
-
-      // Priority next
-      if (a.isPriority !== b.isPriority) return a.isPriority ? -1 : 1;
-
-      // Expired first
-      const aExpired = a.licenseBreakdown?.foraValidade || 0;
-      const bExpired = b.licenseBreakdown?.foraValidade || 0;
-      if (aExpired !== bExpired) return bExpired - aExpired;
-
-      // Then by expiring
-      const aExpiring = a.licenseBreakdown?.proximoVencimento || 0;
-      const bExpiring = b.licenseBreakdown?.proximoVencimento || 0;
-      if (aExpiring !== bExpiring) return bExpiring - aExpiring;
-
-      // Then by total
-      return b.licenses - a.licenses;
-    });
-
-    return result;
-  }, [activeClients, searchQuery, highlightedClients]);
 
   // Determine card variant
   const getCardVariant = (client: Client): "default" | "warning" | "danger" | "success" => {
@@ -87,6 +93,14 @@ export default function LicencasVisual() {
     navigate(`/licencas?client=${clientId}`);
   };
 
+  const sortOptions: { value: VisualSortOption; label: string }[] = [
+    { value: 'priority', label: 'Prioridade' },
+    { value: 'expired', label: 'Vencidas' },
+    { value: 'expiring', label: 'Próx. Venc.' },
+    { value: 'licenses', label: 'Total' },
+    { value: 'name', label: 'Nome' },
+  ];
+
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden">
@@ -103,18 +117,25 @@ export default function LicencasVisual() {
           <KPICard icon={<AlertTriangle className="w-4 h-4" />} value={kpis.foraValidade} label="Vencidas" variant="danger" />
         </VisualPanelHeader>
 
-        {/* Search Bar */}
-        <div className="px-6 py-3 bg-muted/30 border-b border-border">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar empresa..."
-              className="pl-10"
-            />
-          </div>
-        </div>
+        {/* Filters */}
+        <VisualPanelFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filterFlags={filterFlags}
+          onFilterFlagToggle={handleFilterFlagToggle}
+          collaboratorFilters={collaboratorFilters}
+          onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSortChange={setSortBy}
+          onSortDirectionChange={setSortDirection}
+          onClearFilters={handleClearFilters}
+          highlightedCount={counts.highlighted}
+          jackboxCount={counts.jackbox}
+          checkedCount={counts.checked}
+          showCollaborators={true}
+          sortOptions={sortOptions}
+        />
 
         {/* Visual Grid */}
         <VisualGrid itemCount={filteredClients.length}>

@@ -1,18 +1,56 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, CheckCircle, Search, Clock, AlertTriangle, XCircle } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualCard, ProgressBar, StatBadge } from "@/components/visual-panels/VisualCard";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
-import { Input } from "@/components/ui/input";
+import { VisualPanelFilters, VisualSortOption } from "@/components/visual-panels/VisualPanelFilters";
 import { useClients } from "@/contexts/ClientContext";
+import { useTasks } from "@/hooks/useTasks";
+import { useVisualPanelFilters } from "@/hooks/useVisualPanelFilters";
 import { Client } from "@/types/client";
 
 export default function ProcessosVisual() {
   const navigate = useNavigate();
   const { activeClients, highlightedClients } = useClients();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { getActiveTaskCount } = useTasks();
+
+  // Custom sorter for processes
+  const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
+    switch (sortBy) {
+      case 'critical':
+        const aCritical = (a.processBreakdown?.notificado || 0) + (a.processBreakdown?.reprovado || 0);
+        const bCritical = (b.processBreakdown?.notificado || 0) + (b.processBreakdown?.reprovado || 0);
+        return (bCritical - aCritical) * multiplier;
+      case 'processes':
+        return (b.processes - a.processes) * multiplier;
+      default:
+        return null;
+    }
+  };
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
+    filterFlags,
+    collaboratorFilters,
+    counts,
+    filteredClients,
+    handleFilterFlagToggle,
+    handleCollaboratorFilterToggle,
+    handleClearFilters,
+  } = useVisualPanelFilters({
+    clients: activeClients,
+    highlightedClients,
+    getActiveTaskCount,
+    defaultSort: 'critical',
+    customSorter,
+  });
 
   // KPIs
   const kpis = useMemo(() => {
@@ -34,41 +72,6 @@ export default function ProcessosVisual() {
     }, { total: 0, emAnaliseOrgao: 0, emAnaliseRamos: 0, notificado: 0, reprovado: 0, deferido: 0, criticos: 0 });
   }, [activeClients]);
 
-  // Filter and sort clients by critical status
-  const filteredClients = useMemo(() => {
-    let result = [...activeClients];
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(c => 
-        c.name.toLowerCase().includes(query) || 
-        c.initials.toLowerCase().includes(query)
-      );
-    }
-
-    // Sort by: critical first (notificado + reprovado), then by total
-    result.sort((a, b) => {
-      // Highlighted first
-      const aHighlighted = highlightedClients.has(a.id) ? 1 : 0;
-      const bHighlighted = highlightedClients.has(b.id) ? 1 : 0;
-      if (aHighlighted !== bHighlighted) return bHighlighted - aHighlighted;
-
-      // Priority next
-      if (a.isPriority !== b.isPriority) return a.isPriority ? -1 : 1;
-
-      // Critical first
-      const aCritical = (a.processBreakdown?.notificado || 0) + (a.processBreakdown?.reprovado || 0);
-      const bCritical = (b.processBreakdown?.notificado || 0) + (b.processBreakdown?.reprovado || 0);
-      if (aCritical !== bCritical) return bCritical - aCritical;
-
-      // Then by total processes
-      return b.processes - a.processes;
-    });
-
-    return result;
-  }, [activeClients, searchQuery, highlightedClients]);
-
   // Determine card variant
   const getCardVariant = (client: Client): "default" | "warning" | "danger" | "success" => {
     const reprovado = client.processBreakdown?.reprovado || 0;
@@ -86,6 +89,13 @@ export default function ProcessosVisual() {
   const handleCardClick = (clientId: string) => {
     navigate(`/processos?client=${clientId}`);
   };
+
+  const sortOptions: { value: VisualSortOption; label: string }[] = [
+    { value: 'priority', label: 'Prioridade' },
+    { value: 'critical', label: 'Críticos' },
+    { value: 'processes', label: 'Total' },
+    { value: 'name', label: 'Nome' },
+  ];
 
   return (
     <AppLayout>
@@ -113,18 +123,25 @@ export default function ProcessosVisual() {
           </div>
         </VisualPanelHeader>
 
-        {/* Search Bar */}
-        <div className="px-6 py-3 bg-muted/30 border-b border-border">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar empresa..."
-              className="pl-10"
-            />
-          </div>
-        </div>
+        {/* Filters */}
+        <VisualPanelFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filterFlags={filterFlags}
+          onFilterFlagToggle={handleFilterFlagToggle}
+          collaboratorFilters={collaboratorFilters}
+          onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSortChange={setSortBy}
+          onSortDirectionChange={setSortDirection}
+          onClearFilters={handleClearFilters}
+          highlightedCount={counts.highlighted}
+          jackboxCount={counts.jackbox}
+          checkedCount={counts.checked}
+          showCollaborators={true}
+          sortOptions={sortOptions}
+        />
 
         {/* Visual Grid */}
         <VisualGrid itemCount={filteredClients.length}>
@@ -133,7 +150,6 @@ export default function ProcessosVisual() {
               total: 0, deferido: 0, emAnaliseOrgao: 0, emAnaliseRamos: 0, notificado: 0, reprovado: 0 
             };
             const criticos = breakdown.notificado + breakdown.reprovado;
-            const emAndamento = breakdown.emAnaliseOrgao + breakdown.emAnaliseRamos + breakdown.notificado;
 
             return (
               <VisualCard
