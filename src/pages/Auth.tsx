@@ -1,128 +1,80 @@
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { useUser, APP_USERS, AppUserName } from '@/contexts/UserContext';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 export default function AuthPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'forgot'>('login');
+  const { selectUser, isLoggedIn } = useUser();
+  const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      toast.error('Erro ao fazer login: ' + error.message);
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate('/', { replace: true });
     }
-    setLoading(false);
-  };
+  }, [isLoggedIn, navigate]);
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
-    });
-
-    if (error) {
-      toast.error('Erro ao enviar e-mail: ' + error.message);
-    } else {
-      toast.success('Link de recuperação enviado para o e-mail!');
-      setMode('login');
-    }
-    setLoading(false);
+  const handleUserSelect = async (name: AppUserName) => {
+    await selectUser(name);
+    navigate('/', { replace: true });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-3xl font-bold">Painel AC</CardTitle>
-          <CardDescription>
-            {mode === 'login' 
-              ? 'Faça login para acessar o sistema' 
-              : 'Digite seu e-mail para recuperar a senha'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {mode === 'login' ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Seu e-mail"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Entrar
-              </Button>
-              <Button
-                type="button"
-                variant="link"
-                className="w-full"
-                onClick={() => setMode('forgot')}
-              >
-                Esqueceu a senha?
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Seu e-mail"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Enviar link de recuperação
-              </Button>
-              <Button
-                type="button"
-                variant="link"
-                className="w-full"
-                onClick={() => setMode('login')}
-              >
-                Voltar ao login
-              </Button>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+      {/* Logo */}
+      <div className="mb-8 text-center">
+        <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <span className="text-primary-foreground font-bold text-3xl">AC</span>
+        </div>
+        <h1 className="text-3xl font-bold text-foreground">Painel AC</h1>
+        <p className="text-muted-foreground mt-1">SISRAMOS</p>
+      </div>
+
+      {/* Title */}
+      <h2 className="text-xl font-semibold text-foreground mb-6">
+        Selecione seu usuário
+      </h2>
+
+      {/* User Buttons Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl">
+        {APP_USERS.map((user) => (
+          <button
+            key={user.name}
+            onClick={() => handleUserSelect(user.name)}
+            className="group relative flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-offset-2"
+            style={{
+              borderColor: user.color,
+              backgroundColor: `${user.color}10`,
+            }}
+          >
+            {/* Avatar */}
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center mb-4 text-white font-bold text-2xl shadow-lg transition-transform group-hover:scale-110"
+              style={{ backgroundColor: user.color }}
+            >
+              {user.initials}
+            </div>
+            
+            {/* Name */}
+            <span 
+              className="text-xl font-bold transition-colors"
+              style={{ color: user.color }}
+            >
+              {user.name}
+            </span>
+
+            {/* Hover effect overlay */}
+            <div
+              className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity"
+              style={{ backgroundColor: user.color }}
+            />
+          </button>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <p className="mt-8 text-sm text-muted-foreground">
+        Clique no seu nome para entrar no sistema
+      </p>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Star, Sparkles } from "lucide-react";
 import { Client, calculateTotalDemands, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import { ChecklistButton } from "@/components/checklist/ChecklistButton";
 import { CommentButton } from "@/components/comments/CommentButton";
@@ -51,16 +51,22 @@ function hasActiveCollaborators(collaborators: Client['collaborators']): boolean
   return COLLABORATOR_NAMES.some(name => collaborators[name]);
 }
 
-// Calcula o tamanho ideal da fonte baseado no comprimento do nome e quantidade de clientes
-// Objetivo: o MAIOR possível sem estourar o card; nomes grandes podem quebrar em 2 linhas.
-function getOptimalFontSize(name: string, clientCount: number): string {
+// Dynamic font size calculation - MAXIMUM possible based on client count
+// Allows up to 3 lines for long names
+function getOptimalFontSize(name: string, clientCount: number): { fontSize: string; lineHeight: string } {
   const len = name.trim().length;
 
-  // Base mais agressiva (maior) para melhorar leitura no grid
+  // Base size increases significantly with fewer clients
   let baseSize: number;
-  if (clientCount <= 12) {
+  if (clientCount <= 4) {
+    baseSize = 36;
+  } else if (clientCount <= 8) {
+    baseSize = 30;
+  } else if (clientCount <= 12) {
+    baseSize = 26;
+  } else if (clientCount <= 20) {
     baseSize = 22;
-  } else if (clientCount <= 25) {
+  } else if (clientCount <= 30) {
     baseSize = 18;
   } else if (clientCount <= 40) {
     baseSize = 16;
@@ -68,21 +74,41 @@ function getOptimalFontSize(name: string, clientCount: number): string {
     baseSize = 14;
   }
 
-  // Ajuste por tamanho do nome
-  if (len <= 8) {
-    return `${baseSize + 6}px`;
-  }
-  if (len <= 14) {
-    return `${baseSize + 3}px`;
-  }
-  if (len <= 22) {
-    return `${baseSize}px`;
-  }
-  if (len <= 30) {
-    return `${baseSize - 2}px`;
+  // Adjust by name length - short names get even bigger
+  let finalSize: number;
+  if (len <= 6) {
+    finalSize = baseSize + 8;
+  } else if (len <= 10) {
+    finalSize = baseSize + 4;
+  } else if (len <= 16) {
+    finalSize = baseSize;
+  } else if (len <= 24) {
+    finalSize = Math.max(baseSize - 2, 12);
+  } else {
+    finalSize = Math.max(baseSize - 4, 10);
   }
 
-  return `${Math.max(baseSize - 3, 10)}px`;
+  return {
+    fontSize: `${finalSize}px`,
+    lineHeight: '1.1',
+  };
+}
+
+// Dynamic logo area height - expands when fewer clients
+function getLogoAreaStyle(clientCount: number, hasLogo: boolean): { minHeight: string; maxHeight: string } {
+  if (clientCount <= 4) {
+    return { minHeight: hasLogo ? '80px' : '100px', maxHeight: '140px' };
+  } else if (clientCount <= 8) {
+    return { minHeight: hasLogo ? '60px' : '80px', maxHeight: '120px' };
+  } else if (clientCount <= 12) {
+    return { minHeight: hasLogo ? '48px' : '64px', maxHeight: '100px' };
+  } else if (clientCount <= 20) {
+    return { minHeight: hasLogo ? '40px' : '52px', maxHeight: '80px' };
+  } else if (clientCount <= 30) {
+    return { minHeight: hasLogo ? '36px' : '44px', maxHeight: '60px' };
+  } else {
+    return { minHeight: hasLogo ? '28px' : '36px', maxHeight: '48px' };
+  }
 }
 
 export function ClientCard({ 
@@ -102,13 +128,13 @@ export function ClientCard({
   const totalDemands = calculateTotalDemands(client.demands);
   const hasCollaborators = hasActiveCollaborators(client.collaborators);
   const collaboratorBg = getCollaboratorGradient(client.collaborators);
+  const logoAreaStyle = getLogoAreaStyle(clientCount, !!client.logoUrl);
+  const fontStyle = getOptimalFontSize(client.name, clientCount);
 
-  // Tamanho da área do logo baseado na quantidade de clientes - mais compacto
-  const logoAreaHeight = clientCount <= 12 ? 'h-12' : clientCount <= 25 ? 'h-10' : clientCount <= 40 ? 'h-8' : 'h-7';
-  const logoMaxHeight = clientCount <= 12 ? 'max-h-10' : clientCount <= 25 ? 'max-h-8' : clientCount <= 40 ? 'max-h-6' : 'max-h-5';
-  const initialsSize = clientCount <= 12 ? 'w-9 h-9 text-sm' : clientCount <= 25 ? 'w-7 h-7 text-xs' : clientCount <= 40 ? 'w-6 h-6 text-[10px]' : 'w-5 h-5 text-[9px]';
+  // Logo sizing based on client count
+  const logoMaxHeight = clientCount <= 8 ? 'max-h-16' : clientCount <= 20 ? 'max-h-12' : clientCount <= 30 ? 'max-h-10' : 'max-h-8';
 
-  const handleLogoClick = (e: React.MouseEvent) => {
+  const handleHighlightClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onHighlight(client.id);
   };
@@ -133,7 +159,7 @@ export function ClientCard({
       className={`client-card-compact ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={() => onSelect(client.id)}
     >
-      {/* Top right icons - Comments + Checklist + Priority */}
+      {/* Top right icons - Comments + Checklist + Highlight + Priority */}
       <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
         <CommentButton
           clientId={client.id}
@@ -144,6 +170,21 @@ export function ClientCard({
           activeCount={activeTaskCount}
           onClick={handleChecklistClick}
         />
+        {/* Highlight Button */}
+        <button
+          onClick={handleHighlightClick}
+          className="p-0.5 rounded transition-colors hover:bg-muted/50"
+          title={isHighlighted ? "Remover destaque" : "Destacar cliente"}
+        >
+          <Sparkles 
+            className={`w-3.5 h-3.5 transition-colors ${
+              isHighlighted 
+                ? 'text-blue-500 fill-blue-500' 
+                : 'text-muted-foreground/40 hover:text-blue-400'
+            }`} 
+          />
+        </button>
+        {/* Priority Button */}
         <button
           onClick={handleStarClick}
           className="p-0.5 rounded transition-colors hover:bg-muted/50"
@@ -159,24 +200,23 @@ export function ClientCard({
         </button>
       </div>
 
-      {/* Header - Number + Name - mais compacto */}
+      {/* Header - Number + Name */}
       <div className="flex items-center gap-1 px-1.5 py-0.5 bg-card-elevated border-b border-border">
         <div className="flex items-center justify-center w-4 h-4 rounded bg-primary text-primary-foreground text-[8px] font-bold shrink-0">
           {displayNumber.toString().padStart(2, '0')}
         </div>
-        <span className="text-[9px] font-medium text-foreground truncate flex-1 pr-4">
+        <span className="text-[9px] font-medium text-foreground truncate flex-1 pr-6">
           {client.name}
         </span>
       </div>
 
-      {/* Logo Area - mais compacto */}
+      {/* Logo/Name Area - Dynamic height based on client count */}
       <div 
-        className={`flex items-center justify-center p-1 ${logoAreaHeight} transition-colors cursor-pointer overflow-hidden`}
+        className="flex items-center justify-center p-2 flex-1 transition-colors overflow-hidden"
         style={{
-          background: hasCollaborators ? collaboratorBg : 'hsl(var(--muted) / 0.3)',
+          background: hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(220 90% 50% / 0.15)' : 'hsl(var(--muted) / 0.3)'),
+          minHeight: logoAreaStyle.minHeight,
         }}
-        onClick={handleLogoClick}
-        title="Clique para destacar"
       >
         {client.logoUrl ? (
           <img 
@@ -186,13 +226,18 @@ export function ClientCard({
           />
         ) : (
           <span 
-            className={`font-bold text-center leading-tight px-1 ${
+            className={`font-bold text-center px-1 ${
               hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'
             }`}
             style={{
-              fontSize: getOptimalFontSize(client.name, clientCount),
+              fontSize: fontStyle.fontSize,
+              lineHeight: fontStyle.lineHeight,
               wordBreak: 'break-word',
               hyphens: 'auto',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}
           >
             {client.name}
@@ -200,7 +245,7 @@ export function ClientCard({
         )}
       </div>
 
-      {/* Indicators Row - P, L, D with chips - mais compacto */}
+      {/* Indicators Row - P, L, D with chips */}
       <div className="px-1 py-0.5 border-t border-border bg-card-elevated/50">
         <div className="flex items-center justify-between gap-0.5">
           {/* P - Processos */}
@@ -221,7 +266,7 @@ export function ClientCard({
             <span className="text-[10px] font-bold text-foreground leading-tight">{totalDemands}</span>
           </div>
 
-          {/* Status chips - menores */}
+          {/* Status chips */}
           <div className="flex items-center gap-px">
             <DemandChipSmall status="completed" count={client.demands.completed} />
             <DemandChipSmall status="in-progress" count={client.demands.inProgress} />
@@ -231,7 +276,7 @@ export function ClientCard({
         </div>
       </div>
 
-      {/* Collaborators Row - 4 Buttons - altura menor */}
+      {/* Collaborators Row - 4 Buttons */}
       <div className="grid grid-cols-4 border-t border-border">
         {COLLABORATOR_NAMES.map((name) => (
           <CollaboratorButton

@@ -1,7 +1,7 @@
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List, User } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { signOut, user } = useAuth();
+  const { currentUser, logout } = useUser();
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
@@ -94,17 +94,34 @@ export function AppLayout({ children }: AppLayoutProps) {
 
           {/* User info and Logout */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground hidden md:inline truncate max-w-32">
-              {user?.email}
-            </span>
+            {currentUser && (
+              <div 
+                className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
+                style={{ backgroundColor: `${currentUser.color}20` }}
+              >
+                <div 
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                  style={{ backgroundColor: currentUser.color }}
+                >
+                  {currentUser.initials}
+                </div>
+                <span 
+                  className="text-sm font-medium hidden md:inline"
+                  style={{ color: currentUser.color }}
+                >
+                  {currentUser.name}
+                </span>
+              </div>
+            )}
             <Button
               variant="ghost"
               size="sm"
-              onClick={signOut}
+              onClick={logout}
               className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+              title="Trocar usuário"
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Sair</span>
+              <span className="hidden sm:inline">Trocar</span>
             </Button>
           </div>
         </div>
