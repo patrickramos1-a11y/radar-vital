@@ -81,60 +81,60 @@ function getNameFontSize(name: string, scale: CardScale): string {
   return `${Math.max(base - 6, 14)}px`;
 }
 
-// Estilos por escala - AUMENTADOS para TV
+// Estilos por escala - ALTURA DOBRADA para melhor visualização em TV
 function getScaleStyles(scale: CardScale) {
   const styles = {
     xlarge: {
-      headerPadding: 'px-3 py-2',
+      headerPadding: 'px-3 py-3',
+      numberSize: 'w-12 h-12 text-lg',
+      miniLogoSize: 'w-12 h-12',
+      iconSize: 'w-7 h-7',
+      nameAreaHeight: 'min-h-[200px]',
+      indicatorPadding: 'px-4 py-4',
+      indicatorLabel: 'text-base',
+      indicatorValue: 'text-3xl',
+      chipSize: 'min-w-[40px] h-10 text-lg px-3',
+      collabHeight: 'h-12',
+      collabText: 'text-base',
+    },
+    large: {
+      headerPadding: 'px-2.5 py-2',
       numberSize: 'w-10 h-10 text-base',
       miniLogoSize: 'w-10 h-10',
       iconSize: 'w-6 h-6',
-      nameAreaHeight: 'min-h-[120px]',
-      indicatorText: 'text-base',
+      nameAreaHeight: 'min-h-[160px]',
+      indicatorPadding: 'px-3 py-3',
       indicatorLabel: 'text-sm',
       indicatorValue: 'text-2xl',
       chipSize: 'min-w-[32px] h-8 text-base px-2',
-      collabHeight: 'h-8',
+      collabHeight: 'h-10',
       collabText: 'text-sm',
     },
-    large: {
-      headerPadding: 'px-2.5 py-1.5',
+    medium: {
+      headerPadding: 'px-2 py-1.5',
       numberSize: 'w-8 h-8 text-sm',
       miniLogoSize: 'w-8 h-8',
       iconSize: 'w-5 h-5',
-      nameAreaHeight: 'min-h-[100px]',
-      indicatorText: 'text-sm',
+      nameAreaHeight: 'min-h-[120px]',
+      indicatorPadding: 'px-2.5 py-2.5',
       indicatorLabel: 'text-xs',
       indicatorValue: 'text-xl',
       chipSize: 'min-w-[26px] h-7 text-sm px-1.5',
-      collabHeight: 'h-7',
+      collabHeight: 'h-8',
       collabText: 'text-xs',
-    },
-    medium: {
-      headerPadding: 'px-2 py-1',
-      numberSize: 'w-6 h-6 text-xs',
-      miniLogoSize: 'w-6 h-6',
-      iconSize: 'w-4 h-4',
-      nameAreaHeight: 'min-h-[80px]',
-      indicatorText: 'text-xs',
-      indicatorLabel: 'text-[10px]',
-      indicatorValue: 'text-lg',
-      chipSize: 'min-w-[22px] h-6 text-xs px-1',
-      collabHeight: 'h-6',
-      collabText: 'text-[11px]',
     },
     compact: {
       headerPadding: 'px-1.5 py-1',
-      numberSize: 'w-5 h-5 text-[10px]',
-      miniLogoSize: 'w-5 h-5',
-      iconSize: 'w-3.5 h-3.5',
-      nameAreaHeight: 'min-h-[60px]',
-      indicatorText: 'text-[10px]',
-      indicatorLabel: 'text-[8px]',
-      indicatorValue: 'text-base',
-      chipSize: 'min-w-[18px] h-5 text-[10px] px-0.5',
-      collabHeight: 'h-5',
-      collabText: 'text-[9px]',
+      numberSize: 'w-6 h-6 text-xs',
+      miniLogoSize: 'w-6 h-6',
+      iconSize: 'w-4 h-4',
+      nameAreaHeight: 'min-h-[90px]',
+      indicatorPadding: 'px-2 py-2',
+      indicatorLabel: 'text-[10px]',
+      indicatorValue: 'text-lg',
+      chipSize: 'min-w-[20px] h-6 text-xs px-1',
+      collabHeight: 'h-6',
+      collabText: 'text-[10px]',
     },
   };
   
@@ -238,7 +238,7 @@ export function ClientCard({
 
       {/* ÁREA CENTRAL: NOME GRANDE - sempre visível, clique destaca */}
       <div 
-        className={`flex items-center justify-center p-3 ${styles.nameAreaHeight} transition-colors cursor-pointer overflow-hidden`}
+        className={`flex items-center justify-center p-4 ${styles.nameAreaHeight} transition-colors cursor-pointer overflow-hidden`}
         style={{
           background: hasCollaborators ? collaboratorBg : 'hsl(var(--muted) / 0.3)',
         }}
@@ -246,7 +246,7 @@ export function ClientCard({
         title="Clique para destacar"
       >
         <span 
-          className={`font-bold text-center leading-tight line-clamp-2 ${
+          className={`font-bold text-center leading-tight line-clamp-3 ${
             hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'
           }`}
           style={{
@@ -260,28 +260,28 @@ export function ClientCard({
       </div>
 
       {/* INDICADORES: P, L, D + Chips de status - nunca overflow */}
-      <div className={`${styles.headerPadding} border-t border-border bg-card-elevated/50`}>
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+      <div className={`${styles.indicatorPadding} border-t border-border bg-card-elevated/50`}>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           {/* P - Processos */}
-          <div className="flex flex-col items-center min-w-[28px]">
+          <div className="flex flex-col items-center min-w-[36px]">
             <span className={`${styles.indicatorLabel} text-muted-foreground font-medium leading-none`}>P</span>
             <span className={`${styles.indicatorValue} font-bold text-foreground leading-tight`}>{client.processes}</span>
           </div>
 
           {/* L - Licenças */}
-          <div className="flex flex-col items-center min-w-[28px]">
+          <div className="flex flex-col items-center min-w-[36px]">
             <span className={`${styles.indicatorLabel} text-muted-foreground font-medium leading-none`}>L</span>
             <span className={`${styles.indicatorValue} font-bold text-foreground leading-tight`}>{client.licenses}</span>
           </div>
 
           {/* D - Demandas */}
-          <div className="flex flex-col items-center min-w-[28px]">
+          <div className="flex flex-col items-center min-w-[36px]">
             <span className={`${styles.indicatorLabel} text-muted-foreground font-medium leading-none`}>D</span>
             <span className={`${styles.indicatorValue} font-bold text-foreground leading-tight`}>{totalDemands}</span>
           </div>
 
           {/* Chips de status - flex-wrap para não estourar */}
-          <div className="flex items-center gap-1.5 flex-wrap flex-1 justify-end">
+          <div className="flex items-center gap-2 flex-wrap flex-1 justify-end">
             <DemandChip status="completed" count={client.demands.completed} scale={scale} />
             <DemandChip status="in-progress" count={client.demands.inProgress} scale={scale} />
             <DemandChip status="not-started" count={client.demands.notStarted} scale={scale} />
@@ -321,10 +321,10 @@ function DemandChip({ status, count, scale }: DemandChipProps) {
   };
   
   const sizeClasses: Record<CardScale, string> = {
-    xlarge: 'min-w-[36px] h-9 px-2 text-lg',
-    large: 'min-w-[28px] h-7 px-1.5 text-sm',
-    medium: 'min-w-[22px] h-6 px-1 text-xs',
-    compact: 'min-w-[18px] h-5 px-0.5 text-[10px]',
+    xlarge: 'min-w-[44px] h-11 px-3 text-xl',
+    large: 'min-w-[36px] h-9 px-2 text-lg',
+    medium: 'min-w-[28px] h-7 px-1.5 text-sm',
+    compact: 'min-w-[22px] h-6 px-1 text-xs',
   };
   
   return (
@@ -346,17 +346,17 @@ function CollaboratorButton({ name, isActive, onClick, scale }: CollaboratorButt
   const initials = name.slice(0, 2).toUpperCase();
   
 const heightClasses: Record<CardScale, string> = {
-    xlarge: 'h-10',
-    large: 'h-8',
-    medium: 'h-7',
-    compact: 'h-6',
+    xlarge: 'h-14',
+    large: 'h-11',
+    medium: 'h-9',
+    compact: 'h-7',
   };
   
   const textClasses: Record<CardScale, string> = {
-    xlarge: 'text-base',
-    large: 'text-sm',
-    medium: 'text-xs',
-    compact: 'text-[10px]',
+    xlarge: 'text-lg',
+    large: 'text-base',
+    medium: 'text-sm',
+    compact: 'text-xs',
   };
   
   return (
