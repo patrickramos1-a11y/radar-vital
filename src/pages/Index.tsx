@@ -295,8 +295,8 @@ const Index = () => {
           onClearAllFilters={handleClearAllFilters}
         />
 
-        {/* Main Content - Client Grid */}
-        <div className="flex-1 overflow-hidden">
+        {/* Main Content - Client Grid com scroll vertical */}
+        <div className="flex-1 overflow-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">

@@ -81,7 +81,7 @@ function getNameFontSize(name: string, scale: CardScale): string {
   return `${Math.max(base - 6, 14)}px`;
 }
 
-// Estilos por escala - ALTURA DOBRADA para melhor visualização em TV
+// Estilos por escala - com alturas mínimas para garantir visibilidade
 function getScaleStyles(scale: CardScale) {
   const styles = {
     xlarge: {
@@ -89,52 +89,52 @@ function getScaleStyles(scale: CardScale) {
       numberSize: 'w-12 h-12 text-lg',
       miniLogoSize: 'w-12 h-12',
       iconSize: 'w-7 h-7',
-      nameAreaHeight: 'min-h-[200px]',
       indicatorPadding: 'px-4 py-4',
       indicatorLabel: 'text-base',
       indicatorValue: 'text-3xl',
       chipSize: 'min-w-[40px] h-10 text-lg px-3',
-      collabHeight: 'h-12',
+      collabHeight: 'h-14',
       collabText: 'text-base',
+      minCardHeight: '340px',
     },
     large: {
       headerPadding: 'px-2.5 py-2',
       numberSize: 'w-10 h-10 text-base',
       miniLogoSize: 'w-10 h-10',
       iconSize: 'w-6 h-6',
-      nameAreaHeight: 'min-h-[160px]',
       indicatorPadding: 'px-3 py-3',
       indicatorLabel: 'text-sm',
       indicatorValue: 'text-2xl',
       chipSize: 'min-w-[32px] h-8 text-base px-2',
-      collabHeight: 'h-10',
+      collabHeight: 'h-12',
       collabText: 'text-sm',
+      minCardHeight: '300px',
     },
     medium: {
       headerPadding: 'px-2 py-1.5',
       numberSize: 'w-8 h-8 text-sm',
       miniLogoSize: 'w-8 h-8',
       iconSize: 'w-5 h-5',
-      nameAreaHeight: 'min-h-[120px]',
       indicatorPadding: 'px-2.5 py-2.5',
       indicatorLabel: 'text-xs',
       indicatorValue: 'text-xl',
       chipSize: 'min-w-[26px] h-7 text-sm px-1.5',
-      collabHeight: 'h-8',
+      collabHeight: 'h-10',
       collabText: 'text-xs',
+      minCardHeight: '260px',
     },
     compact: {
       headerPadding: 'px-1.5 py-1',
       numberSize: 'w-6 h-6 text-xs',
       miniLogoSize: 'w-6 h-6',
       iconSize: 'w-4 h-4',
-      nameAreaHeight: 'min-h-[90px]',
       indicatorPadding: 'px-2 py-2',
       indicatorLabel: 'text-[10px]',
       indicatorValue: 'text-lg',
       chipSize: 'min-w-[20px] h-6 text-xs px-1',
-      collabHeight: 'h-6',
-      collabText: 'text-[10px]',
+      collabHeight: 'h-8',
+      collabText: 'text-xs',
+      minCardHeight: '220px',
     },
   };
   
@@ -185,7 +185,8 @@ export function ClientCard({
 
   return (
     <div
-      className={`client-card-compact h-full ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+      className={`client-card-compact flex flex-col ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+      style={{ minHeight: styles.minCardHeight }}
       onClick={() => onSelect(client.id)}
     >
       {/* HEADER: Número + Mini Logo + Ícones - altura fixa */}

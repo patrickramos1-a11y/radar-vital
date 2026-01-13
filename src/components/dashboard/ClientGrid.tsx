@@ -58,12 +58,22 @@ export function ClientGrid({
     return '140px';
   }, [clients.length]);
 
+  // Altura mínima dos cards baseada na quantidade - NUNCA comprimir demais
+  const cardMinHeight = useMemo(() => {
+    if (clients.length <= 5) return '340px';
+    if (clients.length <= 10) return '300px';
+    if (clients.length <= 15) return '280px';
+    if (clients.length <= 25) return '260px';
+    if (clients.length <= 40) return '240px';
+    return '220px';
+  }, [clients.length]);
+
   return (
     <div 
-      className="grid gap-3 p-4 w-full h-full transition-all duration-300"
+      className="grid gap-3 p-4 w-full transition-all duration-300"
       style={{ 
         gridTemplateColumns: `repeat(${columns}, minmax(${cardMinSize}, 1fr))`,
-        gridAutoRows: '1fr',
+        gridAutoRows: `minmax(${cardMinHeight}, auto)`,
       }}
     >
       {clients.map((client, index) => (
