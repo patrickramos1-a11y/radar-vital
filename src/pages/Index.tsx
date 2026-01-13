@@ -7,7 +7,7 @@ import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { calculateTotals, calculateTotalDemands, CollaboratorName, Client } from "@/types/client";
-import { Users, FileText, Shield, ClipboardList, Star, Sparkles, MessageCircle } from "lucide-react";
+import { Users, FileText, Shield, ClipboardList } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
 
 const Index = () => {
@@ -33,7 +33,6 @@ const Index = () => {
     toggleComplete,
   } = useTasks();
 
-  // Comment counts for all clients (with manual refresh capability)
   const [commentCounts, refreshCommentCounts] = useAllClientsCommentCountsWithRefresh();
   const getCommentCount = useCallback((clientId: string) => commentCounts.get(clientId) || 0, [commentCounts]);
 
@@ -43,10 +42,10 @@ const Index = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [clientTypeFilter, setClientTypeFilter] = useState<ClientTypeFilter>('all');
   
-  // Multi-select filter flags
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
     highlighted: false,
+    selected: false,
     withJackbox: false,
     withoutJackbox: false,
     withComments: false,
@@ -54,42 +53,35 @@ const Index = () => {
   });
   const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
 
-  // Calculate collaborator demand stats from client data (from imports)
   const collaboratorDemandStats = useMemo(() => {
     const stats = { celine: 0, gabi: 0, darley: 0, vanessa: 0 };
-    
     activeClients.forEach((client) => {
       stats.celine += client.demandsByCollaborator?.celine || 0;
       stats.gabi += client.demandsByCollaborator?.gabi || 0;
       stats.darley += client.demandsByCollaborator?.darley || 0;
       stats.vanessa += client.demandsByCollaborator?.vanessa || 0;
     });
-    
     return stats;
   }, [activeClients]);
 
-  // Count clients with active tasks (jackbox)
   const jackboxCount = useMemo(() => 
     activeClients.filter(c => getActiveTaskCount(c.id) > 0).length,
     [activeClients, getActiveTaskCount]
   );
 
-  // Count clients by type
   const acCount = useMemo(() => activeClients.filter(c => c.clientType === 'AC').length, [activeClients]);
   const avCount = useMemo(() => activeClients.filter(c => c.clientType === 'AV').length, [activeClients]);
-
-  // Count clients with comments
   const withCommentsCount = useMemo(() => 
     activeClients.filter(c => getCommentCount(c.id) > 0).length,
     [activeClients, getCommentCount]
   );
+  const priorityCount = useMemo(() => activeClients.filter(c => c.isPriority).length, [activeClients]);
+  const selectedCount = useMemo(() => activeClients.filter(c => c.isChecked).length, [activeClients]);
 
-  // Toggle filter flag (multi-select)
   const handleFilterFlagToggle = (flag: keyof FilterFlags) => {
     setFilterFlags(prev => ({
       ...prev,
       [flag]: !prev[flag],
-      // Mutually exclusive pairs
       ...(flag === 'withJackbox' && !prev.withJackbox ? { withoutJackbox: false } : {}),
       ...(flag === 'withoutJackbox' && !prev.withoutJackbox ? { withJackbox: false } : {}),
       ...(flag === 'withComments' && !prev.withComments ? { withoutComments: false } : {}),
@@ -97,11 +89,11 @@ const Index = () => {
     }));
   };
 
-  // Clear all filters
   const handleClearAllFilters = () => {
     setFilterFlags({
       priority: false,
       highlighted: false,
+      selected: false,
       withJackbox: false,
       withoutJackbox: false,
       withComments: false,
@@ -111,7 +103,6 @@ const Index = () => {
     setClientTypeFilter('all');
   };
 
-  // Toggle collaborator filter (multi-select)
   const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {
     setCollaboratorFilters(prev => 
       prev.includes(collaborator)
@@ -120,31 +111,28 @@ const Index = () => {
     );
   };
 
-  // Apply filters (OR logic - shows items matching ANY selected filter)
   const filteredClients = useMemo(() => {
     let result = [...activeClients];
 
-    // First, apply client type filter (always applied)
     if (clientTypeFilter !== 'all') {
       result = result.filter(c => c.clientType === clientTypeFilter);
     }
 
-    // Check if any other filter is active
     const hasAnyFilterActive = 
       filterFlags.priority || 
       filterFlags.highlighted || 
+      filterFlags.selected ||
       filterFlags.withJackbox || 
       filterFlags.withoutJackbox ||
       filterFlags.withComments ||
       filterFlags.withoutComments ||
       collaboratorFilters.length > 0;
 
-    // If any filter is active, use OR logic
     if (hasAnyFilterActive) {
       result = result.filter(c => {
-        // Check each condition - return true if ANY matches
         const matchesPriority = filterFlags.priority && c.isPriority;
         const matchesHighlighted = filterFlags.highlighted && highlightedClients.has(c.id);
+        const matchesSelected = filterFlags.selected && c.isChecked;
         const matchesWithJackbox = filterFlags.withJackbox && getActiveTaskCount(c.id) > 0;
         const matchesWithoutJackbox = filterFlags.withoutJackbox && getActiveTaskCount(c.id) === 0;
         const matchesWithComments = filterFlags.withComments && getCommentCount(c.id) > 0;
@@ -152,18 +140,12 @@ const Index = () => {
         const matchesCollaborator = collaboratorFilters.length > 0 && 
           collaboratorFilters.some(collab => c.collaborators[collab]);
 
-        // OR logic: return true if ANY condition matches
-        return matchesPriority || 
-               matchesHighlighted || 
-               matchesWithJackbox || 
-               matchesWithoutJackbox || 
-               matchesWithComments ||
-               matchesWithoutComments ||
-               matchesCollaborator;
+        return matchesPriority || matchesHighlighted || matchesSelected || 
+               matchesWithJackbox || matchesWithoutJackbox || 
+               matchesWithComments || matchesWithoutComments || matchesCollaborator;
       });
     }
 
-    // Sort
     const multiplier = sortDirection === 'desc' ? 1 : -1;
     
     switch (sortBy) {
@@ -171,15 +153,8 @@ const Index = () => {
         result.sort((a, b) => {
           const aTaskCount = getActiveTaskCount(a.id);
           const bTaskCount = getActiveTaskCount(b.id);
-          // First by task count
-          if (aTaskCount !== bTaskCount) {
-            return (bTaskCount - aTaskCount) * multiplier;
-          }
-          // Then by priority
-          if (a.isPriority !== b.isPriority) {
-            return (a.isPriority ? -1 : 1) * multiplier;
-          }
-          // Then by name
+          if (aTaskCount !== bTaskCount) return (bTaskCount - aTaskCount) * multiplier;
+          if (a.isPriority !== b.isPriority) return (a.isPriority ? -1 : 1) * multiplier;
           return a.name.localeCompare(b.name);
         });
         break;
@@ -201,7 +176,6 @@ const Index = () => {
       case 'name':
         result.sort((a, b) => a.name.localeCompare(b.name) * multiplier);
         break;
-      case 'order':
       default:
         result.sort((a, b) => (a.order - b.order) * multiplier);
         break;
@@ -212,19 +186,12 @@ const Index = () => {
 
   const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
-  // Calculate collaborator stats (manual selections)
   const collaboratorStats = useMemo(() => ({
     celine: activeClients.filter(c => c.collaborators.celine).length,
     gabi: activeClients.filter(c => c.collaborators.gabi).length,
     darley: activeClients.filter(c => c.collaborators.darley).length,
     vanessa: activeClients.filter(c => c.collaborators.vanessa).length,
   }), [activeClients]);
-
-  // Calculate priority count
-  const priorityCount = useMemo(() => 
-    activeClients.filter(c => c.isPriority).length, 
-    [activeClients]
-  );
 
   const handleSelectClient = (id: string) => {
     setSelectedClientId(prev => prev === id ? null : id);
@@ -267,9 +234,6 @@ const Index = () => {
               </div>
             </div>
           ))}
-          <div className="w-px h-6 bg-border mx-1" />
-          <StatCardMini icon={<Star className="w-3.5 h-3.5 text-amber-500" />} value={priorityCount} label="Prioridade" />
-          <StatCardMini icon={<MessageCircle className="w-3.5 h-3.5 text-primary" />} value={withCommentsCount} label="Comentários" />
         </div>
 
         {/* Filter Bar */}
@@ -279,7 +243,9 @@ const Index = () => {
           filterFlags={filterFlags}
           collaboratorFilters={collaboratorFilters}
           clientTypeFilter={clientTypeFilter}
+          priorityCount={priorityCount}
           highlightedCount={highlightedClients.size}
+          selectedCount={selectedCount}
           jackboxCount={jackboxCount}
           commentsCount={withCommentsCount}
           visibleCount={filteredClients.length}
@@ -320,7 +286,6 @@ const Index = () => {
           )}
         </div>
 
-        {/* Task Modal */}
         {checklistClient && (
           <TaskModal
             isOpen={!!checklistClientId}

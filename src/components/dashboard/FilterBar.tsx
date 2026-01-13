@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, Sparkles, X, ListChecks, RotateCcw, Users, Building2, Briefcase, MessageCircle, MessageCircleOff } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, Sparkles, X, ListChecks, RotateCcw, Users, Building2, Briefcase, MessageCircle, MessageCircleOff, CheckSquare } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -10,6 +10,7 @@ export type ClientTypeFilter = 'all' | 'AC' | 'AV';
 export interface FilterFlags {
   priority: boolean;
   highlighted: boolean;
+  selected: boolean;
   withJackbox: boolean;
   withoutJackbox: boolean;
   withComments: boolean;
@@ -22,7 +23,9 @@ interface FilterBarProps {
   filterFlags: FilterFlags;
   collaboratorFilters: CollaboratorName[];
   clientTypeFilter: ClientTypeFilter;
+  priorityCount: number;
   highlightedCount: number;
+  selectedCount: number;
   jackboxCount: number;
   commentsCount: number;
   visibleCount: number;
@@ -44,7 +47,9 @@ export function FilterBar({
   filterFlags,
   collaboratorFilters,
   clientTypeFilter,
+  priorityCount,
   highlightedCount,
+  selectedCount,
   jackboxCount,
   commentsCount,
   visibleCount,
@@ -73,6 +78,7 @@ export function FilterBar({
   const hasActiveFilters = 
     filterFlags.priority || 
     filterFlags.highlighted || 
+    filterFlags.selected ||
     filterFlags.withJackbox || 
     filterFlags.withoutJackbox || 
     filterFlags.withComments ||
@@ -82,209 +88,227 @@ export function FilterBar({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5 bg-card border-b border-border">
-        {/* Sort Options */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-            {sortDirection === 'desc' ? (
-              <ArrowDownAZ className="w-3 h-3" />
-            ) : (
-              <ArrowUpAZ className="w-3 h-3" />
+      <div className="flex flex-col gap-1.5 px-4 py-1.5 bg-card border-b border-border">
+        {/* Row 1: Sort Options + Client Type */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* Sort Options */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+              {sortDirection === 'desc' ? (
+                <ArrowDownAZ className="w-3 h-3" />
+              ) : (
+                <ArrowUpAZ className="w-3 h-3" />
+              )}
+              Ordenar:
+            </span>
+            <div className="flex items-center gap-0.5 flex-wrap">
+              <SortButton 
+                active={sortBy === 'order'} 
+                direction={sortBy === 'order' ? sortDirection : undefined}
+                onClick={() => handleSortClick('order')}
+              >
+                Ordem
+              </SortButton>
+              <SortButton 
+                active={sortBy === 'priority'} 
+                direction={sortBy === 'priority' ? sortDirection : undefined}
+                onClick={() => handleSortClick('priority')}
+                icon={<Star className="w-3 h-3" />}
+              >
+                Prioridade
+              </SortButton>
+              <SortButton 
+                active={sortBy === 'jackbox'} 
+                direction={sortBy === 'jackbox' ? sortDirection : undefined}
+                onClick={() => handleSortClick('jackbox')}
+                icon={<ListChecks className="w-3 h-3" />}
+              >
+                Jackbox
+              </SortButton>
+              <SortButton 
+                active={sortBy === 'processes'} 
+                direction={sortBy === 'processes' ? sortDirection : undefined}
+                onClick={() => handleSortClick('processes')}
+              >
+                Processos
+              </SortButton>
+              <SortButton 
+                active={sortBy === 'licenses'} 
+                direction={sortBy === 'licenses' ? sortDirection : undefined}
+                onClick={() => handleSortClick('licenses')}
+              >
+                Licenças
+              </SortButton>
+              <SortButton 
+                active={sortBy === 'demands'} 
+                direction={sortBy === 'demands' ? sortDirection : undefined}
+                onClick={() => handleSortClick('demands')}
+              >
+                Demandas
+              </SortButton>
+              <SortButton 
+                active={sortBy === 'name'} 
+                direction={sortBy === 'name' ? sortDirection : undefined}
+                onClick={() => handleSortClick('name')}
+              >
+                Nome
+              </SortButton>
+            </div>
+          </div>
+
+          {/* Client Type Filter (AC/AV) */}
+          <div className="flex items-center gap-0.5">
+            <ClientTypeButton
+              type="all"
+              active={clientTypeFilter === 'all'}
+              count={totalCount}
+              onClick={() => onClientTypeFilterChange('all')}
+            />
+            <ClientTypeButton
+              type="AC"
+              active={clientTypeFilter === 'AC'}
+              count={acCount}
+              onClick={() => onClientTypeFilterChange('AC')}
+            />
+            <ClientTypeButton
+              type="AV"
+              active={clientTypeFilter === 'AV'}
+              count={avCount}
+              onClick={() => onClientTypeFilterChange('AV')}
+            />
+          </div>
+        </div>
+
+        {/* Row 2: Filter Badges + Collaborators + Client Count */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* Filter Badges - All clickable with counters */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Priority filter */}
+            <IconFilterButton
+              active={filterFlags.priority}
+              onClick={() => onFilterFlagToggle('priority')}
+              tooltip="Filtrar por prioridade"
+              badge={priorityCount > 0 ? priorityCount : undefined}
+              activeColor="rgb(245, 158, 11)"
+            >
+              <Star className={`w-3.5 h-3.5 ${filterFlags.priority ? 'fill-current' : ''}`} />
+            </IconFilterButton>
+
+            {/* Highlighted filter */}
+            <IconFilterButton
+              active={filterFlags.highlighted}
+              onClick={() => onFilterFlagToggle('highlighted')}
+              tooltip="Filtrar destacados"
+              badge={highlightedCount > 0 ? highlightedCount : undefined}
+              activeColor="rgb(59, 130, 246)"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${filterFlags.highlighted ? 'fill-current' : ''}`} />
+            </IconFilterButton>
+
+            {/* Selected filter (checkbox) */}
+            <IconFilterButton
+              active={filterFlags.selected}
+              onClick={() => onFilterFlagToggle('selected')}
+              tooltip="Filtrar selecionados (checkbox)"
+              badge={selectedCount > 0 ? selectedCount : undefined}
+              activeColor="rgb(16, 185, 129)"
+            >
+              <CheckSquare className={`w-3.5 h-3.5 ${filterFlags.selected ? 'fill-current' : ''}`} />
+            </IconFilterButton>
+
+            {/* Jackbox filter - with tasks */}
+            <IconFilterButton
+              active={filterFlags.withJackbox}
+              onClick={() => onFilterFlagToggle('withJackbox')}
+              tooltip="Com tarefas abertas"
+              badge={jackboxCount > 0 ? jackboxCount : undefined}
+              activeColor="rgb(34, 197, 94)"
+            >
+              <ListChecks className="w-3.5 h-3.5" />
+            </IconFilterButton>
+
+            {/* Comments filter - with comments */}
+            <IconFilterButton
+              active={filterFlags.withComments}
+              onClick={() => onFilterFlagToggle('withComments')}
+              tooltip="Com comentários"
+              badge={commentsCount > 0 ? commentsCount : undefined}
+              activeColor="rgb(99, 102, 241)"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+            </IconFilterButton>
+
+            {/* Comments filter - without comments */}
+            <IconFilterButton
+              active={filterFlags.withoutComments}
+              onClick={() => onFilterFlagToggle('withoutComments')}
+              tooltip="Sem comentários"
+              activeColor="rgb(148, 163, 184)"
+            >
+              <MessageCircleOff className="w-3.5 h-3.5" />
+            </IconFilterButton>
+
+            {/* Separator */}
+            <div className="w-px h-5 bg-border mx-1" />
+
+            {/* Collaborator filters - larger colored squares */}
+            <div className="flex items-center gap-1">
+              {COLLABORATOR_NAMES.map((name) => (
+                <CollaboratorColorSquare
+                  key={name}
+                  name={name}
+                  active={collaboratorFilters.includes(name)}
+                  onClick={() => onCollaboratorFilterToggle(name)}
+                />
+              ))}
+            </div>
+
+            {/* Clear filters button */}
+            {hasActiveFilters && (
+              <>
+                <div className="w-px h-4 bg-border mx-0.5" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={onClearAllFilters}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    Limpar filtros
+                  </TooltipContent>
+                </Tooltip>
+              </>
             )}
-            Ordenar:
-          </span>
-          <div className="flex items-center gap-0.5 flex-wrap">
-            <SortButton 
-              active={sortBy === 'order'} 
-              direction={sortBy === 'order' ? sortDirection : undefined}
-              onClick={() => handleSortClick('order')}
-            >
-              Ordem
-            </SortButton>
-            <SortButton 
-              active={sortBy === 'priority'} 
-              direction={sortBy === 'priority' ? sortDirection : undefined}
-              onClick={() => handleSortClick('priority')}
-              icon={<Star className="w-3 h-3" />}
-            >
-              Prioridade
-            </SortButton>
-            <SortButton 
-              active={sortBy === 'jackbox'} 
-              direction={sortBy === 'jackbox' ? sortDirection : undefined}
-              onClick={() => handleSortClick('jackbox')}
-              icon={<ListChecks className="w-3 h-3" />}
-            >
-              Jackbox
-            </SortButton>
-            <SortButton 
-              active={sortBy === 'processes'} 
-              direction={sortBy === 'processes' ? sortDirection : undefined}
-              onClick={() => handleSortClick('processes')}
-            >
-              Processos
-            </SortButton>
-            <SortButton 
-              active={sortBy === 'licenses'} 
-              direction={sortBy === 'licenses' ? sortDirection : undefined}
-              onClick={() => handleSortClick('licenses')}
-            >
-              Licenças
-            </SortButton>
-            <SortButton 
-              active={sortBy === 'demands'} 
-              direction={sortBy === 'demands' ? sortDirection : undefined}
-              onClick={() => handleSortClick('demands')}
-            >
-              Demandas
-            </SortButton>
-            <SortButton 
-              active={sortBy === 'name'} 
-              direction={sortBy === 'name' ? sortDirection : undefined}
-              onClick={() => handleSortClick('name')}
-            >
-              Nome
-            </SortButton>
-          </div>
-        </div>
 
-        {/* Client Count Badge */}
-        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 border border-primary/30">
-          <Users className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-bold text-primary">{visibleCount}</span>
-          {visibleCount !== totalCount && (
-            <span className="text-[10px] text-muted-foreground">/ {totalCount}</span>
-          )}
-        </div>
-
-        {/* Client Type Filter (AC/AV) */}
-        <div className="flex items-center gap-0.5">
-          <ClientTypeButton
-            type="all"
-            active={clientTypeFilter === 'all'}
-            count={totalCount}
-            onClick={() => onClientTypeFilterChange('all')}
-          />
-          <ClientTypeButton
-            type="AC"
-            active={clientTypeFilter === 'AC'}
-            count={acCount}
-            onClick={() => onClientTypeFilterChange('AC')}
-          />
-          <ClientTypeButton
-            type="AV"
-            active={clientTypeFilter === 'AV'}
-            count={avCount}
-            onClick={() => onClientTypeFilterChange('AV')}
-          />
-        </div>
-
-        {/* Filter Options - Multi-select with icons */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {/* Priority filter */}
-          <IconFilterButton
-            active={filterFlags.priority}
-            onClick={() => onFilterFlagToggle('priority')}
-            tooltip="Filtrar por prioridade"
-            activeColor="rgb(245, 158, 11)"
-          >
-            <Star className={`w-3.5 h-3.5 ${filterFlags.priority ? 'fill-current' : ''}`} />
-          </IconFilterButton>
-
-          {/* Highlighted filter */}
-          <IconFilterButton
-            active={filterFlags.highlighted}
-            onClick={() => onFilterFlagToggle('highlighted')}
-            tooltip="Filtrar destacados"
-            badge={highlightedCount > 0 ? highlightedCount : undefined}
-            activeColor="rgb(59, 130, 246)"
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${filterFlags.highlighted ? 'fill-current' : ''}`} />
-          </IconFilterButton>
-
-          {/* Jackbox filter - with tasks */}
-          <IconFilterButton
-            active={filterFlags.withJackbox}
-            onClick={() => onFilterFlagToggle('withJackbox')}
-            tooltip="Com tarefas abertas"
-            badge={jackboxCount > 0 ? jackboxCount : undefined}
-            activeColor="rgb(34, 197, 94)"
-          >
-            <ListChecks className="w-3.5 h-3.5" />
-          </IconFilterButton>
-
-          {/* Comments filter - with comments */}
-          <IconFilterButton
-            active={filterFlags.withComments}
-            onClick={() => onFilterFlagToggle('withComments')}
-            tooltip="Com comentários"
-            badge={commentsCount > 0 ? commentsCount : undefined}
-            activeColor="rgb(99, 102, 241)"
-          >
-            <MessageCircle className="w-3.5 h-3.5" />
-          </IconFilterButton>
-
-          {/* Comments filter - without comments */}
-          <IconFilterButton
-            active={filterFlags.withoutComments}
-            onClick={() => onFilterFlagToggle('withoutComments')}
-            tooltip="Sem comentários"
-            activeColor="rgb(148, 163, 184)"
-          >
-            <MessageCircleOff className="w-3.5 h-3.5" />
-          </IconFilterButton>
-
-          {/* Separator */}
-          <div className="w-px h-5 bg-border mx-1" />
-
-          {/* Collaborator filters - larger colored squares */}
-          <div className="flex items-center gap-1">
-            {COLLABORATOR_NAMES.map((name) => (
-              <CollaboratorColorSquare
-                key={name}
-                name={name}
-                active={collaboratorFilters.includes(name)}
-                onClick={() => onCollaboratorFilterToggle(name)}
-              />
-            ))}
-          </div>
-
-          {/* Clear filters button */}
-          {hasActiveFilters && (
-            <>
-              <div className="w-px h-4 bg-border mx-0.5" />
+            {/* Clear highlights button */}
+            {highlightedCount > 0 && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={onClearAllFilters}
+                    onClick={onClearHighlights}
                     className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs">
-                  Limpar filtros
+                  Limpar destaques
                 </TooltipContent>
               </Tooltip>
-            </>
-          )}
+            )}
+          </div>
 
-          {/* Clear highlights button */}
-          {highlightedCount > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={onClearHighlights}
-                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                Limpar destaques
-              </TooltipContent>
-            </Tooltip>
-          )}
+          {/* Client Count Badge */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 border border-primary/30">
+            <Users className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-bold text-primary">{visibleCount}</span>
+            {visibleCount !== totalCount && (
+              <span className="text-[10px] text-muted-foreground">/ {totalCount}</span>
+            )}
+          </div>
         </div>
       </div>
     </TooltipProvider>
