@@ -97,7 +97,7 @@
 
   /* Client Cards - Compact Version */
   .client-card-compact {
-    @apply relative flex flex-col rounded-xl overflow-hidden;
+    @apply relative flex flex-col rounded-xl overflow-hidden h-full;
     @apply bg-card border border-border;
     @apply transition-all duration-200 ease-out cursor-pointer;
     box-shadow: 0 2px 8px -2px hsl(var(--card-shadow) / 0.15);
