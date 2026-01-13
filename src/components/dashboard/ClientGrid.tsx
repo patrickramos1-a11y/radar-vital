@@ -60,10 +60,10 @@ export function ClientGrid({
 
   return (
     <div 
-      className="grid gap-3 p-4 w-full h-full overflow-auto transition-all duration-300"
+      className="grid gap-3 p-4 w-full h-full transition-all duration-300"
       style={{ 
         gridTemplateColumns: `repeat(${columns}, minmax(${cardMinSize}, 1fr))`,
-        gridAutoRows: 'minmax(auto, 1fr)',
+        gridAutoRows: '1fr',
       }}
     >
       {clients.map((client, index) => (

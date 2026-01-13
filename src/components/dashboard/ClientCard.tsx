@@ -185,11 +185,11 @@ export function ClientCard({
 
   return (
     <div
-      className={`client-card-compact ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+      className={`client-card-compact h-full ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={() => onSelect(client.id)}
     >
-      {/* HEADER: Número + Mini Logo + Nome truncado + Ícones */}
-      <div className={`flex items-center gap-2 ${styles.headerPadding} bg-card-elevated border-b border-border`}>
+      {/* HEADER: Número + Mini Logo + Ícones - altura fixa */}
+      <div className={`flex items-center gap-2 ${styles.headerPadding} bg-card-elevated border-b border-border shrink-0`}>
         {/* Número */}
         <div className={`flex items-center justify-center rounded bg-primary text-primary-foreground font-bold shrink-0 ${styles.numberSize}`}>
           {displayNumber.toString().padStart(2, '0')}
@@ -236,9 +236,9 @@ export function ClientCard({
         </div>
       </div>
 
-      {/* ÁREA CENTRAL: NOME GRANDE - sempre visível, clique destaca */}
+      {/* ÁREA CENTRAL: NOME GRANDE - expande para preencher espaço disponível */}
       <div 
-        className={`flex items-center justify-center p-4 ${styles.nameAreaHeight} transition-colors cursor-pointer overflow-hidden`}
+        className="flex-1 flex items-center justify-center p-4 min-h-[100px] transition-colors cursor-pointer overflow-hidden"
         style={{
           background: hasCollaborators ? collaboratorBg : 'hsl(var(--muted) / 0.3)',
         }}
@@ -246,7 +246,7 @@ export function ClientCard({
         title="Clique para destacar"
       >
         <span 
-          className={`font-bold text-center leading-tight line-clamp-3 ${
+          className={`font-bold text-center leading-tight line-clamp-4 ${
             hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'
           }`}
           style={{
@@ -259,8 +259,8 @@ export function ClientCard({
         </span>
       </div>
 
-      {/* INDICADORES: P, L, D + Chips de status - nunca overflow */}
-      <div className={`${styles.indicatorPadding} border-t border-border bg-card-elevated/50`}>
+      {/* INDICADORES: P, L, D + Chips de status - altura fixa */}
+      <div className={`${styles.indicatorPadding} border-t border-border bg-card-elevated/50 shrink-0`}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
           {/* P - Processos */}
           <div className="flex flex-col items-center min-w-[36px]">
@@ -290,7 +290,7 @@ export function ClientCard({
         </div>
       </div>
 
-      {/* COLABORADORES: 4 botões na base - SEMPRE VISÍVEIS */}
+      {/* COLABORADORES: 4 botões na base - altura fixa */}
       <div className="grid grid-cols-4 border-t border-border shrink-0">
         {COLLABORATOR_NAMES.map((name) => (
           <CollaboratorButton
