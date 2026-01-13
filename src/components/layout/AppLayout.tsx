@@ -1,9 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { NavLink } from "@/components/NavLink";
 import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List } from "lucide-react";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { NotificationPanel } from "@/components/notifications/NotificationPanel";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +16,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { logout, currentUser } = useUser();
+  const { signOut, user } = useAuth();
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
@@ -93,18 +92,15 @@ export function AppLayout({ children }: AppLayoutProps) {
 
           <div className="w-px h-6 bg-border mx-1" />
 
-          {/* Notifications */}
-          <NotificationPanel />
-
           {/* User info and Logout */}
-          <div className="flex items-center gap-2 ml-2">
-            <span className="text-sm font-medium text-foreground hidden md:inline">
-              {currentUser?.displayName}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground hidden md:inline truncate max-w-32">
+              {user?.email}
             </span>
             <Button
               variant="ghost"
               size="sm"
-              onClick={logout}
+              onClick={signOut}
               className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
             >
               <LogOut className="w-4 h-4" />

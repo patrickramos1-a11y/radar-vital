@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ClientProvider } from "@/contexts/ClientContext";
-import { UserProvider, useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Config from "./pages/Config";
 import DemandasPanel from "./pages/DemandasPanel";
@@ -15,16 +15,27 @@ import ProcessosPanel from "./pages/ProcessosPanel";
 import ProcessosVisual from "./pages/ProcessosVisual";
 import JackboxPanel from "./pages/JackboxPanel";
 import JackboxDetalhado from "./pages/JackboxDetalhado";
-import SimpleAuthPage from "./pages/SimpleAuth";
+import AuthPage from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 function AuthenticatedApp() {
-  const { isLoggedIn } = useUser();
+  const { loading, session } = useAuth();
 
-  if (!isLoggedIn) {
-    return <SimpleAuthPage />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <AuthPage />;
   }
 
   return (
@@ -56,9 +67,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <UserProvider>
-        <AuthenticatedApp />
-      </UserProvider>
+      <AuthenticatedApp />
     </TooltipProvider>
   </QueryClientProvider>
 );
