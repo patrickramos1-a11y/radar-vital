@@ -1,6 +1,7 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
 
 export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority' | 'jackbox' | 'comments';
 export type SortDirection = 'asc' | 'desc';
@@ -32,6 +33,8 @@ interface FilterBarProps {
   totalCount: number;
   acCount: number;
   avCount: number;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
   onFilterFlagToggle: (flag: keyof FilterFlags) => void;
@@ -51,6 +54,8 @@ export function FilterBar({
   totalCount,
   acCount,
   avCount,
+  searchQuery,
+  onSearchChange,
   onSortChange,
   onSortDirectionChange,
   onFilterFlagToggle,
@@ -80,7 +85,8 @@ export function FilterBar({
     filterFlags.withComments ||
     filterFlags.withoutComments ||
     collaboratorFilters.length > 0 ||
-    clientTypeFilter !== 'all';
+    clientTypeFilter !== 'all' ||
+    searchQuery.trim().length > 0;
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -148,6 +154,26 @@ export function FilterBar({
               Nome
             </SortButton>
           </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative flex-1 max-w-xs min-w-[180px]">
+          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            type="text"
+            placeholder="Pesquisar cliente, colaborador..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="h-7 pl-8 pr-8 text-xs border-border bg-background/50 focus:bg-background"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => onSearchChange('')}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Center: Visible Client Count */}
