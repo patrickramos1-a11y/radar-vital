@@ -10,8 +10,15 @@ import { calculateTotals, calculateTotalDemands, CollaboratorName, Client } from
 import { Users, FileText, Shield, ClipboardList, Star, Sparkles, CheckSquare, MessageCircle } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileClientGrid } from "@/components/mobile/MobileClientGrid";
+import { MobileFilterBar } from "@/components/mobile/MobileFilterBar";
+import { MobileStatsBar } from "@/components/mobile/MobileStatsBar";
+import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 
 const Index = () => {
+  const isMobile = useIsMobile();
+  
   const { 
     activeClients, 
     highlightedClients, 
@@ -39,6 +46,7 @@ const Index = () => {
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [checklistClientId, setChecklistClientId] = useState<string | null>(null);
+  const [mobileDetailClientId, setMobileDetailClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [clientTypeFilter, setClientTypeFilter] = useState<ClientTypeFilter>('all');
@@ -228,6 +236,78 @@ const Index = () => {
 
   const checklistClient = checklistClientId ? getClient(checklistClientId) : null;
 
+  const mobileDetailClient = mobileDetailClientId ? getClient(mobileDetailClientId) : null;
+
+  // Mobile View
+  if (isMobile) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col h-full overflow-hidden">
+          <MobileStatsBar
+            totalClients={totals.totalClients}
+            totalProcesses={totals.totalProcesses}
+            totalLicenses={totals.totalLicenses}
+            totalDemands={totals.totalDemands}
+            collaboratorStats={collaboratorStats}
+          />
+          
+          <MobileFilterBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            sortBy={sortBy}
+            sortDirection={sortDirection}
+            filterFlags={filterFlags}
+            collaboratorFilters={collaboratorFilters}
+            clientTypeFilter={clientTypeFilter}
+            visibleCount={filteredClients.length}
+            totalCount={activeClients.length}
+            onSortChange={setSortBy}
+            onSortDirectionChange={setSortDirection}
+            onFilterFlagToggle={handleFilterFlagToggle}
+            onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
+            onClientTypeFilterChange={setClientTypeFilter}
+            onClearAllFilters={handleClearAllFilters}
+          />
+
+          <div className="flex-1 overflow-hidden">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <MobileClientGrid
+                clients={filteredClients}
+                highlightedClients={highlightedClients}
+                getActiveTaskCount={getActiveTaskCount}
+                getCommentCount={getCommentCount}
+                onClientTap={setMobileDetailClientId}
+              />
+            )}
+          </div>
+
+          <MobileClientDetail
+            client={mobileDetailClient}
+            isOpen={!!mobileDetailClientId}
+            onClose={() => setMobileDetailClientId(null)}
+            isHighlighted={mobileDetailClientId ? highlightedClients.has(mobileDetailClientId) : false}
+            activeTaskCount={mobileDetailClientId ? getActiveTaskCount(mobileDetailClientId) : 0}
+            commentCount={mobileDetailClientId ? getCommentCount(mobileDetailClientId) : 0}
+            tasks={mobileDetailClientId ? getTasksForClient(mobileDetailClientId) : []}
+            onTogglePriority={togglePriority}
+            onToggleHighlight={toggleHighlight}
+            onToggleChecked={toggleChecked}
+            onToggleCollaborator={handleToggleCollaborator}
+            onAddTask={addTask}
+            onToggleComplete={toggleComplete}
+            onUpdateTask={updateTask}
+            onDeleteTask={deleteTask}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Desktop View
   return (
     <AppLayout>
       <TooltipProvider delayDuration={200}>
@@ -257,45 +337,12 @@ const Index = () => {
               </div>
             ))}
             <div className="w-px h-6 bg-border mx-1" />
-            {/* Priority Badge */}
-            <StatBadge 
-              icon={<Star className="w-3.5 h-3.5" />} 
-              value={priorityCount} 
-              label="Prioridade" 
-              color="rgb(245, 158, 11)"
-              active={filterFlags.priority}
-              onClick={() => handleFilterFlagToggle('priority')}
-            />
-            {/* Highlighted Badge */}
-            <StatBadge 
-              icon={<Sparkles className="w-3.5 h-3.5" />} 
-              value={highlightedClients.size} 
-              label="Destaque" 
-              color="rgb(59, 130, 246)"
-              active={filterFlags.highlighted}
-              onClick={() => handleFilterFlagToggle('highlighted')}
-            />
-            {/* Selected Badge */}
-            <StatBadge 
-              icon={<CheckSquare className="w-3.5 h-3.5" />} 
-              value={selectedCount} 
-              label="Selecionados" 
-              color="rgb(16, 185, 129)"
-              active={filterFlags.selected}
-              onClick={() => handleFilterFlagToggle('selected')}
-            />
-            {/* Comments Badge */}
-            <StatBadge 
-              icon={<MessageCircle className="w-3.5 h-3.5" />} 
-              value={withCommentsCount} 
-              label="Comentários" 
-              color="rgb(99, 102, 241)"
-              active={filterFlags.withComments}
-              onClick={() => handleFilterFlagToggle('withComments')}
-            />
+            <StatBadge icon={<Star className="w-3.5 h-3.5" />} value={priorityCount} label="Prioridade" color="rgb(245, 158, 11)" active={filterFlags.priority} onClick={() => handleFilterFlagToggle('priority')} />
+            <StatBadge icon={<Sparkles className="w-3.5 h-3.5" />} value={highlightedClients.size} label="Destaque" color="rgb(59, 130, 246)" active={filterFlags.highlighted} onClick={() => handleFilterFlagToggle('highlighted')} />
+            <StatBadge icon={<CheckSquare className="w-3.5 h-3.5" />} value={selectedCount} label="Selecionados" color="rgb(16, 185, 129)" active={filterFlags.selected} onClick={() => handleFilterFlagToggle('selected')} />
+            <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(99, 102, 241)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
           </div>
 
-          {/* Filter Bar */}
           <FilterBar
             sortBy={sortBy}
             sortDirection={sortDirection}
@@ -322,7 +369,6 @@ const Index = () => {
             onClearAllFilters={handleClearAllFilters}
           />
 
-          {/* Main Content - Client Grid */}
           <div className="flex-1 overflow-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
