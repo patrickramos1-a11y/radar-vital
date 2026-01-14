@@ -42,6 +42,7 @@ const Index = () => {
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [clientTypeFilter, setClientTypeFilter] = useState<ClientTypeFilter>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
@@ -102,6 +103,7 @@ const Index = () => {
     });
     setCollaboratorFilters([]);
     setClientTypeFilter('all');
+    setSearchQuery('');
   };
 
   const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {
@@ -114,6 +116,24 @@ const Index = () => {
 
   const filteredClients = useMemo(() => {
     let result = [...activeClients];
+
+    // Apply search filter first
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(c => {
+        // Search by client name
+        const matchesName = c.name.toLowerCase().includes(query);
+        
+        // Search by initials
+        const matchesInitials = c.initials.toLowerCase().includes(query);
+        
+        // Search by collaborator names
+        const matchesCollaborator = Object.entries(c.collaborators)
+          .some(([name, isActive]) => isActive && name.toLowerCase().includes(query));
+        
+        return matchesName || matchesInitials || matchesCollaborator;
+      });
+    }
 
     if (clientTypeFilter !== 'all') {
       result = result.filter(c => c.clientType === clientTypeFilter);
@@ -183,7 +203,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount]);
+  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery]);
 
   const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
 
@@ -291,6 +311,8 @@ const Index = () => {
             totalCount={activeClients.length}
             acCount={acCount}
             avCount={avCount}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
             onSortChange={setSortBy}
             onSortDirectionChange={setSortDirection}
             onFilterFlagToggle={handleFilterFlagToggle}
