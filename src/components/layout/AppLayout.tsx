@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List, User } from "lucide-react";
+import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -89,6 +90,11 @@ export function AppLayout({ children }: AppLayoutProps) {
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Configurar</span>
           </NavLink>
+
+          <div className="w-px h-6 bg-border mx-1" />
+          
+          {/* Notifications / Activity History */}
+          <NotificationsPanel />
 
           <div className="w-px h-6 bg-border mx-1" />
 
