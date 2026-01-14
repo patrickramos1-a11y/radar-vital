@@ -7,8 +7,9 @@ import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { calculateTotals, calculateTotalDemands, CollaboratorName, Client } from "@/types/client";
-import { Users, FileText, Shield, ClipboardList } from "lucide-react";
+import { Users, FileText, Shield, ClipboardList, Star, Sparkles, CheckSquare, MessageCircle } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Index = () => {
   const { 
@@ -209,96 +210,135 @@ const Index = () => {
 
   return (
     <AppLayout>
-      <div className="flex flex-col h-full overflow-hidden">
-        {/* Stats Bar */}
-        <div className="flex items-center justify-center gap-2 px-4 py-2 bg-card border-b border-border flex-wrap">
-          <StatCardMini icon={<Users className="w-3.5 h-3.5" />} value={totals.totalClients} label="Clientes" />
-          <StatCardMini icon={<FileText className="w-3.5 h-3.5" />} value={totals.totalProcesses} label="Processos" />
-          <StatCardMini icon={<Shield className="w-3.5 h-3.5" />} value={totals.totalLicenses} label="Licenças" />
-          <StatCardMini icon={<ClipboardList className="w-3.5 h-3.5" />} value={totals.totalDemands} label="Demandas" />
-          <div className="w-px h-6 bg-border mx-1" />
-          {(['celine', 'gabi', 'darley', 'vanessa'] as const).map((name) => (
-            <div key={name} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[52px]">
-              <div className="px-2 py-0.5 text-center" style={{ backgroundColor: COLLABORATOR_COLORS[name] }}>
-                <span className="text-[9px] font-semibold text-white uppercase">{name}</span>
-              </div>
-              <div className="flex items-stretch divide-x divide-border">
-                <div className="flex flex-col items-center px-2 py-1 flex-1">
-                  <span className="text-sm font-bold leading-none">{collaboratorDemandStats[name]}</span>
-                  <span className="text-[7px] text-muted-foreground uppercase">Dem</span>
+      <TooltipProvider delayDuration={200}>
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Stats Bar */}
+          <div className="flex items-center justify-center gap-2 px-4 py-2 bg-card border-b border-border flex-wrap">
+            <StatCardMini icon={<Users className="w-3.5 h-3.5" />} value={totals.totalClients} label="Clientes" />
+            <StatCardMini icon={<FileText className="w-3.5 h-3.5" />} value={totals.totalProcesses} label="Processos" />
+            <StatCardMini icon={<Shield className="w-3.5 h-3.5" />} value={totals.totalLicenses} label="Licenças" />
+            <StatCardMini icon={<ClipboardList className="w-3.5 h-3.5" />} value={totals.totalDemands} label="Demandas" />
+            <div className="w-px h-6 bg-border mx-1" />
+            {(['celine', 'gabi', 'darley', 'vanessa'] as const).map((name) => (
+              <div key={name} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[52px]">
+                <div className="px-2 py-0.5 text-center" style={{ backgroundColor: COLLABORATOR_COLORS[name] }}>
+                  <span className="text-[9px] font-semibold text-white uppercase">{name}</span>
                 </div>
-                <div className="flex flex-col items-center px-2 py-1 flex-1">
-                  <span className="text-sm font-bold leading-none">{collaboratorStats[name]}</span>
-                  <span className="text-[7px] text-muted-foreground uppercase">Sel</span>
+                <div className="flex items-stretch divide-x divide-border">
+                  <div className="flex flex-col items-center px-2 py-1 flex-1">
+                    <span className="text-sm font-bold leading-none">{collaboratorDemandStats[name]}</span>
+                    <span className="text-[7px] text-muted-foreground uppercase">Dem</span>
+                  </div>
+                  <div className="flex flex-col items-center px-2 py-1 flex-1">
+                    <span className="text-sm font-bold leading-none">{collaboratorStats[name]}</span>
+                    <span className="text-[7px] text-muted-foreground uppercase">Sel</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+            <div className="w-px h-6 bg-border mx-1" />
+            {/* Priority Badge */}
+            <StatBadge 
+              icon={<Star className="w-3.5 h-3.5" />} 
+              value={priorityCount} 
+              label="Prioridade" 
+              color="rgb(245, 158, 11)"
+              active={filterFlags.priority}
+              onClick={() => handleFilterFlagToggle('priority')}
+            />
+            {/* Highlighted Badge */}
+            <StatBadge 
+              icon={<Sparkles className="w-3.5 h-3.5" />} 
+              value={highlightedClients.size} 
+              label="Destaque" 
+              color="rgb(59, 130, 246)"
+              active={filterFlags.highlighted}
+              onClick={() => handleFilterFlagToggle('highlighted')}
+            />
+            {/* Selected Badge */}
+            <StatBadge 
+              icon={<CheckSquare className="w-3.5 h-3.5" />} 
+              value={selectedCount} 
+              label="Selecionados" 
+              color="rgb(16, 185, 129)"
+              active={filterFlags.selected}
+              onClick={() => handleFilterFlagToggle('selected')}
+            />
+            {/* Comments Badge */}
+            <StatBadge 
+              icon={<MessageCircle className="w-3.5 h-3.5" />} 
+              value={withCommentsCount} 
+              label="Comentários" 
+              color="rgb(99, 102, 241)"
+              active={filterFlags.withComments}
+              onClick={() => handleFilterFlagToggle('withComments')}
+            />
+          </div>
 
-        {/* Filter Bar */}
-        <FilterBar
-          sortBy={sortBy}
-          sortDirection={sortDirection}
-          filterFlags={filterFlags}
-          collaboratorFilters={collaboratorFilters}
-          clientTypeFilter={clientTypeFilter}
-          priorityCount={priorityCount}
-          highlightedCount={highlightedClients.size}
-          selectedCount={selectedCount}
-          jackboxCount={jackboxCount}
-          commentsCount={withCommentsCount}
-          visibleCount={filteredClients.length}
-          totalCount={activeClients.length}
-          acCount={acCount}
-          avCount={avCount}
-          onSortChange={setSortBy}
-          onSortDirectionChange={setSortDirection}
-          onFilterFlagToggle={handleFilterFlagToggle}
-          onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
-          onClientTypeFilterChange={setClientTypeFilter}
-          onClearHighlights={clearHighlights}
-          onClearAllFilters={handleClearAllFilters}
-        />
+          {/* Filter Bar */}
+          <FilterBar
+            sortBy={sortBy}
+            sortDirection={sortDirection}
+            filterFlags={filterFlags}
+            collaboratorFilters={collaboratorFilters}
+            clientTypeFilter={clientTypeFilter}
+            priorityCount={priorityCount}
+            highlightedCount={highlightedClients.size}
+            selectedCount={selectedCount}
+            jackboxCount={jackboxCount}
+            commentsCount={withCommentsCount}
+            visibleCount={filteredClients.length}
+            totalCount={activeClients.length}
+            acCount={acCount}
+            avCount={avCount}
+            onSortChange={setSortBy}
+            onSortDirectionChange={setSortDirection}
+            onFilterFlagToggle={handleFilterFlagToggle}
+            onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
+            onClientTypeFilterChange={setClientTypeFilter}
+            onClearHighlights={clearHighlights}
+            onClearAllFilters={handleClearAllFilters}
+          />
 
-        {/* Main Content - Client Grid */}
-        <div className="flex-1 overflow-hidden">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-muted-foreground">Carregando clientes...</p>
+          {/* Main Content - Client Grid */}
+          <div className="flex-1 overflow-hidden">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-muted-foreground">Carregando clientes...</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <ClientGrid
-              clients={filteredClients}
-              selectedClientId={selectedClientId}
-              highlightedClients={highlightedClients}
-              getActiveTaskCount={getActiveTaskCount}
-              getCommentCount={getCommentCount}
-              onSelectClient={handleSelectClient}
-              onHighlightClient={toggleHighlight}
-              onTogglePriority={togglePriority}
-              onToggleCollaborator={handleToggleCollaborator}
-              onOpenChecklist={handleOpenChecklist}
+            ) : (
+              <ClientGrid
+                clients={filteredClients}
+                selectedClientId={selectedClientId}
+                highlightedClients={highlightedClients}
+                getActiveTaskCount={getActiveTaskCount}
+                getCommentCount={getCommentCount}
+                onSelectClient={handleSelectClient}
+                onHighlightClient={toggleHighlight}
+                onTogglePriority={togglePriority}
+                onToggleCollaborator={handleToggleCollaborator}
+                onOpenChecklist={handleOpenChecklist}
+              />
+            )}
+          </div>
+
+          {checklistClient && (
+            <TaskModal
+              isOpen={!!checklistClientId}
+              onClose={() => setChecklistClientId(null)}
+              client={checklistClient}
+              tasks={getTasksForClient(checklistClientId!)}
+              onAddTask={addTask}
+              onToggleComplete={toggleComplete}
+              onUpdateTask={updateTask}
+              onDeleteTask={deleteTask}
             />
           )}
         </div>
-
-        {checklistClient && (
-          <TaskModal
-            isOpen={!!checklistClientId}
-            onClose={() => setChecklistClientId(null)}
-            client={checklistClient}
-            tasks={getTasksForClient(checklistClientId!)}
-            onAddTask={addTask}
-            onToggleComplete={toggleComplete}
-            onUpdateTask={updateTask}
-            onDeleteTask={deleteTask}
-          />
-        )}
-      </div>
+      </TooltipProvider>
     </AppLayout>
   );
 };
@@ -312,6 +352,44 @@ function StatCardMini({ icon, value, label }: { icon: React.ReactNode; value: nu
         <span className="text-[8px] text-muted-foreground uppercase">{label}</span>
       </div>
     </div>
+  );
+}
+
+interface StatBadgeProps {
+  icon: React.ReactNode;
+  value: number;
+  label: string;
+  color: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+function StatBadge({ icon, value, label, color, active, onClick }: StatBadgeProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer hover:scale-105 ${
+            active ? 'ring-2 ring-offset-1 ring-offset-background' : ''
+          }`}
+          style={{
+            backgroundColor: active ? color : 'transparent',
+            borderColor: color,
+            color: active ? '#fff' : color,
+          }}
+        >
+          {icon}
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-bold leading-none">{value}</span>
+            <span className="text-[7px] uppercase opacity-80">{label}</span>
+          </div>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="text-xs">
+        {active ? `Filtrar por ${label}` : `Clique para filtrar por ${label}`}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
