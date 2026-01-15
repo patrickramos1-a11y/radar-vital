@@ -257,6 +257,12 @@ const Index = () => {
             clientTypeFilter={clientTypeFilter}
             visibleCount={filteredClients.length}
             totalCount={activeClients.length}
+            priorityCount={priorityCount}
+            highlightedCount={highlightedClients.size}
+            selectedCount={selectedCount}
+            jackboxCount={jackboxCount}
+            commentsCount={withCommentsCount}
+            collaboratorCounts={collaboratorStats}
             onSortChange={setSortBy}
             onSortDirectionChange={setSortDirection}
             onFilterFlagToggle={handleFilterFlagToggle}
