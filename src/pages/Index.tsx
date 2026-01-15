@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter } from "@/components/dashboard/FilterBar";
 import { TaskModal } from "@/components/checklist/TaskModal";
+import { CommentsModal } from "@/components/comments/CommentsModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
@@ -11,11 +12,9 @@ import { Users, FileText, Shield, ClipboardList, Star, Sparkles, CheckSquare, Me
 import { COLLABORATOR_COLORS } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { MobileClientGrid } from "@/components/mobile/MobileClientGrid";
-import { MobileFilterBar } from "@/components/mobile/MobileFilterBar";
-import { MobileStatsBar } from "@/components/mobile/MobileStatsBar";
+import { MobileClientGridNew } from "@/components/mobile/MobileClientGridNew";
+import { MobileFilterBarNew } from "@/components/mobile/MobileFilterBarNew";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
-
 const Index = () => {
   const isMobile = useIsMobile();
   
@@ -47,6 +46,8 @@ const Index = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [checklistClientId, setChecklistClientId] = useState<string | null>(null);
   const [mobileDetailClientId, setMobileDetailClientId] = useState<string | null>(null);
+  const [mobileCommentsClientId, setMobileCommentsClientId] = useState<string | null>(null);
+  const [mobileJackboxClientId, setMobileJackboxClientId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [clientTypeFilter, setClientTypeFilter] = useState<ClientTypeFilter>('all');
@@ -237,21 +238,16 @@ const Index = () => {
   const checklistClient = checklistClientId ? getClient(checklistClientId) : null;
 
   const mobileDetailClient = mobileDetailClientId ? getClient(mobileDetailClientId) : null;
+  const mobileCommentsClient = mobileCommentsClientId ? getClient(mobileCommentsClientId) : null;
+  const mobileJackboxClient = mobileJackboxClientId ? getClient(mobileJackboxClientId) : null;
 
   // Mobile View
   if (isMobile) {
     return (
       <AppLayout>
         <div className="flex flex-col h-full overflow-hidden">
-          <MobileStatsBar
-            totalClients={totals.totalClients}
-            totalProcesses={totals.totalProcesses}
-            totalLicenses={totals.totalLicenses}
-            totalDemands={totals.totalDemands}
-            collaboratorStats={collaboratorStats}
-          />
-          
-          <MobileFilterBar
+          {/* New filter bar - always visible, no modals */}
+          <MobileFilterBarNew
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             sortBy={sortBy}
@@ -275,16 +271,23 @@ const Index = () => {
                 <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <MobileClientGrid
+              <MobileClientGridNew
                 clients={filteredClients}
                 highlightedClients={highlightedClients}
                 getActiveTaskCount={getActiveTaskCount}
                 getCommentCount={getCommentCount}
+                getTasksForClient={getTasksForClient}
                 onClientTap={setMobileDetailClientId}
+                onTogglePriority={togglePriority}
+                onToggleHighlight={toggleHighlight}
+                onToggleCollaborator={handleToggleCollaborator}
+                onOpenComments={setMobileCommentsClientId}
+                onOpenJackbox={setMobileJackboxClientId}
               />
             )}
           </div>
 
+          {/* Detail sheet */}
           <MobileClientDetail
             client={mobileDetailClient}
             isOpen={!!mobileDetailClientId}
@@ -302,6 +305,30 @@ const Index = () => {
             onUpdateTask={updateTask}
             onDeleteTask={deleteTask}
           />
+
+          {/* Comments modal - opened from card action */}
+          {mobileCommentsClient && (
+            <CommentsModal
+              isOpen={!!mobileCommentsClientId}
+              onClose={() => setMobileCommentsClientId(null)}
+              clientId={mobileCommentsClient.id}
+              clientName={mobileCommentsClient.name}
+            />
+          )}
+
+          {/* Jackbox modal - opened from card action */}
+          {mobileJackboxClient && (
+            <TaskModal
+              isOpen={!!mobileJackboxClientId}
+              onClose={() => setMobileJackboxClientId(null)}
+              client={mobileJackboxClient}
+              tasks={getTasksForClient(mobileJackboxClientId!)}
+              onAddTask={addTask}
+              onToggleComplete={toggleComplete}
+              onUpdateTask={updateTask}
+              onDeleteTask={deleteTask}
+            />
+          )}
         </div>
       </AppLayout>
     );
