@@ -177,44 +177,39 @@ const Index = () => {
       });
     }
 
-    // Mobile: always sort alphabetically by name
-    if (isMobile) {
-      result.sort((a, b) => a.name.localeCompare(b.name));
-    } else {
-      const multiplier = sortDirection === 'desc' ? 1 : -1;
-      
-      switch (sortBy) {
-        case 'jackbox':
-          result.sort((a, b) => {
-            const aTaskCount = getActiveTaskCount(a.id);
-            const bTaskCount = getActiveTaskCount(b.id);
-            if (aTaskCount !== bTaskCount) return (bTaskCount - aTaskCount) * multiplier;
-            if (a.isPriority !== b.isPriority) return (a.isPriority ? -1 : 1) * multiplier;
-            return a.name.localeCompare(b.name);
-          });
-          break;
-        case 'priority':
-          result.sort((a, b) => {
-            if (a.isPriority === b.isPriority) return (a.order - b.order) * multiplier;
-            return (a.isPriority ? -1 : 1) * multiplier;
-          });
-          break;
-        case 'processes':
-          result.sort((a, b) => (b.processes - a.processes) * multiplier);
-          break;
-        case 'licenses':
-          result.sort((a, b) => (b.licenses - a.licenses) * multiplier);
-          break;
-        case 'demands':
-          result.sort((a, b) => (calculateTotalDemands(b.demands) - calculateTotalDemands(a.demands)) * multiplier);
-          break;
-        case 'name':
-          result.sort((a, b) => a.name.localeCompare(b.name) * multiplier);
-          break;
-        default:
-          result.sort((a, b) => (a.order - b.order) * multiplier);
-          break;
-      }
+    const multiplier = sortDirection === 'desc' ? 1 : -1;
+    
+    switch (sortBy) {
+      case 'jackbox':
+        result.sort((a, b) => {
+          const aTaskCount = getActiveTaskCount(a.id);
+          const bTaskCount = getActiveTaskCount(b.id);
+          if (aTaskCount !== bTaskCount) return (bTaskCount - aTaskCount) * multiplier;
+          if (a.isPriority !== b.isPriority) return (a.isPriority ? -1 : 1) * multiplier;
+          return a.name.localeCompare(b.name);
+        });
+        break;
+      case 'priority':
+        result.sort((a, b) => {
+          if (a.isPriority === b.isPriority) return (a.order - b.order) * multiplier;
+          return (a.isPriority ? -1 : 1) * multiplier;
+        });
+        break;
+      case 'processes':
+        result.sort((a, b) => (b.processes - a.processes) * multiplier);
+        break;
+      case 'licenses':
+        result.sort((a, b) => (b.licenses - a.licenses) * multiplier);
+        break;
+      case 'demands':
+        result.sort((a, b) => (calculateTotalDemands(b.demands) - calculateTotalDemands(a.demands)) * multiplier);
+        break;
+      case 'name':
+        result.sort((a, b) => a.name.localeCompare(b.name) * multiplier);
+        break;
+      default:
+        result.sort((a, b) => (a.order - b.order) * multiplier);
+        break;
     }
 
     return result;
