@@ -17,32 +17,41 @@ export type Database = {
       activity_logs: {
         Row: {
           action_type: string
+          client_name: string | null
           created_at: string
           description: string
           entity_id: string | null
           entity_name: string | null
           entity_type: string
           id: string
+          new_value: string | null
+          old_value: string | null
           user_name: string
         }
         Insert: {
           action_type: string
+          client_name?: string | null
           created_at?: string
           description: string
           entity_id?: string | null
           entity_name?: string | null
           entity_type: string
           id?: string
+          new_value?: string | null
+          old_value?: string | null
           user_name: string
         }
         Update: {
           action_type?: string
+          client_name?: string | null
           created_at?: string
           description?: string
           entity_id?: string | null
           entity_name?: string | null
           entity_type?: string
           id?: string
+          new_value?: string | null
+          old_value?: string | null
           user_name?: string
         }
         Relationships: []

@@ -1,30 +1,45 @@
 import { useState } from 'react';
-import { Bell, Filter, X, User, Clock, FileText, RefreshCw, RotateCcw } from 'lucide-react';
+import { 
+  Bell, Filter, X, Clock, FileText, RefreshCw, RotateCcw, 
+  Star, Sparkles, MessageCircle, Upload, ListChecks, Users, LogIn
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { useActivityLogs, ActionType, LogFilters } from '@/hooks/useActivityLogs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useActivityLogs, ActionType, QUICK_FILTER_CATEGORIES } from '@/hooks/useActivityLogs';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AppUserName, APP_USERS } from '@/contexts/UserContext';
 
 // Action type labels and colors
-const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+const ACTION_LABELS: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
   LOGIN: { label: 'Login', color: 'bg-green-500/10 text-green-600 border-green-200' },
   LOGOUT: { label: 'Logout', color: 'bg-gray-500/10 text-gray-600 border-gray-200' },
-  IMPORT: { label: 'Importação', color: 'bg-blue-500/10 text-blue-600 border-blue-200' },
-  CREATE: { label: 'Criação', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200' },
-  UPDATE: { label: 'Atualização', color: 'bg-amber-500/10 text-amber-600 border-amber-200' },
-  DELETE: { label: 'Exclusão', color: 'bg-red-500/10 text-red-600 border-red-200' },
+  IMPORT_DEMANDS: { label: 'Importação', color: 'bg-blue-500/10 text-blue-600 border-blue-200' },
+  IMPORT_LICENSES: { label: 'Importação', color: 'bg-blue-500/10 text-blue-600 border-blue-200' },
+  IMPORT_PROCESSES: { label: 'Importação', color: 'bg-blue-500/10 text-blue-600 border-blue-200' },
+  IMPORT_DATA: { label: 'Importação', color: 'bg-blue-500/10 text-blue-600 border-blue-200' },
+  CREATE_COMMENT: { label: 'Comentário', color: 'bg-sky-500/10 text-sky-600 border-sky-200' },
+  DELETE_COMMENT: { label: 'Comentário', color: 'bg-sky-500/10 text-sky-600 border-sky-200' },
+  PIN_COMMENT: { label: 'Comentário', color: 'bg-sky-500/10 text-sky-600 border-sky-200' },
+  CREATE_TASK: { label: 'Tarefa', color: 'bg-amber-500/10 text-amber-600 border-amber-200' },
+  COMPLETE_TASK: { label: 'Tarefa', color: 'bg-amber-500/10 text-amber-600 border-amber-200' },
+  DELETE_TASK: { label: 'Tarefa', color: 'bg-amber-500/10 text-amber-600 border-amber-200' },
+  UPDATE_TASK: { label: 'Tarefa', color: 'bg-amber-500/10 text-amber-600 border-amber-200' },
   TOGGLE_PRIORITY: { label: 'Prioridade', color: 'bg-yellow-500/10 text-yellow-600 border-yellow-200' },
   TOGGLE_HIGHLIGHT: { label: 'Destaque', color: 'bg-purple-500/10 text-purple-600 border-purple-200' },
   TOGGLE_ACTIVE: { label: 'Ativação', color: 'bg-cyan-500/10 text-cyan-600 border-cyan-200' },
   TOGGLE_CHECKED: { label: 'Seleção', color: 'bg-indigo-500/10 text-indigo-600 border-indigo-200' },
-  STATUS_CHANGE: { label: 'Status', color: 'bg-orange-500/10 text-orange-600 border-orange-200' },
-  ASSIGN: { label: 'Atribuição', color: 'bg-pink-500/10 text-pink-600 border-pink-200' },
+  TOGGLE_COLLABORATOR: { label: 'Colaborador', color: 'bg-pink-500/10 text-pink-600 border-pink-200' },
+  TOGGLE_CLIENT_TYPE: { label: 'Tipo', color: 'bg-teal-500/10 text-teal-600 border-teal-200' },
+  UPDATE_DEMAND_STATUS: { label: 'Status', color: 'bg-orange-500/10 text-orange-600 border-orange-200' },
+  CREATE_DEMAND: { label: 'Demanda', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200' },
+  UPDATE_DEMAND: { label: 'Demanda', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200' },
+  CHANGE_RESPONSIBLE: { label: 'Responsável', color: 'bg-pink-500/10 text-pink-600 border-pink-200' },
+  MOVE_CLIENT: { label: 'Ordenação', color: 'bg-slate-500/10 text-slate-600 border-slate-200' },
 };
 
 // Entity type labels
@@ -39,6 +54,18 @@ const ENTITY_LABELS: Record<string, string> = {
   import: 'Importação',
 };
 
+// Quick filter config
+const QUICK_FILTERS: { key: keyof typeof QUICK_FILTER_CATEGORIES; label: string; icon: React.ReactNode }[] = [
+  { key: 'priority', label: 'Prioridades', icon: <Star className="w-3 h-3" /> },
+  { key: 'highlight', label: 'Destaques', icon: <Sparkles className="w-3 h-3" /> },
+  { key: 'comments', label: 'Comentários', icon: <MessageCircle className="w-3 h-3" /> },
+  { key: 'imports', label: 'Importações', icon: <Upload className="w-3 h-3" /> },
+  { key: 'demands', label: 'Demandas', icon: <FileText className="w-3 h-3" /> },
+  { key: 'tasks', label: 'Tarefas', icon: <ListChecks className="w-3 h-3" /> },
+  { key: 'collaborators', label: 'Colaboradores', icon: <Users className="w-3 h-3" /> },
+  { key: 'session', label: 'Sessões', icon: <LogIn className="w-3 h-3" /> },
+];
+
 function getUserColor(userName: string): string {
   const user = APP_USERS.find(u => u.name === userName);
   return user?.color || '#6b7280';
@@ -47,6 +74,7 @@ function getUserColor(userName: string): string {
 export function NotificationsPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'mine'>('all');
   
   const {
     logs,
@@ -59,6 +87,8 @@ export function NotificationsPanel() {
     unreadCount,
     isAdmin,
     refetch,
+    quickFilter,
+    applyQuickFilter,
   } = useActivityLogs();
 
   const handleOpen = (open: boolean) => {
@@ -68,11 +98,17 @@ export function NotificationsPanel() {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'all' | 'mine');
+    updateFilters({ onlyMine: value === 'mine' });
+  };
+
   const hasActiveFilters = 
     filters.userName !== 'all' || 
     filters.actionType !== 'all' || 
     filters.entityType !== 'all' ||
-    filters.clientId !== 'all';
+    filters.clientId !== 'all' ||
+    quickFilter !== null;
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpen}>
@@ -92,7 +128,7 @@ export function NotificationsPanel() {
         </Button>
       </SheetTrigger>
       
-      <SheetContent className="w-full sm:max-w-lg flex flex-col p-0">
+      <SheetContent className="w-full sm:max-w-xl flex flex-col p-0">
         <SheetHeader className="px-4 py-3 border-b">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2">
@@ -109,26 +145,54 @@ export function NotificationsPanel() {
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
-              {isAdmin && (
-                <Button
-                  variant={showFilters ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="h-8 w-8"
-                  title="Filtros"
-                >
-                  <Filter className="w-4 h-4" />
-                </Button>
-              )}
+              <Button
+                variant={showFilters ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => setShowFilters(!showFilters)}
+                className="h-8 w-8"
+                title="Filtros"
+              >
+                <Filter className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </SheetHeader>
 
-        {/* Filters (Admin only) */}
-        {isAdmin && showFilters && (
+        {/* Tabs for admin - All vs Mine */}
+        {isAdmin && (
+          <div className="px-4 pt-3">
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="all">Histórico Geral</TabsTrigger>
+                <TabsTrigger value="mine">Minhas Ações</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
+
+        {/* Quick Filters */}
+        <div className="px-4 py-2 border-b">
+          <div className="flex gap-1.5 flex-wrap">
+            {QUICK_FILTERS.map(filter => (
+              <Button
+                key={filter.key}
+                variant={quickFilter === filter.key ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => applyQuickFilter(quickFilter === filter.key ? null : filter.key)}
+                className="h-7 text-xs gap-1 px-2"
+              >
+                {filter.icon}
+                {filter.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Advanced Filters */}
+        {showFilters && (
           <div className="px-4 py-3 border-b bg-muted/30 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Filtros</span>
+              <span className="text-sm font-medium">Filtros Avançados</span>
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
@@ -144,28 +208,30 @@ export function NotificationsPanel() {
             
             <div className="grid grid-cols-2 gap-2">
               {/* User filter */}
-              <Select
-                value={filters.userName}
-                onValueChange={(value) => updateFilters({ userName: value as AppUserName | 'all' })}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Usuário" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os usuários</SelectItem>
-                  {filterOptions.users.map(user => (
-                    <SelectItem key={user} value={user}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-2 h-2 rounded-full" 
-                          style={{ backgroundColor: getUserColor(user) }}
-                        />
-                        {user}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isAdmin && (
+                <Select
+                  value={filters.userName}
+                  onValueChange={(value) => updateFilters({ userName: value as AppUserName | 'all' })}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os usuários</SelectItem>
+                    {filterOptions.users.map(user => (
+                      <SelectItem key={user} value={user}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-2 h-2 rounded-full" 
+                            style={{ backgroundColor: getUserColor(user) }}
+                          />
+                          {user}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
               {/* Action type filter */}
               <Select
@@ -266,7 +332,10 @@ interface LogEntryProps {
     action_type: string;
     entity_type: string;
     entity_name: string | null;
+    client_name: string | null;
     description: string;
+    old_value: string | null;
+    new_value: string | null;
     created_at: string;
   };
 }
@@ -301,9 +370,9 @@ function LogEntry({ log }: LogEntryProps) {
             >
               {actionConfig.label}
             </Badge>
-            {log.entity_name && (
+            {(log.entity_name || log.client_name) && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                {log.entity_name}
+                {log.client_name || log.entity_name}
               </Badge>
             )}
           </div>
@@ -313,6 +382,15 @@ function LogEntry({ log }: LogEntryProps) {
             {log.description}
           </p>
 
+          {/* Old -> New value if present */}
+          {log.old_value && log.new_value && log.old_value !== log.new_value && (
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="text-muted-foreground line-through">{log.old_value}</span>
+              <span className="text-muted-foreground">→</span>
+              <span className="text-foreground font-medium">{log.new_value}</span>
+            </div>
+          )}
+
           {/* Timestamp */}
           <div className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground">
             <Clock className="w-3 h-3" />
@@ -320,7 +398,7 @@ function LogEntry({ log }: LogEntryProps) {
               {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}
             </span>
             <span className="opacity-50">•</span>
-            <span>{ENTITY_LABELS[log.entity_type] || log.entity_type}</span>
+            <span>{format(new Date(log.created_at), "dd/MM HH:mm", { locale: ptBR })}</span>
           </div>
         </div>
       </div>
