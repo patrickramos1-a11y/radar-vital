@@ -114,19 +114,11 @@ function CompactCard({
         )}
       </div>
 
-      {/* Logo or Name display */}
+      {/* Client initials/name display - always text, no logos */}
       <div className="flex flex-col items-center justify-center p-1.5 pt-3 min-h-[50px]">
-        {client.logoUrl ? (
-          <img 
-            src={client.logoUrl} 
-            alt={client.name}
-            className="w-full max-h-6 object-contain"
-          />
-        ) : (
-          <span className="text-[10px] font-bold text-center text-primary leading-tight line-clamp-2">
-            {client.initials}
-          </span>
-        )}
+        <span className="text-[10px] font-bold text-center text-primary leading-tight line-clamp-2">
+          {client.initials}
+        </span>
       </div>
 
       {/* Client name - always show, truncated */}
