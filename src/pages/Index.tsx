@@ -12,8 +12,9 @@ import { Users, FileText, Shield, ClipboardList, Star, Sparkles, CheckSquare, Me
 import { COLLABORATOR_COLORS } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { MobileClientGridNew } from "@/components/mobile/MobileClientGridNew";
-import { MobileFilterBarNew } from "@/components/mobile/MobileFilterBarNew";
+import { MobileCompactHeader } from "@/components/mobile/MobileCompactHeader";
+import { MobileCompactFilters } from "@/components/mobile/MobileCompactFilters";
+import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 const Index = () => {
   const isMobile = useIsMobile();
@@ -241,54 +242,76 @@ const Index = () => {
   const mobileCommentsClient = mobileCommentsClientId ? getClient(mobileCommentsClientId) : null;
   const mobileJackboxClient = mobileJackboxClientId ? getClient(mobileJackboxClientId) : null;
 
+  // Calculate hasActiveFilters for mobile
+  const hasActiveFilters = 
+    filterFlags.priority || 
+    filterFlags.highlighted || 
+    filterFlags.selected ||
+    filterFlags.withJackbox || 
+    filterFlags.withComments ||
+    collaboratorFilters.length > 0 ||
+    clientTypeFilter !== 'all' ||
+    searchQuery.trim() !== '';
+
   // Mobile View
   if (isMobile) {
     return (
       <AppLayout>
         <div className="flex flex-col h-full overflow-hidden">
-          {/* New filter bar - always visible, no modals */}
-          <MobileFilterBarNew
+          {/* Header with macro indicators */}
+          <MobileCompactHeader
+            totalClients={totals.totalClients}
+            totalProcesses={totals.totalProcesses}
+            totalLicenses={totals.totalLicenses}
+            totalDemands={totals.totalDemands}
+            collaboratorDemandStats={collaboratorDemandStats}
+            collaboratorSelectedStats={collaboratorStats}
+            priorityCount={priorityCount}
+            highlightedCount={highlightedClients.size}
+            selectedCount={selectedCount}
+            commentsCount={withCommentsCount}
+            filterFlags={{
+              priority: filterFlags.priority,
+              highlighted: filterFlags.highlighted,
+              selected: filterFlags.selected,
+              withComments: filterFlags.withComments,
+            }}
+            collaboratorFilters={collaboratorFilters}
+            onFilterFlagToggle={handleFilterFlagToggle}
+            onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
+          />
+
+          {/* Filters: sort, search, type */}
+          <MobileCompactFilters
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             sortBy={sortBy}
             sortDirection={sortDirection}
-            filterFlags={filterFlags}
-            collaboratorFilters={collaboratorFilters}
             clientTypeFilter={clientTypeFilter}
             visibleCount={filteredClients.length}
             totalCount={activeClients.length}
-            priorityCount={priorityCount}
-            highlightedCount={highlightedClients.size}
-            selectedCount={selectedCount}
-            jackboxCount={jackboxCount}
-            commentsCount={withCommentsCount}
-            collaboratorCounts={collaboratorStats}
+            acCount={acCount}
+            avCount={avCount}
+            hasActiveFilters={hasActiveFilters}
             onSortChange={setSortBy}
             onSortDirectionChange={setSortDirection}
-            onFilterFlagToggle={handleFilterFlagToggle}
-            onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
             onClientTypeFilterChange={setClientTypeFilter}
             onClearAllFilters={handleClearAllFilters}
           />
 
+          {/* Compact grid of clients */}
           <div className="flex-1 overflow-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <MobileClientGridNew
+              <MobileCompactGrid
                 clients={filteredClients}
                 highlightedClients={highlightedClients}
                 getActiveTaskCount={getActiveTaskCount}
                 getCommentCount={getCommentCount}
-                getTasksForClient={getTasksForClient}
                 onClientTap={setMobileDetailClientId}
-                onTogglePriority={togglePriority}
-                onToggleHighlight={toggleHighlight}
-                onToggleCollaborator={handleToggleCollaborator}
-                onOpenComments={setMobileCommentsClientId}
-                onOpenJackbox={setMobileJackboxClientId}
               />
             )}
           </div>
