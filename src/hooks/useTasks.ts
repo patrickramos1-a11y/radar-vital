@@ -3,6 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Task, TaskFormData } from '@/types/task';
 import { CollaboratorName } from '@/types/client';
 import { toast } from 'sonner';
+import { ActivityLogger } from '@/lib/activityLogger';
+
+// Get current user from localStorage for logging
+const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
 // Convert DB row to Task type
 const dbRowToTask = (row: any): Task => ({
@@ -40,7 +44,7 @@ export function useTasks() {
     fetchTasks();
   }, [fetchTasks]);
 
-  const addTask = useCallback(async (clientId: string, data: TaskFormData) => {
+  const addTask = useCallback(async (clientId: string, data: TaskFormData, clientName?: string) => {
     // Check limit of 11 active tasks per client
     const clientActiveTasks = tasks.filter(t => t.client_id === clientId && !t.completed);
     if (clientActiveTasks.length >= 11) {
@@ -58,6 +62,10 @@ export function useTasks() {
       if (error) throw error;
       await fetchTasks();
       toast.success('Tarefa criada!');
+      
+      // Log activity
+      ActivityLogger.createTask(getCurrentUserName(), clientName || 'Cliente', clientId, data.title);
+      
       return true;
     } catch (error) {
       console.error('Error adding task:', error);
@@ -92,24 +100,40 @@ export function useTasks() {
     }
   }, [fetchTasks]);
 
-  const deleteTask = useCallback(async (taskId: string) => {
+  const deleteTask = useCallback(async (taskId: string, clientName?: string) => {
+    const task = tasks.find(t => t.id === taskId);
     try {
       const { error } = await supabase.from('tasks').delete().eq('id', taskId);
       if (error) throw error;
       await fetchTasks();
       toast.success('Tarefa excluída');
+      
+      // Log activity
+      if (task) {
+        ActivityLogger.deleteTask(getCurrentUserName(), clientName || 'Cliente', task.client_id, task.title);
+      }
+      
       return true;
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('Erro ao excluir tarefa');
       return false;
     }
-  }, [fetchTasks]);
+  }, [tasks, fetchTasks]);
 
-  const toggleComplete = useCallback(async (taskId: string) => {
+  const toggleComplete = useCallback(async (taskId: string, clientName?: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return false;
-    return updateTask(taskId, { completed: !task.completed });
+    
+    const newCompleted = !task.completed;
+    const result = await updateTask(taskId, { completed: newCompleted });
+    
+    // Log activity
+    if (result) {
+      ActivityLogger.completeTask(getCurrentUserName(), clientName || 'Cliente', task.client_id, task.title, newCompleted);
+    }
+    
+    return result;
   }, [tasks, updateTask]);
 
   // Get active tasks per client

@@ -2,6 +2,10 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ActivityLogger } from '@/lib/activityLogger';
+
+// Get current user from localStorage for logging
+const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
 interface ClientContextType {
   clients: Client[];
@@ -288,41 +292,51 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   const toggleClientActive = useCallback((id: string) => {
     const client = clients.find(c => c.id === id);
     if (client) {
-      updateClient(id, { isActive: !client.isActive });
+      const newValue = !client.isActive;
+      updateClient(id, { isActive: newValue });
+      ActivityLogger.toggleActive(getCurrentUserName(), client.name, id, newValue);
     }
   }, [clients, updateClient]);
 
   const togglePriority = useCallback((id: string) => {
     const client = clients.find(c => c.id === id);
     if (client) {
-      updateClient(id, { isPriority: !client.isPriority });
+      const newValue = !client.isPriority;
+      updateClient(id, { isPriority: newValue });
+      ActivityLogger.togglePriority(getCurrentUserName(), client.name, id, newValue);
     }
   }, [clients, updateClient]);
 
   const toggleChecked = useCallback((id: string) => {
     const client = clients.find(c => c.id === id);
     if (client) {
-      updateClient(id, { isChecked: !client.isChecked });
+      const newValue = !client.isChecked;
+      updateClient(id, { isChecked: newValue });
+      // Don't log selection toggles - too noisy
     }
   }, [clients, updateClient]);
 
   const toggleCollaborator = useCallback((id: string, collaborator: keyof Client['collaborators']) => {
     const client = clients.find(c => c.id === id);
     if (client) {
+      const newValue = !client.collaborators[collaborator];
       updateClient(id, { 
         collaborators: {
           ...client.collaborators,
-          [collaborator]: !client.collaborators[collaborator],
+          [collaborator]: newValue,
         }
       });
+      ActivityLogger.toggleCollaborator(getCurrentUserName(), client.name, id, collaborator, newValue);
     }
   }, [clients, updateClient]);
 
   const toggleHighlight = useCallback((id: string) => {
     const client = clients.find(c => c.id === id);
     if (client) {
+      const newValue = !client.isHighlighted;
       // Update in database and sync local state
-      updateClient(id, { isHighlighted: !client.isHighlighted });
+      updateClient(id, { isHighlighted: newValue });
+      ActivityLogger.toggleHighlight(getCurrentUserName(), client.name, id, newValue);
     }
     // Also update the in-memory set for immediate UI feedback
     setHighlightedClients(prev => {
@@ -349,8 +363,10 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   const toggleClientType = useCallback((id: string) => {
     const client = clients.find(c => c.id === id);
     if (client) {
-      const newType = client.clientType === 'AC' ? 'AV' : 'AC';
+      const oldType = client.clientType;
+      const newType = oldType === 'AC' ? 'AV' : 'AC';
       updateClient(id, { clientType: newType });
+      ActivityLogger.toggleClientType(getCurrentUserName(), client.name, id, oldType, newType);
     }
   }, [clients, updateClient]);
 

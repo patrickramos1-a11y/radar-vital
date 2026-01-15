@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientComment, CommentFormData } from '@/types/comment';
 import { toast } from 'sonner';
+import { ActivityLogger } from '@/lib/activityLogger';
+
+// Get current user from localStorage for logging
+const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
 interface UseClientCommentsReturn {
   comments: ClientComment[];
@@ -51,16 +55,17 @@ export function useClientComments(clientId: string): UseClientCommentsReturn {
     fetchComments();
   }, [fetchComments]);
 
-  const addComment = useCallback(async (data: CommentFormData) => {
+  const addComment = useCallback(async (data: CommentFormData, clientName?: string) => {
     try {
       const { data: userData } = await supabase.auth.getUser();
+      const authorName = data.authorName || getCurrentUserName();
       
       const { error } = await supabase
         .from('client_comments')
         .insert({
           client_id: clientId,
           author_user_id: userData?.user?.id || null,
-          author_name: data.authorName || 'Patrick',
+          author_name: authorName,
           comment_text: data.commentText,
         });
 
@@ -68,13 +73,21 @@ export function useClientComments(clientId: string): UseClientCommentsReturn {
 
       await fetchComments();
       toast.success('Comentário adicionado');
+      
+      // Log the activity
+      ActivityLogger.createComment(
+        getCurrentUserName(), 
+        clientName || 'Cliente', 
+        clientId, 
+        data.commentText
+      );
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Erro ao adicionar comentário');
     }
   }, [clientId, fetchComments]);
 
-  const deleteComment = useCallback(async (id: string) => {
+  const deleteComment = useCallback(async (id: string, clientName?: string) => {
     try {
       const { error } = await supabase
         .from('client_comments')
@@ -85,32 +98,40 @@ export function useClientComments(clientId: string): UseClientCommentsReturn {
 
       setComments(prev => prev.filter(c => c.id !== id));
       toast.success('Comentário excluído');
+      
+      // Log the activity
+      ActivityLogger.deleteComment(getCurrentUserName(), clientName || 'Cliente', clientId);
     } catch (error) {
       console.error('Error deleting comment:', error);
       toast.error('Erro ao excluir comentário');
     }
-  }, []);
+  }, [clientId]);
 
-  const togglePinned = useCallback(async (id: string) => {
+  const togglePinned = useCallback(async (id: string, clientName?: string) => {
     const comment = comments.find(c => c.id === id);
     if (!comment) return;
+
+    const newPinned = !comment.isPinned;
 
     try {
       const { error } = await supabase
         .from('client_comments')
-        .update({ is_pinned: !comment.isPinned })
+        .update({ is_pinned: newPinned })
         .eq('id', id);
 
       if (error) throw error;
 
       setComments(prev => prev.map(c => 
-        c.id === id ? { ...c, isPinned: !c.isPinned } : c
+        c.id === id ? { ...c, isPinned: newPinned } : c
       ));
+      
+      // Log the activity
+      ActivityLogger.pinComment(getCurrentUserName(), clientName || 'Cliente', clientId, newPinned);
     } catch (error) {
       console.error('Error toggling pinned:', error);
       toast.error('Erro ao fixar comentário');
     }
-  }, [comments]);
+  }, [comments, clientId]);
 
   return {
     comments,
