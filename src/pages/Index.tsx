@@ -8,7 +8,7 @@ import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { calculateTotals, calculateTotalDemands, CollaboratorName, Client } from "@/types/client";
-import { Users, FileText, Shield, ClipboardList, Star, Sparkles, CheckSquare, MessageCircle } from "lucide-react";
+import { Users, FileText, Shield, ClipboardList, Star, Sparkles, UserCheck, MessageCircle } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -413,7 +413,7 @@ const Index = () => {
             <div className="w-px h-6 bg-border mx-1" />
             <StatBadge icon={<Star className="w-3.5 h-3.5" />} value={priorityCount} label="Prioridade" color="rgb(245, 158, 11)" active={filterFlags.priority} onClick={() => handleFilterFlagToggle('priority')} />
             <StatBadge icon={<Sparkles className="w-3.5 h-3.5" />} value={highlightedClients.size} label="Destaque" color="rgb(59, 130, 246)" active={filterFlags.highlighted} onClick={() => handleFilterFlagToggle('highlighted')} />
-            <StatBadge icon={<CheckSquare className="w-3.5 h-3.5" />} value={selectedCount} label="Selecionados" color="rgb(16, 185, 129)" active={filterFlags.selected} onClick={() => handleFilterFlagToggle('selected')} />
+            <StatBadge icon={<UserCheck className="w-3.5 h-3.5" />} value={responsaveisCount} label="Responsáveis" color="rgb(16, 185, 129)" active={filterFlags.hasCollaborators} onClick={() => handleFilterFlagToggle('hasCollaborators')} />
             <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(99, 102, 241)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
           </div>
 
