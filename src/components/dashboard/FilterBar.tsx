@@ -12,6 +12,7 @@ export interface FilterFlags {
   priority: boolean;
   highlighted: boolean;
   selected: boolean;
+  hasCollaborators: boolean;
   withJackbox: boolean;
   withoutJackbox: boolean;
   withComments: boolean;
@@ -80,6 +81,7 @@ export function FilterBar({
     filterFlags.priority || 
     filterFlags.highlighted || 
     filterFlags.selected ||
+    filterFlags.hasCollaborators ||
     filterFlags.withJackbox || 
     filterFlags.withoutJackbox || 
     filterFlags.withComments ||
