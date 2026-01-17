@@ -58,6 +58,7 @@ const Index = () => {
     priority: false,
     highlighted: false,
     selected: false,
+    hasCollaborators: false,
     withJackbox: false,
     withoutJackbox: false,
     withComments: false,
@@ -89,6 +90,12 @@ const Index = () => {
   );
   const priorityCount = useMemo(() => activeClients.filter(c => c.isPriority).length, [activeClients]);
   const selectedCount = useMemo(() => activeClients.filter(c => c.isChecked).length, [activeClients]);
+  
+  // Count of clients with at least one collaborator assigned (responsáveis)
+  const responsaveisCount = useMemo(() => 
+    activeClients.filter(c => Object.values(c.collaborators).some(v => v)).length,
+    [activeClients]
+  );
 
   const handleFilterFlagToggle = (flag: keyof FilterFlags) => {
     setFilterFlags(prev => ({
@@ -106,6 +113,7 @@ const Index = () => {
       priority: false,
       highlighted: false,
       selected: false,
+      hasCollaborators: false,
       withJackbox: false,
       withoutJackbox: false,
       withComments: false,
@@ -153,6 +161,7 @@ const Index = () => {
       filterFlags.priority || 
       filterFlags.highlighted || 
       filterFlags.selected ||
+      filterFlags.hasCollaborators ||
       filterFlags.withJackbox || 
       filterFlags.withoutJackbox ||
       filterFlags.withComments ||
@@ -164,6 +173,7 @@ const Index = () => {
         const matchesPriority = filterFlags.priority && c.isPriority;
         const matchesHighlighted = filterFlags.highlighted && highlightedClients.has(c.id);
         const matchesSelected = filterFlags.selected && c.isChecked;
+        const matchesHasCollaborators = filterFlags.hasCollaborators && Object.values(c.collaborators).some(v => v);
         const matchesWithJackbox = filterFlags.withJackbox && getActiveTaskCount(c.id) > 0;
         const matchesWithoutJackbox = filterFlags.withoutJackbox && getActiveTaskCount(c.id) === 0;
         const matchesWithComments = filterFlags.withComments && getCommentCount(c.id) > 0;
@@ -171,7 +181,7 @@ const Index = () => {
         const matchesCollaborator = collaboratorFilters.length > 0 && 
           collaboratorFilters.some(collab => c.collaborators[collab]);
 
-        return matchesPriority || matchesHighlighted || matchesSelected || 
+        return matchesPriority || matchesHighlighted || matchesSelected || matchesHasCollaborators ||
                matchesWithJackbox || matchesWithoutJackbox || 
                matchesWithComments || matchesWithoutComments || matchesCollaborator;
       });
@@ -247,6 +257,7 @@ const Index = () => {
     filterFlags.priority || 
     filterFlags.highlighted || 
     filterFlags.selected ||
+    filterFlags.hasCollaborators ||
     filterFlags.withJackbox || 
     filterFlags.withComments ||
     collaboratorFilters.length > 0 ||
@@ -268,16 +279,23 @@ const Index = () => {
             collaboratorSelectedStats={collaboratorStats}
             priorityCount={priorityCount}
             highlightedCount={highlightedClients.size}
-            selectedCount={selectedCount}
+            responsaveisCount={responsaveisCount}
             commentsCount={withCommentsCount}
             filterFlags={{
               priority: filterFlags.priority,
               highlighted: filterFlags.highlighted,
-              selected: filterFlags.selected,
+              hasCollaborators: filterFlags.hasCollaborators,
               withComments: filterFlags.withComments,
             }}
             collaboratorFilters={collaboratorFilters}
-            onFilterFlagToggle={handleFilterFlagToggle}
+            onFilterFlagToggle={(flag) => {
+              // Map mobile flags to full FilterFlags
+              if (flag === 'hasCollaborators') {
+                handleFilterFlagToggle('hasCollaborators');
+              } else {
+                handleFilterFlagToggle(flag);
+              }
+            }}
             onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
           />
 

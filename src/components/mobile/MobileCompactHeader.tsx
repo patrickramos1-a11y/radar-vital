@@ -1,4 +1,4 @@
-import { Users, FileText, Shield, ClipboardList, Star, Sparkles, CheckSquare, MessageCircle } from "lucide-react";
+import { Users, FileText, Shield, ClipboardList, Star, Sparkles, UserCheck, MessageCircle } from "lucide-react";
 import { COLLABORATOR_COLORS, CollaboratorName } from "@/types/client";
 
 interface MobileCompactHeaderProps {
@@ -10,17 +10,17 @@ interface MobileCompactHeaderProps {
   collaboratorSelectedStats: Record<CollaboratorName, number>;
   priorityCount: number;
   highlightedCount: number;
-  selectedCount: number;
+  responsaveisCount: number; // clients with at least one collaborator assigned
   commentsCount: number;
   // Filter state
   filterFlags: {
     priority: boolean;
     highlighted: boolean;
-    selected: boolean;
+    hasCollaborators: boolean;
     withComments: boolean;
   };
   collaboratorFilters: CollaboratorName[];
-  onFilterFlagToggle: (flag: 'priority' | 'highlighted' | 'selected' | 'withComments') => void;
+  onFilterFlagToggle: (flag: 'priority' | 'highlighted' | 'hasCollaborators' | 'withComments') => void;
   onCollaboratorFilterToggle: (collaborator: CollaboratorName) => void;
 }
 
@@ -33,7 +33,7 @@ export function MobileCompactHeader({
   collaboratorSelectedStats,
   priorityCount,
   highlightedCount,
-  selectedCount,
+  responsaveisCount,
   commentsCount,
   filterFlags,
   collaboratorFilters,
@@ -105,11 +105,11 @@ export function MobileCompactHeader({
           activeColor="rgb(59, 130, 246)"
         />
         <FilterBadge
-          icon={<CheckSquare className="w-3.5 h-3.5" />}
-          value={selectedCount}
-          label="SELECIONADOS"
-          active={filterFlags.selected}
-          onClick={() => onFilterFlagToggle('selected')}
+          icon={<UserCheck className="w-3.5 h-3.5" />}
+          value={responsaveisCount}
+          label="RESPONSÁVEIS"
+          active={filterFlags.hasCollaborators}
+          onClick={() => onFilterFlagToggle('hasCollaborators')}
           activeColor="rgb(16, 185, 129)"
         />
         <FilterBadge
