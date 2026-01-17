@@ -95,19 +95,79 @@ function getOptimalFontSize(name: string, clientCount: number): { fontSize: stri
 }
 
 // Dynamic logo area height - expands when fewer clients
-function getLogoAreaStyle(clientCount: number, hasLogo: boolean): { minHeight: string; maxHeight: string } {
+function getLogoAreaStyle(clientCount: number): { minHeight: string; flex: number } {
   if (clientCount <= 4) {
-    return { minHeight: hasLogo ? '80px' : '100px', maxHeight: '140px' };
+    return { minHeight: '180px', flex: 1 };
   } else if (clientCount <= 8) {
-    return { minHeight: hasLogo ? '60px' : '80px', maxHeight: '120px' };
+    return { minHeight: '140px', flex: 1 };
   } else if (clientCount <= 12) {
-    return { minHeight: hasLogo ? '48px' : '64px', maxHeight: '100px' };
+    return { minHeight: '100px', flex: 1 };
   } else if (clientCount <= 20) {
-    return { minHeight: hasLogo ? '40px' : '52px', maxHeight: '80px' };
+    return { minHeight: '80px', flex: 1 };
   } else if (clientCount <= 30) {
-    return { minHeight: hasLogo ? '36px' : '44px', maxHeight: '60px' };
+    return { minHeight: '60px', flex: 1 };
   } else {
-    return { minHeight: hasLogo ? '28px' : '36px', maxHeight: '48px' };
+    return { minHeight: '48px', flex: 1 };
+  }
+}
+
+// Dynamic logo max height based on client count
+function getLogoMaxHeight(clientCount: number): string {
+  if (clientCount <= 4) {
+    return 'max-h-40'; // 160px
+  } else if (clientCount <= 8) {
+    return 'max-h-32'; // 128px
+  } else if (clientCount <= 12) {
+    return 'max-h-24'; // 96px
+  } else if (clientCount <= 20) {
+    return 'max-h-16'; // 64px
+  } else if (clientCount <= 30) {
+    return 'max-h-12'; // 48px
+  } else {
+    return 'max-h-8';  // 32px
+  }
+}
+
+// Dynamic sizes for header elements
+function getHeaderSizes(clientCount: number): { numberSize: string; nameSize: string; headerPadding: string } {
+  if (clientCount <= 4) {
+    return { numberSize: 'w-8 h-8 text-sm', nameSize: 'text-lg', headerPadding: 'px-3 py-2' };
+  } else if (clientCount <= 8) {
+    return { numberSize: 'w-6 h-6 text-xs', nameSize: 'text-base', headerPadding: 'px-2 py-1.5' };
+  } else if (clientCount <= 12) {
+    return { numberSize: 'w-5 h-5 text-[10px]', nameSize: 'text-sm', headerPadding: 'px-2 py-1' };
+  } else if (clientCount <= 20) {
+    return { numberSize: 'w-4 h-4 text-[9px]', nameSize: 'text-xs', headerPadding: 'px-1.5 py-0.5' };
+  } else {
+    return { numberSize: 'w-4 h-4 text-[8px]', nameSize: 'text-[9px]', headerPadding: 'px-1.5 py-0.5' };
+  }
+}
+
+// Dynamic sizes for indicators (P, L, D, demand chips)
+function getIndicatorSizes(clientCount: number): { labelSize: string; valueSize: string; chipSize: string; chipPadding: string } {
+  if (clientCount <= 4) {
+    return { labelSize: 'text-sm', valueSize: 'text-2xl', chipSize: 'min-w-[28px] h-7 text-sm', chipPadding: 'px-2 py-1.5' };
+  } else if (clientCount <= 8) {
+    return { labelSize: 'text-xs', valueSize: 'text-xl', chipSize: 'min-w-[22px] h-6 text-xs', chipPadding: 'px-1.5 py-1' };
+  } else if (clientCount <= 12) {
+    return { labelSize: 'text-[10px]', valueSize: 'text-lg', chipSize: 'min-w-[18px] h-5 text-[10px]', chipPadding: 'px-1.5 py-1' };
+  } else if (clientCount <= 20) {
+    return { labelSize: 'text-[8px]', valueSize: 'text-base', chipSize: 'min-w-[16px] h-4.5 text-[9px]', chipPadding: 'px-1 py-0.5' };
+  } else {
+    return { labelSize: 'text-[6px]', valueSize: 'text-[10px]', chipSize: 'min-w-[14px] h-4 text-[8px]', chipPadding: 'px-1 py-0.5' };
+  }
+}
+
+// Dynamic collaborator button height
+function getCollaboratorHeight(clientCount: number): string {
+  if (clientCount <= 4) {
+    return 'h-6';
+  } else if (clientCount <= 8) {
+    return 'h-5';
+  } else if (clientCount <= 12) {
+    return 'h-4';
+  } else {
+    return 'h-3';
   }
 }
 
@@ -128,11 +188,12 @@ export function ClientCard({
   const totalDemands = calculateTotalDemands(client.demands);
   const hasCollaborators = hasActiveCollaborators(client.collaborators);
   const collaboratorBg = getCollaboratorGradient(client.collaborators);
-  const logoAreaStyle = getLogoAreaStyle(clientCount, !!client.logoUrl);
+  const logoAreaStyle = getLogoAreaStyle(clientCount);
   const fontStyle = getOptimalFontSize(client.name, clientCount);
-
-  // Logo sizing based on client count
-  const logoMaxHeight = clientCount <= 8 ? 'max-h-16' : clientCount <= 20 ? 'max-h-12' : clientCount <= 30 ? 'max-h-10' : 'max-h-8';
+  const logoMaxHeight = getLogoMaxHeight(clientCount);
+  const headerSizes = getHeaderSizes(clientCount);
+  const indicatorSizes = getIndicatorSizes(clientCount);
+  const collaboratorHeight = getCollaboratorHeight(clientCount);
 
   const handleHighlightClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -201,28 +262,30 @@ export function ClientCard({
       </div>
 
       {/* Header - Number + Name */}
-      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-card-elevated border-b border-border">
-        <div className="flex items-center justify-center w-4 h-4 rounded bg-primary text-primary-foreground text-[8px] font-bold shrink-0">
+      <div className={`flex items-center gap-1 ${headerSizes.headerPadding} bg-card-elevated border-b border-border`}>
+        <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded bg-primary text-primary-foreground font-bold shrink-0`}>
           {displayNumber.toString().padStart(2, '0')}
         </div>
-        <span className="text-[9px] font-medium text-foreground truncate flex-1 pr-6">
+        <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1 pr-6`}>
           {client.name}
         </span>
       </div>
 
       {/* Logo/Name Area - Dynamic height based on client count */}
       <div 
-        className="flex items-center justify-center p-2 flex-1 transition-colors overflow-hidden"
+        className="flex items-center justify-center p-2 transition-colors overflow-hidden"
         style={{
           background: hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(220 90% 50% / 0.15)' : 'hsl(var(--muted) / 0.3)'),
           minHeight: logoAreaStyle.minHeight,
+          flex: logoAreaStyle.flex,
         }}
       >
         {client.logoUrl ? (
           <img 
             src={client.logoUrl} 
             alt={`Logo ${client.name}`} 
-            className={`${logoMaxHeight} max-w-full object-contain rounded`}
+            className={`${logoMaxHeight} w-auto object-contain rounded`}
+            style={{ maxWidth: '90%' }}
           />
         ) : (
           <span 
@@ -246,32 +309,32 @@ export function ClientCard({
       </div>
 
       {/* Indicators Row - P, L, D with chips */}
-      <div className="px-1 py-0.5 border-t border-border bg-card-elevated/50">
+      <div className={`${indicatorSizes.chipPadding} border-t border-border bg-card-elevated/50`}>
         <div className="flex items-center justify-between gap-0.5">
           {/* P - Processos */}
           <div className="flex flex-col items-center min-w-[16px]">
-            <span className="text-[6px] text-muted-foreground font-medium leading-none">P</span>
-            <span className="text-[10px] font-bold text-foreground leading-tight">{client.processes}</span>
+            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-medium leading-none`}>P</span>
+            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight`}>{client.processes}</span>
           </div>
 
           {/* L - Licenças */}
           <div className="flex flex-col items-center min-w-[16px]">
-            <span className="text-[6px] text-muted-foreground font-medium leading-none">L</span>
-            <span className="text-[10px] font-bold text-foreground leading-tight">{client.licenses}</span>
+            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-medium leading-none`}>L</span>
+            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight`}>{client.licenses}</span>
           </div>
 
           {/* D - Demandas with total */}
           <div className="flex flex-col items-center min-w-[16px]">
-            <span className="text-[6px] text-muted-foreground font-medium leading-none">D</span>
-            <span className="text-[10px] font-bold text-foreground leading-tight">{totalDemands}</span>
+            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-medium leading-none`}>D</span>
+            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight`}>{totalDemands}</span>
           </div>
 
           {/* Status chips */}
           <div className="flex items-center gap-px">
-            <DemandChipSmall status="completed" count={client.demands.completed} />
-            <DemandChipSmall status="in-progress" count={client.demands.inProgress} />
-            <DemandChipSmall status="not-started" count={client.demands.notStarted} />
-            <DemandChipSmall status="cancelled" count={client.demands.cancelled} />
+            <DemandChipSmall status="completed" count={client.demands.completed} sizeClass={indicatorSizes.chipSize} />
+            <DemandChipSmall status="in-progress" count={client.demands.inProgress} sizeClass={indicatorSizes.chipSize} />
+            <DemandChipSmall status="not-started" count={client.demands.notStarted} sizeClass={indicatorSizes.chipSize} />
+            <DemandChipSmall status="cancelled" count={client.demands.cancelled} sizeClass={indicatorSizes.chipSize} />
           </div>
         </div>
       </div>
@@ -284,6 +347,7 @@ export function ClientCard({
             name={name}
             isActive={client.collaborators[name]}
             onClick={(e) => handleCollaboratorClick(e, name)}
+            heightClass={collaboratorHeight}
           />
         ))}
       </div>
@@ -294,9 +358,10 @@ export function ClientCard({
 interface DemandChipSmallProps {
   status: 'completed' | 'in-progress' | 'not-started' | 'cancelled';
   count: number;
+  sizeClass: string;
 }
 
-function DemandChipSmall({ status, count }: DemandChipSmallProps) {
+function DemandChipSmall({ status, count, sizeClass }: DemandChipSmallProps) {
   const statusColors = {
     'completed': 'bg-green-600',
     'in-progress': 'bg-emerald-400', 
@@ -305,7 +370,7 @@ function DemandChipSmall({ status, count }: DemandChipSmallProps) {
   };
   
   return (
-    <div className={`flex items-center justify-center min-w-[14px] h-4 px-0.5 rounded text-[8px] font-bold text-white ${statusColors[status]}`}>
+    <div className={`flex items-center justify-center ${sizeClass} px-0.5 rounded font-bold text-white ${statusColors[status]}`}>
       {count}
     </div>
   );
@@ -315,16 +380,17 @@ interface CollaboratorButtonProps {
   name: CollaboratorName;
   isActive: boolean;
   onClick: (e: React.MouseEvent) => void;
+  heightClass: string;
 }
 
-function CollaboratorButton({ name, isActive, onClick }: CollaboratorButtonProps) {
+function CollaboratorButton({ name, isActive, onClick, heightClass }: CollaboratorButtonProps) {
   const color = COLLABORATOR_COLORS[name];
   const initials = name.slice(0, 2).toUpperCase();
   
   return (
     <button
       onClick={onClick}
-      className="h-3 w-full transition-all hover:opacity-70 flex items-center justify-center"
+      className={`${heightClass} w-full transition-all hover:opacity-70 flex items-center justify-center`}
       style={{ 
         backgroundColor: color,
         opacity: isActive ? 1 : 0.25,
