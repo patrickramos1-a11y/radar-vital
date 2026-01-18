@@ -9,12 +9,16 @@ import Index from "./pages/Index";
 import Config from "./pages/Config";
 import DemandasPanel from "./pages/DemandasPanel";
 import DemandasVisual from "./pages/DemandasVisual";
+import DemandasUnified from "./pages/DemandasUnified";
 import LicencasPanel from "./pages/LicencasPanel";
 import LicencasVisual from "./pages/LicencasVisual";
 import ProcessosPanel from "./pages/ProcessosPanel";
 import ProcessosVisual from "./pages/ProcessosVisual";
+import ProcessosUnified from "./pages/ProcessosUnified";
 import JackboxPanel from "./pages/JackboxPanel";
+import JackboxUnified from "./pages/JackboxUnified";
 import JackboxDetalhado from "./pages/JackboxDetalhado";
+import CommentsPanel from "./pages/CommentsPanel";
 import AuthPage from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +42,11 @@ function AuthenticatedApp() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          {/* Unified Panels (New - Macro View) */}
+          <Route path="/demandas-unificado" element={<DemandasUnified />} />
+          <Route path="/processos-unificado" element={<ProcessosUnified />} />
+          <Route path="/jackbox-unificado" element={<JackboxUnified />} />
+          <Route path="/comentarios" element={<CommentsPanel />} />
           {/* Visual Panels (Macro) */}
           <Route path="/demandas-visual" element={<DemandasVisual />} />
           <Route path="/licencas-visual" element={<LicencasVisual />} />
