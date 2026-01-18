@@ -86,6 +86,11 @@ export type Database = {
           created_at: string
           id: string
           is_pinned: boolean
+          read_celine: boolean
+          read_darley: boolean
+          read_gabi: boolean
+          read_patrick: boolean
+          read_vanessa: boolean
         }
         Insert: {
           author_name?: string
@@ -95,6 +100,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_pinned?: boolean
+          read_celine?: boolean
+          read_darley?: boolean
+          read_gabi?: boolean
+          read_patrick?: boolean
+          read_vanessa?: boolean
         }
         Update: {
           author_name?: string
@@ -104,6 +114,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_pinned?: boolean
+          read_celine?: boolean
+          read_darley?: boolean
+          read_gabi?: boolean
+          read_patrick?: boolean
+          read_vanessa?: boolean
         }
         Relationships: [
           {
