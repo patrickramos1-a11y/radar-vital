@@ -51,27 +51,27 @@ function hasActiveCollaborators(collaborators: Client['collaborators']): boolean
   return COLLABORATOR_NAMES.some(name => collaborators[name]);
 }
 
-// Dynamic font size calculation - MAXIMUM possible based on client count
-// Allows up to 3 lines for long names
+// Dynamic font size calculation - IMPROVED for better legibility
+// Allows up to 3 lines for long names with better base sizes
 function getOptimalFontSize(name: string, clientCount: number): { fontSize: string; lineHeight: string } {
   const len = name.trim().length;
 
-  // Base size increases significantly with fewer clients
+  // Base size increases significantly with fewer clients - INCREASED for readability
   let baseSize: number;
   if (clientCount <= 4) {
-    baseSize = 36;
+    baseSize = 40;
   } else if (clientCount <= 8) {
-    baseSize = 30;
+    baseSize = 34;
   } else if (clientCount <= 12) {
-    baseSize = 26;
+    baseSize = 30;
   } else if (clientCount <= 20) {
-    baseSize = 22;
+    baseSize = 26;
   } else if (clientCount <= 30) {
-    baseSize = 18;
+    baseSize = 22;
   } else if (clientCount <= 40) {
-    baseSize = 16;
+    baseSize = 18;
   } else {
-    baseSize = 14;
+    baseSize = 16;
   }
 
   // Adjust by name length - short names get even bigger
@@ -83,14 +83,14 @@ function getOptimalFontSize(name: string, clientCount: number): { fontSize: stri
   } else if (len <= 16) {
     finalSize = baseSize;
   } else if (len <= 24) {
-    finalSize = Math.max(baseSize - 2, 12);
+    finalSize = Math.max(baseSize - 2, 14);
   } else {
-    finalSize = Math.max(baseSize - 4, 10);
+    finalSize = Math.max(baseSize - 4, 12);
   }
 
   return {
     fontSize: `${finalSize}px`,
-    lineHeight: '1.1',
+    lineHeight: '1.2',
   };
 }
 
@@ -128,46 +128,48 @@ function getLogoMaxHeight(clientCount: number): string {
   }
 }
 
-// Dynamic sizes for header elements
+// Dynamic sizes for header elements - IMPROVED for better hierarchy
 function getHeaderSizes(clientCount: number): { numberSize: string; nameSize: string; headerPadding: string } {
   if (clientCount <= 4) {
-    return { numberSize: 'w-8 h-8 text-sm', nameSize: 'text-lg', headerPadding: 'px-3 py-2' };
+    return { numberSize: 'w-10 h-10 text-base', nameSize: 'text-xl', headerPadding: 'px-4 py-3' };
   } else if (clientCount <= 8) {
-    return { numberSize: 'w-6 h-6 text-xs', nameSize: 'text-base', headerPadding: 'px-2 py-1.5' };
+    return { numberSize: 'w-8 h-8 text-sm', nameSize: 'text-lg', headerPadding: 'px-3 py-2.5' };
   } else if (clientCount <= 12) {
-    return { numberSize: 'w-5 h-5 text-[10px]', nameSize: 'text-sm', headerPadding: 'px-2 py-1' };
+    return { numberSize: 'w-7 h-7 text-xs', nameSize: 'text-base', headerPadding: 'px-3 py-2' };
   } else if (clientCount <= 20) {
-    return { numberSize: 'w-4 h-4 text-[9px]', nameSize: 'text-xs', headerPadding: 'px-1.5 py-0.5' };
+    return { numberSize: 'w-6 h-6 text-xs', nameSize: 'text-sm', headerPadding: 'px-2.5 py-1.5' };
   } else {
-    return { numberSize: 'w-4 h-4 text-[8px]', nameSize: 'text-[9px]', headerPadding: 'px-1.5 py-0.5' };
+    return { numberSize: 'w-5 h-5 text-[10px]', nameSize: 'text-xs', headerPadding: 'px-2 py-1' };
   }
 }
 
-// Dynamic sizes for indicators (P, L, D, demand chips)
+// Dynamic sizes for indicators (P, L, D, demand chips) - IMPROVED for legibility
 function getIndicatorSizes(clientCount: number): { labelSize: string; valueSize: string; chipSize: string; chipPadding: string } {
   if (clientCount <= 4) {
-    return { labelSize: 'text-sm', valueSize: 'text-2xl', chipSize: 'min-w-[28px] h-7 text-sm', chipPadding: 'px-2 py-1.5' };
+    return { labelSize: 'text-base', valueSize: 'text-3xl', chipSize: 'min-w-[32px] h-8 text-base', chipPadding: 'px-3 py-2' };
   } else if (clientCount <= 8) {
-    return { labelSize: 'text-xs', valueSize: 'text-xl', chipSize: 'min-w-[22px] h-6 text-xs', chipPadding: 'px-1.5 py-1' };
+    return { labelSize: 'text-sm', valueSize: 'text-2xl', chipSize: 'min-w-[28px] h-7 text-sm', chipPadding: 'px-2.5 py-1.5' };
   } else if (clientCount <= 12) {
-    return { labelSize: 'text-[10px]', valueSize: 'text-lg', chipSize: 'min-w-[18px] h-5 text-[10px]', chipPadding: 'px-1.5 py-1' };
+    return { labelSize: 'text-xs', valueSize: 'text-xl', chipSize: 'min-w-[24px] h-6 text-xs', chipPadding: 'px-2 py-1.5' };
   } else if (clientCount <= 20) {
-    return { labelSize: 'text-[8px]', valueSize: 'text-base', chipSize: 'min-w-[16px] h-4.5 text-[9px]', chipPadding: 'px-1 py-0.5' };
+    return { labelSize: 'text-xs', valueSize: 'text-lg', chipSize: 'min-w-[20px] h-5 text-[11px]', chipPadding: 'px-1.5 py-1' };
   } else {
-    return { labelSize: 'text-[6px]', valueSize: 'text-[10px]', chipSize: 'min-w-[14px] h-4 text-[8px]', chipPadding: 'px-1 py-0.5' };
+    return { labelSize: 'text-[10px]', valueSize: 'text-base', chipSize: 'min-w-[18px] h-5 text-[10px]', chipPadding: 'px-1.5 py-1' };
   }
 }
 
-// Dynamic collaborator button height
+// Dynamic collaborator button height - IMPROVED for touch targets
 function getCollaboratorHeight(clientCount: number): string {
   if (clientCount <= 4) {
-    return 'h-6';
+    return 'h-8';
   } else if (clientCount <= 8) {
-    return 'h-5';
+    return 'h-7';
   } else if (clientCount <= 12) {
-    return 'h-4';
+    return 'h-6';
+  } else if (clientCount <= 20) {
+    return 'h-5';
   } else {
-    return 'h-3';
+    return 'h-4';
   }
 }
 
@@ -261,19 +263,19 @@ export function ClientCard({
         </button>
       </div>
 
-      {/* Header - Number + Name */}
-      <div className={`flex items-center gap-1 ${headerSizes.headerPadding} bg-card-elevated border-b border-border`}>
-        <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded bg-primary text-primary-foreground font-bold shrink-0`}>
+      {/* Header - Number + Name - Improved spacing and typography */}
+      <div className={`flex items-center gap-2 ${headerSizes.headerPadding} bg-card-elevated border-b border-border`}>
+        <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded-lg bg-primary text-primary-foreground font-bold shrink-0`}>
           {displayNumber.toString().padStart(2, '0')}
         </div>
-        <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1 pr-6`}>
+        <span className={`${headerSizes.nameSize} font-semibold text-foreground truncate flex-1 pr-6`}>
           {client.name}
         </span>
       </div>
 
-      {/* Logo/Name Area - Dynamic height based on client count */}
+      {/* Logo/Name Area - Dynamic height with improved padding */}
       <div 
-        className="flex items-center justify-center p-2 transition-colors overflow-hidden"
+        className="flex items-center justify-center p-4 transition-colors overflow-hidden"
         style={{
           background: hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(220 90% 50% / 0.15)' : 'hsl(var(--muted) / 0.3)'),
           minHeight: logoAreaStyle.minHeight,
@@ -284,12 +286,12 @@ export function ClientCard({
           <img 
             src={client.logoUrl} 
             alt={`Logo ${client.name}`} 
-            className={`${logoMaxHeight} w-auto object-contain rounded`}
+            className={`${logoMaxHeight} w-auto object-contain rounded-lg`}
             style={{ maxWidth: '90%' }}
           />
         ) : (
           <span 
-            className={`font-bold text-center px-1 ${
+            className={`font-bold text-center px-2 ${
               hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'
             }`}
             style={{
@@ -301,6 +303,7 @@ export function ClientCard({
               WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
+              letterSpacing: '-0.01em',
             }}
           >
             {client.name}
@@ -308,29 +311,29 @@ export function ClientCard({
         )}
       </div>
 
-      {/* Indicators Row - P, L, D with chips */}
+      {/* Indicators Row - P, L, D with chips - Improved spacing */}
       <div className={`${indicatorSizes.chipPadding} border-t border-border bg-card-elevated/50`}>
-        <div className="flex items-center justify-between gap-0.5">
+        <div className="flex items-center justify-between gap-2">
           {/* P - Processos */}
-          <div className="flex flex-col items-center min-w-[16px]">
-            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-medium leading-none`}>P</span>
-            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight`}>{client.processes}</span>
+          <div className="flex flex-col items-center min-w-[24px]">
+            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-semibold leading-none`}>P</span>
+            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight mt-0.5`}>{client.processes}</span>
           </div>
 
           {/* L - Licenças */}
-          <div className="flex flex-col items-center min-w-[16px]">
-            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-medium leading-none`}>L</span>
-            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight`}>{client.licenses}</span>
+          <div className="flex flex-col items-center min-w-[24px]">
+            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-semibold leading-none`}>L</span>
+            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight mt-0.5`}>{client.licenses}</span>
           </div>
 
           {/* D - Demandas with total */}
-          <div className="flex flex-col items-center min-w-[16px]">
-            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-medium leading-none`}>D</span>
-            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight`}>{totalDemands}</span>
+          <div className="flex flex-col items-center min-w-[24px]">
+            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-semibold leading-none`}>D</span>
+            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight mt-0.5`}>{totalDemands}</span>
           </div>
 
-          {/* Status chips */}
-          <div className="flex items-center gap-px">
+          {/* Status chips - preserved colors exactly as required */}
+          <div className="flex items-center gap-1">
             <DemandChipSmall status="completed" count={client.demands.completed} sizeClass={indicatorSizes.chipSize} />
             <DemandChipSmall status="in-progress" count={client.demands.inProgress} sizeClass={indicatorSizes.chipSize} />
             <DemandChipSmall status="not-started" count={client.demands.notStarted} sizeClass={indicatorSizes.chipSize} />
@@ -397,7 +400,7 @@ function CollaboratorButton({ name, isActive, onClick, heightClass }: Collaborat
       }}
       title={`${name.charAt(0).toUpperCase() + name.slice(1)} - Clique para ${isActive ? 'desativar' : 'ativar'}`}
     >
-      <span className="text-[7px] font-bold text-white leading-none">{initials}</span>
+      <span className="text-[9px] font-bold text-white leading-none tracking-wide">{initials}</span>
     </button>
   );
 }
