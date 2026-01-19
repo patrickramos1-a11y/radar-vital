@@ -67,75 +67,45 @@
     @apply border-border;
   }
 
-  html {
-    /* Base font size - slightly larger for better readability */
-    font-size: 16px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, sans-serif;
-    font-weight: 400;
-    line-height: 1.5;
-    letter-spacing: -0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
-    font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
-  }
-
-  /* Improved base typography sizes */
-  h1 { @apply text-2xl md:text-3xl; }
-  h2 { @apply text-xl md:text-2xl; }
-  h3 { @apply text-lg md:text-xl; }
-  h4 { @apply text-base md:text-lg; }
-  
-  p, span, div {
-    @apply text-sm md:text-base;
-  }
-
-  /* Better link readability */
-  a {
-    @apply transition-colors;
   }
 }
 
 @layer components {
   /* Dashboard Header Stats */
   .stat-card {
-    @apply flex flex-col items-center justify-center px-6 py-4 rounded-xl;
+    @apply flex flex-col items-center justify-center px-6 py-3 rounded-xl;
     @apply bg-card backdrop-blur-sm border border-border;
     @apply transition-all duration-300 hover:border-primary/30;
     box-shadow: 0 2px 8px -2px hsl(var(--card-shadow) / 0.15);
   }
 
   .stat-value {
-    @apply text-3xl md:text-4xl font-bold text-foreground;
+    @apply text-3xl font-bold text-foreground;
     font-family: 'Space Grotesk', system-ui, sans-serif;
-    letter-spacing: -0.02em;
   }
 
   .stat-label {
-    @apply text-sm md:text-base font-medium text-muted-foreground uppercase tracking-wider mt-1;
+    @apply text-sm font-medium text-muted-foreground uppercase tracking-wider;
   }
 
-  /* Client Cards - Compact Version with improved spacing */
+  /* Client Cards - Compact Version */
   .client-card-compact {
     @apply relative flex flex-col rounded-xl overflow-hidden;
-    @apply bg-card border-2 border-border;
+    @apply bg-card border border-border;
     @apply transition-all duration-200 ease-out cursor-pointer;
     box-shadow: 0 2px 8px -2px hsl(var(--card-shadow) / 0.15);
   }
 
   .client-card-compact:hover {
     @apply border-primary/50;
-    box-shadow: 0 6px 20px -4px hsl(var(--card-shadow) / 0.25);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 16px -2px hsl(var(--card-shadow) / 0.25);
   }
 
   .client-card-compact.selected {
@@ -143,11 +113,10 @@
     box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.3);
   }
 
-  /* Highlighted cards - Preserving red priority marker exactly as specified */
   .client-card-compact.highlighted {
     @apply border-red-500 ring-4 ring-red-500/40;
     border-width: 3px;
-    box-shadow: 0 0 24px -4px rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 20px -4px rgba(239, 68, 68, 0.5);
   }
 
   .client-card-compact.selected.highlighted {
@@ -155,24 +124,22 @@
     border-width: 3px;
   }
 
-  /* Indicator Pills - Enhanced for better readability */
+  /* Indicator Pills */
   .indicator-pill {
-    @apply flex items-center gap-2 px-4 py-2 rounded-lg;
-    @apply bg-secondary text-foreground font-semibold text-base;
+    @apply flex items-center gap-1.5 px-3 py-1.5 rounded-lg;
+    @apply bg-secondary text-foreground font-semibold text-sm;
   }
 
   .indicator-pill-label {
-    @apply text-muted-foreground font-medium text-sm;
+    @apply text-muted-foreground font-medium;
   }
 
-  /* Demand Status Chips - Improved sizes for legibility */
+  /* Demand Status Chips - Small version */
   .demand-chip-small {
-    @apply flex items-center justify-center min-w-[22px] h-6 px-1.5 rounded;
-    @apply text-xs font-bold text-white;
-    letter-spacing: -0.01em;
+    @apply flex items-center justify-center min-w-[18px] h-5 px-1 rounded;
+    @apply text-[10px] font-bold text-white;
   }
 
-  /* Status colors preserved as per requirements */
   .demand-chip-small.completed {
     background-color: hsl(var(--status-completed));
   }
@@ -189,13 +156,12 @@
     background-color: hsl(var(--status-cancelled));
   }
 
-  /* Collaborator Buttons - Better touch targets on mobile */
+  /* Collaborator Buttons - Bottom of card */
   .collaborator-button {
-    @apply py-1.5 text-[10px] font-bold uppercase tracking-tight text-center;
-    @apply border-r border-border/50 last:border-r-0;
+    @apply py-1 text-[9px] font-bold uppercase tracking-tight text-center;
+    @apply border-r border-border last:border-r-0;
     @apply transition-all duration-150;
     @apply hover:opacity-80 cursor-pointer;
-    min-height: 28px;
   }
 
   /* Presentation Mode */

@@ -29,72 +29,72 @@ export function MobileClientCard({
   return (
     <button
       onClick={() => onTap(client.id)}
-      className={`w-full text-left rounded-xl border-2 bg-card transition-all active:scale-[0.98] ${
+      className={`w-full text-left rounded-xl border bg-card transition-all active:scale-[0.98] ${
         isHighlighted 
           ? 'border-red-500 ring-2 ring-red-500/30' 
           : 'border-border'
       }`}
       style={{
-        borderLeftWidth: activeCollaborators.length > 0 ? '5px' : '2px',
+        borderLeftWidth: activeCollaborators.length > 0 ? '4px' : '1px',
         borderLeftColor: borderColor,
       }}
     >
-      <div className="flex items-center gap-4 p-4">
-        {/* Number badge - Larger for better tap target */}
-        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-primary-foreground text-base font-bold shrink-0">
+      <div className="flex items-center gap-3 p-3">
+        {/* Number badge */}
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground text-sm font-bold shrink-0">
           {displayNumber.toString().padStart(2, '0')}
         </div>
 
-        {/* Client info - Improved typography hierarchy */}
+        {/* Client info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-foreground truncate text-base">
+            <h3 className="font-semibold text-foreground truncate text-sm">
               {client.name}
             </h3>
             {client.isPriority && (
-              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 shrink-0" />
+              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 shrink-0" />
             )}
           </div>
           
-          {/* Quick stats - Larger and more legible */}
-          <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground">
+          {/* Quick stats */}
+          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
             <span className="font-medium">
-              P: <span className="text-foreground font-semibold">{client.processes}</span>
+              P: <span className="text-foreground">{client.processes}</span>
             </span>
             <span className="font-medium">
-              L: <span className="text-foreground font-semibold">{client.licenses}</span>
+              L: <span className="text-foreground">{client.licenses}</span>
             </span>
             <span className="font-medium">
-              D: <span className="text-foreground font-semibold">{totalDemands}</span>
+              D: <span className="text-foreground">{totalDemands}</span>
             </span>
           </div>
         </div>
 
-        {/* Right side indicators - Larger touch targets */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Right side indicators */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* Jackbox indicator */}
           {activeTaskCount > 0 && (
-            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-amber-100 text-amber-700">
-              <ListChecks className="w-4 h-4" />
-              <span className="text-sm font-bold">{activeTaskCount}</span>
+            <div className="flex items-center gap-0.5 px-2 py-1 rounded-full bg-amber-100 text-amber-700">
+              <ListChecks className="w-3 h-3" />
+              <span className="text-xs font-bold">{activeTaskCount}</span>
             </div>
           )}
           
           {/* Comments indicator */}
           {commentCount > 0 && (
-            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-blue-100 text-blue-700">
-              <MessageCircle className="w-4 h-4" />
-              <span className="text-sm font-bold">{commentCount}</span>
+            <div className="flex items-center gap-0.5 px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+              <MessageCircle className="w-3 h-3" />
+              <span className="text-xs font-bold">{commentCount}</span>
             </div>
           )}
           
-          {/* Collaborator dots - Preserved colors */}
+          {/* Collaborator dots */}
           {activeCollaborators.length > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {activeCollaborators.map(name => (
                 <div
                   key={name}
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: COLLABORATOR_COLORS[name] }}
                   title={name}
                 />
@@ -102,12 +102,12 @@ export function MobileClientCard({
             </div>
           )}
           
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </div>
       </div>
 
-      {/* Demand status bar - Slightly taller for visibility */}
-      <div className="flex h-2 overflow-hidden rounded-b-xl">
+      {/* Demand status bar - compact */}
+      <div className="flex h-1.5 overflow-hidden rounded-b-xl">
         <div 
           className="bg-green-600 transition-all" 
           style={{ width: `${totalDemands > 0 ? (client.demands.completed / totalDemands) * 100 : 0}%` }}

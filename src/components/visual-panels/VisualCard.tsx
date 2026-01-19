@@ -30,39 +30,38 @@ export function VisualCard({
     <div
       onClick={onClick}
       className={cn(
-        "group relative rounded-xl border-2 bg-card p-5 transition-all duration-200 cursor-pointer",
+        "group relative rounded-xl border-2 bg-card p-4 transition-all duration-200 cursor-pointer",
         "hover:shadow-lg hover:scale-[1.02]",
         variantStyles[variant],
-        // Highlighted preserved exactly as per requirements - red priority marker
         isHighlighted && "border-4 border-red-500 ring-2 ring-red-500/30",
         className
       )}
     >
-      {/* Client Header - Improved spacing and typography */}
-      <div className="flex items-center gap-4 mb-4">
+      {/* Client Header */}
+      <div className="flex items-center gap-3 mb-3">
         {/* Logo */}
         <div className="relative flex-shrink-0">
           {client.logoUrl ? (
             <img
               src={client.logoUrl}
               alt={client.name}
-              className="w-14 h-14 object-contain rounded-lg bg-white p-1.5 shadow-sm"
+              className="w-12 h-12 object-contain rounded-lg bg-white p-1"
             />
           ) : (
-            <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center">
-              <span className="text-xl font-bold text-primary">{client.initials}</span>
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <span className="text-lg font-bold text-primary">{client.initials}</span>
             </div>
           )}
           {client.isPriority && (
-            <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
-              <span className="text-[10px] text-white">★</span>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
+              <span className="text-[8px] text-white">★</span>
             </div>
           )}
         </div>
         
-        {/* Name - Improved typography hierarchy */}
+        {/* Name */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate text-base md:text-lg leading-tight">
+          <h3 className="font-semibold text-foreground truncate text-sm">
             {client.name}
           </h3>
         </div>
@@ -100,16 +99,16 @@ export function ProgressBar({
   };
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       {label && (
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground font-medium">{label}</span>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">{label}</span>
           {showPercentage && (
-            <span className="font-semibold">{percentage}%</span>
+            <span className="font-medium">{percentage}%</span>
           )}
         </div>
       )}
-      <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden">
+      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
         <div
           className={cn("h-full transition-all duration-300", variantColors[variant])}
           style={{ width: `${percentage}%` }}
@@ -135,7 +134,7 @@ export function RiskBar({ valid, expiring, expired }: RiskBarProps) {
   const expiredPct = (expired / total) * 100;
 
   return (
-    <div className="h-3.5 w-full rounded-full overflow-hidden flex shadow-inner">
+    <div className="h-3 w-full rounded-full overflow-hidden flex">
       {valid > 0 && (
         <div 
           className="bg-emerald-500 h-full transition-all" 
@@ -184,14 +183,14 @@ export function StatBadge({
   };
 
   const sizeStyles = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-4 py-2 text-base",
+    sm: "px-2 py-1 text-xs",
+    md: "px-3 py-1.5 text-sm",
   };
 
   return (
-    <div className={cn("rounded-lg flex items-center gap-2", variantStyles[variant], sizeStyles[size])}>
+    <div className={cn("rounded-lg flex items-center gap-1.5", variantStyles[variant], sizeStyles[size])}>
       <span className="font-bold">{value}</span>
-      <span className="text-muted-foreground font-medium">{label}</span>
+      <span className="text-muted-foreground">{label}</span>
     </div>
   );
 }

@@ -69,7 +69,7 @@ function CompactCard({
   commentCount,
   onTap,
 }: CompactCardProps) {
-  // Get primary collaborator color for border - preserved exactly
+  // Get primary collaborator color for border
   const activeCollaborators = COLLABORATOR_NAMES.filter(name => client.collaborators[name]);
   const primaryColor = activeCollaborators.length > 0 
     ? COLLABORATOR_COLORS[activeCollaborators[0]] 
@@ -81,63 +81,67 @@ function CompactCard({
       className={`relative flex flex-col rounded-lg overflow-hidden transition-all active:scale-[0.98] ${
         isHighlighted 
           ? 'ring-2 ring-red-500 bg-red-50' 
-          : 'border-2 border-border bg-card'
+          : 'border border-border bg-card'
       }`}
       style={{
-        borderLeftWidth: primaryColor ? '4px' : undefined,
+        borderLeftWidth: primaryColor ? '3px' : undefined,
         borderLeftColor: primaryColor,
       }}
     >
-      {/* Index number - More legible */}
-      <div className="absolute top-1 left-1.5 text-[10px] font-semibold text-muted-foreground">
+      {/* Index number in corner */}
+      <div className="absolute top-0.5 left-1 text-[8px] font-medium text-muted-foreground">
         {String(index).padStart(2, '0')}
       </div>
 
-      {/* Status indicators - Larger touch targets */}
-      <div className="absolute top-1 right-1 flex items-center gap-1">
+      {/* Status indicators in top right */}
+      <div className="absolute top-0.5 right-0.5 flex items-center gap-0.5">
         {client.isPriority && (
-          <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+          <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
         )}
         {activeTaskCount > 0 && (
-          <span className="text-[10px] font-bold text-yellow-700 bg-yellow-100 rounded px-1 py-0.5">
-            {activeTaskCount}
-          </span>
+          <div className="flex items-center">
+            <span className="text-[8px] font-bold text-yellow-600 bg-yellow-100 rounded px-0.5">
+              {activeTaskCount}
+            </span>
+          </div>
         )}
         {commentCount > 0 && (
-          <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 rounded px-1 py-0.5">
-            {commentCount}
-          </span>
+          <div className="flex items-center">
+            <span className="text-[8px] font-bold text-indigo-600 bg-indigo-100 rounded px-0.5">
+              {commentCount}
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Logo or Name - Improved sizing */}
-      <div className="flex flex-col items-center justify-center p-2 pt-4 min-h-[56px]">
+      {/* Logo or Name display */}
+      <div className="flex flex-col items-center justify-center p-1.5 pt-3 min-h-[50px]">
         {client.logoUrl ? (
           <img 
             src={client.logoUrl} 
             alt={client.name}
-            className="w-full max-h-8 object-contain"
+            className="w-full max-h-6 object-contain"
           />
         ) : (
-          <span className="text-xs font-bold text-center text-primary leading-tight line-clamp-2">
+          <span className="text-[10px] font-bold text-center text-primary leading-tight line-clamp-2">
             {client.initials}
           </span>
         )}
       </div>
 
-      {/* Client name - Larger text */}
-      <div className="px-1.5 pb-1.5">
-        <p className="text-[10px] font-semibold text-center text-foreground truncate leading-tight">
-          {client.name.length > 14 ? client.name.slice(0, 12) + '...' : client.name}
+      {/* Client name - always show, truncated */}
+      <div className="px-1 pb-1">
+        <p className="text-[8px] font-medium text-center text-foreground truncate leading-tight">
+          {client.name.length > 12 ? client.name.slice(0, 10) + '...' : client.name}
         </p>
       </div>
 
-      {/* Collaborator dots - Preserved colors exactly */}
-      <div className="flex items-center justify-center gap-1 pb-1.5">
+      {/* Collaborator dots at bottom */}
+      <div className="flex items-center justify-center gap-0.5 pb-1">
         {COLLABORATOR_NAMES.filter(name => client.collaborators[name]).map(name => (
           <div
             key={name}
-            className="w-2.5 h-2.5 rounded-full"
+            className="w-2 h-2 rounded-full"
             style={{ backgroundColor: COLLABORATOR_COLORS[name] }}
           />
         ))}
