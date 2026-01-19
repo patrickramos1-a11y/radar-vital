@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List } from "lucide-react";
+import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List, MessageSquare, Layers } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +54,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             label="Demandas"
             visualRoute="/demandas-visual"
             detailRoute="/demandas"
+            unifiedRoute="/demandas-unificado"
           />
           
           {/* Licenças Dropdown */}
@@ -70,6 +71,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             label="Processos"
             visualRoute="/processos-visual"
             detailRoute="/processos"
+            unifiedRoute="/processos-unificado"
           />
 
           {/* Jackbox Dropdown */}
@@ -78,7 +80,18 @@ export function AppLayout({ children }: AppLayoutProps) {
             label="Jackbox"
             visualRoute="/jackbox"
             detailRoute="/jackbox-detalhado"
+            unifiedRoute="/jackbox-unificado"
           />
+
+          {/* Comentários Link */}
+          <NavLink
+            to="/comentarios"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-muted/50"
+            activeClassName="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="hidden sm:inline">Comentários</span>
+          </NavLink>
           
           <div className="w-px h-6 bg-border mx-1" />
           
@@ -147,9 +160,10 @@ interface NavDropdownProps {
   label: string;
   visualRoute: string;
   detailRoute: string;
+  unifiedRoute?: string;
 }
 
-function NavDropdown({ icon, label, visualRoute, detailRoute }: NavDropdownProps) {
+function NavDropdown({ icon, label, visualRoute, detailRoute, unifiedRoute }: NavDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -160,6 +174,17 @@ function NavDropdown({ icon, label, visualRoute, detailRoute }: NavDropdownProps
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
+        {unifiedRoute && (
+          <>
+            <DropdownMenuItem asChild>
+              <NavLink to={unifiedRoute} className="flex items-center gap-2 w-full cursor-pointer">
+                <Layers className="w-4 h-4" />
+                <span>Unificado</span>
+              </NavLink>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem asChild>
           <NavLink to={visualRoute} className="flex items-center gap-2 w-full cursor-pointer">
             <Eye className="w-4 h-4" />
