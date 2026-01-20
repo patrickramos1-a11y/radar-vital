@@ -161,6 +161,9 @@ export type Database = {
           licenses: number
           logo_url: string | null
           name: string
+          notif_atendida_count: number
+          notif_pendente_count: number
+          notif_total_count: number
           proc_deferido_count: number
           proc_em_analise_orgao_count: number
           proc_em_analise_ramos_count: number
@@ -200,6 +203,9 @@ export type Database = {
           licenses?: number
           logo_url?: string | null
           name: string
+          notif_atendida_count?: number
+          notif_pendente_count?: number
+          notif_total_count?: number
           proc_deferido_count?: number
           proc_em_analise_orgao_count?: number
           proc_em_analise_ramos_count?: number
@@ -239,6 +245,9 @@ export type Database = {
           licenses?: number
           logo_url?: string | null
           name?: string
+          notif_atendida_count?: number
+          notif_pendente_count?: number
+          notif_total_count?: number
           proc_deferido_count?: number
           proc_em_analise_orgao_count?: number
           proc_em_analise_ramos_count?: number
@@ -365,6 +374,53 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          data_recebimento: string | null
+          descricao: string | null
+          empresa_excel: string
+          id: string
+          numero_notificacao: string
+          numero_processo: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          data_recebimento?: string | null
+          descricao?: string | null
+          empresa_excel: string
+          id?: string
+          numero_notificacao: string
+          numero_processo?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          data_recebimento?: string | null
+          descricao?: string | null
+          empresa_excel?: string
+          id?: string
+          numero_notificacao?: string
+          numero_processo?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processes: {
         Row: {
           client_id: string | null
@@ -481,6 +537,10 @@ export type Database = {
         Returns: boolean
       }
       recalculate_client_demands: {
+        Args: { p_client_id: string }
+        Returns: undefined
+      }
+      recalculate_client_notifications: {
         Args: { p_client_id: string }
         Returns: undefined
       }

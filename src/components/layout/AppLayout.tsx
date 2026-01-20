@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List, MessageSquare, Layers } from "lucide-react";
+import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, LogOut, Box, ChevronDown, Eye, List, MessageSquare, Layers, Bell } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -91,6 +91,16 @@ export function AppLayout({ children }: AppLayoutProps) {
           >
             <MessageSquare className="w-4 h-4" />
             <span className="hidden sm:inline">Comentários</span>
+          </NavLink>
+
+          {/* Notificações Link */}
+          <NavLink
+            to="/notificacoes"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-muted/50"
+            activeClassName="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Bell className="w-4 h-4" />
+            <span className="hidden sm:inline">Notificações</span>
           </NavLink>
           
           <div className="w-px h-6 bg-border mx-1" />

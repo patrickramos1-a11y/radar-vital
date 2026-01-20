@@ -19,6 +19,7 @@ import JackboxPanel from "./pages/JackboxPanel";
 import JackboxUnified from "./pages/JackboxUnified";
 import JackboxDetalhado from "./pages/JackboxDetalhado";
 import CommentsPanel from "./pages/CommentsPanel";
+import NotificacoesPanel from "./pages/NotificacoesPanel";
 import AuthPage from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -47,6 +48,7 @@ function AuthenticatedApp() {
           <Route path="/processos-unificado" element={<ProcessosUnified />} />
           <Route path="/jackbox-unificado" element={<JackboxUnified />} />
           <Route path="/comentarios" element={<CommentsPanel />} />
+          <Route path="/notificacoes" element={<NotificacoesPanel />} />
           {/* Visual Panels (Macro) */}
           <Route path="/demandas-visual" element={<DemandasVisual />} />
           <Route path="/licencas-visual" element={<LicencasVisual />} />
