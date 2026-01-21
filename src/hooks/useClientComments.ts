@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ClientComment, CommentFormData } from '@/types/comment';
+import { ClientComment, CommentFormData, ReadStatusName } from '@/types/comment';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
 
@@ -13,6 +13,7 @@ interface UseClientCommentsReturn {
   addComment: (data: CommentFormData) => Promise<void>;
   deleteComment: (id: string) => Promise<void>;
   togglePinned: (id: string) => Promise<void>;
+  toggleReadStatus: (id: string, collaborator: ReadStatusName) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
@@ -40,6 +41,13 @@ export function useClientComments(clientId: string): UseClientCommentsReturn {
         commentText: row.comment_text,
         createdAt: row.created_at,
         isPinned: row.is_pinned,
+        readStatus: {
+          celine: row.read_celine ?? false,
+          gabi: row.read_gabi ?? false,
+          darley: row.read_darley ?? false,
+          vanessa: row.read_vanessa ?? false,
+          patrick: row.read_patrick ?? false,
+        },
       }));
 
       setComments(mapped);
@@ -133,12 +141,39 @@ export function useClientComments(clientId: string): UseClientCommentsReturn {
     }
   }, [comments, clientId]);
 
+  const toggleReadStatus = useCallback(async (id: string, collaborator: ReadStatusName) => {
+    const comment = comments.find(c => c.id === id);
+    if (!comment) return;
+
+    const newValue = !comment.readStatus[collaborator];
+    const updateField = `read_${collaborator}`;
+
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ [updateField]: newValue })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setComments(prev => prev.map(c =>
+        c.id === id
+          ? { ...c, readStatus: { ...c.readStatus, [collaborator]: newValue } }
+          : c
+      ));
+    } catch (error) {
+      console.error('Error updating read status:', error);
+      toast.error('Erro ao atualizar status');
+    }
+  }, [comments]);
+
   return {
     comments,
     isLoading,
     addComment,
     deleteComment,
     togglePinned,
+    toggleReadStatus,
     refetch: fetchComments,
   };
 }
