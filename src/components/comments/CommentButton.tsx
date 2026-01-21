@@ -42,6 +42,13 @@ export function CommentButton({ clientId, clientName, commentCount }: CommentBut
           commentText: row.comment_text,
           createdAt: row.created_at,
           isPinned: row.is_pinned,
+          readStatus: {
+            celine: row.read_celine ?? false,
+            gabi: row.read_gabi ?? false,
+            darley: row.read_darley ?? false,
+            vanessa: row.read_vanessa ?? false,
+            patrick: row.read_patrick ?? false,
+          },
         }));
 
         setPreviewComments(mapped);

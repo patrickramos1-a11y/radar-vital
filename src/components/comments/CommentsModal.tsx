@@ -5,9 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ClientComment } from '@/types/comment';
+import { ClientComment, ReadStatusName, READ_STATUS_NAMES } from '@/types/comment';
 import { useClientComments, triggerCommentCountRefresh } from '@/hooks/useClientComments';
-import { Pin, Trash2, Send, Loader2 } from 'lucide-react';
+import { Pin, Trash2, Send, Loader2, Check, EyeOff } from 'lucide-react';
+import { COLLABORATOR_COLORS, CollaboratorName } from '@/types/client';
+import { cn } from '@/lib/utils';
 
 interface CommentsModalProps {
   clientId: string;
@@ -17,7 +19,7 @@ interface CommentsModalProps {
 }
 
 export function CommentsModal({ clientId, clientName, isOpen, onClose }: CommentsModalProps) {
-  const { comments, isLoading, addComment, deleteComment, togglePinned } = useClientComments(clientId);
+  const { comments, isLoading, addComment, deleteComment, togglePinned, toggleReadStatus } = useClientComments(clientId);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -109,6 +111,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
                   comment={comment}
                   onDelete={() => handleDelete(comment.id)}
                   onTogglePin={() => togglePinned(comment.id)}
+                  onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
                 />
               ))}
             </div>
@@ -123,9 +126,10 @@ interface CommentItemProps {
   comment: ClientComment;
   onDelete: () => void;
   onTogglePin: () => void;
+  onToggleRead: (collaborator: ReadStatusName) => void;
 }
 
-function CommentItem({ comment, onDelete, onTogglePin }: CommentItemProps) {
+function CommentItem({ comment, onDelete, onTogglePin, onToggleRead }: CommentItemProps) {
   return (
     <div
       className={`p-3 rounded-lg border ${
@@ -162,9 +166,35 @@ function CommentItem({ comment, onDelete, onTogglePin }: CommentItemProps) {
           </button>
         </div>
       </div>
-      <p className="text-sm text-foreground whitespace-pre-wrap">
+      <p className="text-sm text-foreground whitespace-pre-wrap mb-3">
         {comment.commentText}
       </p>
+      
+      {/* Read Status Row */}
+      <div className="flex items-center gap-1.5 pt-2 border-t border-border">
+        <span className="text-[10px] text-muted-foreground mr-1">Lido:</span>
+        {READ_STATUS_NAMES.map((name) => {
+          const color = name === 'patrick' ? '#10B981' : COLLABORATOR_COLORS[name as CollaboratorName];
+          const isRead = comment.readStatus[name];
+          return (
+            <button
+              key={name}
+              onClick={() => onToggleRead(name)}
+              className={cn(
+                "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all",
+                isRead 
+                  ? "text-white" 
+                  : "text-muted-foreground bg-muted hover:bg-muted/80"
+              )}
+              style={isRead ? { backgroundColor: color } : {}}
+              title={`${name}: ${isRead ? 'Lido' : 'Não lido'}`}
+            >
+              {isRead ? <Check className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
+              <span className="capitalize">{name.charAt(0).toUpperCase()}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
