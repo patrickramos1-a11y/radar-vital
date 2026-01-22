@@ -7,7 +7,6 @@ import { ClientProvider } from "@/contexts/ClientContext";
 import { UserProvider, useUser } from "@/contexts/UserContext";
 import Index from "./pages/Index";
 import Config from "./pages/Config";
-import AptPanel from "./pages/AptPanel";
 import DemandasPanel from "./pages/DemandasPanel";
 import DemandasVisual from "./pages/DemandasVisual";
 import DemandasUnified from "./pages/DemandasUnified";
@@ -45,8 +44,6 @@ function AuthenticatedApp() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* APT Module */}
-          <Route path="/apt" element={<AptPanel />} />
           {/* Unified Panels (New - Macro View) */}
           <Route path="/demandas-unificado" element={<DemandasUnified />} />
           <Route path="/processos-unificado" element={<ProcessosUnified />} />
