@@ -1,4 +1,4 @@
-import { Star, Sparkles } from "lucide-react";
+import { Star, Sparkles, Building2 } from "lucide-react";
 import { Client, calculateTotalDemands, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import { ChecklistButton } from "@/components/checklist/ChecklistButton";
 import { CommentButton } from "@/components/comments/CommentButton";
@@ -94,37 +94,54 @@ function getOptimalFontSize(name: string, clientCount: number): { fontSize: stri
   };
 }
 
-// Dynamic logo area height - expands when fewer clients
+// Dynamic logo area height - expands when fewer clients - valores aumentados
 function getLogoAreaStyle(clientCount: number): { minHeight: string; flex: number } {
   if (clientCount <= 4) {
-    return { minHeight: '180px', flex: 1 };
+    return { minHeight: '200px', flex: 1 };
   } else if (clientCount <= 8) {
-    return { minHeight: '140px', flex: 1 };
+    return { minHeight: '160px', flex: 1 };
   } else if (clientCount <= 12) {
-    return { minHeight: '100px', flex: 1 };
+    return { minHeight: '120px', flex: 1 };
   } else if (clientCount <= 20) {
-    return { minHeight: '80px', flex: 1 };
+    return { minHeight: '100px', flex: 1 };
   } else if (clientCount <= 30) {
-    return { minHeight: '60px', flex: 1 };
+    return { minHeight: '80px', flex: 1 };
   } else {
-    return { minHeight: '48px', flex: 1 };
+    return { minHeight: '60px', flex: 1 };
   }
 }
 
-// Dynamic logo max height based on client count
+// Dynamic logo max height based on client count - aumentado para melhor visualização
 function getLogoMaxHeight(clientCount: number): string {
   if (clientCount <= 4) {
-    return 'max-h-40'; // 160px
+    return 'max-h-48'; // 192px
   } else if (clientCount <= 8) {
-    return 'max-h-32'; // 128px
+    return 'max-h-40'; // 160px
   } else if (clientCount <= 12) {
-    return 'max-h-24'; // 96px
+    return 'max-h-32'; // 128px
   } else if (clientCount <= 20) {
-    return 'max-h-16'; // 64px
+    return 'max-h-24'; // 96px
   } else if (clientCount <= 30) {
-    return 'max-h-12'; // 48px
+    return 'max-h-20'; // 80px
   } else {
-    return 'max-h-8';  // 32px
+    return 'max-h-16'; // 64px
+  }
+}
+
+// Get building icon size based on client count
+function getBuildingIconSize(clientCount: number): string {
+  if (clientCount <= 4) {
+    return 'w-24 h-24'; // 96px
+  } else if (clientCount <= 8) {
+    return 'w-20 h-20'; // 80px
+  } else if (clientCount <= 12) {
+    return 'w-16 h-16'; // 64px
+  } else if (clientCount <= 20) {
+    return 'w-12 h-12'; // 48px
+  } else if (clientCount <= 30) {
+    return 'w-10 h-10'; // 40px
+  } else {
+    return 'w-8 h-8'; // 32px
   }
 }
 
@@ -273,7 +290,7 @@ export function ClientCard({
 
       {/* Logo/Name Area - Dynamic height based on client count */}
       <div 
-        className="flex items-center justify-center p-2 transition-colors overflow-hidden"
+        className="flex flex-col items-center justify-center p-3 transition-colors overflow-hidden"
         style={{
           background: hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(220 90% 50% / 0.15)' : 'hsl(var(--muted) / 0.3)'),
           minHeight: logoAreaStyle.minHeight,
@@ -281,30 +298,49 @@ export function ClientCard({
         }}
       >
         {client.logoUrl ? (
-          <img 
-            src={client.logoUrl} 
-            alt={`Logo ${client.name}`} 
-            className={`${logoMaxHeight} w-auto object-contain rounded`}
-            style={{ maxWidth: '90%' }}
-          />
+          <div className="flex items-center justify-center w-full h-full">
+            <img 
+              src={client.logoUrl} 
+              alt={`Logo ${client.name}`} 
+              className={`${logoMaxHeight} max-w-[85%] object-contain rounded`}
+              style={{ 
+                objectFit: 'contain',
+                width: 'auto',
+                height: 'auto',
+              }}
+            />
+          </div>
         ) : (
-          <span 
-            className={`font-bold text-center px-1 ${
-              hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'
-            }`}
-            style={{
-              fontSize: fontStyle.fontSize,
-              lineHeight: fontStyle.lineHeight,
-              wordBreak: 'break-word',
-              hyphens: 'auto',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
-            {client.name}
-          </span>
+          <div className="flex flex-col items-center justify-center gap-2">
+            <div className={`flex items-center justify-center rounded-xl bg-primary/15 p-3 ${
+              hasCollaborators || isHighlighted ? 'bg-white/20' : ''
+            }`}>
+              <Building2 
+                className={`${getBuildingIconSize(clientCount)} ${
+                  hasCollaborators || isHighlighted 
+                    ? 'text-white drop-shadow-md' 
+                    : 'text-primary'
+                }`}
+                strokeWidth={1.5}
+              />
+            </div>
+            {clientCount <= 20 && (
+              <span 
+                className={`font-semibold text-center px-1 text-xs ${
+                  hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-muted-foreground'
+                }`}
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {client.name}
+              </span>
+            )}
+          </div>
         )}
       </div>
 

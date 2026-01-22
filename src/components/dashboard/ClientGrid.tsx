@@ -56,14 +56,16 @@ export function ClientGrid({
 }: ClientGridProps) {
   const { columns, rows } = useMemo(() => getGridLayout(clients.length), [clients.length]);
 
-  // Calcula o tamanho mínimo dos cards baseado na quantidade
+  // Calcula o tamanho mínimo dos cards baseado na quantidade - aumentado para melhor legibilidade
   const cardMinSize = useMemo(() => {
-    if (clients.length <= 6) return '140px';
-    if (clients.length <= 12) return '120px';
-    if (clients.length <= 25) return '100px';
-    if (clients.length <= 40) return '90px';
-    if (clients.length <= 60) return '80px';
-    return '70px';
+    if (clients.length <= 4) return '200px';
+    if (clients.length <= 6) return '180px';
+    if (clients.length <= 12) return '160px';
+    if (clients.length <= 20) return '140px';
+    if (clients.length <= 30) return '120px';
+    if (clients.length <= 40) return '110px';
+    if (clients.length <= 60) return '100px';
+    return '90px';
   }, [clients.length]);
 
   return (
