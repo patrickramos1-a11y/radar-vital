@@ -29,20 +29,20 @@ export function useAptDemands() {
       if (filters.apenas_ativos) {
         query = query.eq('is_active', true);
       }
-      if (filters.responsavel) {
-        query = query.eq('responsavel', filters.responsavel);
+      if (filters.responsaveis.length > 0) {
+        query = query.in('responsavel', filters.responsaveis);
       }
-      if (filters.setor) {
-        query = query.eq('setor', filters.setor);
+      if (filters.setores.length > 0) {
+        query = query.in('setor', filters.setores);
       }
-      if (filters.mes) {
-        query = query.eq('mes', filters.mes);
+      if (filters.meses.length > 0) {
+        query = query.in('mes', filters.meses);
       }
-      if (filters.ano) {
-        query = query.eq('ano', filters.ano);
+      if (filters.anos.length > 0) {
+        query = query.in('ano', filters.anos);
       }
-      if (filters.semana_limite) {
-        query = query.eq('semana_limite', filters.semana_limite);
+      if (filters.semanas.length > 0) {
+        query = query.in('semana_limite', filters.semanas);
       }
       if (filters.status_responsavel) {
         query = query.eq('feito_responsavel', filters.status_responsavel);

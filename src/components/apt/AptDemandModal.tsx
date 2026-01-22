@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { AptDemand, FeitoResponsavelStatus, AprovadoGestorStatus } from '@/types/apt';
+import { AptDemand, FeitoResponsavelStatus, AprovadoGestorStatus, COLABORADORES } from '@/types/apt';
 
 interface AptDemandModalProps {
   open: boolean;
@@ -14,11 +14,9 @@ interface AptDemandModalProps {
   demand?: AptDemand | null;
   onSave: (demand: Omit<AptDemand, 'id' | 'created_at' | 'updated_at'>) => void;
   existingSetores: string[];
-  existingResponsaveis: string[];
 }
 
 const DEFAULT_SETORES = ['ALIMENTAÇÃO', 'AUDITAR', 'SERVIÇO', 'FEEDBACK', 'FINANCEIRO', 'COMERCIAL', 'OPERACIONAL', 'RH'];
-const DEFAULT_RESPONSAVEIS = ['CELINE', 'GABI', 'DARLEY', 'VANESSA', 'PATRICK'];
 
 export function AptDemandModal({
   open,
@@ -26,7 +24,6 @@ export function AptDemandModal({
   demand,
   onSave,
   existingSetores,
-  existingResponsaveis,
 }: AptDemandModalProps) {
   const [formData, setFormData] = useState<{
     numero: number;
@@ -57,7 +54,6 @@ export function AptDemandModal({
   });
 
   const setores = [...new Set([...DEFAULT_SETORES, ...existingSetores])].sort();
-  const responsaveis = [...new Set([...DEFAULT_RESPONSAVEIS, ...existingResponsaveis])].sort();
 
   useEffect(() => {
     if (demand) {
@@ -155,7 +151,7 @@ export function AptDemandModal({
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {responsaveis.map(r => (
+                  {COLABORADORES.map(r => (
                     <SelectItem key={r} value={r}>{r}</SelectItem>
                   ))}
                 </SelectContent>
