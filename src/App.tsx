@@ -12,6 +12,7 @@ import DemandasVisual from "./pages/DemandasVisual";
 import DemandasUnified from "./pages/DemandasUnified";
 import LicencasPanel from "./pages/LicencasPanel";
 import LicencasVisual from "./pages/LicencasVisual";
+import LicencasUnified from "./pages/LicencasUnified";
 import ProcessosPanel from "./pages/ProcessosPanel";
 import ProcessosVisual from "./pages/ProcessosVisual";
 import ProcessosUnified from "./pages/ProcessosUnified";
@@ -49,9 +50,9 @@ function AuthenticatedApp() {
           <Route path="/jackbox-unificado" element={<JackboxUnified />} />
           <Route path="/comentarios" element={<CommentsPanel />} />
           <Route path="/notificacoes" element={<NotificacoesPanel />} />
-          {/* Visual Panels (Macro) */}
-          <Route path="/demandas-visual" element={<DemandasVisual />} />
+          <Route path="/licencas-unificado" element={<LicencasUnified />} />
           <Route path="/licencas-visual" element={<LicencasVisual />} />
+          <Route path="/licencas" element={<LicencasPanel />} />
           <Route path="/processos-visual" element={<ProcessosVisual />} />
           <Route path="/jackbox" element={<JackboxPanel />} />
           <Route path="/jackbox-detalhado" element={<JackboxDetalhado />} />
