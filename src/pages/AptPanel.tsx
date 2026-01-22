@@ -143,7 +143,6 @@ export default function AptPanel() {
           filters={filters}
           onFiltersChange={setFilters}
           setores={setores}
-          responsaveis={responsaveis}
         />
 
         {/* Content */}
@@ -193,7 +192,6 @@ export default function AptPanel() {
           demand={editingDemand}
           onSave={handleSave}
           existingSetores={setores}
-          existingResponsaveis={responsaveis}
         />
 
         {/* Delete Confirmation */}

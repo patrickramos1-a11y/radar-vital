@@ -22,16 +22,20 @@ export interface AptDemand {
 }
 
 export interface AptFilters {
-  responsavel: string | null;
-  setor: string | null;
-  mes: number | null;
-  ano: number | null;
-  semana_limite: number | null;
+  responsaveis: string[];
+  setores: string[];
+  meses: number[];
+  anos: number[];
+  semanas: number[];
   status_responsavel: FeitoResponsavelStatus | null;
   status_gestor: AprovadoGestorStatus | null;
   busca: string;
   apenas_ativos: boolean;
 }
+
+// Colaboradores fixos da plataforma
+export const COLABORADORES = ['Darley', 'Celine', 'Gabi', 'Vanessa'] as const;
+export type Colaborador = typeof COLABORADORES[number];
 
 export const SETOR_COLORS: Record<string, string> = {
   'ALIMENTAÇÃO': 'hsl(60, 80%, 75%)',
@@ -61,11 +65,11 @@ export const SEMANA_LABELS: Record<number, string> = {
 };
 
 export const getDefaultFilters = (): AptFilters => ({
-  responsavel: null,
-  setor: null,
-  mes: new Date().getMonth() + 1,
-  ano: new Date().getFullYear(),
-  semana_limite: null,
+  responsaveis: [],
+  setores: [],
+  meses: [new Date().getMonth() + 1],
+  anos: [new Date().getFullYear()],
+  semanas: [],
   status_responsavel: null,
   status_gestor: null,
   busca: '',
