@@ -77,6 +77,60 @@ export type Database = {
         }
         Relationships: []
       }
+      apt_demands: {
+        Row: {
+          ano: number
+          aprovado_gestor: string
+          created_at: string
+          descricao: string
+          feito_responsavel: string
+          id: string
+          is_active: boolean
+          is_highlighted: boolean
+          mes: number
+          numero: number
+          repeticoes: number
+          responsavel: string
+          semana_limite: number
+          setor: string
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          aprovado_gestor?: string
+          created_at?: string
+          descricao: string
+          feito_responsavel?: string
+          id?: string
+          is_active?: boolean
+          is_highlighted?: boolean
+          mes: number
+          numero: number
+          repeticoes?: number
+          responsavel: string
+          semana_limite?: number
+          setor: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          aprovado_gestor?: string
+          created_at?: string
+          descricao?: string
+          feito_responsavel?: string
+          id?: string
+          is_active?: boolean
+          is_highlighted?: boolean
+          mes?: number
+          numero?: number
+          repeticoes?: number
+          responsavel?: string
+          semana_limite?: number
+          setor?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_comments: {
         Row: {
           author_name: string

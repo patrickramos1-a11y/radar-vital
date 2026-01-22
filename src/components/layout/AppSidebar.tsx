@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, Box, MessageSquare, Bell, LucideIcon } from "lucide-react";
+import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, Box, MessageSquare, Bell, ClipboardCheck, LucideIcon } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 
 // Type for navigation items
@@ -17,6 +17,11 @@ const navigationItems: NavItem[] = [
     title: "Painel AC",
     icon: LayoutDashboard,
     href: "/"
+  },
+  {
+    title: "APT",
+    icon: ClipboardCheck,
+    href: "/apt"
   },
   {
     title: "Demandas",
