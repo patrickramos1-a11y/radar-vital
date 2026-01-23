@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { LogOut } from "lucide-react";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 import { AppSidebar } from "./AppSidebar";
@@ -15,7 +15,12 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { currentUser, logout } = useUser();
+  const { profile, collaborator, signOut } = useAuth();
+
+  // Determine display info
+  const displayName = collaborator?.name || profile?.displayName || 'Usuário';
+  const displayColor = collaborator?.color || '#6366f1';
+  const displayInitials = collaborator?.initials || displayName.slice(0, 2).toUpperCase();
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -49,34 +54,32 @@ export function AppLayout({ children }: AppLayoutProps) {
 
               {/* User info and Logout */}
               <div className="flex items-center gap-2">
-                {currentUser && (
+                <div
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
+                  style={{ backgroundColor: `${displayColor}20` }}
+                >
                   <div
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
-                    style={{ backgroundColor: `${currentUser.color}20` }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                    style={{ backgroundColor: displayColor }}
                   >
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                      style={{ backgroundColor: currentUser.color }}
-                    >
-                      {currentUser.initials}
-                    </div>
-                    <span
-                      className="text-sm font-medium hidden sm:inline"
-                      style={{ color: currentUser.color }}
-                    >
-                      {currentUser.name}
-                    </span>
+                    {displayInitials}
                   </div>
-                )}
+                  <span
+                    className="text-sm font-medium hidden sm:inline"
+                    style={{ color: displayColor }}
+                  >
+                    {displayName}
+                  </span>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={logout}
+                  onClick={signOut}
                   className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
-                  title="Trocar usuário"
+                  title="Sair"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">Trocar</span>
+                  <span className="hidden sm:inline">Sair</span>
                 </Button>
               </div>
             </div>
