@@ -9,10 +9,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useActivityLogs, ActionType, QUICK_FILTER_CATEGORIES } from '@/hooks/useActivityLogs';
+import { useActivityLogs, ActionType, QUICK_FILTER_CATEGORIES, CollaboratorFilterName } from '@/hooks/useActivityLogs';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { AppUserName, APP_USERS } from '@/contexts/UserContext';
+import { useCollaborators } from '@/hooks/useCollaborators';
 
 // Action type labels and colors
 const ACTION_LABELS: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
@@ -66,15 +66,17 @@ const QUICK_FILTERS: { key: keyof typeof QUICK_FILTER_CATEGORIES; label: string;
   { key: 'session', label: 'Sessões', icon: <LogIn className="w-3 h-3" /> },
 ];
 
-function getUserColor(userName: string): string {
-  const user = APP_USERS.find(u => u.name === userName);
-  return user?.color || '#6b7280';
-}
-
 export function NotificationsPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'mine'>('all');
+  const { collaborators } = useCollaborators();
+  
+  // Helper to get user color from collaborators
+  const getUserColor = (userName: string): string => {
+    const collab = collaborators.find(c => c.name.toLowerCase() === userName.toLowerCase());
+    return collab?.color || '#6b7280';
+  };
   
   const {
     logs,
@@ -211,7 +213,7 @@ export function NotificationsPanel() {
               {isAdmin && (
                 <Select
                   value={filters.userName}
-                  onValueChange={(value) => updateFilters({ userName: value as AppUserName | 'all' })}
+                  onValueChange={(value) => updateFilters({ userName: value as CollaboratorFilterName | 'all' })}
                 >
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Usuário" />
@@ -315,7 +317,7 @@ export function NotificationsPanel() {
           ) : (
             <div className="divide-y">
               {logs.map((log) => (
-                <LogEntry key={log.id} log={log} />
+                <LogEntry key={log.id} log={log} getUserColor={getUserColor} />
               ))}
             </div>
           )}
@@ -338,9 +340,10 @@ interface LogEntryProps {
     new_value: string | null;
     created_at: string;
   };
+  getUserColor: (userName: string) => string;
 }
 
-function LogEntry({ log }: LogEntryProps) {
+function LogEntry({ log, getUserColor }: LogEntryProps) {
   const actionConfig = ACTION_LABELS[log.action_type] || { 
     label: log.action_type, 
     color: 'bg-gray-500/10 text-gray-600 border-gray-200' 

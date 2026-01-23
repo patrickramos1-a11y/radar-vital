@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useUser, AppUserName } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 
+// Collaborator names type for filters
+export type CollaboratorFilterName = string;
 // Action types for operational tracking
 export type ActionType =
   | 'LOGIN'
@@ -47,7 +49,7 @@ export interface ActivityLog {
 }
 
 export interface LogFilters {
-  userName: AppUserName | 'all';
+  userName: CollaboratorFilterName | 'all';
   actionType: ActionType | 'all';
   entityType: string | 'all';
   clientId: string | 'all';
@@ -77,7 +79,7 @@ export const QUICK_FILTER_CATEGORIES = {
 const STORAGE_KEY = 'activity_logs_last_seen';
 
 export function useActivityLogs() {
-  const { currentUser } = useUser();
+  const { profile, collaborator } = useAuth();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<LogFilters>(DEFAULT_FILTERS);
@@ -85,7 +87,10 @@ export function useActivityLogs() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [quickFilter, setQuickFilter] = useState<keyof typeof QUICK_FILTER_CATEGORIES | null>(null);
 
-  const isAdmin = currentUser?.name === 'Patrick';
+  // Get current user name for filtering
+  const currentUserName = collaborator?.name || profile?.displayName || null;
+  // For now, we'll consider admin anyone with Patrick name - can be enhanced with roles later
+  const isAdmin = currentUserName?.toLowerCase() === 'patrick';
 
   // Load last seen timestamp from localStorage
   useEffect(() => {
@@ -187,16 +192,16 @@ export function useActivityLogs() {
     let result = logs;
 
     // Non-admin users only see their own actions or actions on their clients
-    if (!isAdmin && currentUser) {
+    if (!isAdmin && currentUserName) {
       result = result.filter(log => 
-        log.user_name === currentUser.name ||
-        log.entity_name?.toLowerCase().includes(currentUser.name.toLowerCase())
+        log.user_name === currentUserName ||
+        log.entity_name?.toLowerCase().includes(currentUserName.toLowerCase())
       );
     }
 
     // Apply "only mine" filter
-    if (filters.onlyMine && currentUser) {
-      result = result.filter(log => log.user_name === currentUser.name);
+    if (filters.onlyMine && currentUserName) {
+      result = result.filter(log => log.user_name === currentUserName);
     }
 
     // Apply user filter
@@ -226,7 +231,7 @@ export function useActivityLogs() {
     }
 
     return result;
-  }, [logs, filters, quickFilter, isAdmin, currentUser]);
+  }, [logs, filters, quickFilter, isAdmin, currentUserName]);
 
   // Build filter options from available logs
   const filterOptions = useMemo(() => {
