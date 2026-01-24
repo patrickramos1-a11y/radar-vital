@@ -71,23 +71,25 @@ export function ClientGrid({
     return '90px';
   }, [clients.length]);
 
-  // For scroll mode, use 7 fixed columns (as in January 15 layout) with vertical scroll
-  // For fit-all mode, calculate to fit everything without scroll
+  // For scroll mode, use 7 fixed columns with vertical scroll
+  // For fit-all mode, force all cards to fit within screen without scrolling
   const gridStyles = useMemo(() => {
     if (viewMode === 'scroll') {
       return {
         gridTemplateColumns: `repeat(7, minmax(160px, 1fr))`,
         gridAutoRows: 'auto',
         overflow: 'auto',
+        height: 'auto',
       };
     }
-    // fit-all mode - use calculated grid
+    // fit-all mode - força colunas E linhas para caber tudo na tela
     return {
-      gridTemplateColumns: `repeat(${columns}, minmax(${cardMinSize}, 1fr))`,
-      gridAutoRows: 'minmax(auto, 1fr)',
+      gridTemplateColumns: `repeat(${columns}, 1fr)`,
+      gridTemplateRows: `repeat(${rows}, 1fr)`,
       overflow: 'hidden',
+      height: '100%',
     };
-  }, [viewMode, columns, cardMinSize]);
+  }, [viewMode, columns, rows]);
 
   return (
     <div 
