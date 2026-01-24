@@ -511,6 +511,213 @@ export type Database = {
           },
         ]
       }
+      pdf_client_aliases: {
+        Row: {
+          alias_normalized: string
+          client_id: string
+          created_at: string
+          created_by: string
+          id: string
+        }
+        Insert: {
+          alias_normalized: string
+          client_id: string
+          created_at?: string
+          created_by?: string
+          id?: string
+        }
+        Update: {
+          alias_normalized?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_client_aliases_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdf_detected_clients: {
+        Row: {
+          client_name_normalized: string
+          client_name_raw: string
+          created_at: string
+          id: string
+          match_score: number | null
+          match_status: string
+          matched_client_id: string | null
+          pdf_import_id: string
+          source_pages: number[] | null
+        }
+        Insert: {
+          client_name_normalized: string
+          client_name_raw: string
+          created_at?: string
+          id?: string
+          match_score?: number | null
+          match_status?: string
+          matched_client_id?: string | null
+          pdf_import_id: string
+          source_pages?: number[] | null
+        }
+        Update: {
+          client_name_normalized?: string
+          client_name_raw?: string
+          created_at?: string
+          id?: string
+          match_score?: number | null
+          match_status?: string
+          matched_client_id?: string | null
+          pdf_import_id?: string
+          source_pages?: number[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_detected_clients_matched_client_id_fkey"
+            columns: ["matched_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdf_detected_clients_pdf_import_id_fkey"
+            columns: ["pdf_import_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdf_imports: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_hash: string | null
+          file_name: string
+          file_size: number | null
+          file_url: string | null
+          id: string
+          imported_by: string
+          raw_metadata: Json | null
+          report_period_month: number | null
+          report_period_year: number | null
+          status: string
+          total_clients_detected: number | null
+          total_clients_matched: number | null
+          total_clients_pending: number | null
+          total_clients_unmatched: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_hash?: string | null
+          file_name: string
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          imported_by?: string
+          raw_metadata?: Json | null
+          report_period_month?: number | null
+          report_period_year?: number | null
+          status?: string
+          total_clients_detected?: number | null
+          total_clients_matched?: number | null
+          total_clients_pending?: number | null
+          total_clients_unmatched?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_hash?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          imported_by?: string
+          raw_metadata?: Json | null
+          report_period_month?: number | null
+          report_period_year?: number | null
+          status?: string
+          total_clients_detected?: number | null
+          total_clients_matched?: number | null
+          total_clients_pending?: number | null
+          total_clients_unmatched?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pdf_metrics: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          metric_key: string
+          metric_label: string
+          metric_unit: string | null
+          metric_value_number: number | null
+          metric_value_text: string | null
+          pdf_detected_client_id: string | null
+          pdf_import_id: string
+          source_pages: number[] | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          metric_key: string
+          metric_label: string
+          metric_unit?: string | null
+          metric_value_number?: number | null
+          metric_value_text?: string | null
+          pdf_detected_client_id?: string | null
+          pdf_import_id: string
+          source_pages?: number[] | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          metric_key?: string
+          metric_label?: string
+          metric_unit?: string | null
+          metric_value_number?: number | null
+          metric_value_text?: string | null
+          pdf_detected_client_id?: string | null
+          pdf_import_id?: string
+          source_pages?: number[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_metrics_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdf_metrics_pdf_detected_client_id_fkey"
+            columns: ["pdf_detected_client_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_detected_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdf_metrics_pdf_import_id_fkey"
+            columns: ["pdf_import_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processes: {
         Row: {
           client_id: string | null

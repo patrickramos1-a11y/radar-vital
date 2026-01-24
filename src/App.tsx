@@ -21,6 +21,7 @@ import JackboxUnified from "./pages/JackboxUnified";
 import JackboxDetalhado from "./pages/JackboxDetalhado";
 import CommentsPanel from "./pages/CommentsPanel";
 import NotificacoesPanel from "./pages/NotificacoesPanel";
+import RelatoriosPdf from "./pages/RelatoriosPdf";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/jackbox-unificado" element={<JackboxUnified />} />
               <Route path="/comentarios" element={<CommentsPanel />} />
               <Route path="/notificacoes" element={<NotificacoesPanel />} />
+              <Route path="/relatorios-pdf" element={<RelatoriosPdf />} />
               <Route path="/licencas-unificado" element={<LicencasUnified />} />
               <Route path="/licencas-visual" element={<LicencasVisual />} />
               <Route path="/licencas" element={<LicencasPanel />} />
