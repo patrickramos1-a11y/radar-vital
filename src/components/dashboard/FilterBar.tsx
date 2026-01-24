@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Grid3X3, ScrollText } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Grid3X3, Maximize2 } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -188,17 +188,17 @@ export function FilterBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-muted/50 border border-border">
-              <ScrollText className={`w-3.5 h-3.5 ${viewMode === 'scroll' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Maximize2 className={`w-3.5 h-3.5 ${viewMode === 'fit-all' ? 'text-primary' : 'text-muted-foreground'}`} />
               <Switch
-                checked={viewMode === 'fit-all'}
-                onCheckedChange={(checked) => onViewModeChange(checked ? 'fit-all' : 'scroll')}
+                checked={viewMode === 'scroll'}
+                onCheckedChange={(checked) => onViewModeChange(checked ? 'scroll' : 'fit-all')}
                 className="data-[state=checked]:bg-emerald-500"
               />
-              <Grid3X3 className={`w-3.5 h-3.5 ${viewMode === 'fit-all' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Grid3X3 className={`w-3.5 h-3.5 ${viewMode === 'scroll' ? 'text-primary' : 'text-muted-foreground'}`} />
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-xs">
-            {viewMode === 'fit-all' ? 'Modo Fit-All: todos os clientes visíveis sem scroll' : 'Modo Scroll: rolagem habilitada'}
+            {viewMode === 'fit-all' ? 'Modo Ampliação: todos os clientes visíveis sem scroll' : 'Modo Grid: rolagem habilitada com grid fixo'}
           </TooltipContent>
         </Tooltip>
 
