@@ -71,13 +71,13 @@ export function ClientGrid({
     return '90px';
   }, [clients.length]);
 
-  // For scroll mode, use fixed columns and allow scrolling
+  // For scroll mode, use 7 fixed columns (as in January 15 layout) with vertical scroll
   // For fit-all mode, calculate to fit everything without scroll
   const gridStyles = useMemo(() => {
     if (viewMode === 'scroll') {
       return {
-        gridTemplateColumns: `repeat(auto-fill, minmax(220px, 1fr))`,
-        gridAutoRows: 'minmax(200px, auto)',
+        gridTemplateColumns: `repeat(7, minmax(160px, 1fr))`,
+        gridAutoRows: 'auto',
         overflow: 'auto',
       };
     }
