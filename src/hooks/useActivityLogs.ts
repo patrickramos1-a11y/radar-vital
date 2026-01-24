@@ -79,7 +79,7 @@ export const QUICK_FILTER_CATEGORIES = {
 const STORAGE_KEY = 'activity_logs_last_seen';
 
 export function useActivityLogs() {
-  const { profile, collaborator } = useAuth();
+  const { currentUser } = useAuth();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<LogFilters>(DEFAULT_FILTERS);
@@ -88,7 +88,7 @@ export function useActivityLogs() {
   const [quickFilter, setQuickFilter] = useState<keyof typeof QUICK_FILTER_CATEGORIES | null>(null);
 
   // Get current user name for filtering
-  const currentUserName = collaborator?.name || profile?.displayName || null;
+  const currentUserName = currentUser?.name || null;
   // For now, we'll consider admin anyone with Patrick name - can be enhanced with roles later
   const isAdmin = currentUserName?.toLowerCase() === 'patrick';
 
