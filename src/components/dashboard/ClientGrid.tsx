@@ -111,6 +111,7 @@ export function ClientGrid({
           onToggleCollaborator={onToggleCollaborator}
           onOpenChecklist={onOpenChecklist}
           clientCount={clients.length}
+          fitAll={viewMode !== 'scroll'}
         />
       ))}
     </div>

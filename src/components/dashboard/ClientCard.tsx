@@ -16,6 +16,8 @@ interface ClientCardProps {
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
   onOpenChecklist: (id: string) => void;
   clientCount?: number;
+  /** When true, disables minimum heights so the grid can shrink to fit everything on-screen */
+  fitAll?: boolean;
 }
 
 // Get gradient background for active collaborators
@@ -201,6 +203,7 @@ export function ClientCard({
   onToggleCollaborator,
   onOpenChecklist,
   clientCount = 40,
+  fitAll = false,
 }: ClientCardProps) {
   const totalDemands = calculateTotalDemands(client.demands);
   const hasCollaborators = hasActiveCollaborators(client.collaborators);
@@ -234,7 +237,7 @@ export function ClientCard({
 
   return (
     <div
-      className={`client-card-compact ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+      className={`client-card-compact h-full min-h-0 min-w-0 ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={() => onSelect(client.id)}
     >
       {/* Top right icons - Comments + Checklist + Highlight + Priority */}
@@ -290,10 +293,12 @@ export function ClientCard({
 
       {/* Logo/Name Area - Dynamic height based on client count */}
       <div 
-        className="flex flex-col items-center justify-center p-3 transition-colors overflow-hidden"
+        className={`flex flex-col items-center justify-center transition-colors overflow-hidden ${fitAll ? 'p-2' : 'p-3'}`}
         style={{
           background: hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(220 90% 50% / 0.15)' : 'hsl(var(--muted) / 0.3)'),
-          minHeight: logoAreaStyle.minHeight,
+          // In fit-all mode we must allow the card to shrink below any minimum,
+          // otherwise the grid can't fit all clients without scroll.
+          ...(fitAll ? {} : { minHeight: logoAreaStyle.minHeight }),
           flex: logoAreaStyle.flex,
         }}
       >
@@ -319,7 +324,7 @@ export function ClientCard({
               style={{
                 ...fontStyle,
                 display: '-webkit-box',
-                WebkitLineClamp: 3,
+                WebkitLineClamp: fitAll ? 2 : 3,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
                 wordBreak: 'break-word',
