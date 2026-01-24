@@ -311,35 +311,22 @@ export function ClientCard({
             />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2">
-            <div className={`flex items-center justify-center rounded-xl bg-primary/15 p-3 ${
-              hasCollaborators || isHighlighted ? 'bg-white/20' : ''
-            }`}>
-              <Building2 
-                className={`${getBuildingIconSize(clientCount)} ${
-                  hasCollaborators || isHighlighted 
-                    ? 'text-white drop-shadow-md' 
-                    : 'text-primary'
-                }`}
-                strokeWidth={1.5}
-              />
-            </div>
-            {clientCount <= 20 && (
-              <span 
-                className={`font-semibold text-center px-1 text-xs ${
-                  hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-muted-foreground'
-                }`}
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {client.name}
-              </span>
-            )}
+          <div className="flex flex-col items-center justify-center w-full h-full px-2">
+            <span 
+              className={`font-bold text-center break-words ${
+                hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'
+              }`}
+              style={{
+                ...fontStyle,
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                wordBreak: 'break-word',
+              }}
+            >
+              {client.name}
+            </span>
           </div>
         )}
       </div>

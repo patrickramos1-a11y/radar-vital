@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { ClientCard } from "./ClientCard";
 import { Client, CollaboratorName } from "@/types/client";
+import { ViewMode } from "./FilterBar";
 
 interface ClientGridProps {
   clients: Client[];
@@ -13,6 +14,7 @@ interface ClientGridProps {
   onTogglePriority: (id: string) => void;
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
   onOpenChecklist: (id: string) => void;
+  viewMode: ViewMode;
 }
 
 // Calcula o layout do grid de forma orgânica - sem limite de clientes
@@ -53,6 +55,7 @@ export function ClientGrid({
   onTogglePriority,
   onToggleCollaborator,
   onOpenChecklist,
+  viewMode,
 }: ClientGridProps) {
   const { columns, rows } = useMemo(() => getGridLayout(clients.length), [clients.length]);
 
@@ -68,13 +71,28 @@ export function ClientGrid({
     return '90px';
   }, [clients.length]);
 
+  // For scroll mode, use fixed columns and allow scrolling
+  // For fit-all mode, calculate to fit everything without scroll
+  const gridStyles = useMemo(() => {
+    if (viewMode === 'scroll') {
+      return {
+        gridTemplateColumns: `repeat(auto-fill, minmax(220px, 1fr))`,
+        gridAutoRows: 'minmax(200px, auto)',
+        overflow: 'auto',
+      };
+    }
+    // fit-all mode - use calculated grid
+    return {
+      gridTemplateColumns: `repeat(${columns}, minmax(${cardMinSize}, 1fr))`,
+      gridAutoRows: 'minmax(auto, 1fr)',
+      overflow: 'hidden',
+    };
+  }, [viewMode, columns, cardMinSize]);
+
   return (
     <div 
-      className="grid gap-2 p-3 w-full h-full overflow-auto transition-all duration-300"
-      style={{ 
-        gridTemplateColumns: `repeat(${columns}, minmax(${cardMinSize}, 1fr))`,
-        gridAutoRows: 'minmax(auto, 1fr)',
-      }}
+      className="grid gap-2 p-3 w-full h-full transition-all duration-300"
+      style={gridStyles}
     >
       {clients.map((client, index) => (
         <ClientCard

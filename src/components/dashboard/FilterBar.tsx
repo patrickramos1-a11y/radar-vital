@@ -1,11 +1,13 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Grid3X3, ScrollText } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority' | 'jackbox' | 'comments';
 export type SortDirection = 'asc' | 'desc';
 export type ClientTypeFilter = 'all' | 'AC' | 'AV';
+export type ViewMode = 'fit-all' | 'scroll';
 
 // Multi-select filter flags
 export interface FilterFlags {
@@ -35,6 +37,7 @@ interface FilterBarProps {
   acCount: number;
   avCount: number;
   searchQuery: string;
+  viewMode: ViewMode;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
@@ -43,6 +46,7 @@ interface FilterBarProps {
   onClientTypeFilterChange: (type: ClientTypeFilter) => void;
   onClearHighlights: () => void;
   onClearAllFilters: () => void;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 export function FilterBar({
@@ -56,6 +60,7 @@ export function FilterBar({
   acCount,
   avCount,
   searchQuery,
+  viewMode,
   onSearchChange,
   onSortChange,
   onSortDirectionChange,
@@ -64,6 +69,7 @@ export function FilterBar({
   onClientTypeFilterChange,
   onClearHighlights,
   onClearAllFilters,
+  onViewModeChange,
   highlightedCount,
 }: FilterBarProps) {
 
@@ -177,6 +183,24 @@ export function FilterBar({
             </button>
           )}
         </div>
+
+        {/* View Mode Toggle */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-muted/50 border border-border">
+              <ScrollText className={`w-3.5 h-3.5 ${viewMode === 'scroll' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Switch
+                checked={viewMode === 'fit-all'}
+                onCheckedChange={(checked) => onViewModeChange(checked ? 'fit-all' : 'scroll')}
+                className="data-[state=checked]:bg-emerald-500"
+              />
+              <Grid3X3 className={`w-3.5 h-3.5 ${viewMode === 'fit-all' ? 'text-primary' : 'text-muted-foreground'}`} />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            {viewMode === 'fit-all' ? 'Modo Fit-All: todos os clientes visíveis sem scroll' : 'Modo Scroll: rolagem habilitada'}
+          </TooltipContent>
+        </Tooltip>
 
         {/* Center: Visible Client Count */}
         <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 border border-primary/30">
