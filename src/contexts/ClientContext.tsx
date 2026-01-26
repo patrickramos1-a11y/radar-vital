@@ -86,6 +86,7 @@ const dbRowToClient = (row: any): Client => {
       darley: row.collaborator_darley,
       vanessa: row.collaborator_vanessa,
     },
+    municipios: row.municipios || [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -136,6 +137,9 @@ const clientToDbRow = (client: Partial<ClientFormData>) => {
     row.collaborator_gabi = client.collaborators.gabi;
     row.collaborator_darley = client.collaborators.darley;
     row.collaborator_vanessa = client.collaborators.vanessa;
+  }
+  if (client.municipios !== undefined) {
+    row.municipios = client.municipios;
   }
   
   return row;
@@ -486,6 +490,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
           demands: client.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
           demandsByCollaborator: client.demandsByCollaborator || DEFAULT_COLLABORATOR_DEMAND_COUNTS,
           collaborators: client.collaborators || DEFAULT_COLLABORATORS,
+          municipios: client.municipios || [],
         };
         await supabase
           .from('clients')

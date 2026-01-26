@@ -709,6 +709,7 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     demands: client?.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
     demandsByCollaborator: client?.demandsByCollaborator || { celine: 0, gabi: 0, darley: 0, vanessa: 0 },
     collaborators: client?.collaborators || DEFAULT_COLLABORATORS,
+    municipios: client?.municipios || [],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -1000,6 +1001,15 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
           </div>
         </div>
 
+        {/* Municípios */}
+        <div className="lg:col-span-3">
+          <label className="admin-label">Municípios</label>
+          <MunicipiosInput
+            value={formData.municipios}
+            onChange={(municipios) => setFormData(prev => ({ ...prev, municipios }))}
+          />
+        </div>
+
         {/* Toggles */}
         <div className="lg:col-span-3 flex items-center gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -1157,6 +1167,84 @@ function InlineDemandInput({ value, onChange, className }: InlineDemandInputProp
     >
       {value}
     </button>
+  );
+}
+
+// Municipios Input Component - allows adding/removing municipalities
+interface MunicipiosInputProps {
+  value: string[];
+  onChange: (municipios: string[]) => void;
+}
+
+function MunicipiosInput({ value, onChange }: MunicipiosInputProps) {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleAdd = () => {
+    const trimmed = inputValue.trim();
+    if (trimmed && !value.includes(trimmed)) {
+      onChange([...value, trimmed]);
+      setInputValue('');
+    }
+  };
+
+  const handleRemove = (municipio: string) => {
+    onChange(value.filter(m => m !== municipio));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAdd();
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Digite o nome do município..."
+          className="admin-input flex-1"
+        />
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={!inputValue.trim()}
+          className="admin-button-primary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+      
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {value.map((municipio) => (
+            <span
+              key={municipio}
+              className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-sm rounded-md border border-primary/20"
+            >
+              {municipio}
+              <button
+                type="button"
+                onClick={() => handleRemove(municipio)}
+                className="hover:text-destructive transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      
+      {value.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          Nenhum município adicionado ainda.
+        </p>
+      )}
+    </div>
   );
 }
 

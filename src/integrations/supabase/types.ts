@@ -214,6 +214,7 @@ export type Database = {
           lic_validas_count: number
           licenses: number
           logo_url: string | null
+          municipios: string[] | null
           name: string
           notif_atendida_count: number
           notif_pendente_count: number
@@ -256,6 +257,7 @@ export type Database = {
           lic_validas_count?: number
           licenses?: number
           logo_url?: string | null
+          municipios?: string[] | null
           name: string
           notif_atendida_count?: number
           notif_pendente_count?: number
@@ -298,6 +300,7 @@ export type Database = {
           lic_validas_count?: number
           licenses?: number
           logo_url?: string | null
+          municipios?: string[] | null
           name?: string
           notif_atendida_count?: number
           notif_pendente_count?: number
