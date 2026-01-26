@@ -7,6 +7,7 @@ import { ClientProvider } from "@/contexts/ClientContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Config from "./pages/Config";
+import Dashboard from "./pages/Dashboard";
 import DemandasPanel from "./pages/DemandasPanel";
 import DemandasVisual from "./pages/DemandasVisual";
 import DemandasUnified from "./pages/DemandasUnified";
@@ -36,6 +37,7 @@ const App = () => (
             <Sonner />
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               {/* Unified Panels (New - Macro View) */}
               <Route path="/demandas-unificado" element={<DemandasUnified />} />
               <Route path="/processos-unificado" element={<ProcessosUnified />} />
