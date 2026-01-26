@@ -59,6 +59,7 @@ export interface Client {
   demands: DemandBreakdown;
   demandsByCollaborator: CollaboratorDemandCounts; // Demand counts per collaborator (from import)
   collaborators: Collaborators; // Manual selection flags (user interaction)
+  municipios: string[]; // List of municipalities associated with this client
   createdAt: string;
   updatedAt: string;
 }
