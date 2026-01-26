@@ -84,8 +84,28 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
     .map(([municipio, count]) => ({ municipio, count }))
     .sort((a, b) => b.count - a.count);
 
-  // Fetch processes data
+  // Get client IDs for filtering related data
   const clientIds = clients?.map(c => c.id) || [];
+
+  // Calculate process stats from client aggregated data (imported from Excel)
+  let totalProcesses = 0;
+  let deferidoCount = 0;
+  let emAnaliseOrgaoCount = 0;
+  let emAnaliseRamosCount = 0;
+  let notificadoCount = 0;
+  let reprovadoCount = 0;
+
+  clients?.forEach(c => {
+    const clientData = c as any;
+    totalProcesses += clientData.proc_total_count || 0;
+    deferidoCount += clientData.proc_deferido_count || 0;
+    emAnaliseOrgaoCount += clientData.proc_em_analise_orgao_count || 0;
+    emAnaliseRamosCount += clientData.proc_em_analise_ramos_count || 0;
+    notificadoCount += clientData.proc_notificado_count || 0;
+    reprovadoCount += clientData.proc_reprovado_count || 0;
+  });
+
+  // Try to get individual processes from processes table for tipology distribution
   let processesQuery = supabase
     .from('processes')
     .select('id, tipo_processo, status, client_id');
@@ -94,30 +114,44 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
     processesQuery = processesQuery.in('client_id', clientIds);
   }
 
-  const { data: processes, error: processesError } = await processesQuery;
-  if (processesError) throw processesError;
+  const { data: processes } = await processesQuery;
 
-  // Aggregate processes by type
+  // Build tipology distribution from processes table if available
   const tipoMap = new Map<string, number>();
-  processes?.forEach(p => {
-    const tipo = p.tipo_processo || 'Outros';
-    tipoMap.set(tipo, (tipoMap.get(tipo) || 0) + 1);
-  });
+  if (processes && processes.length > 0) {
+    processes.forEach(p => {
+      const tipo = p.tipo_processo || 'Outros';
+      tipoMap.set(tipo, (tipoMap.get(tipo) || 0) + 1);
+    });
+  }
   const byTipologia = Array.from(tipoMap.entries())
     .map(([tipo, count]) => ({ tipo, count }))
     .sort((a, b) => b.count - a.count);
 
-  // Aggregate processes by status
-  const statusProcessMap = new Map<string, number>();
-  processes?.forEach(p => {
-    const status = p.status || 'Outros';
-    statusProcessMap.set(status, (statusProcessMap.get(status) || 0) + 1);
-  });
-  const processByStatus = Array.from(statusProcessMap.entries())
-    .map(([status, count]) => ({ status, count }))
-    .sort((a, b) => b.count - a.count);
+  // Build status distribution from aggregated client data
+  const processByStatus: { status: string; count: number }[] = [];
+  if (deferidoCount > 0) processByStatus.push({ status: 'Deferido', count: deferidoCount });
+  if (emAnaliseOrgaoCount > 0) processByStatus.push({ status: 'Em Análise (Órgão)', count: emAnaliseOrgaoCount });
+  if (emAnaliseRamosCount > 0) processByStatus.push({ status: 'Em Análise (Ramos)', count: emAnaliseRamosCount });
+  if (notificadoCount > 0) processByStatus.push({ status: 'Notificado', count: notificadoCount });
+  if (reprovadoCount > 0) processByStatus.push({ status: 'Reprovado', count: reprovadoCount });
+  processByStatus.sort((a, b) => b.count - a.count);
 
-  // Fetch licenses data
+  // Calculate license stats from client aggregated data (imported from Excel)
+  let totalLicensesAgg = 0;
+  let licValidasCount = 0;
+  let licProximoVencCount = 0;
+  let licForaValidadeCount = 0;
+
+  clients?.forEach(c => {
+    const clientData = c as any;
+    licValidasCount += clientData.lic_validas_count || 0;
+    licProximoVencCount += clientData.lic_proximo_venc_count || 0;
+    licForaValidadeCount += clientData.lic_fora_validade_count || 0;
+  });
+  totalLicensesAgg = licValidasCount + licProximoVencCount + licForaValidadeCount;
+
+  // Try to get individual licenses from licenses table for type distribution
   let licensesQuery = supabase
     .from('licenses')
     .select('id, tipo_licenca, status_calculado, vencimento, client_id');
@@ -126,63 +160,51 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
     licensesQuery = licensesQuery.in('client_id', clientIds);
   }
 
-  const { data: licenses, error: licensesError } = await licensesQuery;
-  if (licensesError) throw licensesError;
+  const { data: licenses } = await licensesQuery;
 
-  // Aggregate licenses by type
+  // Aggregate licenses by type from licenses table if available
   const tipoLicMap = new Map<string, number>();
-  licenses?.forEach(l => {
-    const tipo = l.tipo_licenca || 'Outros';
-    tipoLicMap.set(tipo, (tipoLicMap.get(tipo) || 0) + 1);
-  });
+  if (licenses && licenses.length > 0) {
+    licenses.forEach(l => {
+      const tipo = l.tipo_licenca || 'Outros';
+      tipoLicMap.set(tipo, (tipoLicMap.get(tipo) || 0) + 1);
+    });
+  }
   const byTipoLic = Array.from(tipoLicMap.entries())
     .map(([tipo, count]) => ({ tipo, count }))
     .sort((a, b) => b.count - a.count);
 
-  // Aggregate licenses by status
-  const statusLicMap = new Map<string, number>();
-  licenses?.forEach(l => {
-    const status = l.status_calculado || 'Outros';
-    statusLicMap.set(status, (statusLicMap.get(status) || 0) + 1);
-  });
-  const licByStatus = Array.from(statusLicMap.entries())
-    .map(([status, count]) => ({ status, count }))
-    .sort((a, b) => b.count - a.count);
+  // Build license status distribution from aggregated client data
+  const licByStatus: { status: string; count: number }[] = [];
+  if (licValidasCount > 0) licByStatus.push({ status: 'VALIDA', count: licValidasCount });
+  if (licProximoVencCount > 0) licByStatus.push({ status: 'PROXIMO_VENCIMENTO', count: licProximoVencCount });
+  if (licForaValidadeCount > 0) licByStatus.push({ status: 'FORA_VALIDADE', count: licForaValidadeCount });
+  licByStatus.sort((a, b) => b.count - a.count);
 
-  // Condicionantes calculation based on vencimento
-  const now = new Date();
-  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  
-  let atendidas = 0;
-  let vencidas = 0;
-  let aVencer = 0;
+  // Condicionantes from aggregated data
+  const atendidas = licValidasCount;
+  const vencidas = licForaValidadeCount;
+  const aVencer = licProximoVencCount;
 
-  licenses?.forEach(l => {
-    if (l.status_calculado === 'VALIDA') {
-      atendidas++;
-    } else if (l.status_calculado === 'FORA_VALIDADE' || l.status_calculado === 'VENCIDA') {
-      vencidas++;
-    } else if (l.status_calculado === 'PROXIMO_VENCIMENTO') {
-      aVencer++;
-    }
+  // Calculate notification stats from client aggregated data (imported from Excel)
+  let totalNotificationsAgg = 0;
+  let notifAtendidaCount = 0;
+  let notifPendenteCount = 0;
+
+  clients?.forEach(c => {
+    const clientData = c as any;
+    totalNotificationsAgg += clientData.notif_total_count || 0;
+    notifAtendidaCount += clientData.notif_atendida_count || 0;
+    notifPendenteCount += clientData.notif_pendente_count || 0;
   });
 
-  // Fetch notifications data
-  let notificationsQuery = supabase
-    .from('notifications')
-    .select('id, status, client_id');
-  
-  if (clientIds.length > 0) {
-    notificationsQuery = notificationsQuery.in('client_id', clientIds);
-  }
+  // Calculate vencidos as difference (total - atendida - pendente)
+  const notifVencidoCount = Math.max(0, totalNotificationsAgg - notifAtendidaCount - notifPendenteCount);
 
-  const { data: notifications, error: notificationsError } = await notificationsQuery;
-  if (notificationsError) throw notificationsError;
-
-  const totalNotifications = notifications?.length || 0;
-  const itensAtendidos = notifications?.filter(n => n.status === 'ATENDIDA').length || 0;
-  const itensVencidos = notifications?.filter(n => n.status === 'VENCIDA').length || 0;
-  const itensPendentes = notifications?.filter(n => n.status === 'PENDENTE').length || 0;
+  const totalNotifications = totalNotificationsAgg;
+  const itensAtendidos = notifAtendidaCount;
+  const itensVencidos = notifVencidoCount;
+  const itensPendentes = notifPendenteCount;
 
   const taxaAtendimentoNotificacoes = totalNotifications > 0 
     ? Math.round((itensAtendidos / totalNotifications) * 100) 
@@ -201,12 +223,12 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
       byMunicipio,
     },
     processes: {
-      total: processes?.length || 0,
+      total: totalProcesses,
       byTipologia,
       byStatus: processByStatus,
     },
     licenses: {
-      total: licenses?.length || 0,
+      total: totalLicensesAgg,
       byTipo: byTipoLic,
       byStatus: licByStatus,
       condicionantes: {
