@@ -1,7 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { ClientCard } from "./ClientCard";
 import { Client, CollaboratorName } from "@/types/client";
-import { ViewMode } from "./FilterBar";
+import { ViewMode, GridSize } from "./FilterBar";
 
 interface ClientGridProps {
   clients: Client[];
@@ -15,6 +15,7 @@ interface ClientGridProps {
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
   onOpenChecklist: (id: string) => void;
   viewMode: ViewMode;
+  gridSize: GridSize;
 }
 
 // Calcula o layout do grid de forma orgânica - sem limite de clientes
@@ -56,40 +57,107 @@ export function ClientGrid({
   onToggleCollaborator,
   onOpenChecklist,
   viewMode,
+  gridSize,
 }: ClientGridProps) {
-  const { columns, rows } = useMemo(() => getGridLayout(clients.length), [clients.length]);
+  // Track container dimensions for responsive calculations
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // Calcula o tamanho mínimo dos cards baseado na quantidade - aumentado para melhor legibilidade
-  const cardMinSize = useMemo(() => {
-    if (clients.length <= 4) return '200px';
-    if (clients.length <= 6) return '180px';
-    if (clients.length <= 12) return '160px';
-    if (clients.length <= 20) return '140px';
-    if (clients.length <= 30) return '120px';
-    if (clients.length <= 40) return '110px';
-    if (clients.length <= 60) return '100px';
-    return '90px';
-  }, [clients.length]);
+  useEffect(() => {
+    const updateSize = () => {
+      // Get viewport dimensions minus header/filter bar height (approx 180px)
+      const width = window.innerWidth - 280; // Subtract sidebar width
+      const height = window.innerHeight - 180; // Subtract headers
+      setContainerSize({ width: Math.max(width, 400), height: Math.max(height, 300) });
+    };
 
-  // For scroll mode, use 7 fixed columns with vertical scroll
-  // For fit-all mode, force all cards to fit within screen without scrolling
-  const gridStyles = useMemo(() => {
-    if (viewMode === 'scroll') {
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  // Calculate grid layout based on mode and settings
+  const gridLayout = useMemo(() => {
+    // If user selected a fixed grid size, use that
+    if (gridSize) {
       return {
-        gridTemplateColumns: `repeat(7, minmax(160px, 1fr))`,
-        gridAutoRows: 'auto',
-        overflow: 'auto',
-        height: 'auto',
+        columns: gridSize.cols,
+        rows: gridSize.rows,
+        useFixedGrid: true,
       };
     }
-    // fit-all mode - força colunas E linhas para caber tudo na tela
+
+    // Auto-calculate based on view mode
+    if (viewMode === 'fit-all') {
+      // Calculate optimal columns and rows to fit all clients without scrolling
+      const clientCount = clients.length;
+      if (clientCount === 0) return { columns: 7, rows: 1, useFixedGrid: false };
+
+      // Estimate card dimensions based on container size
+      const minCardWidth = 120;
+      const minCardHeight = 100;
+      const gap = 8;
+
+      // Calculate max possible columns based on width
+      const maxCols = Math.floor((containerSize.width + gap) / (minCardWidth + gap));
+      
+      // Calculate max possible rows based on height
+      const maxRows = Math.floor((containerSize.height + gap) / (minCardHeight + gap));
+
+      // Find the best combination to fit all clients
+      let bestCols = Math.ceil(Math.sqrt(clientCount * 1.2));
+      let bestRows = Math.ceil(clientCount / bestCols);
+
+      // Ensure we can fit within the available space
+      if (bestCols > maxCols) {
+        bestCols = Math.max(maxCols, 4);
+        bestRows = Math.ceil(clientCount / bestCols);
+      }
+
+      // Expand columns if we have extra space
+      while (bestCols < maxCols && bestRows > 1 && (bestCols * (bestRows - 1)) >= clientCount) {
+        bestCols++;
+        bestRows = Math.ceil(clientCount / bestCols);
+      }
+
+      return {
+        columns: Math.max(bestCols, 4),
+        rows: Math.max(bestRows, 1),
+        useFixedGrid: true,
+      };
+    }
+
+    // Scroll mode - responsive columns based on screen width
+    const baseColumns = Math.floor((containerSize.width + 8) / 168); // 160px card + 8px gap
     return {
-      gridTemplateColumns: `repeat(${columns}, 1fr)`,
-      gridTemplateRows: `repeat(${rows}, 1fr)`,
-      overflow: 'hidden',
-      height: '100%',
+      columns: Math.max(Math.min(baseColumns, 6), 4),
+      rows: null, // Auto rows for scroll
+      useFixedGrid: false,
     };
-  }, [viewMode, columns, rows]);
+  }, [gridSize, viewMode, clients.length, containerSize]);
+
+  // Calculate styles based on layout
+  const gridStyles = useMemo(() => {
+    if (gridLayout.useFixedGrid && gridLayout.rows) {
+      // Fixed grid - force both columns and rows
+      return {
+        gridTemplateColumns: `repeat(${gridLayout.columns}, 1fr)`,
+        gridTemplateRows: `repeat(${gridLayout.rows}, 1fr)`,
+        overflow: 'hidden',
+        height: '100%',
+      };
+    }
+
+    // Scroll mode - auto rows
+    return {
+      gridTemplateColumns: `repeat(${gridLayout.columns}, minmax(140px, 1fr))`,
+      gridAutoRows: 'auto',
+      overflow: 'auto',
+      height: 'auto',
+    };
+  }, [gridLayout]);
+
+  // Determine if we should use fit-all layout
+  const useFitAll = gridLayout.useFixedGrid;
 
   return (
     <div 
@@ -111,7 +179,7 @@ export function ClientGrid({
           onToggleCollaborator={onToggleCollaborator}
           onOpenChecklist={onOpenChecklist}
           clientCount={clients.length}
-          fitAll={viewMode !== 'scroll'}
+          fitAll={useFitAll}
         />
       ))}
     </div>
