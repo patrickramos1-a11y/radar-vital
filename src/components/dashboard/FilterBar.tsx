@@ -1,13 +1,15 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Grid3X3, Maximize2 } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Maximize2 } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { GridSizePicker } from "./GridSizePicker";
 
 export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority' | 'jackbox' | 'comments';
 export type SortDirection = 'asc' | 'desc';
 export type ClientTypeFilter = 'all' | 'AC' | 'AV';
 export type ViewMode = 'fit-all' | 'scroll';
+export type GridSize = { cols: number; rows: number } | null;
 
 // Multi-select filter flags
 export interface FilterFlags {
@@ -38,6 +40,7 @@ interface FilterBarProps {
   avCount: number;
   searchQuery: string;
   viewMode: ViewMode;
+  gridSize: GridSize;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
@@ -47,6 +50,7 @@ interface FilterBarProps {
   onClearHighlights: () => void;
   onClearAllFilters: () => void;
   onViewModeChange: (mode: ViewMode) => void;
+  onGridSizeChange: (size: GridSize) => void;
 }
 
 export function FilterBar({
@@ -61,6 +65,7 @@ export function FilterBar({
   avCount,
   searchQuery,
   viewMode,
+  gridSize,
   onSearchChange,
   onSortChange,
   onSortDirectionChange,
@@ -70,6 +75,7 @@ export function FilterBar({
   onClearHighlights,
   onClearAllFilters,
   onViewModeChange,
+  onGridSizeChange,
   highlightedCount,
 }: FilterBarProps) {
 
@@ -184,23 +190,29 @@ export function FilterBar({
           )}
         </div>
 
-        {/* View Mode Toggle */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-muted/50 border border-border">
-              <Maximize2 className={`w-3.5 h-3.5 ${viewMode === 'fit-all' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <Switch
-                checked={viewMode === 'scroll'}
-                onCheckedChange={(checked) => onViewModeChange(checked ? 'scroll' : 'fit-all')}
-                className="data-[state=checked]:bg-emerald-500"
-              />
-              <Grid3X3 className={`w-3.5 h-3.5 ${viewMode === 'scroll' ? 'text-primary' : 'text-muted-foreground'}`} />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
-            {viewMode === 'fit-all' ? 'Modo Ampliação: todos os clientes visíveis sem scroll' : 'Modo Grid: rolagem habilitada com grid fixo'}
-          </TooltipContent>
-        </Tooltip>
+        {/* View Mode Toggle + Grid Size Picker */}
+        <div className="flex items-center gap-1.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-muted/50 border border-border">
+                <Maximize2 className={`w-3.5 h-3.5 ${viewMode === 'fit-all' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <Switch
+                  checked={viewMode === 'scroll'}
+                  onCheckedChange={(checked) => onViewModeChange(checked ? 'scroll' : 'fit-all')}
+                  className="data-[state=checked]:bg-emerald-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {viewMode === 'fit-all' ? 'Modo Ampliação: ajusta automaticamente ao tamanho da tela' : 'Modo Rolagem: grid com scroll vertical'}
+            </TooltipContent>
+          </Tooltip>
+
+          <GridSizePicker 
+            selectedSize={gridSize} 
+            onSizeSelect={onGridSizeChange}
+          />
+        </div>
 
         {/* Center: Visible Client Count */}
         <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 border border-primary/30">

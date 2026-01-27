@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
-import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter, ViewMode } from "@/components/dashboard/FilterBar";
+import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter, ViewMode, GridSize } from "@/components/dashboard/FilterBar";
 import { TaskModal } from "@/components/checklist/TaskModal";
 import { CommentsModal } from "@/components/comments/CommentsModal";
 import { useClients } from "@/contexts/ClientContext";
@@ -54,6 +54,7 @@ const Index = () => {
   const [clientTypeFilter, setClientTypeFilter] = useState<ClientTypeFilter>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<ViewMode>('fit-all');
+  const [gridSize, setGridSize] = useState<GridSize>(null);
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
@@ -435,6 +436,7 @@ const Index = () => {
             avCount={avCount}
             searchQuery={searchQuery}
             viewMode={viewMode}
+            gridSize={gridSize}
             onSearchChange={setSearchQuery}
             onSortChange={setSortBy}
             onSortDirectionChange={setSortDirection}
@@ -444,6 +446,7 @@ const Index = () => {
             onClearHighlights={clearHighlights}
             onClearAllFilters={handleClearAllFilters}
             onViewModeChange={setViewMode}
+            onGridSizeChange={setGridSize}
           />
 
           <div className="flex-1 overflow-hidden">
@@ -467,6 +470,7 @@ const Index = () => {
                 onToggleCollaborator={handleToggleCollaborator}
                 onOpenChecklist={handleOpenChecklist}
                 viewMode={viewMode}
+                gridSize={gridSize}
               />
             )}
           </div>
