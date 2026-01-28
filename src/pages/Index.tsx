@@ -452,7 +452,10 @@ const Index = () => {
             onFitAllLockedChange={setFitAllLocked}
           />
 
-          <div className="flex-1 overflow-hidden">
+          <div 
+            className={`flex-1 ${fitAllLocked ? 'overflow-hidden' : 'overflow-auto'}`}
+            style={fitAllLocked ? { overflow: 'hidden', maxHeight: '100%' } : {}}
+          >
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">

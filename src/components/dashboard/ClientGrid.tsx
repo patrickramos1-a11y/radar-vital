@@ -165,10 +165,24 @@ export function ClientGrid({
   }, [fitAllLocked, gridSize, viewMode, clients.length, containerSize]);
 
   // Calculate styles based on layout
-  const gridStyles = useMemo(() => {
+  const gridStyles = useMemo((): React.CSSProperties => {
+    // When fitAllLocked is active, force fixed dimensions and no overflow
+    if (fitAllLocked) {
+      return {
+        display: 'grid',
+        gridTemplateColumns: `repeat(${gridLayout.columns}, 1fr)`,
+        gridTemplateRows: `repeat(${gridLayout.rows || 1}, 1fr)`,
+        overflow: 'hidden',
+        height: `${containerSize.height}px`,
+        maxHeight: `${containerSize.height}px`,
+        width: '100%',
+      };
+    }
+
     if (gridLayout.useFixedGrid && gridLayout.rows) {
       // Fixed grid - force both columns and rows
       return {
+        display: 'grid',
         gridTemplateColumns: `repeat(${gridLayout.columns}, 1fr)`,
         gridTemplateRows: `repeat(${gridLayout.rows}, 1fr)`,
         overflow: 'hidden',
@@ -178,19 +192,20 @@ export function ClientGrid({
 
     // Scroll mode - auto rows
     return {
+      display: 'grid',
       gridTemplateColumns: `repeat(${gridLayout.columns}, minmax(140px, 1fr))`,
       gridAutoRows: 'auto',
       overflow: 'auto',
       height: 'auto',
     };
-  }, [gridLayout]);
+  }, [gridLayout, containerSize, fitAllLocked]);
 
   // Determine if we should use fit-all layout
-  const useFitAll = gridLayout.useFixedGrid;
+  const useFitAll = fitAllLocked || gridLayout.useFixedGrid;
 
   return (
     <div 
-      className="grid gap-2 p-3 w-full h-full transition-all duration-300"
+      className={`grid gap-2 p-3 w-full transition-all duration-300 ${fitAllLocked ? '' : 'h-full'}`}
       style={gridStyles}
     >
       {clients.map((client, index) => (
