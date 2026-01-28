@@ -55,6 +55,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<ViewMode>('fit-all');
   const [gridSize, setGridSize] = useState<GridSize>(null);
+  const [fitAllLocked, setFitAllLocked] = useState(false);
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
@@ -437,6 +438,7 @@ const Index = () => {
             searchQuery={searchQuery}
             viewMode={viewMode}
             gridSize={gridSize}
+            fitAllLocked={fitAllLocked}
             onSearchChange={setSearchQuery}
             onSortChange={setSortBy}
             onSortDirectionChange={setSortDirection}
@@ -447,6 +449,7 @@ const Index = () => {
             onClearAllFilters={handleClearAllFilters}
             onViewModeChange={setViewMode}
             onGridSizeChange={setGridSize}
+            onFitAllLockedChange={setFitAllLocked}
           />
 
           <div className="flex-1 overflow-hidden">
@@ -471,6 +474,7 @@ const Index = () => {
                 onOpenChecklist={handleOpenChecklist}
                 viewMode={viewMode}
                 gridSize={gridSize}
+                fitAllLocked={fitAllLocked}
               />
             )}
           </div>
