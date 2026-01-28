@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen } from "lucide-react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ interface FilterBarProps {
   searchQuery: string;
   viewMode: ViewMode;
   gridSize: GridSize;
+  fitAllLocked: boolean;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
@@ -50,6 +51,7 @@ interface FilterBarProps {
   onClearAllFilters: () => void;
   onViewModeChange: (mode: ViewMode) => void;
   onGridSizeChange: (size: GridSize) => void;
+  onFitAllLockedChange: (locked: boolean) => void;
 }
 
 export function FilterBar({
@@ -65,6 +67,7 @@ export function FilterBar({
   searchQuery,
   viewMode,
   gridSize,
+  fitAllLocked,
   onSearchChange,
   onSortChange,
   onSortDirectionChange,
@@ -75,6 +78,7 @@ export function FilterBar({
   onClearAllFilters,
   onViewModeChange,
   onGridSizeChange,
+  onFitAllLockedChange,
   highlightedCount,
 }: FilterBarProps) {
 
@@ -189,11 +193,36 @@ export function FilterBar({
           )}
         </div>
 
-        {/* Grid Size Picker */}
-        <GridSizePicker 
-          selectedSize={gridSize} 
-          onSizeSelect={onGridSizeChange}
-        />
+        {/* Grid Size Picker + Lock Toggle */}
+        <div className="flex items-center gap-1">
+          <GridSizePicker 
+            selectedSize={gridSize} 
+            onSizeSelect={onGridSizeChange}
+          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onFitAllLockedChange(!fitAllLocked)}
+                className={`p-1.5 rounded-md border transition-all ${
+                  fitAllLocked 
+                    ? 'bg-green-500 border-green-600 text-white hover:bg-green-600' 
+                    : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }`}
+              >
+                {fitAllLocked ? (
+                  <Lock className="w-4 h-4" />
+                ) : (
+                  <LockOpen className="w-4 h-4" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs max-w-[200px]">
+              {fitAllLocked 
+                ? "Desativar Travamento de Espaço - retornar ao modo anterior" 
+                : "Ativar Travamento de Espaço - todos os cards cabem na tela sem scroll"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         {/* Center: Visible Client Count */}
         <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 border border-primary/30">

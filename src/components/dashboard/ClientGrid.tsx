@@ -16,6 +16,7 @@ interface ClientGridProps {
   onOpenChecklist: (id: string) => void;
   viewMode: ViewMode;
   gridSize: GridSize;
+  fitAllLocked: boolean;
 }
 
 // Calcula o layout do grid de forma orgânica - sem limite de clientes
@@ -58,6 +59,7 @@ export function ClientGrid({
   onOpenChecklist,
   viewMode,
   gridSize,
+  fitAllLocked,
 }: ClientGridProps) {
   // Track container dimensions for responsive calculations
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -77,7 +79,42 @@ export function ClientGrid({
 
   // Calculate grid layout based on mode and settings
   const gridLayout = useMemo(() => {
-    // If user selected a fixed grid size, use that
+    // Priority 1: fitAllLocked mode - calculate optimal fit for all clients
+    if (fitAllLocked) {
+      const clientCount = clients.length;
+      if (clientCount === 0) return { columns: 7, rows: 1, useFixedGrid: true };
+
+      // Minimum card dimensions for fit-all locked mode (smaller to allow more clients)
+      const minCardWidth = 80;
+      const minCardHeight = 70;
+      const gap = 8;
+
+      // Calculate max possible columns and rows based on container
+      const maxCols = Math.floor((containerSize.width + gap) / (minCardWidth + gap));
+      const maxRows = Math.floor((containerSize.height + gap) / (minCardHeight + gap));
+
+      // Find optimal columns that fit all clients within the available rows
+      let bestCols = Math.ceil(Math.sqrt(clientCount * 1.3)); // Start with slightly more columns than rows
+      let bestRows = Math.ceil(clientCount / bestCols);
+
+      // If rows exceed max, increase columns
+      while (bestRows > maxRows && bestCols < maxCols) {
+        bestCols++;
+        bestRows = Math.ceil(clientCount / bestCols);
+      }
+
+      // Clamp to valid ranges
+      bestCols = Math.max(Math.min(bestCols, maxCols), 4);
+      bestRows = Math.max(Math.ceil(clientCount / bestCols), 1);
+
+      return {
+        columns: bestCols,
+        rows: bestRows,
+        useFixedGrid: true,
+      };
+    }
+
+    // Priority 2: User selected a fixed grid size
     if (gridSize) {
       return {
         columns: gridSize.cols,
@@ -86,34 +123,26 @@ export function ClientGrid({
       };
     }
 
-    // Auto-calculate based on view mode
+    // Priority 3: Auto-calculate based on view mode
     if (viewMode === 'fit-all') {
-      // Calculate optimal columns and rows to fit all clients without scrolling
       const clientCount = clients.length;
       if (clientCount === 0) return { columns: 7, rows: 1, useFixedGrid: false };
 
-      // Estimate card dimensions based on container size
       const minCardWidth = 120;
       const minCardHeight = 100;
       const gap = 8;
 
-      // Calculate max possible columns based on width
       const maxCols = Math.floor((containerSize.width + gap) / (minCardWidth + gap));
-      
-      // Calculate max possible rows based on height
       const maxRows = Math.floor((containerSize.height + gap) / (minCardHeight + gap));
 
-      // Find the best combination to fit all clients
       let bestCols = Math.ceil(Math.sqrt(clientCount * 1.2));
       let bestRows = Math.ceil(clientCount / bestCols);
 
-      // Ensure we can fit within the available space
       if (bestCols > maxCols) {
         bestCols = Math.max(maxCols, 4);
         bestRows = Math.ceil(clientCount / bestCols);
       }
 
-      // Expand columns if we have extra space
       while (bestCols < maxCols && bestRows > 1 && (bestCols * (bestRows - 1)) >= clientCount) {
         bestCols++;
         bestRows = Math.ceil(clientCount / bestCols);
@@ -126,14 +155,14 @@ export function ClientGrid({
       };
     }
 
-    // Scroll mode - responsive columns based on screen width
-    const baseColumns = Math.floor((containerSize.width + 8) / 168); // 160px card + 8px gap
+    // Default: Scroll mode - responsive columns based on screen width
+    const baseColumns = Math.floor((containerSize.width + 8) / 168);
     return {
       columns: Math.max(Math.min(baseColumns, 6), 4),
-      rows: null, // Auto rows for scroll
+      rows: null,
       useFixedGrid: false,
     };
-  }, [gridSize, viewMode, clients.length, containerSize]);
+  }, [fitAllLocked, gridSize, viewMode, clients.length, containerSize]);
 
   // Calculate styles based on layout
   const gridStyles = useMemo(() => {
