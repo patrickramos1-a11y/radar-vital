@@ -12,7 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useClients } from '@/contexts/ClientContext';
 import { toast } from 'sonner';
 
-type ImportMode = 'quick' | 'complete';
 type WizardStep = 'upload' | 'found' | 'notfound' | 'preview';
 
 interface LicenseImportWizardProps {
@@ -25,7 +24,7 @@ interface LicenseImportWizardProps {
 export function LicenseImportWizard({ isOpen, onClose, clients, onImportComplete }: LicenseImportWizardProps) {
   const { refetch } = useClients();
   const [step, setStep] = useState<WizardStep>('upload');
-  const [mode, setMode] = useState<ImportMode>('quick');
+  
   const [licenses, setLicenses] = useState<ExcelLicense[]>([]);
   const [matchResults, setMatchResults] = useState<LicenseMatchResult[]>([]);
   const [summaries, setSummaries] = useState<LicenseSummary[]>([]);
@@ -246,11 +245,8 @@ export function LicenseImportWizard({ isOpen, onClose, clients, onImportComplete
   };
 
   const handleImport = async () => {
-    if (mode === 'quick') {
-      await importQuickMode();
-    } else {
-      await importCompleteMode();
-    }
+    // Always use complete mode - saves individual licenses + updates aggregates
+    await importCompleteMode();
   };
 
   const handleClose = () => {
@@ -297,30 +293,14 @@ export function LicenseImportWizard({ isOpen, onClose, clients, onImportComplete
           {/* Step 1: Upload */}
           {step === 'upload' && (
             <div className="space-y-4">
-              {/* Mode selection */}
-              <div className="flex gap-4 p-4 bg-muted/50 rounded-lg">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === 'quick'}
-                    onChange={() => setMode('quick')}
-                    className="w-4 h-4"
-                  />
-                  <span className="font-medium">Modo Rápido</span>
-                  <span className="text-xs text-muted-foreground">(apenas totais)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === 'complete'}
-                    onChange={() => setMode('complete')}
-                    className="w-4 h-4"
-                  />
-                  <span className="font-medium">Modo Completo</span>
-                  <span className="text-xs text-muted-foreground">(licença por licença)</span>
-                </label>
+              {/* Info about import */}
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-medium mb-2">A importação irá considerar:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• <span className="text-foreground font-medium">Total de licenças</span> por empresa</li>
+                  <li>• <span className="text-foreground font-medium">Tipos de licenças</span> (LO, LI, LP, etc.)</li>
+                  <li>• <span className="text-foreground font-medium">Status das licenças</span> (Válidas, Próx. Vencimento, Vencidas)</li>
+                </ul>
               </div>
 
               {/* Upload area */}
@@ -542,7 +522,7 @@ export function LicenseImportWizard({ isOpen, onClose, clients, onImportComplete
                   Voltar
                 </Button>
                 <Button onClick={handleImport} disabled={isImporting || selectedSummaries.length === 0}>
-                  {isImporting ? 'Importando...' : `Importar ${mode === 'quick' ? '(Rápido)' : '(Completo)'}`}
+                  {isImporting ? 'Importando...' : 'Importar Licenças'}
                 </Button>
               </div>
             </div>

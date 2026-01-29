@@ -6,7 +6,6 @@ import {
   Download, FolderUp, RotateCcw, FileSpreadsheet
 } from "lucide-react";
 import { ImportWizard } from "@/components/import/ImportWizard";
-import { LicenseImportWizard } from "@/components/import/LicenseImportWizard";
 import { ProcessImportWizard } from "@/components/import/ProcessImportWizard";
 import { useClients } from "@/contexts/ClientContext";
 import { 
@@ -53,7 +52,7 @@ const Config = () => {
   const [moveToPositionId, setMoveToPositionId] = useState<string | null>(null);
   const [moveToPositionValue, setMoveToPositionValue] = useState<string>("");
   const [showImportWizard, setShowImportWizard] = useState(false);
-  const [showLicenseImportWizard, setShowLicenseImportWizard] = useState(false);
+  
   const [showProcessImportWizard, setShowProcessImportWizard] = useState(false);
   
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -204,15 +203,6 @@ const Config = () => {
               Importar Programação
             </button>
 
-            {/* Import Licenças Excel */}
-            <button
-              onClick={() => setShowLicenseImportWizard(true)}
-              className="admin-button flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
-              title="Importar licenças de planilha Excel"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              Importar Licenças
-            </button>
 
             {/* Import Processos Excel */}
             <button
@@ -662,13 +652,6 @@ const Config = () => {
         onImportComplete={() => setShowImportWizard(false)}
       />
 
-      {/* Import License Wizard */}
-      <LicenseImportWizard
-        isOpen={showLicenseImportWizard}
-        onClose={() => setShowLicenseImportWizard(false)}
-        clients={clients}
-        onImportComplete={() => setShowLicenseImportWizard(false)}
-      />
 
       {/* Import Process Wizard */}
       <ProcessImportWizard
