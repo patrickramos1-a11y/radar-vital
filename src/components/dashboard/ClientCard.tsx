@@ -1,7 +1,12 @@
-import { Star, Sparkles, Building2 } from "lucide-react";
-import { Client, calculateTotalDemands, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { Star, Sparkles, Building2, Plus } from "lucide-react";
+import { Client, calculateTotalDemands, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, Collaborators } from "@/types/client";
 import { ChecklistButton } from "@/components/checklist/ChecklistButton";
 import { CommentButton } from "@/components/comments/CommentButton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ClientCardProps {
   client: Client;
@@ -177,18 +182,6 @@ function getIndicatorSizes(clientCount: number): { labelSize: string; valueSize:
   }
 }
 
-// Dynamic collaborator button height
-function getCollaboratorHeight(clientCount: number): string {
-  if (clientCount <= 4) {
-    return 'h-6';
-  } else if (clientCount <= 8) {
-    return 'h-5';
-  } else if (clientCount <= 12) {
-    return 'h-4';
-  } else {
-    return 'h-3';
-  }
-}
 
 export function ClientCard({ 
   client, 
@@ -213,7 +206,7 @@ export function ClientCard({
   const logoMaxHeight = getLogoMaxHeight(clientCount);
   const headerSizes = getHeaderSizes(clientCount);
   const indicatorSizes = getIndicatorSizes(clientCount);
-  const collaboratorHeight = getCollaboratorHeight(clientCount);
+  
 
   const handleHighlightClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -234,6 +227,9 @@ export function ClientCard({
     e.stopPropagation();
     onOpenChecklist(client.id);
   };
+
+  // Get active collaborators for display
+  const activeCollaboratorsList = COLLABORATOR_NAMES.filter(name => client.collaborators[name]);
 
   return (
     <div
@@ -281,14 +277,32 @@ export function ClientCard({
         </button>
       </div>
 
-      {/* Header - Number + Name */}
+      {/* Header - Number + Name + Collaborator Badges */}
       <div className={`flex items-center gap-1 ${headerSizes.headerPadding} bg-card-elevated border-b border-border`}>
         <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded bg-primary text-primary-foreground font-bold shrink-0`}>
           {displayNumber.toString().padStart(2, '0')}
         </div>
-        <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1 pr-6`}>
+        <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1`}>
           {client.name}
         </span>
+        
+        {/* Collaborator Badges - Inside header, right side */}
+        <div className="flex items-center gap-0.5 shrink-0 pr-8">
+          {activeCollaboratorsList.map((name) => (
+            <CollaboratorBadge
+              key={name}
+              name={name}
+              onClick={(e) => handleCollaboratorClick(e, name)}
+              clientCount={clientCount}
+            />
+          ))}
+          {/* Add collaborator button */}
+          <CollaboratorAddButton
+            collaborators={client.collaborators}
+            onToggle={(e, name) => handleCollaboratorClick(e, name)}
+            clientCount={clientCount}
+          />
+        </div>
       </div>
 
       {/* Logo/Name Area - Dynamic height based on client count */}
@@ -366,19 +380,6 @@ export function ClientCard({
           </div>
         </div>
       </div>
-
-      {/* Collaborators Row - 4 Buttons */}
-      <div className="grid grid-cols-4 border-t border-border">
-        {COLLABORATOR_NAMES.map((name) => (
-          <CollaboratorButton
-            key={name}
-            name={name}
-            isActive={client.collaborators[name]}
-            onClick={(e) => handleCollaboratorClick(e, name)}
-            heightClass={collaboratorHeight}
-          />
-        ))}
-      </div>
     </div>
   );
 }
@@ -404,28 +405,91 @@ function DemandChipSmall({ status, count, sizeClass }: DemandChipSmallProps) {
   );
 }
 
-interface CollaboratorButtonProps {
-  name: CollaboratorName;
-  isActive: boolean;
-  onClick: (e: React.MouseEvent) => void;
-  heightClass: string;
+// Badge size based on client count
+function getBadgeSize(clientCount: number): { size: string; fontSize: string } {
+  if (clientCount <= 8) {
+    return { size: 'w-6 h-6', fontSize: 'text-[10px]' };
+  } else if (clientCount <= 20) {
+    return { size: 'w-5 h-5', fontSize: 'text-[9px]' };
+  } else {
+    return { size: 'w-4 h-4', fontSize: 'text-[8px]' };
+  }
 }
 
-function CollaboratorButton({ name, isActive, onClick, heightClass }: CollaboratorButtonProps) {
+interface CollaboratorBadgeProps {
+  name: CollaboratorName;
+  onClick: (e: React.MouseEvent) => void;
+  clientCount: number;
+}
+
+function CollaboratorBadge({ name, onClick, clientCount }: CollaboratorBadgeProps) {
   const color = COLLABORATOR_COLORS[name];
-  const initials = name.slice(0, 2).toUpperCase();
+  const initial = name.charAt(0).toUpperCase();
+  const { size, fontSize } = getBadgeSize(clientCount);
   
   return (
     <button
       onClick={onClick}
-      className={`${heightClass} w-full transition-all hover:opacity-70 flex items-center justify-center`}
-      style={{ 
-        backgroundColor: color,
-        opacity: isActive ? 1 : 0.25,
-      }}
-      title={`${name.charAt(0).toUpperCase() + name.slice(1)} - Clique para ${isActive ? 'desativar' : 'ativar'}`}
+      className={`${size} rounded-full transition-all hover:opacity-80 hover:scale-110 flex items-center justify-center shadow-sm`}
+      style={{ backgroundColor: color }}
+      title={`${name.charAt(0).toUpperCase() + name.slice(1)} - Clique para remover`}
     >
-      <span className="text-[7px] font-bold text-white leading-none">{initials}</span>
+      <span className={`${fontSize} font-bold text-white leading-none`}>{initial}</span>
     </button>
+  );
+}
+
+interface CollaboratorAddButtonProps {
+  collaborators: Collaborators;
+  onToggle: (e: React.MouseEvent, name: CollaboratorName) => void;
+  clientCount: number;
+}
+
+function CollaboratorAddButton({ collaborators, onToggle, clientCount }: CollaboratorAddButtonProps) {
+  const { size, fontSize } = getBadgeSize(clientCount);
+  const inactiveCollaborators = COLLABORATOR_NAMES.filter(name => !collaborators[name]);
+  
+  // If all collaborators are active, don't show the add button
+  if (inactiveCollaborators.length === 0) {
+    return null;
+  }
+  
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className={`${size} rounded-full border-2 border-dashed border-muted-foreground/40 transition-all hover:border-muted-foreground hover:bg-muted/50 flex items-center justify-center`}
+          title="Adicionar colaborador"
+        >
+          <Plus className={`${clientCount <= 8 ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-muted-foreground/60`} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent 
+        className="w-auto p-2" 
+        align="end" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground px-1 mb-1">Adicionar colaborador</span>
+          <div className="flex gap-1">
+            {inactiveCollaborators.map((name) => (
+              <button
+                key={name}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle(e, name);
+                }}
+                className="w-8 h-8 rounded-full transition-all hover:opacity-80 hover:scale-110 flex items-center justify-center shadow-sm"
+                style={{ backgroundColor: COLLABORATOR_COLORS[name] }}
+                title={`Adicionar ${name.charAt(0).toUpperCase() + name.slice(1)}`}
+              >
+                <span className="text-xs font-bold text-white">{name.charAt(0).toUpperCase()}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
