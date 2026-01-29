@@ -277,32 +277,32 @@ export function ClientCard({
         </button>
       </div>
 
-      {/* Header - Number + Name + Collaborator Badges */}
-      <div className={`flex items-center gap-1 ${headerSizes.headerPadding} bg-card-elevated border-b border-border`}>
+      {/* Header - Number + Name */}
+      <div className={`flex items-center gap-1.5 ${headerSizes.headerPadding} bg-card-elevated border-b border-border`}>
         <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded bg-primary text-primary-foreground font-bold shrink-0`}>
           {displayNumber.toString().padStart(2, '0')}
         </div>
-        <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1`}>
+        <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1 pr-12`}>
           {client.name}
         </span>
-        
-        {/* Collaborator Badges - Inside header, right side */}
-        <div className="flex items-center gap-0.5 shrink-0 pr-8">
-          {activeCollaboratorsList.map((name) => (
-            <CollaboratorBadge
-              key={name}
-              name={name}
-              onClick={(e) => handleCollaboratorClick(e, name)}
-              clientCount={clientCount}
-            />
-          ))}
-          {/* Add collaborator button */}
-          <CollaboratorAddButton
-            collaborators={client.collaborators}
-            onToggle={(e, name) => handleCollaboratorClick(e, name)}
+      </div>
+
+      {/* Collaborator Row - Below header, horizontal layout like reference */}
+      <div className="flex items-center gap-1 px-2 py-1 bg-muted/30 border-b border-border/50">
+        {activeCollaboratorsList.map((name) => (
+          <CollaboratorBadge
+            key={name}
+            name={name}
+            onClick={(e) => handleCollaboratorClick(e, name)}
             clientCount={clientCount}
           />
-        </div>
+        ))}
+        {/* Add collaborator button */}
+        <CollaboratorAddButton
+          collaborators={client.collaborators}
+          onToggle={(e, name) => handleCollaboratorClick(e, name)}
+          clientCount={clientCount}
+        />
       </div>
 
       {/* Logo/Name Area - Dynamic height based on client count */}
@@ -405,11 +405,13 @@ function DemandChipSmall({ status, count, sizeClass }: DemandChipSmallProps) {
   );
 }
 
-// Badge size based on client count
+// Badge size based on client count - larger sizes like reference image
 function getBadgeSize(clientCount: number): { size: string; fontSize: string } {
   if (clientCount <= 8) {
-    return { size: 'w-6 h-6', fontSize: 'text-[10px]' };
+    return { size: 'w-7 h-7', fontSize: 'text-xs' };
   } else if (clientCount <= 20) {
+    return { size: 'w-6 h-6', fontSize: 'text-[10px]' };
+  } else if (clientCount <= 40) {
     return { size: 'w-5 h-5', fontSize: 'text-[9px]' };
   } else {
     return { size: 'w-4 h-4', fontSize: 'text-[8px]' };

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, CheckCircle, Clock, AlertTriangle, Filter } from "lucide-react";
+import { Shield, CheckCircle, Clock, AlertTriangle, Filter, FileSpreadsheet } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
@@ -13,14 +13,16 @@ import { useVisualPanelFilters } from "@/hooks/useVisualPanelFilters";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { LicenseImportWizard } from "@/components/import/LicenseImportWizard";
 
 type StatusFilter = 'all' | 'valid' | 'expiring' | 'expired';
 
 export default function LicencasUnified() {
   const navigate = useNavigate();
-  const { activeClients, highlightedClients } = useClients();
+  const { activeClients, highlightedClients, clients, refetch } = useClients();
   const { getActiveTaskCount } = useTasks();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [showLicenseImportWizard, setShowLicenseImportWizard] = useState(false);
 
   // Custom sorter for licenses
   const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
@@ -142,6 +144,18 @@ export default function LicencasUnified() {
           icon={<Shield className="w-5 h-5" />}
           detailRoute="/licencas"
         >
+          {/* Import License Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+            onClick={() => setShowLicenseImportWizard(true)}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Importar Licenças
+          </Button>
+          
+          <div className="w-px h-8 bg-border" />
           <KPICard icon={<Shield className="w-4 h-4" />} value={kpis.total} label="Total" />
           <KPICard icon={<CheckCircle className="w-4 h-4" />} value={kpis.validas} label="Válidas" variant="success" />
           <KPICard icon={<Clock className="w-4 h-4" />} value={kpis.proximoVencimento} label="Próx. Venc." variant="warning" />
@@ -228,6 +242,14 @@ export default function LicencasUnified() {
             );
           })}
         </VisualGrid>
+
+        {/* License Import Wizard */}
+        <LicenseImportWizard
+          isOpen={showLicenseImportWizard}
+          onClose={() => setShowLicenseImportWizard(false)}
+          clients={clients}
+          onImportComplete={() => refetch()}
+        />
       </div>
     </AppLayout>
   );
