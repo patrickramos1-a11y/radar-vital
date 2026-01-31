@@ -1,153 +1,502 @@
 
-# Plano: Botao de Travamento de Espaco (Fit-All Fixo) no Painel de Clientes
 
-## Resumo
+# Plano: Backlog de Produto - Sistema Radar-Vital
 
-Adicionar um botao de alternancia (toggle) ao lado do seletor de tamanho de grid que permite ao usuario ativar/desativar o modo de "Travamento de Espaco". Quando ativado, todos os cards de clientes serao automaticamente redimensionados para caber em uma area fixa da tela, sem scroll, independentemente da quantidade de clientes.
+## Resumo Executivo
 
-## Comportamento Esperado
+Implementar um sistema completo de Backlog de Produto para o Radar-Vital, permitindo registro estruturado de melhorias, rastreabilidade de implementacoes e historico de evolucao do sistema. Esta funcionalidade e independente das demandas de clientes e foca exclusivamente no desenvolvimento do proprio produto.
 
-| Estado do Botao | Comportamento |
-|-----------------|---------------|
-| **Desativado** | Comportamento atual mantido - se o usuario selecionou um grid manual, usa esse tamanho; caso contrario, usa o modo responsivo padrao com scroll vertical |
-| **Ativado** | Modo Travamento de Espaco - area do grid tem dimensoes fixas em pixels, todos os cards sao redimensionados automaticamente para caber sem scroll |
-
-## Arquitetura da Solucao
+## Arquitetura Geral
 
 ```text
-+-------------------+     +------------------+     +-------------------+
-|   FilterBar.tsx   |     |   Index.tsx      |     |  ClientGrid.tsx   |
-|                   |     |                  |     |                   |
-| [Toggle Button]   |---->| fitAllLocked     |---->| Calcula layout    |
-| [GridSizePicker]  |     | state            |     | baseado no modo   |
-+-------------------+     +------------------+     +-------------------+
-                                                          |
-                                                          v
-                                                   +-------------------+
-                                                   |  ClientCard.tsx   |
-                                                   |                   |
-                                                   | fitAll prop       |
-                                                   | (reduz minimos)   |
-                                                   +-------------------+
++------------------+     +---------------------+     +-------------------+
+|   BacklogPage    |     |  useBacklogItems    |     |   Supabase DB     |
+|                  |     |                     |     |                   |
+| - Lista/Grid     |<--->| - CRUD operations   |<--->| backlog_items     |
+| - Filtros/KPIs   |     | - Activity logging  |     | backlog_history   |
+| - Detalhes       |     | - File uploads      |     | backlog_impl      |
++------------------+     +---------------------+     | backlog_attach    |
+        |                                           +-------------------+
+        v                                                   |
++------------------+     +---------------------+             v
+| BacklogForm      |     | BacklogDetail       |     +-------------------+
+|                  |     |                     |     |  Lovable Storage  |
+| - Rich Text      |     | - Historico auto    |     |                   |
+| - Multi-select   |     | - Implementacoes    |     | backlog-files     |
+| - Anexos         |     | - Anexos viewer     |     +-------------------+
++------------------+     +---------------------+
 ```
 
-## Detalhes Tecnicos
+---
 
-### 1. Novo Tipo e Estado
+## Parte 1: Estrutura de Banco de Dados
 
-**Arquivo: `src/components/dashboard/FilterBar.tsx`**
+### Tabela Principal: `backlog_items`
 
-- Adicionar novo tipo de export: `FitAllLocked: boolean`
-- Adicionar prop `fitAllLocked` e `onFitAllLockedChange` ao `FilterBarProps`
+| Coluna | Tipo | Descricao |
+|--------|------|-----------|
+| id | uuid | Chave primaria |
+| titulo | text | Titulo curto e objetivo (obrigatorio) |
+| categoria | text | Enum com categorias predefinidas |
+| modulos_impactados | text[] | Array de modulos (multi-select) |
+| descricao_detalhada | text | Rich text/Markdown |
+| status_backlog | text | Status do pipeline |
+| prioridade | text | Alta/Media/Baixa |
+| impacto_esperado | text | Baixo/Medio/Alto |
+| estimativa_esforco | text | Pequeno/Medio/Grande |
+| dependente_de_creditos | boolean | Flag para filtro de creditos |
+| responsavel_produto | text | Usuario responsavel |
+| responsavel_tecnico | text | Usuario tecnico (opcional) |
+| data_criacao | timestamptz | Automatico |
+| data_inicio_implementacao | date | Quando iniciou |
+| data_conclusao | date | Quando concluiu |
+| data_lancamento | date | Quando foi lancado |
+| created_at | timestamptz | Timestamp de criacao |
+| updated_at | timestamptz | Timestamp de atualizacao |
 
-**Arquivo: `src/pages/Index.tsx`**
+### Categorias (Enum/Check)
 
-- Adicionar estado: `const [fitAllLocked, setFitAllLocked] = useState(false)`
-- Passar props para `FilterBar` e `ClientGrid`
+- Nova Funcionalidade
+- Melhoria de Funcionalidade Existente
+- Correcao / Bug
+- Ajuste Tecnico / Performance
+- UX / UI / Visual
+- Relatorios / Indicadores
+- Seguranca / Permissoes
+- Infraestrutura / Creditos / Limitacoes da Plataforma
 
-### 2. Botao Toggle na FilterBar
+### Modulos Impactados (Multi-select)
 
-**Arquivo: `src/components/dashboard/FilterBar.tsx`**
+- Dashboard Geral
+- Painel de Demandas
+- Jackbox
+- Processos
+- Licencas
+- Filtros e Ordenacoes
+- Mobile
+- Notificacoes
+- Relatorios
+- Importacao de Dados
+- Configuracoes
+- Performance Geral
 
-Adicionar botao de toggle ao lado do `GridSizePicker`:
+### Status do Pipeline
+
+- Ideia / Proposta
+- Em Analise
+- Refinado (Pronto para Implementacao)
+- Aguardando Creditos
+- Em Implementacao
+- Em Testes
+- Implementado
+- Lancado
+- Arquivado
+
+---
+
+### Tabela: `backlog_attachments`
+
+| Coluna | Tipo | Descricao |
+|--------|------|-----------|
+| id | uuid | Chave primaria |
+| backlog_item_id | uuid | FK para backlog_items |
+| file_name | text | Nome original do arquivo |
+| file_url | text | URL no storage |
+| file_type | text | MIME type |
+| file_size | integer | Tamanho em bytes |
+| uploaded_by | text | Nome do usuario |
+| created_at | timestamptz | Data de upload |
+
+---
+
+### Tabela: `backlog_history`
+
+| Coluna | Tipo | Descricao |
+|--------|------|-----------|
+| id | uuid | Chave primaria |
+| backlog_item_id | uuid | FK para backlog_items |
+| event_type | text | Tipo do evento (criacao, status, etc) |
+| description | text | Descricao legivel |
+| user_name | text | Quem executou |
+| old_value | text | Valor anterior (opcional) |
+| new_value | text | Novo valor (opcional) |
+| created_at | timestamptz | Quando ocorreu |
+
+### Eventos Automaticos
+
+- CREATED: Criacao do item
+- STATUS_CHANGED: Mudanca de status
+- ATTACHMENT_ADDED: Anexo adicionado
+- ATTACHMENT_REMOVED: Anexo removido
+- PRIORITY_CHANGED: Prioridade alterada
+- DATE_CHANGED: Datas alteradas
+- MARKED_IMPLEMENTED: Marcado como implementado
+- MARKED_LAUNCHED: Marcado como lancado
+- IMPLEMENTATION_ADDED: Registro de implementacao adicionado
+- FIELD_UPDATED: Campo generico atualizado
+
+---
+
+### Tabela: `backlog_implementations`
+
+| Coluna | Tipo | Descricao |
+|--------|------|-----------|
+| id | uuid | Chave primaria |
+| backlog_item_id | uuid | FK para backlog_items |
+| descricao | text | Descricao do ajuste |
+| responsavel | text | Quem executou |
+| status | text | Executado/Nao Executado |
+| data_execucao | date | Quando foi feito |
+| created_at | timestamptz | Timestamp |
+
+---
+
+## Parte 2: Storage para Anexos
+
+Criar bucket `backlog-files` no Lovable Storage para armazenar:
+- Imagens (prints, mockups)
+- PDFs
+- Planilhas
+- Outros arquivos
+
+Politica: Publico para leitura, autenticado para escrita.
+
+---
+
+## Parte 3: Tipos TypeScript
+
+### Arquivo: `src/types/backlog.ts`
+
+```typescript
+export type BacklogCategory = 
+  | 'NOVA_FUNCIONALIDADE'
+  | 'MELHORIA_EXISTENTE'
+  | 'CORRECAO_BUG'
+  | 'AJUSTE_TECNICO'
+  | 'UX_UI_VISUAL'
+  | 'RELATORIOS'
+  | 'SEGURANCA'
+  | 'INFRAESTRUTURA';
+
+export type BacklogModule = 
+  | 'DASHBOARD'
+  | 'DEMANDAS'
+  | 'JACKBOX'
+  | 'PROCESSOS'
+  | 'LICENCAS'
+  | 'FILTROS'
+  | 'MOBILE'
+  | 'NOTIFICACOES'
+  | 'RELATORIOS'
+  | 'IMPORTACAO'
+  | 'CONFIGURACOES'
+  | 'PERFORMANCE';
+
+export type BacklogStatus = 
+  | 'IDEIA'
+  | 'EM_ANALISE'
+  | 'REFINADO'
+  | 'AGUARDANDO_CREDITOS'
+  | 'EM_IMPLEMENTACAO'
+  | 'EM_TESTES'
+  | 'IMPLEMENTADO'
+  | 'LANCADO'
+  | 'ARQUIVADO';
+
+export type BacklogPriority = 'ALTA' | 'MEDIA' | 'BAIXA';
+export type BacklogImpact = 'BAIXO' | 'MEDIO' | 'ALTO';
+export type BacklogEffort = 'PEQUENO' | 'MEDIO' | 'GRANDE';
+
+export interface BacklogItem {
+  id: string;
+  titulo: string;
+  categoria: BacklogCategory;
+  modulosImpactados: BacklogModule[];
+  descricaoDetalhada: string | null;
+  statusBacklog: BacklogStatus;
+  prioridade: BacklogPriority;
+  impactoEsperado: BacklogImpact;
+  estimativaEsforco: BacklogEffort;
+  dependenteDeCreditos: boolean;
+  responsavelProduto: string;
+  responsavelTecnico: string | null;
+  dataCriacao: string;
+  dataInicioImplementacao: string | null;
+  dataConclusao: string | null;
+  dataLancamento: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BacklogAttachment {
+  id: string;
+  backlogItemId: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  uploadedBy: string;
+  createdAt: string;
+}
+
+export interface BacklogHistory {
+  id: string;
+  backlogItemId: string;
+  eventType: string;
+  description: string;
+  userName: string;
+  oldValue: string | null;
+  newValue: string | null;
+  createdAt: string;
+}
+
+export interface BacklogImplementation {
+  id: string;
+  backlogItemId: string;
+  descricao: string;
+  responsavel: string;
+  status: 'EXECUTADO' | 'NAO_EXECUTADO';
+  dataExecucao: string | null;
+  createdAt: string;
+}
+```
+
+---
+
+## Parte 4: Hook Principal
+
+### Arquivo: `src/hooks/useBacklog.ts`
+
+Funcionalidades:
+- `fetchBacklogItems()` - Listar todos os itens
+- `addBacklogItem(data)` - Criar novo item
+- `updateBacklogItem(id, data)` - Atualizar item (com log automatico)
+- `deleteBacklogItem(id)` - Excluir item
+- `changeStatus(id, newStatus)` - Mudar status (com log)
+- `uploadAttachment(itemId, file)` - Upload de anexo
+- `deleteAttachment(attachmentId)` - Remover anexo
+- `addImplementation(itemId, data)` - Adicionar registro de implementacao
+- `updateImplementation(id, data)` - Atualizar implementacao
+- `deleteImplementation(id)` - Remover implementacao
+- `getHistory(itemId)` - Buscar historico do item
+- Filtros e ordenacao
+
+---
+
+## Parte 5: Componentes de Interface
+
+### Estrutura de Arquivos
 
 ```text
-+-----------------------------------------------+
-| [GridSizePicker] [Lock Icon Toggle]           |
-|                  ON: verde, icone de cadeado  |
-|                  OFF: cinza, icone aberto     |
-+-----------------------------------------------+
+src/
+  pages/
+    Backlog.tsx              # Pagina principal
+    BacklogDetail.tsx        # Detalhes de um item
+  components/
+    backlog/
+      BacklogHeader.tsx      # Header com KPIs
+      BacklogFilters.tsx     # Filtros e ordenacao
+      BacklogCard.tsx        # Card de item na lista
+      BacklogForm.tsx        # Formulario criar/editar
+      BacklogHistory.tsx     # Timeline de historico
+      BacklogAttachments.tsx # Gerenciador de anexos
+      BacklogImplementations.tsx # Registros de implementacao
+      BacklogTimeline.tsx    # Visao linha do tempo
 ```
 
-Componentes visuais:
-- Icone: `Lock` (ativado) / `LockOpen` (desativado) do Lucide
-- Cor: Verde quando ativo, cinza quando inativo
-- Tooltip explicativo do modo
+### Pagina Principal: `Backlog.tsx`
 
-### 3. Logica de Layout no ClientGrid
+Layout:
+1. **Header com KPIs**
+   - Total de itens
+   - Aguardando creditos
+   - Em implementacao
+   - Implementados
+   - Lancados
 
-**Arquivo: `src/components/dashboard/ClientGrid.tsx`**
+2. **Barra de Filtros**
+   - Busca por texto
+   - Filtro por status (tabs ou pills)
+   - Filtro por categoria
+   - Filtro por modulo
+   - Filtro por prioridade
+   - Toggle "Dependente de creditos"
 
-Quando `fitAllLocked` estiver ativo:
+3. **Lista/Grid de Itens**
+   - Cards compactos com indicadores visuais
+   - Status com cores
+   - Badges para prioridade e creditos
+   - Preview da descricao
 
-1. **Calcular dimensoes fixas do container**: Usar `containerSize` ja existente (largura/altura da viewport menos headers)
+4. **Botao Criar Novo**
 
-2. **Calcular colunas e linhas otimas**:
-   - Dimensoes minimas do card: 80px largura x 70px altura (reduzido para permitir mais cards)
-   - Gap entre cards: 8px
-   - Calcular quantas colunas cabem: `Math.floor((width + gap) / (minWidth + gap))`
-   - Calcular quantas linhas sao necessarias: `Math.ceil(clientCount / cols)`
-   - Se linhas calculadas excederem o maximo que cabe na altura, aumentar colunas
+---
 
-3. **Aplicar CSS de grid fixo**:
-   ```css
-   gridTemplateColumns: repeat(cols, 1fr);
-   gridTemplateRows: repeat(rows, 1fr);
-   overflow: hidden;
-   height: 100%;
-   ```
+### Pagina de Detalhes: `BacklogDetail.tsx`
 
-4. **Prioridade de modos**:
-   - `fitAllLocked` = true: Sempre usa calculo de travamento
-   - `gridSize` definido pelo usuario: Usa grid manual
-   - Nenhum dos dois: Usa modo responsivo padrao
+Secoes:
+1. **Cabecalho**
+   - Titulo editavel
+   - Status selector
+   - Botoes de acao
 
-### 4. Ajustes nos Cards
+2. **Informacoes Principais**
+   - Categoria
+   - Modulos impactados (chips)
+   - Prioridade, Impacto, Esforco
+   - Responsaveis
 
-**Arquivo: `src/components/dashboard/ClientCard.tsx`**
+3. **Descricao Detalhada**
+   - Editor rich text/markdown
+   - Placeholder com estrutura sugerida
 
-O componente ja possui a prop `fitAll` que:
-- Remove minHeights fixos
-- Reduz padding interno
-- Limita linhas de texto (WebkitLineClamp)
+4. **Datas**
+   - Data criacao (readonly)
+   - Data inicio implementacao
+   - Data conclusao
+   - Data lancamento
 
-No modo `fitAllLocked`, esta prop sera sempre `true`, permitindo que os cards diminuam o quanto necessario para caber na tela.
+5. **Anexos**
+   - Upload drag-and-drop
+   - Lista de arquivos com preview
+   - Botao deletar
 
-### 5. Responsividade
+6. **Registros de Implementacao**
+   - Lista de ajustes tecnicos
+   - Formulario inline para adicionar
+   - Status executado/nao executado
 
-A solucao sera responsiva:
-- Em telas menores (tablets), o calculo ajusta automaticamente o numero de colunas
-- Em dispositivos moveis, o comportamento atual do `MobileCompactGrid` e mantido (nao afetado)
-- O resize da janela recalcula automaticamente o layout
+7. **Historico (Timeline)**
+   - Lista cronologica de eventos
+   - Readonly, automatico
+   - Icones por tipo de evento
+
+---
+
+## Parte 6: Navegacao
+
+### Atualizar: `AppSidebar.tsx`
+
+Adicionar item de menu:
+
+```typescript
+{
+  title: "Backlog",
+  icon: ListChecks, // ou Kanban
+  href: "/backlog"
+}
+```
+
+Posicionar no grupo "Sistema" ou criar novo grupo "Desenvolvimento".
+
+---
+
+### Atualizar: `App.tsx`
+
+Adicionar rotas:
+
+```typescript
+<Route path="/backlog" element={<Backlog />} />
+<Route path="/backlog/:id" element={<BacklogDetail />} />
+```
+
+---
+
+## Parte 7: Visao Timeline/Historico do Produto
+
+Componente especial para visualizar:
+- Linha do tempo com implementacoes
+- Lancamentos por periodo
+- Melhorias agrupadas por mes/trimestre
+
+Filtros:
+- Por periodo
+- Por modulo
+- Apenas lancados
+
+---
+
+## Parte 8: Regras de Negocio
+
+1. **Historico automatico**: Qualquer mudanca em campos criticos gera log
+2. **Status manual**: Transicoes de status sao manuais, nunca automaticas
+3. **Implementado != Lancado**: Sao estados distintos
+4. **Arquivar != Excluir**: Arquivado ainda e visivel com filtro
+5. **Anexos permanentes**: Ficam vinculados mesmo apos conclusao
+6. **Backlog != Clientes**: Nao existe relacao com tabela clients
+
+---
+
+## Arquivos a Criar
+
+| Arquivo | Descricao |
+|---------|-----------|
+| `src/types/backlog.ts` | Tipos TypeScript |
+| `src/hooks/useBacklog.ts` | Hook principal CRUD |
+| `src/hooks/useBacklogHistory.ts` | Hook para historico |
+| `src/pages/Backlog.tsx` | Pagina principal |
+| `src/pages/BacklogDetail.tsx` | Pagina de detalhes |
+| `src/components/backlog/BacklogHeader.tsx` | Header com KPIs |
+| `src/components/backlog/BacklogFilters.tsx` | Filtros |
+| `src/components/backlog/BacklogCard.tsx` | Card de item |
+| `src/components/backlog/BacklogForm.tsx` | Formulario |
+| `src/components/backlog/BacklogHistory.tsx` | Timeline |
+| `src/components/backlog/BacklogAttachments.tsx` | Anexos |
+| `src/components/backlog/BacklogImplementations.tsx` | Implementacoes |
+| `src/components/backlog/BacklogTimeline.tsx` | Visao historica |
 
 ## Arquivos a Modificar
 
 | Arquivo | Mudancas |
 |---------|----------|
-| `src/components/dashboard/FilterBar.tsx` | Adicionar props, botao toggle, imports |
-| `src/pages/Index.tsx` | Adicionar estado `fitAllLocked`, passar props |
-| `src/components/dashboard/ClientGrid.tsx` | Adicionar logica de layout travado |
+| `src/App.tsx` | Adicionar rotas |
+| `src/components/layout/AppSidebar.tsx` | Adicionar menu |
 
-## Interface do Usuario
+---
 
-### Botao Toggle (Desativado)
-```text
-+-------------+  +----+
-| 12x2  Grid  |  | 🔓 |  <- Cadeado aberto, cinza
-+-------------+  +----+
-```
+## Ordem de Implementacao
 
-### Botao Toggle (Ativado)
-```text
-+-------------+  +----+
-| 12x2  Grid  |  | 🔒 |  <- Cadeado fechado, verde
-+-------------+  +----+
-```
+1. **Fase 1 - Database**
+   - Criar tabelas via migration
+   - Configurar RLS policies
+   - Criar storage bucket
 
-### Tooltip
-- Desativado: "Ativar Travamento de Espaco - todos os cards cabem na tela sem scroll"
-- Ativado: "Desativar Travamento de Espaco - retornar ao modo anterior"
+2. **Fase 2 - Tipos e Hook**
+   - Criar tipos TypeScript
+   - Implementar hook useBacklog
+   - Implementar hook useBacklogHistory
 
-## Transicao Entre Modos
+3. **Fase 3 - Pagina Principal**
+   - BacklogHeader
+   - BacklogFilters
+   - BacklogCard
+   - Pagina Backlog.tsx
 
-Quando o usuario desativa o `fitAllLocked`:
-- Se havia um `gridSize` selecionado antes, volta para esse grid manual
-- Se nao havia, volta para o modo responsivo padrao com scroll
+4. **Fase 4 - Detalhes**
+   - BacklogForm
+   - BacklogDetail.tsx
+   - Editor de descricao
 
-A transicao sera suave com `transition-all duration-300` ja existente no grid.
+5. **Fase 5 - Anexos e Historico**
+   - BacklogAttachments
+   - BacklogHistory
+   - Integracao com storage
 
-## Consideracoes de Performance
+6. **Fase 6 - Implementacoes**
+   - BacklogImplementations
+   - Logica de registros
 
-- O calculo de layout usa `useMemo` para evitar recalculos desnecessarios
-- O resize da janela usa `debounce` implicito via React state
-- Nenhuma chamada adicional ao banco de dados
+7. **Fase 7 - Timeline e Finalizacao**
+   - BacklogTimeline
+   - Ajustes visuais
+   - Navegacao
+
+---
+
+## Consideracoes de Seguranca
+
+- RLS policies: Todos usuarios autenticados podem ler/escrever
+- Historico: Nunca pode ser editado ou excluido
+- Arquivos: Armazenados em storage dedicado, nao no banco
+- Validacao: Todos os campos obrigatorios validados no frontend e backend
+
