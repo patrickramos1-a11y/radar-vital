@@ -23,6 +23,8 @@ import JackboxDetalhado from "./pages/JackboxDetalhado";
 import CommentsPanel from "./pages/CommentsPanel";
 import NotificacoesPanel from "./pages/NotificacoesPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
+import Backlog from "./pages/Backlog";
+import BacklogDetail from "./pages/BacklogDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +57,9 @@ const App = () => (
               <Route path="/demandas" element={<DemandasPanel />} />
               <Route path="/processos" element={<ProcessosPanel />} />
               <Route path="/config" element={<Config />} />
+              {/* Backlog de Produto */}
+              <Route path="/backlog" element={<Backlog />} />
+              <Route path="/backlog/:id" element={<BacklogDetail />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

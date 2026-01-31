@@ -131,6 +131,189 @@ export type Database = {
         }
         Relationships: []
       }
+      backlog_attachments: {
+        Row: {
+          backlog_item_id: string
+          created_at: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          uploaded_by: string
+        }
+        Insert: {
+          backlog_item_id: string
+          created_at?: string
+          file_name: string
+          file_size?: number
+          file_type: string
+          file_url: string
+          id?: string
+          uploaded_by?: string
+        }
+        Update: {
+          backlog_item_id?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backlog_attachments_backlog_item_id_fkey"
+            columns: ["backlog_item_id"]
+            isOneToOne: false
+            referencedRelation: "backlog_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backlog_history: {
+        Row: {
+          backlog_item_id: string
+          created_at: string
+          description: string
+          event_type: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          user_name: string
+        }
+        Insert: {
+          backlog_item_id: string
+          created_at?: string
+          description: string
+          event_type: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_name?: string
+        }
+        Update: {
+          backlog_item_id?: string
+          created_at?: string
+          description?: string
+          event_type?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backlog_history_backlog_item_id_fkey"
+            columns: ["backlog_item_id"]
+            isOneToOne: false
+            referencedRelation: "backlog_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backlog_implementations: {
+        Row: {
+          backlog_item_id: string
+          created_at: string
+          data_execucao: string | null
+          descricao: string
+          id: string
+          responsavel: string
+          status: string
+        }
+        Insert: {
+          backlog_item_id: string
+          created_at?: string
+          data_execucao?: string | null
+          descricao: string
+          id?: string
+          responsavel: string
+          status?: string
+        }
+        Update: {
+          backlog_item_id?: string
+          created_at?: string
+          data_execucao?: string | null
+          descricao?: string
+          id?: string
+          responsavel?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backlog_implementations_backlog_item_id_fkey"
+            columns: ["backlog_item_id"]
+            isOneToOne: false
+            referencedRelation: "backlog_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backlog_items: {
+        Row: {
+          categoria: string
+          created_at: string
+          data_conclusao: string | null
+          data_criacao: string
+          data_inicio_implementacao: string | null
+          data_lancamento: string | null
+          dependente_de_creditos: boolean
+          descricao_detalhada: string | null
+          estimativa_esforco: string
+          id: string
+          impacto_esperado: string
+          modulos_impactados: string[]
+          prioridade: string
+          responsavel_produto: string
+          responsavel_tecnico: string | null
+          status_backlog: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          data_conclusao?: string | null
+          data_criacao?: string
+          data_inicio_implementacao?: string | null
+          data_lancamento?: string | null
+          dependente_de_creditos?: boolean
+          descricao_detalhada?: string | null
+          estimativa_esforco?: string
+          id?: string
+          impacto_esperado?: string
+          modulos_impactados?: string[]
+          prioridade?: string
+          responsavel_produto: string
+          responsavel_tecnico?: string | null
+          status_backlog?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data_conclusao?: string | null
+          data_criacao?: string
+          data_inicio_implementacao?: string | null
+          data_lancamento?: string | null
+          dependente_de_creditos?: boolean
+          descricao_detalhada?: string | null
+          estimativa_esforco?: string
+          id?: string
+          impacto_esperado?: string
+          modulos_impactados?: string[]
+          prioridade?: string
+          responsavel_produto?: string
+          responsavel_tecnico?: string | null
+          status_backlog?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_comments: {
         Row: {
           author_name: string
