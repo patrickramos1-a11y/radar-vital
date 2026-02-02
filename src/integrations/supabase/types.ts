@@ -375,6 +375,9 @@ export type Database = {
           collaborator_gabi: boolean
           collaborator_vanessa: boolean
           comment_count: number
+          cond_a_vencer_count: number
+          cond_atendidas_count: number
+          cond_vencidas_count: number
           created_at: string
           demands_cancelled: number
           demands_celine: number
@@ -418,6 +421,9 @@ export type Database = {
           collaborator_gabi?: boolean
           collaborator_vanessa?: boolean
           comment_count?: number
+          cond_a_vencer_count?: number
+          cond_atendidas_count?: number
+          cond_vencidas_count?: number
           created_at?: string
           demands_cancelled?: number
           demands_celine?: number
@@ -461,6 +467,9 @@ export type Database = {
           collaborator_gabi?: boolean
           collaborator_vanessa?: boolean
           comment_count?: number
+          cond_a_vencer_count?: number
+          cond_atendidas_count?: number
+          cond_vencidas_count?: number
           created_at?: string
           demands_cancelled?: number
           demands_celine?: number
@@ -1056,6 +1065,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      recalculate_client_condicionantes: {
+        Args: { p_client_id: string }
+        Returns: undefined
       }
       recalculate_client_demands: {
         Args: { p_client_id: string }
