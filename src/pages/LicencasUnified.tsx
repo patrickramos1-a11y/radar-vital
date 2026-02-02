@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, CheckCircle, Clock, AlertTriangle, Filter, FileSpreadsheet } from "lucide-react";
+import { Shield, CheckCircle, Clock, AlertTriangle, Filter, FileSpreadsheet, RefreshCw } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
@@ -104,7 +104,10 @@ export default function LicencasUnified() {
       return acc;
     }, {} as Record<CollaboratorName, number>);
 
-    return { ...totals, byCollaborator };
+    // Calculate "Em Renovação" - licenses that are close to expiring (próximo vencimento) are typically in renewal process
+    const emRenovacao = totals.proximoVencimento;
+
+    return { ...totals, byCollaborator, emRenovacao };
   }, [activeClients]);
 
   // Clients with critical licenses (expired or expiring)
@@ -159,6 +162,7 @@ export default function LicencasUnified() {
           <KPICard icon={<Shield className="w-4 h-4" />} value={kpis.total} label="Total" />
           <KPICard icon={<CheckCircle className="w-4 h-4" />} value={kpis.validas} label="Válidas" variant="success" />
           <KPICard icon={<Clock className="w-4 h-4" />} value={kpis.proximoVencimento} label="Próx. Venc." variant="warning" />
+          <KPICard icon={<RefreshCw className="w-4 h-4" />} value={kpis.emRenovacao} label="Em Renovação" variant="info" />
           <KPICard icon={<AlertTriangle className="w-4 h-4" />} value={kpis.foraValidade} label="Vencidas" variant="danger" />
           
           <div className="w-px h-8 bg-border" />

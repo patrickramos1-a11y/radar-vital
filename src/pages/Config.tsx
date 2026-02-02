@@ -6,7 +6,6 @@ import {
   Download, FolderUp, RotateCcw, FileSpreadsheet
 } from "lucide-react";
 import { ImportWizard } from "@/components/import/ImportWizard";
-import { ProcessImportWizard } from "@/components/import/ProcessImportWizard";
 import { useClients } from "@/contexts/ClientContext";
 import { 
   Client, ClientFormData, generateInitials, calculateTotalDemands,
@@ -52,8 +51,6 @@ const Config = () => {
   const [moveToPositionId, setMoveToPositionId] = useState<string | null>(null);
   const [moveToPositionValue, setMoveToPositionValue] = useState<string>("");
   const [showImportWizard, setShowImportWizard] = useState(false);
-  
-  const [showProcessImportWizard, setShowProcessImportWizard] = useState(false);
   
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -201,17 +198,6 @@ const Config = () => {
             >
               <FileSpreadsheet className="w-4 h-4" />
               Importar Programação
-            </button>
-
-
-            {/* Import Processos Excel */}
-            <button
-              onClick={() => setShowProcessImportWizard(true)}
-              className="admin-button flex items-center gap-2 bg-purple-600 text-white hover:bg-purple-700"
-              title="Importar processos de planilha Excel"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              Importar Processos
             </button>
 
             <div className="h-6 w-px bg-border mx-1" />
@@ -652,14 +638,6 @@ const Config = () => {
         onImportComplete={() => setShowImportWizard(false)}
       />
 
-
-      {/* Import Process Wizard */}
-      <ProcessImportWizard
-        isOpen={showProcessImportWizard}
-        onClose={() => setShowProcessImportWizard(false)}
-        clients={clients}
-        onImportComplete={() => setShowProcessImportWizard(false)}
-      />
     </div>
   );
 };
