@@ -185,9 +185,9 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
   let condVencidas = 0;
 
   clients?.forEach(c => {
-    condAtendidas += (c as any).cond_atendidas_count || 0;
-    condAVencer += (c as any).cond_a_vencer_count || 0;
-    condVencidas += (c as any).cond_vencidas_count || 0;
+    condAtendidas += c.cond_atendidas_count || 0;
+    condAVencer += c.cond_a_vencer_count || 0;
+    condVencidas += c.cond_vencidas_count || 0;
   });
 
   // Use dedicated condicionantes columns if they have data, otherwise fall back to license status
@@ -264,7 +264,7 @@ export function useDashboardStats(filters: DashboardFilters = {}) {
   return useQuery({
     queryKey: ['dashboard-stats', filters],
     queryFn: () => fetchDashboardStats(filters),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: false,
+    staleTime: 1000 * 30, // 30 seconds - faster refresh for dashboard data
+    refetchOnWindowFocus: true,
   });
 }
