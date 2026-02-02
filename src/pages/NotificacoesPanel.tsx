@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
-import { Bell, Upload, Search, Filter, CheckCircle, AlertCircle, Calendar, Building2, FileText } from 'lucide-react';
+import { Bell, Upload, Search, CheckCircle, AlertCircle, Calendar, Building2, FileText } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useClients } from '@/contexts/ClientContext';
 import { NotificationImportWizard } from '@/components/import/NotificationImportWizard';
+import { NotificationItemImportWizard } from '@/components/import/NotificationItemImportWizard';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -25,14 +25,11 @@ interface Notification {
   created_at: string;
 }
 
-type StatusFilter = 'all' | 'PENDENTE' | 'ATENDIDA';
-
 export default function NotificacoesPanel() {
   const { clients } = useClients();
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isItemImportOpen, setIsItemImportOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [clientFilter, setClientFilter] = useState<string>('all');
 
   // Fetch notifications from database
   const { data: notifications = [], refetch } = useQuery({
@@ -47,38 +44,6 @@ export default function NotificacoesPanel() {
       return data as Notification[];
     },
   });
-
-  // Get unique clients that have notifications
-  const clientsWithNotifications = useMemo(() => {
-    const clientIds = new Set(notifications.map(n => n.client_id).filter(Boolean));
-    return clients.filter(c => clientIds.has(c.id));
-  }, [notifications, clients]);
-
-  // Filter notifications
-  const filteredNotifications = useMemo(() => {
-    return notifications.filter(n => {
-      // Status filter
-      if (statusFilter !== 'all' && n.status !== statusFilter) return false;
-      
-      // Client filter
-      if (clientFilter !== 'all' && n.client_id !== clientFilter) return false;
-      
-      // Search filter
-      if (searchTerm) {
-        const search = searchTerm.toLowerCase();
-        const matchesEmpresa = n.empresa_excel.toLowerCase().includes(search);
-        const matchesNotificacao = n.numero_notificacao.toLowerCase().includes(search);
-        const matchesDescricao = n.descricao?.toLowerCase().includes(search);
-        const matchesProcesso = n.numero_processo?.toLowerCase().includes(search);
-        
-        if (!matchesEmpresa && !matchesNotificacao && !matchesDescricao && !matchesProcesso) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-  }, [notifications, statusFilter, clientFilter, searchTerm]);
 
   // Summary statistics
   const stats = useMemo(() => {
@@ -132,6 +97,17 @@ export default function NotificacoesPanel() {
     return Array.from(summaryMap.values()).sort((a, b) => b.pendentes - a.pendentes);
   }, [notifications, clients]);
 
+  // Filter summaries by search
+  const filteredSummaries = useMemo(() => {
+    if (!searchTerm) return clientSummaries;
+    
+    const search = searchTerm.toLowerCase();
+    return clientSummaries.filter(summary => {
+      const matchesName = (summary.clientName || summary.empresaExcel).toLowerCase().includes(search);
+      return matchesName;
+    });
+  }, [clientSummaries, searchTerm]);
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '—';
     try {
@@ -139,14 +115,6 @@ export default function NotificacoesPanel() {
     } catch {
       return dateStr;
     }
-  };
-
-  const getClientName = (notification: Notification) => {
-    if (notification.client_id) {
-      const client = clients.find(c => c.id === notification.client_id);
-      return client?.name || notification.empresa_excel;
-    }
-    return notification.empresa_excel;
   };
 
   return (
@@ -163,10 +131,16 @@ export default function NotificacoesPanel() {
               </p>
             </div>
           </div>
-          <Button onClick={() => setIsImportOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Importar Planilha
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsItemImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Importar Itens
+            </Button>
+            <Button onClick={() => setIsImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Importar Notificações
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -225,58 +199,37 @@ export default function NotificacoesPanel() {
           </Card>
         </div>
 
-        {/* Filters */}
+        {/* Search */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por empresa, notificação, descrição..."
+              placeholder="Buscar empresa..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
-          
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Status</SelectItem>
-              <SelectItem value="PENDENTE">Pendentes</SelectItem>
-              <SelectItem value="ATENDIDA">Atendidas</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={clientFilter} onValueChange={setClientFilter}>
-            <SelectTrigger className="w-[220px]">
-              <Building2 className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Empresa" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as Empresas</SelectItem>
-              {clientsWithNotifications.map(client => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
-        {/* Client Summaries */}
-        {statusFilter === 'all' && clientFilter === 'all' && !searchTerm && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Building2 className="w-4 h-4" />
-                Resumo por Empresa
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {clientSummaries.slice(0, 9).map((summary) => (
+        {/* Client Summaries - Full Width Grid */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              Resumo por Empresa ({filteredSummaries.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredSummaries.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Bell className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                <p>Nenhuma empresa encontrada</p>
+                <p className="text-sm mt-1">Importe uma planilha para começar</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {filteredSummaries.map((summary) => (
                   <div 
                     key={summary.clientId || summary.empresaExcel}
                     className={`p-3 rounded-lg border ${
@@ -307,76 +260,20 @@ export default function NotificacoesPanel() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Notifications Table */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Notificações ({filteredNotifications.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredNotifications.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Bell className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                <p>Nenhuma notificação encontrada</p>
-                <p className="text-sm mt-1">Importe uma planilha para começar</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-2 font-medium">Empresa</th>
-                      <th className="text-left py-3 px-2 font-medium">Nº Notificação</th>
-                      <th className="text-left py-3 px-2 font-medium">Descrição</th>
-                      <th className="text-left py-3 px-2 font-medium">Data Recebimento</th>
-                      <th className="text-left py-3 px-2 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredNotifications.map((notif) => (
-                      <tr key={notif.id} className="border-b hover:bg-muted/50">
-                        <td className="py-3 px-2 font-medium">
-                          {getClientName(notif)}
-                        </td>
-                        <td className="py-3 px-2 text-muted-foreground">
-                          {notif.numero_notificacao}
-                        </td>
-                        <td className="py-3 px-2 max-w-[300px] truncate text-muted-foreground">
-                          {notif.descricao || '—'}
-                        </td>
-                        <td className="py-3 px-2">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            {formatDate(notif.data_recebimento)}
-                          </div>
-                        </td>
-                        <td className="py-3 px-2">
-                          <Badge 
-                            variant={notif.status === 'PENDENTE' ? 'destructive' : 'secondary'}
-                            className={notif.status === 'ATENDIDA' ? 'bg-emerald-500 text-white' : ''}
-                          >
-                            {notif.status === 'PENDENTE' ? 'Pendente' : 'Atendida'}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Import Wizard */}
+        {/* Import Wizards */}
         <NotificationImportWizard
           isOpen={isImportOpen}
           onClose={() => setIsImportOpen(false)}
+          clients={clients}
+          onImportComplete={() => refetch()}
+        />
+        <NotificationItemImportWizard
+          isOpen={isItemImportOpen}
+          onClose={() => setIsItemImportOpen(false)}
           clients={clients}
           onImportComplete={() => refetch()}
         />

@@ -403,6 +403,9 @@ export type Database = {
           municipios: string[] | null
           name: string
           notif_atendida_count: number
+          notif_item_atendido_count: number
+          notif_item_pendente_count: number
+          notif_item_vencido_count: number
           notif_pendente_count: number
           notif_total_count: number
           proc_deferido_count: number
@@ -449,6 +452,9 @@ export type Database = {
           municipios?: string[] | null
           name: string
           notif_atendida_count?: number
+          notif_item_atendido_count?: number
+          notif_item_pendente_count?: number
+          notif_item_vencido_count?: number
           notif_pendente_count?: number
           notif_total_count?: number
           proc_deferido_count?: number
@@ -495,6 +501,9 @@ export type Database = {
           municipios?: string[] | null
           name?: string
           notif_atendida_count?: number
+          notif_item_atendido_count?: number
+          notif_item_pendente_count?: number
+          notif_item_vencido_count?: number
           notif_pendente_count?: number
           notif_total_count?: number
           proc_deferido_count?: number
