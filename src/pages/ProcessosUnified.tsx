@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, CheckCircle, Search, Clock, AlertTriangle, XCircle, Filter } from "lucide-react";
+import { FileText, CheckCircle, Search, Clock, AlertTriangle, XCircle, Filter, FileSpreadsheet } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
@@ -11,14 +11,16 @@ import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useVisualPanelFilters } from "@/hooks/useVisualPanelFilters";
 import { Client } from "@/types/client";
+import { ProcessImportWizard } from "@/components/import/ProcessImportWizard";
 
 type StatusFilter = 'all' | 'critical' | 'notificado' | 'reprovado' | 'emAnalise' | 'deferido';
 
 export default function ProcessosUnified() {
   const navigate = useNavigate();
-  const { activeClients, highlightedClients } = useClients();
+  const { activeClients, highlightedClients, clients, refetch } = useClients();
   const { getActiveTaskCount } = useTasks();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [showProcessImportWizard, setShowProcessImportWizard] = useState(false);
 
   // Custom sorter for processes
   const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
@@ -124,6 +126,18 @@ export default function ProcessosUnified() {
           icon={<FileText className="w-5 h-5" />}
           detailRoute="/processos"
         >
+          {/* Import Process Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-purple-600 text-white hover:bg-purple-700 border-purple-600"
+            onClick={() => setShowProcessImportWizard(true)}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Importar Processos
+          </Button>
+          
+          <div className="w-px h-8 bg-border" />
           <KPICard icon={<FileText className="w-4 h-4" />} value={kpis.total} label="Total" />
           <KPICard icon={<Clock className="w-4 h-4" />} value={kpis.emAndamento} label="Em Andamento" variant="info" />
           <KPICard icon={<Search className="w-4 h-4" />} value={kpis.emAnaliseOrgao + kpis.emAnaliseRamos} label="Em Análise" variant="info" />
@@ -190,6 +204,14 @@ export default function ProcessosUnified() {
             />
           ))}
         </VisualGrid>
+
+        {/* Process Import Wizard */}
+        <ProcessImportWizard
+          isOpen={showProcessImportWizard}
+          onClose={() => setShowProcessImportWizard(false)}
+          clients={clients}
+          onImportComplete={() => refetch()}
+        />
       </div>
     </AppLayout>
   );

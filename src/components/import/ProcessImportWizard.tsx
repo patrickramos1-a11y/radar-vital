@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useClients } from '@/contexts/ClientContext';
 import { toast } from 'sonner';
 
-type ImportMode = 'quick' | 'complete';
+// Removed ImportMode - now always uses complete mode
 type WizardStep = 'upload' | 'found' | 'notfound' | 'preview';
 
 interface ProcessImportWizardProps {
@@ -24,7 +24,7 @@ interface ProcessImportWizardProps {
 export function ProcessImportWizard({ isOpen, onClose, clients, onImportComplete }: ProcessImportWizardProps) {
   const { refetch } = useClients();
   const [step, setStep] = useState<WizardStep>('upload');
-  const [mode, setMode] = useState<ImportMode>('quick');
+  // Always use complete mode now
   const [processes, setProcesses] = useState<ExcelProcess[]>([]);
   const [matchResults, setMatchResults] = useState<ProcessMatchResult[]>([]);
   const [summaries, setSummaries] = useState<ProcessSummary[]>([]);
@@ -245,11 +245,8 @@ export function ProcessImportWizard({ isOpen, onClose, clients, onImportComplete
   };
 
   const handleImport = async () => {
-    if (mode === 'quick') {
-      await importQuickMode();
-    } else {
-      await importCompleteMode();
-    }
+    // Always use complete mode - saves individual processes + updates aggregates
+    await importCompleteMode();
   };
 
   const handleClose = () => {
@@ -304,30 +301,14 @@ export function ProcessImportWizard({ isOpen, onClose, clients, onImportComplete
           {/* Step 1: Upload */}
           {step === 'upload' && (
             <div className="space-y-4">
-              {/* Mode selection */}
-              <div className="flex gap-4 p-4 bg-muted/50 rounded-lg">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === 'quick'}
-                    onChange={() => setMode('quick')}
-                    className="w-4 h-4"
-                  />
-                  <span className="font-medium">Modo Rápido</span>
-                  <span className="text-xs text-muted-foreground">(apenas totais)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === 'complete'}
-                    onChange={() => setMode('complete')}
-                    className="w-4 h-4"
-                  />
-                  <span className="font-medium">Modo Completo</span>
-                  <span className="text-xs text-muted-foreground">(processo por processo)</span>
-                </label>
+              {/* Info about import */}
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-medium mb-2">A importação irá considerar:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• <span className="text-foreground font-medium">Quantidade de processos ativos</span> por empresa</li>
+                  <li>• <span className="text-foreground font-medium">Tipo de processo</span> (Licenciamento, Renovação, Outorga, etc.)</li>
+                  <li>• <span className="text-foreground font-medium">Status do processo</span> (Deferido, Em Análise, Notificado, etc.)</li>
+                </ul>
               </div>
 
               {/* Upload area */}
@@ -563,7 +544,7 @@ export function ProcessImportWizard({ isOpen, onClose, clients, onImportComplete
                   Voltar
                 </Button>
                 <Button onClick={handleImport} disabled={isImporting || selectedSummaries.length === 0}>
-                  {isImporting ? 'Importando...' : `Confirmar Importação (${mode === 'quick' ? 'Rápido' : 'Completo'})`}
+                  {isImporting ? 'Importando...' : 'Confirmar Importação'}
                 </Button>
               </div>
             </div>

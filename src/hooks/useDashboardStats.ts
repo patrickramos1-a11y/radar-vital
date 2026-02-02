@@ -54,10 +54,10 @@ export interface DashboardFilters {
 }
 
 async function fetchDashboardStats(filters: DashboardFilters): Promise<DashboardStats> {
-  // Fetch clients data
+  // Fetch clients data with all aggregated fields
   let clientsQuery = supabase
     .from('clients')
-    .select('id, client_type, municipios, is_active')
+    .select('id, client_type, municipios, is_active, lic_validas_count, lic_proximo_venc_count, lic_fora_validade_count, proc_total_count, proc_deferido_count, proc_em_analise_orgao_count, proc_em_analise_ramos_count, proc_notificado_count, proc_reprovado_count, notif_total_count, notif_atendida_count, notif_pendente_count')
     .eq('is_active', true);
 
   if (filters.clientType && filters.clientType !== 'all') {
@@ -96,13 +96,12 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
   let reprovadoCount = 0;
 
   clients?.forEach(c => {
-    const clientData = c as any;
-    totalProcesses += clientData.proc_total_count || 0;
-    deferidoCount += clientData.proc_deferido_count || 0;
-    emAnaliseOrgaoCount += clientData.proc_em_analise_orgao_count || 0;
-    emAnaliseRamosCount += clientData.proc_em_analise_ramos_count || 0;
-    notificadoCount += clientData.proc_notificado_count || 0;
-    reprovadoCount += clientData.proc_reprovado_count || 0;
+    totalProcesses += c.proc_total_count || 0;
+    deferidoCount += c.proc_deferido_count || 0;
+    emAnaliseOrgaoCount += c.proc_em_analise_orgao_count || 0;
+    emAnaliseRamosCount += c.proc_em_analise_ramos_count || 0;
+    notificadoCount += c.proc_notificado_count || 0;
+    reprovadoCount += c.proc_reprovado_count || 0;
   });
 
   // Try to get individual processes from processes table for tipology distribution
@@ -138,18 +137,16 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
   processByStatus.sort((a, b) => b.count - a.count);
 
   // Calculate license stats from client aggregated data (imported from Excel)
-  let totalLicensesAgg = 0;
   let licValidasCount = 0;
   let licProximoVencCount = 0;
   let licForaValidadeCount = 0;
 
   clients?.forEach(c => {
-    const clientData = c as any;
-    licValidasCount += clientData.lic_validas_count || 0;
-    licProximoVencCount += clientData.lic_proximo_venc_count || 0;
-    licForaValidadeCount += clientData.lic_fora_validade_count || 0;
+    licValidasCount += c.lic_validas_count || 0;
+    licProximoVencCount += c.lic_proximo_venc_count || 0;
+    licForaValidadeCount += c.lic_fora_validade_count || 0;
   });
-  totalLicensesAgg = licValidasCount + licProximoVencCount + licForaValidadeCount;
+  const totalLicensesAgg = licValidasCount + licProximoVencCount + licForaValidadeCount;
 
   // Try to get individual licenses from licenses table for type distribution
   let licensesQuery = supabase
@@ -192,10 +189,9 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
   let notifPendenteCount = 0;
 
   clients?.forEach(c => {
-    const clientData = c as any;
-    totalNotificationsAgg += clientData.notif_total_count || 0;
-    notifAtendidaCount += clientData.notif_atendida_count || 0;
-    notifPendenteCount += clientData.notif_pendente_count || 0;
+    totalNotificationsAgg += c.notif_total_count || 0;
+    notifAtendidaCount += c.notif_atendida_count || 0;
+    notifPendenteCount += c.notif_pendente_count || 0;
   });
 
   // Calculate vencidos as difference (total - atendida - pendente)
