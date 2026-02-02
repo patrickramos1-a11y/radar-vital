@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, CheckCircle, Clock, AlertTriangle, Filter, FileSpreadsheet, RefreshCw } from "lucide-react";
+import { Shield, CheckCircle, Clock, AlertTriangle, Filter, FileSpreadsheet, RefreshCw, ClipboardList } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
@@ -14,6 +14,7 @@ import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } fro
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LicenseImportWizard } from "@/components/import/LicenseImportWizard";
+import { CondicionanteImportWizard } from "@/components/import/CondicionanteImportWizard";
 
 type StatusFilter = 'all' | 'valid' | 'expiring' | 'expired';
 
@@ -23,6 +24,7 @@ export default function LicencasUnified() {
   const { getActiveTaskCount } = useTasks();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [showLicenseImportWizard, setShowLicenseImportWizard] = useState(false);
+  const [showCondicionanteImportWizard, setShowCondicionanteImportWizard] = useState(false);
 
   // Custom sorter for licenses
   const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
@@ -147,7 +149,7 @@ export default function LicencasUnified() {
           icon={<Shield className="w-5 h-5" />}
           detailRoute="/licencas"
         >
-          {/* Import License Button */}
+          {/* Import Buttons */}
           <Button
             variant="outline"
             size="sm"
@@ -156,6 +158,15 @@ export default function LicencasUnified() {
           >
             <FileSpreadsheet className="w-4 h-4" />
             Importar Licenças
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-amber-600 text-white hover:bg-amber-700 border-amber-600"
+            onClick={() => setShowCondicionanteImportWizard(true)}
+          >
+            <ClipboardList className="w-4 h-4" />
+            Importar Condicionantes
           </Button>
           
           <div className="w-px h-8 bg-border" />
@@ -251,6 +262,14 @@ export default function LicencasUnified() {
         <LicenseImportWizard
           isOpen={showLicenseImportWizard}
           onClose={() => setShowLicenseImportWizard(false)}
+          clients={clients}
+          onImportComplete={() => refetch()}
+        />
+
+        {/* Condicionante Import Wizard */}
+        <CondicionanteImportWizard
+          isOpen={showCondicionanteImportWizard}
+          onClose={() => setShowCondicionanteImportWizard(false)}
           clients={clients}
           onImportComplete={() => refetch()}
         />

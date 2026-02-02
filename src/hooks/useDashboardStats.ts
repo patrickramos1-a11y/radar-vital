@@ -54,10 +54,10 @@ export interface DashboardFilters {
 }
 
 async function fetchDashboardStats(filters: DashboardFilters): Promise<DashboardStats> {
-  // Fetch clients data with all aggregated fields
+  // Fetch clients data with all aggregated fields including condicionantes
   let clientsQuery = supabase
     .from('clients')
-    .select('id, client_type, municipios, is_active, lic_validas_count, lic_proximo_venc_count, lic_fora_validade_count, proc_total_count, proc_deferido_count, proc_em_analise_orgao_count, proc_em_analise_ramos_count, proc_notificado_count, proc_reprovado_count, notif_total_count, notif_atendida_count, notif_pendente_count')
+    .select('id, client_type, municipios, is_active, lic_validas_count, lic_proximo_venc_count, lic_fora_validade_count, proc_total_count, proc_deferido_count, proc_em_analise_orgao_count, proc_em_analise_ramos_count, proc_notificado_count, proc_reprovado_count, notif_total_count, notif_atendida_count, notif_pendente_count, cond_atendidas_count, cond_a_vencer_count, cond_vencidas_count')
     .eq('is_active', true);
 
   if (filters.clientType && filters.clientType !== 'all') {
@@ -178,10 +178,23 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
   if (licForaValidadeCount > 0) licByStatus.push({ status: 'FORA_VALIDADE', count: licForaValidadeCount });
   licByStatus.sort((a, b) => b.count - a.count);
 
-  // Condicionantes from aggregated data
-  const atendidas = licValidasCount;
-  const vencidas = licForaValidadeCount;
-  const aVencer = licProximoVencCount;
+  // Condicionantes from dedicated columns (imported separately)
+  // Calculate condicionantes from dedicated columns (from condicionantes import)
+  let condAtendidas = 0;
+  let condAVencer = 0;
+  let condVencidas = 0;
+
+  clients?.forEach(c => {
+    condAtendidas += (c as any).cond_atendidas_count || 0;
+    condAVencer += (c as any).cond_a_vencer_count || 0;
+    condVencidas += (c as any).cond_vencidas_count || 0;
+  });
+
+  // Use dedicated condicionantes columns if they have data, otherwise fall back to license status
+  const hasCondicionantesData = condAtendidas > 0 || condAVencer > 0 || condVencidas > 0;
+  const atendidas = hasCondicionantesData ? condAtendidas : licValidasCount;
+  const vencidas = hasCondicionantesData ? condVencidas : licForaValidadeCount;
+  const aVencer = hasCondicionantesData ? condAVencer : licProximoVencCount;
 
   // Calculate notification stats from client aggregated data (imported from Excel)
   let totalNotificationsAgg = 0;
