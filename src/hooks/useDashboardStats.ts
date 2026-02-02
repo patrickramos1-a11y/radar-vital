@@ -54,10 +54,10 @@ export interface DashboardFilters {
 }
 
 async function fetchDashboardStats(filters: DashboardFilters): Promise<DashboardStats> {
-  // Fetch clients data with all aggregated fields including condicionantes
+  // Fetch clients data with all aggregated fields including condicionantes and notification items
   let clientsQuery = supabase
     .from('clients')
-    .select('id, client_type, municipios, is_active, lic_validas_count, lic_proximo_venc_count, lic_fora_validade_count, proc_total_count, proc_deferido_count, proc_em_analise_orgao_count, proc_em_analise_ramos_count, proc_notificado_count, proc_reprovado_count, notif_total_count, notif_atendida_count, notif_pendente_count, cond_atendidas_count, cond_a_vencer_count, cond_vencidas_count')
+    .select('id, client_type, municipios, is_active, lic_validas_count, lic_proximo_venc_count, lic_fora_validade_count, proc_total_count, proc_deferido_count, proc_em_analise_orgao_count, proc_em_analise_ramos_count, proc_notificado_count, proc_reprovado_count, notif_total_count, notif_atendida_count, notif_pendente_count, cond_atendidas_count, cond_a_vencer_count, cond_vencidas_count, notif_item_atendido_count, notif_item_pendente_count, notif_item_vencido_count')
     .eq('is_active', true);
 
   if (filters.clientType && filters.clientType !== 'all') {
@@ -196,7 +196,20 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
   const vencidas = hasCondicionantesData ? condVencidas : licForaValidadeCount;
   const aVencer = hasCondicionantesData ? condAVencer : licProximoVencCount;
 
-  // Calculate notification stats from client aggregated data (imported from Excel)
+  // Calculate notification ITEMS stats from dedicated columns (from notification items import)
+  let itemAtendidoCount = 0;
+  let itemPendenteCount = 0;
+  let itemVencidoCount = 0;
+
+  clients?.forEach(c => {
+    itemAtendidoCount += (c as any).notif_item_atendido_count || 0;
+    itemPendenteCount += (c as any).notif_item_pendente_count || 0;
+    itemVencidoCount += (c as any).notif_item_vencido_count || 0;
+  });
+
+  // Use notification items if imported, otherwise fall back to notification status
+  const hasNotifItemsData = itemAtendidoCount > 0 || itemPendenteCount > 0 || itemVencidoCount > 0;
+  
   let totalNotificationsAgg = 0;
   let notifAtendidaCount = 0;
   let notifPendenteCount = 0;
@@ -207,13 +220,13 @@ async function fetchDashboardStats(filters: DashboardFilters): Promise<Dashboard
     notifPendenteCount += c.notif_pendente_count || 0;
   });
 
-  // Calculate vencidos as difference (total - atendida - pendente)
-  const notifVencidoCount = Math.max(0, totalNotificationsAgg - notifAtendidaCount - notifPendenteCount);
-
-  const totalNotifications = totalNotificationsAgg;
-  const itensAtendidos = notifAtendidaCount;
-  const itensVencidos = notifVencidoCount;
-  const itensPendentes = notifPendenteCount;
+  // Use notification items data if available, otherwise use notification status data
+  const itensAtendidos = hasNotifItemsData ? itemAtendidoCount : notifAtendidaCount;
+  const itensPendentes = hasNotifItemsData ? itemPendenteCount : notifPendenteCount;
+  const itensVencidos = hasNotifItemsData ? itemVencidoCount : 0;
+  const totalNotifications = hasNotifItemsData 
+    ? (itemAtendidoCount + itemPendenteCount + itemVencidoCount) 
+    : totalNotificationsAgg;
 
   const taxaAtendimentoNotificacoes = totalNotifications > 0 
     ? Math.round((itensAtendidos / totalNotifications) * 100) 
