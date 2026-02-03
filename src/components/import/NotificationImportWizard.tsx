@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, ArrowRight, ArrowLeft, Bell } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, ArrowRight, ArrowLeft, Bell, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Client } from '@/types/client';
+import { Client, generateInitials } from '@/types/client';
 import { 
   ExcelNotification, 
   NotificationMatchResult, 
@@ -157,6 +158,59 @@ export function NotificationImportWizard({ isOpen, onClose, clients, onImportCom
       }
       return s;
     }));
+  };
+
+  // Handle create new company
+  const handleCreateCompany = async (empresaExcel: string) => {
+    try {
+      const initials = generateInitials(empresaExcel);
+      const { data: newClient, error } = await supabase
+        .from('clients')
+        .insert({
+          name: empresaExcel,
+          initials,
+          is_active: true,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      if (newClient) {
+        // Update match result with newly created client
+        setMatchResults(prev => prev.map(r => {
+          if (r.empresaExcel === empresaExcel) {
+            return {
+              ...r,
+              clientId: newClient.id,
+              clientName: newClient.name,
+              matchType: 'exact' as const,
+              selected: true,
+            };
+          }
+          return r;
+        }));
+        
+        setSummaries(prev => prev.map(s => {
+          if (s.empresaExcel === empresaExcel) {
+            return {
+              ...s,
+              clientId: newClient.id,
+              clientName: newClient.name,
+              matchType: 'exact' as const,
+              selected: true,
+            };
+          }
+          return s;
+        }));
+        
+        toast.success(`Empresa "${empresaExcel}" criada com sucesso!`);
+        await refetch();
+      }
+    } catch (error) {
+      console.error('Error creating company:', error);
+      toast.error('Erro ao criar empresa');
+    }
   };
 
   // Stats
@@ -360,36 +414,15 @@ export function NotificationImportWizard({ isOpen, onClose, clients, onImportCom
                   {notFoundResults.map((result) => {
                     const summary = summaries.find(s => s.empresaExcel === result.empresaExcel);
                     return (
-                      <div key={result.empresaExcel} className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium">{result.empresaExcel}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">
-                              {summary?.totalNotifications || 0} notificações
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleIgnore(result.empresaExcel)}
-                              className="h-6 px-2"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        <Select onValueChange={(value) => handleManualLink(result.empresaExcel, value)}>
-                          <SelectTrigger className="h-8">
-                            <SelectValue placeholder="Vincular a cliente existente..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {clients.map((client) => (
-                              <SelectItem key={client.id} value={client.id}>
-                                {client.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <NotFoundCompanyRow
+                        key={result.empresaExcel}
+                        result={result}
+                        summary={summary}
+                        clients={clients}
+                        onManualLink={handleManualLink}
+                        onIgnore={handleIgnore}
+                        onCreateCompany={handleCreateCompany}
+                      />
                     );
                   })}
                 </div>
@@ -488,5 +521,70 @@ export function NotificationImportWizard({ isOpen, onClose, clients, onImportCom
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Component for not found company rows with create option
+interface NotFoundCompanyRowProps {
+  result: NotificationMatchResult;
+  summary: NotificationSummary | undefined;
+  clients: Client[];
+  onManualLink: (empresaExcel: string, clientId: string) => void;
+  onIgnore: (empresaExcel: string) => void;
+  onCreateCompany: (empresaExcel: string) => void;
+}
+
+function NotFoundCompanyRow({ result, summary, clients, onManualLink, onIgnore, onCreateCompany }: NotFoundCompanyRowProps) {
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleCreate = async () => {
+    setIsCreating(true);
+    await onCreateCompany(result.empresaExcel);
+    setIsCreating(false);
+  };
+
+  return (
+    <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-medium">{result.empresaExcel}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {summary?.totalNotifications || 0} notificações
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onIgnore(result.empresaExcel)}
+            className="h-6 px-2"
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Select onValueChange={(value) => onManualLink(result.empresaExcel, value)}>
+          <SelectTrigger className="h-8 flex-1">
+            <SelectValue placeholder="Vincular a cliente existente..." />
+          </SelectTrigger>
+          <SelectContent>
+            {clients.map((client) => (
+              <SelectItem key={client.id} value={client.id}>
+                {client.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleCreate}
+          disabled={isCreating}
+          className="h-8 gap-1"
+        >
+          <Plus className="w-3 h-3" />
+          Criar
+        </Button>
+      </div>
+    </div>
   );
 }

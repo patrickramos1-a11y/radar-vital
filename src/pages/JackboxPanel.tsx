@@ -64,7 +64,7 @@ export default function JackboxPanel() {
     };
   }, [tasks]);
 
-  // Filter tasks by collaborator
+  // Filter tasks by collaborator - only show clients that have tasks matching the filter
   const getFilteredTasks = (clientId: string) => {
     let clientTasks = getActiveTasksForClient(clientId);
     if (collaboratorFilters.length > 0) {
@@ -74,6 +74,18 @@ export default function JackboxPanel() {
     }
     return clientTasks;
   };
+
+  // Custom filter: when collaborator filters are active, only show clients with matching tasks
+  const clientsWithMatchingTasks = useMemo(() => {
+    if (collaboratorFilters.length === 0) return filteredClients;
+    
+    return filteredClients.filter(client => {
+      const matchingTasks = getActiveTasksForClient(client.id).filter(t =>
+        t.assigned_to && collaboratorFilters.includes(t.assigned_to)
+      );
+      return matchingTasks.length > 0;
+    });
+  }, [filteredClients, collaboratorFilters, getActiveTasksForClient]);
 
   const sortOptions: { value: VisualSortOption; label: string }[] = [
     { value: 'priority', label: 'Prioridade' },
@@ -135,8 +147,8 @@ export default function JackboxPanel() {
         />
 
         {/* Visual Grid */}
-        <VisualGrid itemCount={filteredClients.length}>
-          {filteredClients.map((client) => (
+        <VisualGrid itemCount={clientsWithMatchingTasks.length}>
+          {clientsWithMatchingTasks.map((client) => (
             <JackboxCard
               key={client.id}
               client={client}
@@ -148,7 +160,7 @@ export default function JackboxPanel() {
         </VisualGrid>
 
         {/* Empty State */}
-        {filteredClients.length === 0 && (
+        {clientsWithMatchingTasks.length === 0 && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <Box className="w-12 h-12 mx-auto mb-4 opacity-50" />
