@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardList, CheckCircle, PlayCircle, CircleDashed, XCircle, Filter } from "lucide-react";
+import { ClipboardList, CheckCircle, PlayCircle, CircleDashed, XCircle, Filter, FileSpreadsheet } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
 import { VisualPanelFilters, VisualSortOption } from "@/components/visual-panels/VisualPanelFilters";
 import { Button } from "@/components/ui/button";
+import { ImportWizard } from "@/components/import/ImportWizard";
 import { cn } from "@/lib/utils";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
@@ -16,9 +17,10 @@ type StatusFilter = 'all' | 'completed' | 'inProgress' | 'notStarted' | 'cancell
 
 export default function DemandasUnified() {
   const navigate = useNavigate();
-  const { activeClients, highlightedClients } = useClients();
+  const { activeClients, highlightedClients, refetch } = useClients();
   const { getActiveTaskCount } = useTasks();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [showImportWizard, setShowImportWizard] = useState(false);
 
   // Custom sorter for demands
   const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
@@ -126,6 +128,16 @@ export default function DemandasUnified() {
           subtitle="Visão consolidada por empresa"
           icon={<ClipboardList className="w-5 h-5" />}
           detailRoute="/demandas"
+          actions={
+            <Button
+              onClick={() => setShowImportWizard(true)}
+              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+              size="sm"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Importar Programação
+            </Button>
+          }
         >
           <KPICard icon={<ClipboardList className="w-4 h-4" />} value={kpis.total} label="Total" />
           <KPICard icon={<CheckCircle className="w-4 h-4" />} value={kpis.completed} label="Concluídas" variant="success" />
@@ -211,6 +223,14 @@ export default function DemandasUnified() {
           })}
         </VisualGrid>
       </div>
+
+      {/* Import Wizard */}
+      <ImportWizard
+        isOpen={showImportWizard}
+        onClose={() => setShowImportWizard(false)}
+        clients={activeClients}
+        onImportComplete={refetch}
+      />
     </AppLayout>
   );
 }

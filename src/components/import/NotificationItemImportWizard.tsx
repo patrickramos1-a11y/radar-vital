@@ -4,13 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, FileSpreadsheet, CheckCircle, XCircle, AlertCircle, Building2, Loader2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, XCircle, AlertCircle, Building2, Loader2, Plus } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { parseNotificationItemExcel, groupNotificationItemsByCompany } from '@/lib/notificationItemParser';
 import { ExcelNotificationItem, NotificationItemMatchResult, createNotificationItemSummary } from '@/types/notificationItem';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Client } from '@/types/client';
+import { Client, generateInitials } from '@/types/client';
+import { useClients } from '@/contexts/ClientContext';
 
 interface NotificationItemImportWizardProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ function calculateMatchScore(excelName: string, clientName: string): number {
 }
 
 export function NotificationItemImportWizard({ isOpen, onClose, clients, onImportComplete }: NotificationItemImportWizardProps) {
+  const { refetch } = useClients();
   const [step, setStep] = useState<WizardStep>('upload');
   const [items, setItems] = useState<ExcelNotificationItem[]>([]);
   const [matchResults, setMatchResults] = useState<NotificationItemMatchResult[]>([]);
@@ -169,6 +171,45 @@ export function NotificationItemImportWizard({ isOpen, onClose, clients, onImpor
       }
       return r;
     }));
+  };
+
+  // Handle create new company
+  const handleCreateCompany = async (empresaExcel: string) => {
+    try {
+      const initials = generateInitials(empresaExcel);
+      const { data: newClient, error } = await supabase
+        .from('clients')
+        .insert({
+          name: empresaExcel,
+          initials,
+          is_active: true,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      if (newClient) {
+        setMatchResults(prev => prev.map(r => {
+          if (r.empresaExcel === empresaExcel) {
+            return {
+              ...r,
+              clientId: newClient.id,
+              clientName: newClient.name,
+              matchType: 'exact' as const,
+              selected: true,
+            };
+          }
+          return r;
+        }));
+        
+        toast.success(`Empresa "${empresaExcel}" criada com sucesso!`);
+        await refetch();
+      }
+    } catch (error) {
+      console.error('Error creating company:', error);
+      toast.error('Erro ao criar empresa');
+    }
   };
 
   const handleImport = async () => {
@@ -303,30 +344,43 @@ export function NotificationItemImportWizard({ isOpen, onClose, clients, onImpor
                           {result.matchType === 'exact' ? (
                             <span className="text-emerald-600 font-medium">{result.clientName}</span>
                           ) : (
-                            <Select
-                              value={result.clientId || ''}
-                              onValueChange={(v) => handleClientChange(result.empresaExcel, v)}
-                            >
-                              <SelectTrigger className="h-8 text-xs">
-                                <SelectValue placeholder="Selecionar cliente..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {result.suggestions.map((s) => (
-                                  <SelectItem key={s.id} value={s.id}>
-                                    {s.name} ({s.score}%)
-                                  </SelectItem>
-                                ))}
-                                <div className="border-t my-1" />
-                                {clients
-                                  .filter(c => !result.suggestions.find(s => s.id === c.id))
-                                  .slice(0, 20)
-                                  .map((c) => (
-                                    <SelectItem key={c.id} value={c.id}>
-                                      {c.name}
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={result.clientId || ''}
+                                onValueChange={(v) => handleClientChange(result.empresaExcel, v)}
+                              >
+                                <SelectTrigger className="h-8 text-xs flex-1">
+                                  <SelectValue placeholder="Selecionar cliente..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {result.suggestions.map((s) => (
+                                    <SelectItem key={s.id} value={s.id}>
+                                      {s.name} ({s.score}%)
                                     </SelectItem>
                                   ))}
-                              </SelectContent>
-                            </Select>
+                                  <div className="border-t my-1" />
+                                  {clients
+                                    .filter(c => !result.suggestions.find(s => s.id === c.id))
+                                    .slice(0, 20)
+                                    .map((c) => (
+                                      <SelectItem key={c.id} value={c.id}>
+                                        {c.name}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                              {result.matchType === 'none' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCreateCompany(result.empresaExcel)}
+                                  className="h-8 gap-1 shrink-0"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  Criar
+                                </Button>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td className="py-2 px-3 text-center">

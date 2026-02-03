@@ -3,12 +3,13 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-interface VisualPanelHeaderProps {
+export interface VisualPanelHeaderProps {
   title: string;
   subtitle?: string;
   icon?: ReactNode;
   children?: ReactNode;
   detailRoute?: string;
+  actions?: ReactNode;
 }
 
 export function VisualPanelHeader({ 
@@ -17,6 +18,7 @@ export function VisualPanelHeader({
   icon,
   children,
   detailRoute,
+  actions,
 }: VisualPanelHeaderProps) {
   const navigate = useNavigate();
 
@@ -37,17 +39,20 @@ export function VisualPanelHeader({
           </div>
         </div>
 
-        {detailRoute && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(detailRoute)}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Ver Detalhado
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {actions}
+          {detailRoute && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(detailRoute)}
+              className="gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Ver Detalhado
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* KPI Stats Row */}
