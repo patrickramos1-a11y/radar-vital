@@ -25,6 +25,7 @@ import NotificacoesPanel from "./pages/NotificacoesPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
 import Backlog from "./pages/Backlog";
 import BacklogDetail from "./pages/BacklogDetail";
+import TVMode from "./pages/TVMode";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,8 @@ const App = () => (
               {/* Backlog de Produto */}
               <Route path="/backlog" element={<Backlog />} />
               <Route path="/backlog/:id" element={<BacklogDetail />} />
+              {/* Modo TV / Apresentação */}
+              <Route path="/tv" element={<TVMode />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
