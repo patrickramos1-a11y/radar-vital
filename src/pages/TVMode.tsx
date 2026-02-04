@@ -1,7 +1,8 @@
 import { useMemo, useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Play, Pause, SkipForward, SkipBack, Settings, Clock, 
-  Monitor, Star, Sparkles, Users, MessageSquare, Building2
+  Monitor, Star, Sparkles, Users, MessageSquare, Building2, X, CheckSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -19,6 +20,7 @@ import { Client, COLLABORATOR_NAMES, COLLABORATOR_COLORS, calculateTotalDemands 
 import { cn } from "@/lib/utils";
 
 export default function TVMode() {
+  const navigate = useNavigate();
   const { activeClients, highlightedClients } = useClients();
   const { getActiveTaskCount } = useTasks();
   const [commentCounts] = useAllClientsCommentCountsWithRefresh();
@@ -34,6 +36,10 @@ export default function TVMode() {
     nextScene,
     previousScene,
   } = useTVMode();
+
+  const handleExit = () => {
+    navigate('/');
+  };
 
   // Current time
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -76,7 +82,7 @@ export default function TVMode() {
       case 'comentarios':
         result = result.filter(c => getCommentCount(c.id) > 0);
         break;
-      case 'jackbox':
+      case 'checklist':
         result = result.filter(c => getActiveTaskCount(c.id) > 0);
         break;
     }
@@ -155,6 +161,7 @@ export default function TVMode() {
     if (recorte === 'destaque') return <Sparkles className="w-5 h-5 text-blue-500" />;
     if (recorte === 'responsaveis') return <Users className="w-5 h-5 text-violet-500" />;
     if (recorte === 'comentarios') return <MessageSquare className="w-5 h-5 text-emerald-500" />;
+    if (recorte === 'checklist') return <CheckSquare className="w-5 h-5 text-primary" />;
     if (responsavel) {
       return (
         <div 
@@ -265,7 +272,7 @@ export default function TVMode() {
           </div>
         </div>
 
-        {/* Right: Clock */}
+        {/* Right: Clock + Exit */}
         <div className="flex items-center gap-3 text-right">
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-1.5">
@@ -274,6 +281,15 @@ export default function TVMode() {
             </div>
             <span className="text-xs text-muted-foreground capitalize">{formatDate(currentTime)}</span>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExit}
+            className="gap-1 text-muted-foreground hover:text-destructive hover:border-destructive"
+          >
+            <X className="w-4 h-4" />
+            Sair
+          </Button>
         </div>
       </div>
 
