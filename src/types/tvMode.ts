@@ -1,6 +1,6 @@
 import { CollaboratorName } from './client';
 
-export type TVRecorte = 'prioridade' | 'destaque' | 'responsaveis' | 'comentarios' | 'jackbox' | null;
+export type TVRecorte = 'prioridade' | 'destaque' | 'responsaveis' | 'comentarios' | 'checklist' | null;
 export type TVDensidade = 'compacta' | 'normal' | 'gigante';
 export type TVTipoCliente = 'TODOS' | 'AC' | 'AV';
 export type TVOrdenacao = 'ordem' | 'prioridade' | 'nome' | 'demandas' | null;

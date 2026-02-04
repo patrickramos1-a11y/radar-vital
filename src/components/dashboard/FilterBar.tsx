@@ -1,4 +1,5 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv } from "lucide-react";
+import { Link } from "react-router-dom";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -193,7 +194,7 @@ export function FilterBar({
           )}
         </div>
 
-        {/* Grid Size Picker + Lock Toggle */}
+        {/* Grid Size Picker + Lock Toggle + TV Mode */}
         <div className="flex items-center gap-1">
           <GridSizePicker 
             selectedSize={gridSize} 
@@ -220,6 +221,19 @@ export function FilterBar({
               {fitAllLocked 
                 ? "Desativar Travamento de Espaço - retornar ao modo anterior" 
                 : "Ativar Travamento de Espaço - todos os cards cabem na tela sem scroll"}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/tv"
+                className="p-1.5 rounded-md border bg-secondary/50 border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
+              >
+                <Tv className="w-4 h-4" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              Modo TV - exibir painel em televisão
             </TooltipContent>
           </Tooltip>
         </div>

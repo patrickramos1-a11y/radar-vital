@@ -287,8 +287,8 @@ export function ClientCard({
         </span>
       </div>
 
-      {/* Collaborator Row - Below header, horizontal layout like reference */}
-      <div className="flex items-center gap-1 px-2 py-1 bg-muted/30 border-b border-border/50">
+      {/* Collaborator Row - Compact layout */}
+      <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-muted/30 border-b border-border/50">
         {activeCollaboratorsList.map((name) => (
           <CollaboratorBadge
             key={name}
@@ -405,16 +405,16 @@ function DemandChipSmall({ status, count, sizeClass }: DemandChipSmallProps) {
   );
 }
 
-// Badge size based on client count - larger sizes like reference image
+// Badge size based on client count - compact sizes
 function getBadgeSize(clientCount: number): { size: string; fontSize: string } {
   if (clientCount <= 8) {
-    return { size: 'w-7 h-7', fontSize: 'text-xs' };
-  } else if (clientCount <= 20) {
-    return { size: 'w-6 h-6', fontSize: 'text-[10px]' };
-  } else if (clientCount <= 40) {
     return { size: 'w-5 h-5', fontSize: 'text-[9px]' };
+  } else if (clientCount <= 20) {
+    return { size: 'w-4.5 h-4.5', fontSize: 'text-[8px]' };
+  } else if (clientCount <= 40) {
+    return { size: 'w-4 h-4', fontSize: 'text-[7px]' };
   } else {
-    return { size: 'w-4 h-4', fontSize: 'text-[8px]' };
+    return { size: 'w-3.5 h-3.5', fontSize: 'text-[6px]' };
   }
 }
 
