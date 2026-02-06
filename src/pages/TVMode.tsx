@@ -110,45 +110,31 @@ export default function TVMode() {
     return result;
   }, [activeClients, currentScene, highlightedClients, getCommentCount, getActiveTaskCount]);
 
-  // Calculate optimal grid layout to fill screen without whitespace
-  const gridLayout = useMemo(() => {
+  // Calculate grid columns based on client count and density
+  const gridColumns = useMemo(() => {
     const count = filteredClients.length;
-    if (count === 0) return { columns: 1, rows: 1 };
-    
     const { densidade } = currentScene.filtros;
     
-    // Get viewport dimensions (minus header areas ~130px)
-    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight - 130 : 600;
-    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    
-    // Calculate optimal grid to fill screen
-    // We want to maximize card size while fitting all cards
-    let bestCols = 1;
-    let bestRows = 1;
-    
-    // Try different column counts and find the best fit
-    for (let cols = 1; cols <= Math.min(count, 12); cols++) {
-      const rows = Math.ceil(count / cols);
-      const cardWidth = (viewportWidth - 32 - (cols - 1) * 12) / cols; // 32px padding, 12px gap
-      const cardHeight = (viewportHeight - (rows - 1) * 12) / rows;
-      
-      // Minimum card dimensions based on density
-      const minWidth = densidade === 'compacta' ? 100 : densidade === 'gigante' ? 250 : 150;
-      const minHeight = densidade === 'compacta' ? 80 : densidade === 'gigante' ? 200 : 120;
-      
-      if (cardWidth >= minWidth && cardHeight >= minHeight) {
-        bestCols = cols;
-        bestRows = rows;
-      }
+    if (densidade === 'gigante') {
+      if (count <= 4) return 2;
+      if (count <= 9) return 3;
+      return 4;
     }
     
-    // Ensure we have enough cells for all cards
-    while (bestCols * bestRows < count) {
-      bestCols++;
-      bestRows = Math.ceil(count / bestCols);
+    if (densidade === 'compacta') {
+      if (count <= 16) return 4;
+      if (count <= 36) return 6;
+      if (count <= 64) return 8;
+      return 10;
     }
     
-    return { columns: bestCols, rows: bestRows };
+    // normal
+    if (count <= 6) return 3;
+    if (count <= 12) return 4;
+    if (count <= 20) return 5;
+    if (count <= 30) return 6;
+    if (count <= 42) return 7;
+    return 8;
   }, [filteredClients.length, currentScene.filtros]);
 
   // Format time
@@ -338,10 +324,9 @@ export default function TVMode() {
         className="flex-1 p-4 overflow-hidden"
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${gridLayout.columns}, 1fr)`,
-          gridTemplateRows: `repeat(${gridLayout.rows}, 1fr)`,
+          gridTemplateColumns: `repeat(${gridColumns}, 1fr)`,
           gap: '12px',
-          height: '100%',
+          alignContent: 'start',
         }}
       >
         {filteredClients.map((client, idx) => (
@@ -353,7 +338,6 @@ export default function TVMode() {
             commentCount={getCommentCount(client.id)}
             taskCount={getActiveTaskCount(client.id)}
             density={currentScene.filtros.densidade}
-            totalCards={filteredClients.length}
           />
         ))}
         
