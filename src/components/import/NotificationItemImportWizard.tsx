@@ -253,6 +253,7 @@ export function NotificationItemImportWizard({ isOpen, onClose, clients, onImpor
       setImportedCount(imported);
     }
     
+    await refetch();
     setStep('complete');
     toast.success(`${imported} empresas atualizadas com sucesso`);
     onImportComplete?.();

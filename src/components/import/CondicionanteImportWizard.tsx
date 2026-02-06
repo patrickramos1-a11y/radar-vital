@@ -32,6 +32,7 @@ import {
 } from '@/types/condicionante';
 import { parseCondicionanteExcel, groupCondicionantesByCompany } from '@/lib/condicionanteParser';
 import { supabase } from '@/integrations/supabase/client';
+import { useClients } from '@/contexts/ClientContext';
 import { ImportProgress } from './ImportProgress';
 
 interface CondicionanteImportWizardProps {
@@ -78,6 +79,7 @@ export function CondicionanteImportWizard({
   clients,
   onImportComplete 
 }: CondicionanteImportWizardProps) {
+  const { refetch } = useClients();
   const [step, setStep] = useState<Step>('upload');
   const [condicionantes, setCondicionantes] = useState<ExcelCondicionante[]>([]);
   const [matchResults, setMatchResults] = useState<CondicionanteMatchResult[]>([]);
@@ -256,6 +258,7 @@ export function CondicionanteImportWizard({
         setImportProgress({ current: i + 1, total: toImport.length });
       }
 
+      await refetch();
       setStep('complete');
       toast.success(`${toImport.length} empresas atualizadas com sucesso!`);
       onImportComplete();
