@@ -193,9 +193,6 @@ export function ProcessImportWizard({ isOpen, onClose, clients, onImportComplete
       }
 
       await refetch();
-      toast.success(`Importação rápida concluída! ${selectedSummaries.length} empresas atualizadas`);
-      onImportComplete();
-      handleClose();
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Erro durante a importação');
@@ -235,7 +232,10 @@ export function ProcessImportWizard({ isOpen, onClose, clients, onImportComplete
         setImportProgress({ current: imported, total: toImport.length });
       }
 
+      await refetch();
       toast.success(`Importação completa! ${imported} processos salvos`);
+      onImportComplete();
+      handleClose();
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Erro durante a importação');
