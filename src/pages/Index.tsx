@@ -12,6 +12,7 @@ import { Users, FileText, Shield, ClipboardList, Star, Sparkles, UserCheck, Mess
 import { COLLABORATOR_COLORS } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PanelNavigationBar } from "@/components/panel-links/PanelNavigationBar";
 import { MobileCompactHeader } from "@/components/mobile/MobileCompactHeader";
 import { MobileCompactFilters } from "@/components/mobile/MobileCompactFilters";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
@@ -419,6 +420,9 @@ const Index = () => {
             <StatBadge icon={<UserCheck className="w-3.5 h-3.5" />} value={responsaveisCount} label="Responsáveis" color="rgb(16, 185, 129)" active={filterFlags.hasCollaborators} onClick={() => handleFilterFlagToggle('hasCollaborators')} />
             <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(99, 102, 241)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
           </div>
+
+          {/* Panel Navigation Bar */}
+          <PanelNavigationBar />
 
           <FilterBar
             sortBy={sortBy}
