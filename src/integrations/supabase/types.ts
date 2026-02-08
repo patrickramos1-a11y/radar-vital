@@ -715,6 +715,45 @@ export type Database = {
           },
         ]
       }
+      panel_links: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          icon_name: string | null
+          id: string
+          is_active: boolean
+          name: string
+          panel_type: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          panel_type?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          panel_type?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       pdf_client_aliases: {
         Row: {
           alias_normalized: string
