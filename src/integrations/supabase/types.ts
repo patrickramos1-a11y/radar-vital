@@ -668,6 +668,27 @@ export type Database = {
           },
         ]
       }
+      municipalities: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          state: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          state: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          state?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           client_id: string | null
