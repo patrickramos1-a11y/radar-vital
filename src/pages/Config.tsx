@@ -1,15 +1,16 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { 
   ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X, 
   AlertTriangle, CheckSquare, ChevronUp, ChevronDown, RefreshCw,
-  Download, FolderUp, RotateCcw
+  Download, FolderUp, RotateCcw, MapPin, Search, Check
 } from "lucide-react";
 import { useClients } from "@/contexts/ClientContext";
 import { 
   Client, ClientFormData, generateInitials, calculateTotalDemands,
   COLLABORATOR_NAMES, COLLABORATOR_COLORS, CollaboratorName, DEFAULT_COLLABORATORS, DEFAULT_PROCESS_BREAKDOWN
 } from "@/types/client";
+import { useMunicipalities } from "@/hooks/useMunicipalities";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -261,6 +262,9 @@ const Config = () => {
       </header>
 
       <main className="max-w-7xl mx-auto p-6">
+        {/* Municipality Manager */}
+        <MunicipalityManager />
+
         {/* Form for Create/Edit */}
         {(isCreating || editingClient) && (
           <div className="mb-6">
@@ -1108,20 +1112,41 @@ function InlineDemandInput({ value, onChange, className }: InlineDemandInputProp
   );
 }
 
-// Municipios Input Component - allows adding/removing municipalities
+// Municipios Select Component - selects from registered municipalities
 interface MunicipiosInputProps {
   value: string[];
   onChange: (municipios: string[]) => void;
 }
 
 function MunicipiosInput({ value, onChange }: MunicipiosInputProps) {
-  const [inputValue, setInputValue] = useState('');
+  const { municipalities, isLoading } = useMunicipalities();
+  const [search, setSearch] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleAdd = () => {
-    const trimmed = inputValue.trim();
-    if (trimmed && !value.includes(trimmed)) {
-      onChange([...value, trimmed]);
-      setInputValue('');
+  const filtered = useMemo(() => {
+    if (!search.trim()) return municipalities;
+    const q = search.toLowerCase();
+    return municipalities.filter(m => 
+      m.name.toLowerCase().includes(q) || m.state.toLowerCase().includes(q)
+    );
+  }, [municipalities, search]);
+
+  // Group filtered by state
+  const grouped = useMemo(() => {
+    const map: Record<string, typeof municipalities> = {};
+    for (const m of filtered) {
+      if (!map[m.state]) map[m.state] = [];
+      map[m.state].push(m);
+    }
+    return map;
+  }, [filtered]);
+
+  const toggleMunicipio = (name: string) => {
+    if (value.includes(name)) {
+      onChange(value.filter(v => v !== name));
+    } else {
+      onChange([...value, name]);
     }
   };
 
@@ -1129,32 +1154,71 @@ function MunicipiosInput({ value, onChange }: MunicipiosInputProps) {
     onChange(value.filter(m => m !== municipio));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAdd();
+  // Close on outside click
+  const handleBlur = (e: React.FocusEvent) => {
+    if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+      setIsOpen(false);
     }
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Digite o nome do município..."
-          className="admin-input flex-1"
-        />
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={!inputValue.trim()}
-          className="admin-button-primary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+    <div className="space-y-2" ref={containerRef} onBlur={handleBlur}>
+      <div className="relative">
+        <div 
+          className="admin-input flex items-center gap-2 cursor-pointer min-h-[40px]"
+          onClick={() => setIsOpen(!isOpen)}
         >
-          <Plus className="w-4 h-4" />
-        </button>
+          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setIsOpen(true); }}
+            onFocus={() => setIsOpen(true)}
+            placeholder={isLoading ? "Carregando municípios..." : "Buscar município..."}
+            className="flex-1 bg-transparent border-none outline-none text-sm"
+          />
+          <span className="text-xs text-muted-foreground shrink-0">
+            {value.length} selecionado{value.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        
+        {isOpen && (
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-[250px] overflow-y-auto">
+            {Object.keys(grouped).length === 0 ? (
+              <div className="p-3 text-sm text-muted-foreground text-center">
+                {isLoading ? 'Carregando...' : 'Nenhum município encontrado'}
+              </div>
+            ) : (
+              Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([state, munis]) => (
+                <div key={state}>
+                  <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
+                    {state}
+                  </div>
+                  {munis.map((m) => {
+                    const selected = value.includes(m.name);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => toggleMunicipio(m.name)}
+                        className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 hover:bg-accent transition-colors ${
+                          selected ? 'bg-primary/5 text-primary font-medium' : 'text-foreground'
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                          selected ? 'bg-primary border-primary' : 'border-border'
+                        }`}>
+                          {selected && <Check className="w-3 h-3 text-primary-foreground" />}
+                        </div>
+                        {m.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
       
       {value.length > 0 && (
@@ -1179,8 +1243,141 @@ function MunicipiosInput({ value, onChange }: MunicipiosInputProps) {
       
       {value.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          Nenhum município adicionado ainda.
+          Nenhum município selecionado ainda.
         </p>
+      )}
+    </div>
+  );
+}
+
+// Municipality Management Section
+function MunicipalityManager() {
+  const { municipalities, byState, states, addMunicipality, deleteMunicipality, isLoading } = useMunicipalities();
+  const [newName, setNewName] = useState('');
+  const [newState, setNewState] = useState('PA');
+  const [searchFilter, setSearchFilter] = useState('');
+  const [showManager, setShowManager] = useState(false);
+
+  const handleAdd = () => {
+    if (!newName.trim() || !newState.trim()) return;
+    addMunicipality.mutate({ name: newName.trim(), state: newState.trim() });
+    setNewName('');
+  };
+
+  const filteredMunis = useMemo(() => {
+    if (!searchFilter.trim()) return municipalities;
+    const q = searchFilter.toLowerCase();
+    return municipalities.filter(m => 
+      m.name.toLowerCase().includes(q) || m.state.toLowerCase().includes(q)
+    );
+  }, [municipalities, searchFilter]);
+
+  return (
+    <div className="admin-card mb-6">
+      <button
+        type="button"
+        onClick={() => setShowManager(!showManager)}
+        className="flex items-center justify-between w-full"
+      >
+        <div className="flex items-center gap-2">
+          <MapPin className="w-5 h-5 text-primary" />
+          <h2 className="text-lg font-semibold text-foreground">
+            Cadastro de Municípios ({municipalities.length})
+          </h2>
+        </div>
+        <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${showManager ? 'rotate-180' : ''}`} />
+      </button>
+
+      {showManager && (
+        <div className="mt-4 space-y-4">
+          {/* Add new municipality */}
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <label className="admin-label">Nome do Município</label>
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
+                placeholder="Ex: Marabá"
+                className="admin-input"
+              />
+            </div>
+            <div className="w-24">
+              <label className="admin-label">UF</label>
+              <input
+                type="text"
+                value={newState}
+                onChange={(e) => setNewState(e.target.value.toUpperCase().slice(0, 2))}
+                placeholder="PA"
+                className="admin-input"
+                maxLength={2}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={!newName.trim() || !newState.trim() || addMunicipality.isPending}
+              className="admin-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar
+            </button>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              placeholder="Filtrar municípios..."
+              className="admin-input pl-9"
+            />
+          </div>
+
+          {/* List grouped by state */}
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando...</p>
+          ) : (
+            <div className="max-h-[300px] overflow-y-auto border border-border rounded-md">
+              {Object.entries(
+                filteredMunis.reduce<Record<string, typeof municipalities>>((acc, m) => {
+                  if (!acc[m.state]) acc[m.state] = [];
+                  acc[m.state].push(m);
+                  return acc;
+                }, {})
+              ).sort(([a], [b]) => a.localeCompare(b)).map(([state, munis]) => (
+                <div key={state}>
+                  <div className="px-3 py-2 text-xs font-bold text-muted-foreground bg-muted/50 sticky top-0 border-b border-border">
+                    {state} ({munis.length} municípios)
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-0">
+                    {munis.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between px-3 py-1.5 text-sm border-b border-border/30 hover:bg-muted/30">
+                        <span className="text-foreground">{m.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => deleteMunicipality.mutate(m.id)}
+                          className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
+                          title="Remover município"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {filteredMunis.length === 0 && (
+                <div className="p-4 text-sm text-muted-foreground text-center">
+                  Nenhum município encontrado.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
