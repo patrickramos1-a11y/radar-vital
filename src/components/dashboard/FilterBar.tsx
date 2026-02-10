@@ -203,7 +203,11 @@ export function FilterBar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={() => onFitAllLockedChange(!fitAllLocked)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onFitAllLockedChange(!fitAllLocked);
+                }}
                 className={`p-1.5 rounded-md border transition-all ${
                   fitAllLocked 
                     ? 'bg-green-500 border-green-600 text-white hover:bg-green-600' 
