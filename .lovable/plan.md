@@ -1,60 +1,41 @@
 
-# Correção: Cadeado (Fit-All Locked) não impede rolagem vertical
 
-## Problema
+# Fix: Lock button (Fit-All Locked) not responding to clicks
 
-Quando o cadeado ("Fit-All Locked") está ativado, os cards ultrapassam a area visivel e aparece scroll vertical. O comportamento esperado e semelhante ao Modo TV: todos os cards devem caber na tela sem rolagem, reduzindo o tamanho dos cards se necessario.
+## Problem
 
-## Causa Raiz
+The lock/unlock button in the filter bar does not respond when clicked - clicking it produces no visual change and the fit-all-locked mode is not activated.
 
-O calculo de altura disponivel em `ClientGrid.tsx` usa uma estimativa fixa (`window.innerHeight - 180px`) para descontar os elementos acima do grid (stats bar, barra de paineis, barra de filtros). Na pratica esses elementos ocupam mais espaco, fazendo com que os cards excedam a area visivel.
+## Root Cause
 
-Alem disso, o container pai no `Index.tsx` aplica `overflow: hidden` mas o grid interno calcula sua propria altura com base no `window`, criando um desalinhamento.
+The button is wrapped in a Radix UI `Tooltip` > `TooltipTrigger asChild` pattern. The `asChild` prop merges Radix's internal event handlers onto the button element. In some scenarios, this can interfere with the button's own `onClick` handler due to event propagation or handler ordering issues.
 
-## Solucao
+## Solution
 
-Substituir o calculo baseado em `window.innerHeight` por uma medicao real do container do grid usando `ResizeObserver`. Assim o grid sempre sabera exatamente quanto espaco tem disponivel, independente da altura dos elementos acima.
+Add explicit `e.stopPropagation()` to the lock button's click handler to ensure the event is not consumed by parent elements or Radix internals. This is a minimal, targeted fix that follows the same pattern used in other interactive elements.
 
-## Detalhes Tecnicos
+## Technical Details
 
-### 1. `ClientGrid.tsx` - Usar ref + ResizeObserver para medir o container real
+### File: `src/components/dashboard/FilterBar.tsx`
 
-- Adicionar um `ref` ao elemento wrapper do grid
-- Usar `ResizeObserver` para capturar as dimensoes reais do container (largura e altura disponivel)
-- Substituir o `useEffect` atual que calcula `containerSize` via `window.innerWidth/innerHeight` por um observer no elemento real
-- Isso elimina a necessidade de "adivinhar" offsets fixos (280px sidebar, 180px headers)
+Update the lock button's onClick handler to explicitly stop propagation:
 
-```text
-Antes:
-  width = window.innerWidth - 280
-  height = window.innerHeight - 180
+```typescript
+// Before
+onClick={() => onFitAllLockedChange(!fitAllLocked)}
 
-Depois:
-  width = containerRef.current.clientWidth
-  height = containerRef.current.clientHeight
+// After
+onClick={(e) => {
+  e.stopPropagation();
+  onFitAllLockedChange(!fitAllLocked);
+}}
 ```
 
-### 2. `ClientGrid.tsx` - Garantir que o grid respeita as dimensoes
+If `stopPropagation` alone doesn't resolve it, the fallback approach is to also add `e.preventDefault()` and move the button outside the `TooltipTrigger asChild` wrapper (using a manual ref-based tooltip trigger instead), or restructure to avoid nested Radix components interfering.
 
-- Quando `fitAllLocked` esta ativo, aplicar `height: 100%` e `maxHeight: 100%` no grid em vez de um valor fixo em pixels baseado no calculo errado
-- Usar `overflow: hidden` para garantir que nada extrapole
+### Summary
 
-### 3. `Index.tsx` - Container pai do grid
+| File | Change |
+|------|--------|
+| `src/components/dashboard/FilterBar.tsx` | Add `e.stopPropagation()` to lock button onClick handler |
 
-- O container `flex-1 overflow-hidden` que envolve o `ClientGrid` ja esta correto em estrutura
-- Garantir que quando `fitAllLocked` esta ativo, o container realmente restringe o espaco com `min-h-0` (necessario em flex layouts para permitir que o elemento encolha abaixo de seu conteudo natural)
-
-### 4. `ClientCard.tsx` - Ajustes para escala extrema
-
-- Quando `fitAll` esta ativo e ha muitos clientes (49+), permitir que todos os elementos internos do card encolham ainda mais:
-  - Reduzir padding interno
-  - Usar `overflow: hidden` em cada secao do card
-  - Garantir que nenhum `min-height` bloqueie o encolhimento
-
-### Resumo das alteracoes
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/components/dashboard/ClientGrid.tsx` | Usar `ResizeObserver` no container real em vez de `window`, ajustar estilos do grid para `height: 100%` quando locked |
-| `src/pages/Index.tsx` | Adicionar `min-h-0` ao container flex do grid para permitir encolhimento correto |
-| `src/components/dashboard/ClientCard.tsx` | Reduzir padding e remover min-heights residuais no modo `fitAll` |
