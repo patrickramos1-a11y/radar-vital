@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -7,12 +7,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
 import { ClientComment, ReadStatusName, READ_STATUS_NAMES, CommentType, COMMENT_TYPE_LABELS } from '@/types/comment';
 import { useClientComments, triggerCommentCountRefresh } from '@/hooks/useClientComments';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pin, Trash2, Send, Loader2, Check, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock } from 'lucide-react';
+import { Pin, Trash2, Send, Loader2, Check, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users } from 'lucide-react';
 import { COLLABORATOR_COLORS, CollaboratorName } from '@/types/client';
 import { cn } from '@/lib/utils';
+
+const COMMENT_TYPE_DESCRIPTIONS: Record<CommentType, string> = {
+  informativo: 'Registro simples sem exigência de confirmação. Ideal para anotações, observações e registros gerais do dia a dia.',
+  relevante: 'Destaque visual para informações importantes. Não exige confirmação, mas chama atenção na listagem.',
+  ciencia: 'Comunicação formal que exige confirmação de leitura dos colaboradores selecionados. Use para decisões, alertas críticos ou informações que precisam de rastreabilidade.',
+};
 
 interface CommentsModalProps {
   clientId: string;
@@ -107,26 +115,20 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
             })}
           </div>
 
-          {/* Required readers selector for ciencia */}
+          {/* Type description */}
+          <p className="text-[11px] text-muted-foreground italic px-1">
+            {COMMENT_TYPE_DESCRIPTIONS[commentType]}
+          </p>
+
+          {/* Required readers dropdown for ciencia */}
           {commentType === 'ciencia' && (
-            <div className="space-y-1.5 p-2.5 rounded-md bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800">
-              <p className="text-[10px] font-medium text-red-700 dark:text-red-400">Selecione quem deve confirmar ciência:</p>
-              <div className="flex flex-wrap gap-1.5">
-                {collaborators.map((collab) => (
-                  <label key={collab.id} className="flex items-center gap-1.5 cursor-pointer">
-                    <Checkbox
-                      checked={selectedReaders.includes(collab.name)}
-                      onCheckedChange={() => toggleReader(collab.name)}
-                      className="h-3.5 w-3.5"
-                    />
-                    <span className="text-xs">{collab.name}</span>
-                  </label>
-                ))}
-              </div>
-              {selectedReaders.length === 0 && (
-                <p className="text-[10px] text-red-500">Selecione pelo menos um colaborador</p>
-              )}
-            </div>
+            <ReadersDropdown
+              collaborators={collaborators}
+              selectedReaders={selectedReaders}
+              onToggleReader={toggleReader}
+              onSelectAll={() => setSelectedReaders(collaborators.map(c => c.name))}
+              onDeselectAll={() => setSelectedReaders([])}
+            />
           )}
 
           <Textarea
@@ -182,6 +184,113 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
   );
 }
 
+// --- ReadersDropdown ---
+interface ReadersDropdownProps {
+  collaborators: { id: string; name: string }[];
+  selectedReaders: string[];
+  onToggleReader: (name: string) => void;
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
+}
+
+function ReadersDropdown({ collaborators, selectedReaders, onToggleReader, onSelectAll, onDeselectAll }: ReadersDropdownProps) {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return collaborators;
+    const q = search.toLowerCase();
+    return collaborators.filter(c => c.name.toLowerCase().includes(q));
+  }, [collaborators, search]);
+
+  const allSelected = collaborators.length > 0 && selectedReaders.length === collaborators.length;
+
+  return (
+    <div className="space-y-1.5">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              'w-full flex items-center justify-between px-3 py-2 rounded-md border text-xs transition-all',
+              'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-600',
+              selectedReaders.length === 0 && 'text-red-500',
+              selectedReaders.length > 0 && 'text-red-700 dark:text-red-400'
+            )}
+          >
+            <span className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" />
+              {selectedReaders.length === 0
+                ? 'Selecione quem deve confirmar ciência'
+                : `${selectedReaders.length} colaborador${selectedReaders.length > 1 ? 'es' : ''} selecionado${selectedReaders.length > 1 ? 's' : ''}`}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+          {/* Search */}
+          <div className="p-2 border-b border-border">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar colaborador..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-7 pl-7 text-xs"
+              />
+            </div>
+          </div>
+          {/* Select all / deselect all */}
+          <div className="px-2 py-1.5 border-b border-border">
+            <button
+              type="button"
+              onClick={allSelected ? onDeselectAll : onSelectAll}
+              className="text-[11px] font-medium text-primary hover:underline"
+            >
+              {allSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+            </button>
+          </div>
+          {/* List */}
+          <ScrollArea className="max-h-[180px]">
+            <div className="p-1.5 space-y-0.5">
+              {filtered.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-2">Nenhum resultado</p>
+              ) : (
+                filtered.map((collab) => (
+                  <label
+                    key={collab.id}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 cursor-pointer transition-colors"
+                  >
+                    <Checkbox
+                      checked={selectedReaders.includes(collab.name)}
+                      onCheckedChange={() => onToggleReader(collab.name)}
+                      className="h-3.5 w-3.5"
+                    />
+                    <span className="text-xs">{collab.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </PopoverContent>
+      </Popover>
+      {selectedReaders.length === 0 && (
+        <p className="text-[10px] text-red-500 px-1">Selecione pelo menos um colaborador</p>
+      )}
+      {selectedReaders.length > 0 && (
+        <div className="flex flex-wrap gap-1 px-1">
+          {selectedReaders.map(name => (
+            <Badge key={name} variant="secondary" className="text-[10px] px-1.5 py-0 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              {name}
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- CommentItem ---
 interface CommentItemProps {
   comment: ClientComment;
   currentUserName: string;
