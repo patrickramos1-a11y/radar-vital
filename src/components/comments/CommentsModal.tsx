@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ClientComment, ReadStatusName, READ_STATUS_NAMES, CommentType, COMMENT_TYPE_LABELS } from '@/types/comment';
 import { useClientComments, triggerCommentCountRefresh } from '@/hooks/useClientComments';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pin, Trash2, Send, Loader2, Check, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users } from 'lucide-react';
+import { Pin, Trash2, Send, Loader2, Check, CheckCheck, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users } from 'lucide-react';
 import { COLLABORATOR_COLORS, CollaboratorName } from '@/types/client';
 import { cn } from '@/lib/utils';
 
@@ -472,29 +472,118 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
         </div>
       )}
 
-      {/* Legacy read status row */}
-      <div className="flex items-center gap-1.5 pt-2 border-t border-border">
-        <span className="text-[10px] text-muted-foreground mr-1">Lido:</span>
-        {READ_STATUS_NAMES.map((name) => {
-          const color = name === 'patrick' ? '#10B981' : COLLABORATOR_COLORS[name as CollaboratorName];
-          const isRead = comment.readStatus[name];
-          return (
-            <button
-              key={name}
-              onClick={() => onToggleRead(name)}
-              className={cn(
-                'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all',
-                isRead ? 'text-white' : 'text-muted-foreground bg-muted hover:bg-muted/80'
-              )}
-              style={isRead ? { backgroundColor: color } : {}}
-              title={`${name}: ${isRead ? 'Lido' : 'Não lido'}`}
-            >
-              {isRead ? <Check className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
-              <span className="capitalize">{name.charAt(0).toUpperCase()}</span>
-            </button>
-          );
-        })}
+      {/* WhatsApp-style read status */}
+      <ReadStatusBar
+        comment={comment}
+        currentUserName={currentUserName}
+        isAdmin={isAdmin}
+        collaborators={collaborators}
+        onToggleRead={onToggleRead}
+      />
+    </div>
+  );
+}
+
+// --- ReadStatusBar (WhatsApp-style) ---
+interface ReadStatusBarProps {
+  comment: ClientComment;
+  currentUserName: string;
+  isAdmin: boolean;
+  collaborators: { id: string; name: string; color?: string }[];
+  onToggleRead: (collaborator: ReadStatusName) => void;
+}
+
+function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onToggleRead }: ReadStatusBarProps) {
+  const [showInfo, setShowInfo] = useState(false);
+
+  const currentReadStatusName = currentUserName.toLowerCase() as ReadStatusName;
+  const canMarkSelf = READ_STATUS_NAMES.includes(currentReadStatusName);
+  const selfIsRead = canMarkSelf && comment.readStatus[currentReadStatusName];
+
+  const currentCollaborator = collaborators.find(c => c.name.toLowerCase() === currentReadStatusName);
+  const selfColor = currentCollaborator?.color || '#6B7280';
+
+  const readCount = READ_STATUS_NAMES.filter(n => comment.readStatus[n]).length;
+  const allRead = readCount === READ_STATUS_NAMES.length;
+
+  return (
+    <div className="flex items-center justify-between pt-2 border-t border-border">
+      {/* Left: self check button */}
+      <div className="flex items-center gap-1.5">
+        {canMarkSelf && (
+          <button
+            onClick={() => onToggleRead(currentReadStatusName)}
+            className={cn(
+              'flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all',
+              selfIsRead ? 'text-white' : 'text-muted-foreground bg-muted hover:bg-muted/80'
+            )}
+            style={selfIsRead ? { backgroundColor: selfColor } : {}}
+            title={selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
+          >
+            {selfIsRead ? <CheckCheck className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+            {selfIsRead ? 'Lido' : 'Marcar lido'}
+          </button>
+        )}
+        <span className="text-[9px] text-muted-foreground">
+          {allRead ? (
+            <span className="text-green-600 dark:text-green-400">Todos leram</span>
+          ) : (
+            `${readCount}/${READ_STATUS_NAMES.length}`
+          )}
+        </span>
       </div>
+
+      {/* Right: info popover */}
+      <Popover open={showInfo} onOpenChange={setShowInfo}>
+        <PopoverTrigger asChild>
+          <button
+            className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+            title="Ver quem leu"
+          >
+            <Info className="w-3.5 h-3.5" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-0" align="end">
+          <div className="px-3 py-2 border-b border-border">
+            <p className="text-xs font-semibold text-foreground">Lida por</p>
+          </div>
+          <div className="p-2 space-y-1">
+            {READ_STATUS_NAMES.map((name) => {
+              const collab = collaborators.find(c => c.name.toLowerCase() === name);
+              const color = collab?.color || '#6B7280';
+              const isRead = comment.readStatus[name];
+              return (
+                <div key={name} className="flex items-center justify-between gap-2 px-1.5 py-1 rounded hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                    <span className="text-xs capitalize">{name}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {isRead ? (
+                      <span className="flex items-center gap-0.5 text-[9px] text-green-600 dark:text-green-400">
+                        <CheckCheck className="w-3 h-3" />
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-[9px] text-muted-foreground">Pendente</span>
+                        {isAdmin && (
+                          <button
+                            onClick={() => onToggleRead(name)}
+                            className="ml-1 p-0.5 rounded hover:bg-primary/10 text-primary transition-colors"
+                            title={`Marcar ${name} como lido`}
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
