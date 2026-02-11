@@ -12,7 +12,8 @@ import {
   Wrench,
   Clock,
   Paperclip,
-  History
+  History,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +40,9 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { BacklogHistory } from '@/components/backlog/BacklogHistory';
 import { BacklogAttachments } from '@/components/backlog/BacklogAttachments';
 import { BacklogImplementations } from '@/components/backlog/BacklogImplementations';
+import { BacklogChat } from '@/components/backlog/BacklogChat';
 import { useBacklog, useBacklogItem } from '@/hooks/useBacklog';
+import { useBacklogMessages } from '@/hooks/useBacklogMessages';
 import type { 
   BacklogStatus, 
   BacklogCategory, 
@@ -74,6 +77,8 @@ export default function BacklogDetail() {
     updateImplementation,
     deleteImplementation
   } = useBacklogItem(id);
+
+  const { messages, isLoading: messagesLoading, sendMessage, editMessage, deleteMessage: deleteMsg } = useBacklogMessages(id);
 
   // Local edit state
   const [titulo, setTitulo] = useState('');
@@ -268,14 +273,18 @@ export default function BacklogDetail() {
 
             {/* Tabs for Attachments, Implementations, History */}
             <Tabs defaultValue="attachments">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="attachments" className="flex items-center gap-2">
                   <Paperclip className="w-4 h-4" />
                   Anexos ({attachments.length})
                 </TabsTrigger>
                 <TabsTrigger value="implementations" className="flex items-center gap-2">
                   <Wrench className="w-4 h-4" />
-                  Implementações ({implementations.length})
+                  Impl. ({implementations.length})
+                </TabsTrigger>
+                <TabsTrigger value="chat" className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Conversa ({messages.length})
                 </TabsTrigger>
                 <TabsTrigger value="history" className="flex items-center gap-2">
                   <History className="w-4 h-4" />
@@ -303,6 +312,20 @@ export default function BacklogDetail() {
                       onAdd={addImplementation}
                       onUpdate={updateImplementation}
                       onDelete={deleteImplementation}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="chat" className="mt-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <BacklogChat
+                      messages={messages}
+                      isLoading={messagesLoading}
+                      onSend={sendMessage}
+                      onEdit={editMessage}
+                      onDelete={deleteMsg}
                     />
                   </CardContent>
                 </Card>

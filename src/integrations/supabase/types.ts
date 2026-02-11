@@ -314,6 +314,44 @@ export type Database = {
         }
         Relationships: []
       }
+      backlog_messages: {
+        Row: {
+          author_name: string
+          backlog_item_id: string
+          created_at: string
+          id: string
+          is_edited: boolean
+          message: string
+          updated_at: string
+        }
+        Insert: {
+          author_name: string
+          backlog_item_id: string
+          created_at?: string
+          id?: string
+          is_edited?: boolean
+          message: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string
+          backlog_item_id?: string
+          created_at?: string
+          id?: string
+          is_edited?: boolean
+          message?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backlog_messages_backlog_item_id_fkey"
+            columns: ["backlog_item_id"]
+            isOneToOne: false
+            referencedRelation: "backlog_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_comments: {
         Row: {
           author_name: string
