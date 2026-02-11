@@ -161,6 +161,30 @@ export function useTasks() {
     return tasks.filter(t => t.assigned_to === collaborator && !t.completed);
   }, [tasks]);
 
+  // Calculate days open for a task
+  const getDaysOpen = useCallback((task: Task) => {
+    const start = new Date(task.created_at);
+    const end = task.completed && task.completed_at ? new Date(task.completed_at) : new Date();
+    return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  }, []);
+
+  // Get oldest pending task
+  const getOldestTask = useCallback(() => {
+    const pending = tasks.filter(t => !t.completed);
+    if (pending.length === 0) return null;
+    return pending.reduce((oldest, t) => 
+      new Date(t.created_at) < new Date(oldest.created_at) ? t : oldest
+    );
+  }, [tasks]);
+
+  // Get average days open for pending tasks
+  const getAverageDaysOpen = useCallback(() => {
+    const pending = tasks.filter(t => !t.completed);
+    if (pending.length === 0) return 0;
+    const totalDays = pending.reduce((sum, t) => sum + getDaysOpen(t), 0);
+    return Math.round(totalDays / pending.length);
+  }, [tasks, getDaysOpen]);
+
   return {
     tasks,
     isLoading,
@@ -173,6 +197,9 @@ export function useTasks() {
     getActiveTaskCount,
     clientsWithActiveTasks,
     getTasksByCollaborator,
+    getDaysOpen,
+    getOldestTask,
+    getAverageDaysOpen,
     refetch: fetchTasks,
   };
 }
