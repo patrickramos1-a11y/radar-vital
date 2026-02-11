@@ -205,7 +205,10 @@ export function FilterBar({
             title={fitAllLocked 
               ? "Desativar Travamento de Espaço - retornar ao modo anterior" 
               : "Ativar Travamento de Espaço - todos os cards cabem na tela sem scroll"}
-            onClick={() => onFitAllLockedChange(!fitAllLocked)}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onFitAllLockedChange(!fitAllLocked);
+            }}
             className={`p-1.5 rounded-md border transition-all ${
               fitAllLocked 
                 ? 'bg-green-500 border-green-600 text-white hover:bg-green-600' 
