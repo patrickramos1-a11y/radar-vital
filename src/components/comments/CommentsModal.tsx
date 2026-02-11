@@ -393,27 +393,46 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
 
       {/* Ciência status */}
       {isCiencia && totalRequired > 0 && (
-        <div className="space-y-2 mb-3 p-2 rounded bg-background/50 border border-border">
-          <div className="flex items-center gap-2">
+        <div className="space-y-2.5 mb-3 p-3 rounded-md bg-muted/40 border border-border/60">
+          {/* Status header */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Confirmações de ciência</span>
             {comment.isClosed ? (
-              <Badge variant="secondary" className="text-[10px]"><Lock className="w-2.5 h-2.5 mr-0.5" />Encerrado por {comment.closedBy}</Badge>
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-muted-foreground/30 text-muted-foreground gap-1">
+                <Lock className="w-2.5 h-2.5" /> Encerrado por {comment.closedBy}
+              </Badge>
             ) : isFullyRead ? (
-              <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"><CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />Completo ({confirmedCount}/{totalRequired})</Badge>
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-green-400 text-green-600 dark:text-green-400 gap-1">
+                <CheckCircle2 className="w-2.5 h-2.5" /> {confirmedCount}/{totalRequired}
+              </Badge>
             ) : isPartial ? (
-              <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"><Clock className="w-2.5 h-2.5 mr-0.5" />Parcial ({confirmedCount}/{totalRequired})</Badge>
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-amber-400 text-amber-600 dark:text-amber-400 gap-1">
+                <Clock className="w-2.5 h-2.5" /> {confirmedCount}/{totalRequired}
+              </Badge>
             ) : (
-              <Badge className="text-[10px] bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"><Clock className="w-2.5 h-2.5 mr-0.5" />Pendente (0/{totalRequired})</Badge>
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-red-400 text-red-600 dark:text-red-400 gap-1">
+                <Clock className="w-2.5 h-2.5" /> 0/{totalRequired}
+              </Badge>
             )}
           </div>
-          <div className="flex flex-wrap gap-1">
+          {/* Readers list */}
+          <div className="flex flex-wrap gap-1.5">
             {comment.requiredReaders.map((reader) => {
               const confirmed = !!comment.readTimestamps[reader];
               return (
-                <div key={reader} className={cn('flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium', confirmed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400')}>
-                  {confirmed ? <Check className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
+                <div
+                  key={reader}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium border transition-colors',
+                    confirmed
+                      ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
+                      : 'bg-background text-muted-foreground border-border'
+                  )}
+                >
+                  {confirmed ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <Clock className="w-3 h-3 opacity-50" />}
                   <span>{reader}</span>
                   {confirmed && (
-                    <span className="text-[8px] ml-1 opacity-70">
+                    <span className="text-[8px] opacity-60 ml-0.5">
                       {format(new Date(comment.readTimestamps[reader]), 'dd/MM HH:mm', { locale: ptBR })}
                     </span>
                   )}
@@ -421,9 +440,10 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
               );
             })}
           </div>
+          {/* Confirm button */}
           {userNeedsToConfirm && (
-            <Button size="sm" variant="default" className="h-7 text-xs mt-1" onClick={onConfirmReading}>
-              <Check className="w-3 h-3 mr-1" /> Confirmar minha ciência
+            <Button size="sm" className="h-8 text-xs w-full mt-1 gap-1.5" onClick={onConfirmReading}>
+              <CheckCircle2 className="w-3.5 h-3.5" /> Confirmar minha ciência
             </Button>
           )}
         </div>
