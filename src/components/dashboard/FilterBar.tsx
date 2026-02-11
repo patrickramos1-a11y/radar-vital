@@ -202,24 +202,26 @@ export function FilterBar({
           />
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onFitAllLockedChange(!fitAllLocked);
-                }}
-                className={`p-1.5 rounded-md border transition-all ${
-                  fitAllLocked 
-                    ? 'bg-green-500 border-green-600 text-white hover:bg-green-600' 
-                    : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
-                }`}
-              >
-                {fitAllLocked ? (
-                  <Lock className="w-4 h-4" />
-                ) : (
-                  <LockOpen className="w-4 h-4" />
-                )}
-              </button>
+              <span className="inline-flex">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFitAllLockedChange(!fitAllLocked);
+                  }}
+                  className={`p-1.5 rounded-md border transition-all ${
+                    fitAllLocked 
+                      ? 'bg-green-500 border-green-600 text-white hover:bg-green-600' 
+                      : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  }`}
+                >
+                  {fitAllLocked ? (
+                    <Lock className="w-4 h-4" />
+                  ) : (
+                    <LockOpen className="w-4 h-4" />
+                  )}
+                </button>
+              </span>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs max-w-[200px]">
               {fitAllLocked 
