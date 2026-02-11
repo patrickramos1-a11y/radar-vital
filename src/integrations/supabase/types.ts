@@ -357,43 +357,61 @@ export type Database = {
           author_name: string
           author_user_id: string | null
           client_id: string
+          closed_at: string | null
+          closed_by: string | null
           comment_text: string
+          comment_type: string
           created_at: string
           id: string
+          is_closed: boolean
           is_pinned: boolean
           read_celine: boolean
           read_darley: boolean
           read_gabi: boolean
           read_patrick: boolean
+          read_timestamps: Json
           read_vanessa: boolean
+          required_readers: string[]
         }
         Insert: {
           author_name?: string
           author_user_id?: string | null
           client_id: string
+          closed_at?: string | null
+          closed_by?: string | null
           comment_text: string
+          comment_type?: string
           created_at?: string
           id?: string
+          is_closed?: boolean
           is_pinned?: boolean
           read_celine?: boolean
           read_darley?: boolean
           read_gabi?: boolean
           read_patrick?: boolean
+          read_timestamps?: Json
           read_vanessa?: boolean
+          required_readers?: string[]
         }
         Update: {
           author_name?: string
           author_user_id?: string | null
           client_id?: string
+          closed_at?: string | null
+          closed_by?: string | null
           comment_text?: string
+          comment_type?: string
           created_at?: string
           id?: string
+          is_closed?: boolean
           is_pinned?: boolean
           read_celine?: boolean
           read_darley?: boolean
           read_gabi?: boolean
           read_patrick?: boolean
+          read_timestamps?: Json
           read_vanessa?: boolean
+          required_readers?: string[]
         }
         Relationships: [
           {
@@ -446,6 +464,7 @@ export type Database = {
           notif_item_vencido_count: number
           notif_pendente_count: number
           notif_total_count: number
+          pending_ciencia_count: number
           proc_deferido_count: number
           proc_em_analise_orgao_count: number
           proc_em_analise_ramos_count: number
@@ -495,6 +514,7 @@ export type Database = {
           notif_item_vencido_count?: number
           notif_pendente_count?: number
           notif_total_count?: number
+          pending_ciencia_count?: number
           proc_deferido_count?: number
           proc_em_analise_orgao_count?: number
           proc_em_analise_ramos_count?: number
@@ -544,6 +564,7 @@ export type Database = {
           notif_item_vencido_count?: number
           notif_pendente_count?: number
           notif_total_count?: number
+          pending_ciencia_count?: number
           proc_deferido_count?: number
           proc_em_analise_orgao_count?: number
           proc_em_analise_ramos_count?: number
@@ -1183,6 +1204,10 @@ export type Database = {
         Returns: undefined
       }
       recalculate_client_notifications: {
+        Args: { p_client_id: string }
+        Returns: undefined
+      }
+      recalculate_pending_ciencia: {
         Args: { p_client_id: string }
         Returns: undefined
       }
