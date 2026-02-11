@@ -544,8 +544,27 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-56 p-0" align="end">
-          <div className="px-3 py-2 border-b border-border">
+          <div className="px-3 py-2 border-b border-border flex items-center justify-between">
             <p className="text-xs font-semibold text-foreground">Lida por</p>
+            {isAdmin && (
+              <div className="flex gap-1">
+                <button
+                  onClick={() => READ_STATUS_NAMES.forEach(n => { if (!comment.readStatus[n]) onToggleRead(n); })}
+                  className="text-[9px] font-medium text-primary hover:underline"
+                  title="Marcar todos como lido"
+                >
+                  Todos
+                </button>
+                <span className="text-[9px] text-muted-foreground">|</span>
+                <button
+                  onClick={() => READ_STATUS_NAMES.forEach(n => { if (comment.readStatus[n]) onToggleRead(n); })}
+                  className="text-[9px] font-medium text-destructive hover:underline"
+                  title="Desmarcar todos"
+                >
+                  Nenhum
+                </button>
+              </div>
+            )}
           </div>
           <div className="p-2 space-y-1">
             {READ_STATUS_NAMES.map((name) => {
@@ -562,6 +581,15 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
                     {isRead ? (
                       <span className="flex items-center gap-0.5 text-[9px] text-green-600 dark:text-green-400">
                         <CheckCheck className="w-3 h-3" />
+                        {isAdmin && (
+                          <button
+                            onClick={() => onToggleRead(name)}
+                            className="ml-0.5 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                            title={`Desmarcar ${name}`}
+                          >
+                            <EyeOff className="w-3 h-3" />
+                          </button>
+                        )}
                       </span>
                     ) : (
                       <>
