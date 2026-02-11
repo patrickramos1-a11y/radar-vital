@@ -129,6 +129,62 @@ export default function CommentsPanel() {
     }
   };
 
+  const confirmReading = async (commentId: string) => {
+    const comment = comments.find(c => c.id === commentId);
+    if (!comment) return;
+    const userName = currentUserName;
+    const newTimestamps = { ...comment.readTimestamps, [userName]: new Date().toISOString() };
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ read_timestamps: newTimestamps as any })
+        .eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, readTimestamps: newTimestamps } : c
+      ));
+      toast.success('Ciência confirmada');
+    } catch (error) {
+      console.error('Error confirming reading:', error);
+      toast.error('Erro ao confirmar ciência');
+    }
+  };
+
+  const closeComment = async (commentId: string) => {
+    const userName = currentUserName;
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ is_closed: true, closed_by: userName, closed_at: new Date().toISOString() })
+        .eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, isClosed: true, closedBy: userName, closedAt: new Date().toISOString() } : c
+      ));
+      toast.success('Comentário encerrado');
+    } catch (error) {
+      console.error('Error closing comment:', error);
+      toast.error('Erro ao encerrar comentário');
+    }
+  };
+
+  const reopenComment = async (commentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ is_closed: false, closed_by: null, closed_at: null })
+        .eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, isClosed: false, closedBy: undefined, closedAt: undefined } : c
+      ));
+      toast.success('Comentário reaberto');
+    } catch (error) {
+      console.error('Error reopening comment:', error);
+      toast.error('Erro ao reabrir comentário');
+    }
+  };
+
   const togglePinned = async (commentId: string) => {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return;
@@ -321,6 +377,9 @@ export default function CommentsPanel() {
               onToggleRead={toggleReadStatus}
               onTogglePinned={togglePinned}
               onDelete={deleteComment}
+              onConfirmReading={confirmReading}
+              onClose={closeComment}
+              onReopen={reopenComment}
             />
           ))}
         </VisualGrid>
@@ -345,14 +404,20 @@ interface CommentCardProps {
   onToggleRead: (id: string, collaborator: ReadStatus) => void;
   onTogglePinned: (id: string) => void;
   onDelete: (id: string) => void;
+  onConfirmReading: (id: string) => void;
+  onClose: (id: string) => void;
+  onReopen: (id: string) => void;
 }
 
-function CommentCard({ comment, currentUserName, collaborators, onToggleRead, onTogglePinned, onDelete }: CommentCardProps) {
+function CommentCard({ comment, currentUserName, collaborators, onToggleRead, onTogglePinned, onDelete, onConfirmReading, onClose, onReopen }: CommentCardProps) {
+  const isAdmin = currentUserName === 'Patrick';
   const isCiencia = comment.commentType === 'ciencia';
   const confirmedCount = isCiencia ? comment.requiredReaders.filter(r => comment.readTimestamps[r]).length : 0;
   const totalRequired = isCiencia ? comment.requiredReaders.length : 0;
   const isFullyRead = isCiencia && totalRequired > 0 && confirmedCount === totalRequired;
   const isPending = isCiencia && confirmedCount === 0 && totalRequired > 0;
+  const isPartial = isCiencia && confirmedCount > 0 && confirmedCount < totalRequired;
+  const userNeedsToConfirm = isCiencia && !comment.isClosed && comment.requiredReaders.includes(currentUserName) && !comment.readTimestamps[currentUserName];
 
   const typeBadgeStyles: Record<CommentType, string> = {
     informativo: 'bg-muted text-muted-foreground',
@@ -405,6 +470,19 @@ function CommentCard({ comment, currentUserName, collaborators, onToggleRead, on
           <Button variant="ghost" size="icon" className={cn("h-6 w-6", comment.isPinned && "text-amber-500")} onClick={() => onTogglePinned(comment.id)}>
             <Pin className="h-3 w-3" />
           </Button>
+          {isAdmin && isCiencia && (
+            <>
+              {!comment.isClosed ? (
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-orange-500" onClick={() => onClose(comment.id)} title="Encerrar">
+                  <Lock className="h-3 w-3" />
+                </Button>
+              ) : (
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-green-500" onClick={() => onReopen(comment.id)} title="Reabrir">
+                  <Unlock className="h-3 w-3" />
+                </Button>
+              )}
+            </>
+          )}
           <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => onDelete(comment.id)}>
             <Trash2 className="h-3 w-3" />
           </Button>
@@ -414,26 +492,58 @@ function CommentCard({ comment, currentUserName, collaborators, onToggleRead, on
       {/* Text */}
       <p className="text-sm text-foreground mb-3 line-clamp-4">{comment.commentText}</p>
 
-      {/* Ciência status */}
+      {/* Ciência status - full version matching CommentsModal */}
       {isCiencia && totalRequired > 0 && (
-        <div className="flex flex-wrap items-center gap-1 mb-2">
-          {comment.isClosed ? (
-            <Badge variant="secondary" className="text-[9px]"><Lock className="w-2.5 h-2.5 mr-0.5" />Encerrado</Badge>
-          ) : isFullyRead ? (
-            <Badge className="text-[9px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"><CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />{confirmedCount}/{totalRequired}</Badge>
-          ) : (
-            <Badge className={cn("text-[9px]", isPending ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")}>
-              <Clock className="w-2.5 h-2.5 mr-0.5" />{confirmedCount}/{totalRequired}
-            </Badge>
+        <div className="space-y-2 mb-3 p-2.5 rounded-md bg-muted/40 border border-border/60">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Confirmações de ciência</span>
+            {comment.isClosed ? (
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-muted-foreground/30 text-muted-foreground gap-1">
+                <Lock className="w-2.5 h-2.5" /> Encerrado por {comment.closedBy}
+              </Badge>
+            ) : isFullyRead ? (
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-green-400 text-green-600 dark:text-green-400 gap-1">
+                <CheckCircle2 className="w-2.5 h-2.5" /> {confirmedCount}/{totalRequired}
+              </Badge>
+            ) : isPartial ? (
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-amber-400 text-amber-600 dark:text-amber-400 gap-1">
+                <Clock className="w-2.5 h-2.5" /> {confirmedCount}/{totalRequired}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-red-400 text-red-600 dark:text-red-400 gap-1">
+                <Clock className="w-2.5 h-2.5" /> 0/{totalRequired}
+              </Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {comment.requiredReaders.map((reader) => {
+              const confirmed = !!comment.readTimestamps[reader];
+              return (
+                <div
+                  key={reader}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium border transition-colors',
+                    confirmed
+                      ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
+                      : 'bg-background text-muted-foreground border-border'
+                  )}
+                >
+                  {confirmed ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <Clock className="w-3 h-3 opacity-50" />}
+                  <span>{reader}</span>
+                  {confirmed && (
+                    <span className="text-[8px] opacity-60 ml-0.5">
+                      {format(new Date(comment.readTimestamps[reader]), 'dd/MM HH:mm', { locale: ptBR })}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {userNeedsToConfirm && (
+            <Button size="sm" className="h-8 text-xs w-full mt-1 gap-1.5" onClick={() => onConfirmReading(comment.id)}>
+              <CheckCircle2 className="w-3.5 h-3.5" /> Confirmar minha ciência
+            </Button>
           )}
-          {comment.requiredReaders.map(reader => {
-            const confirmed = !!comment.readTimestamps[reader];
-            return (
-              <span key={reader} className={cn('text-[9px] px-1.5 py-0.5 rounded', confirmed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400')}>
-                {confirmed ? '✓' : '○'} {reader}
-              </span>
-            );
-          })}
         </div>
       )}
 
