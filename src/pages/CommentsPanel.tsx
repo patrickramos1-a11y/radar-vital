@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, User, Clock, Check, CheckCheck, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2 } from "lucide-react";
+import { MessageSquare, User, Clock, Check, CheckCheck, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2, Send, Loader2, ChevronDown, Search, Users, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -53,6 +55,12 @@ export default function CommentsPanel() {
   const [typeFilter, setTypeFilter] = useState<CommentType | 'all'>('all');
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
   const [showMyCiencia, setShowMyCiencia] = useState(false);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [newCommentType, setNewCommentType] = useState<CommentType>('informativo');
+  const [newClientId, setNewClientId] = useState<string>('');
+  const [newSelectedReaders, setNewSelectedReaders] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currentUserName = currentUser?.name || 'Sistema';
 
@@ -212,6 +220,35 @@ export default function CommentsPanel() {
     }
   };
 
+  const addComment = async () => {
+    if (!newComment.trim() || !newClientId) return;
+    setIsSubmitting(true);
+    try {
+      const insertData: any = {
+        client_id: newClientId,
+        author_name: currentUserName,
+        comment_text: newComment.trim(),
+        comment_type: newCommentType,
+        required_readers: newCommentType === 'ciencia' ? newSelectedReaders : [],
+        read_timestamps: {},
+      };
+      const { error } = await supabase.from('client_comments').insert(insertData);
+      if (error) throw error;
+      setNewComment('');
+      setNewCommentType('informativo');
+      setNewClientId('');
+      setNewSelectedReaders([]);
+      setShowNewForm(false);
+      toast.success('Comentário adicionado');
+      await fetchComments();
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Erro ao adicionar comentário');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const uniqueAuthors = useMemo(() => {
     const authors = new Set(comments.map(c => c.authorName));
     return Array.from(authors).sort();
@@ -363,8 +400,98 @@ export default function CommentsPanel() {
           )}
 
           <div className="flex-1" />
+          <Button size="sm" className="gap-1.5" onClick={() => setShowNewForm(!showNewForm)}>
+            <Plus className="w-4 h-4" />
+            Novo comentário
+          </Button>
           <Badge variant="secondary">{filteredComments.length} comentários</Badge>
         </div>
+
+        {/* New Comment Form */}
+        {showNewForm && (
+          <div className="px-6 py-4 bg-card border-b border-border space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Novo Comentário</h3>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowNewForm(false)}>Fechar</Button>
+            </div>
+
+            {/* Client selector */}
+            <Select value={newClientId} onValueChange={setNewClientId}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Selecione a empresa..." />
+              </SelectTrigger>
+              <SelectContent>
+                {activeClients.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Comment type selector */}
+            <div className="flex gap-1.5">
+              {(['informativo', 'relevante', 'ciencia'] as CommentType[]).map((type) => {
+                const icons = { informativo: Info, relevante: AlertTriangle, ciencia: ShieldAlert };
+                const colors = {
+                  informativo: 'bg-muted text-muted-foreground border-border',
+                  relevante: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700',
+                  ciencia: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700',
+                };
+                const Icon = icons[type];
+                return (
+                  <button
+                    key={type}
+                    onClick={() => setNewCommentType(type)}
+                    className={cn(
+                      'flex items-center gap-1 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all',
+                      newCommentType === type ? colors[type] + ' ring-2 ring-offset-1 ring-primary/30' : 'bg-background text-muted-foreground border-border hover:bg-muted/50'
+                    )}
+                  >
+                    <Icon className="w-3 h-3" />
+                    {COMMENT_TYPE_LABELS[type]}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Type description */}
+            <p className="text-[11px] text-muted-foreground italic px-1">
+              {{
+                informativo: 'Registro simples sem exigência de confirmação. Ideal para anotações, observações e registros gerais do dia a dia.',
+                relevante: 'Destaque visual para informações importantes. Não exige confirmação, mas chama atenção na listagem.',
+                ciencia: 'Comunicação formal que exige confirmação de leitura dos colaboradores selecionados.',
+              }[newCommentType]}
+            </p>
+
+            {/* Required readers for ciencia */}
+            {newCommentType === 'ciencia' && (
+              <PanelReadersSelector
+                collaborators={collaborators}
+                selectedReaders={newSelectedReaders}
+                onToggleReader={(name) => setNewSelectedReaders(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])}
+                onSelectAll={() => setNewSelectedReaders(collaborators.map(c => c.name))}
+                onDeselectAll={() => setNewSelectedReaders([])}
+              />
+            )}
+
+            <Textarea
+              placeholder="Adicionar comentário... (Ctrl+Enter para enviar)"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addComment(); }}
+              className="min-h-[80px] resize-none"
+            />
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={addComment}
+                disabled={!newComment.trim() || !newClientId || isSubmitting || (newCommentType === 'ciencia' && newSelectedReaders.length === 0)}
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
+                Enviar
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Comments Grid */}
         <VisualGrid itemCount={filteredComments.length}>
@@ -674,6 +801,106 @@ function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, 
           </div>
         </PopoverContent>
       </Popover>
+    </div>
+  );
+}
+
+// --- PanelReadersSelector ---
+interface PanelReadersSelectorProps {
+  collaborators: { id: string; name: string }[];
+  selectedReaders: string[];
+  onToggleReader: (name: string) => void;
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
+}
+
+function PanelReadersSelector({ collaborators, selectedReaders, onToggleReader, onSelectAll, onDeselectAll }: PanelReadersSelectorProps) {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return collaborators;
+    const q = search.toLowerCase();
+    return collaborators.filter(c => c.name.toLowerCase().includes(q));
+  }, [collaborators, search]);
+
+  const allSelected = collaborators.length > 0 && selectedReaders.length === collaborators.length;
+
+  return (
+    <div className="space-y-1.5">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              'w-full flex items-center justify-between px-3 py-2 rounded-md border text-xs transition-all',
+              'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-600',
+              selectedReaders.length === 0 && 'text-red-500',
+              selectedReaders.length > 0 && 'text-red-700 dark:text-red-400'
+            )}
+          >
+            <span className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" />
+              {selectedReaders.length === 0
+                ? 'Selecione quem deve confirmar ciência'
+                : `${selectedReaders.length} colaborador${selectedReaders.length > 1 ? 'es' : ''} selecionado${selectedReaders.length > 1 ? 's' : ''}`}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+          <div className="p-2 border-b border-border">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar colaborador..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-7 pl-7 text-xs"
+              />
+            </div>
+          </div>
+          <div className="px-2 py-1.5 border-b border-border">
+            <button
+              type="button"
+              onClick={allSelected ? onDeselectAll : onSelectAll}
+              className="text-[11px] font-medium text-primary hover:underline"
+            >
+              {allSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+            </button>
+          </div>
+          <ScrollArea className="max-h-[180px]">
+            <div className="p-1.5 space-y-0.5">
+              {filtered.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-2">Nenhum resultado</p>
+              ) : (
+                filtered.map((collab) => (
+                  <label key={collab.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 cursor-pointer transition-colors">
+                    <Checkbox
+                      checked={selectedReaders.includes(collab.name)}
+                      onCheckedChange={() => onToggleReader(collab.name)}
+                      className="h-3.5 w-3.5"
+                    />
+                    <span className="text-xs">{collab.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </PopoverContent>
+      </Popover>
+      {selectedReaders.length === 0 && (
+        <p className="text-[10px] text-red-500 px-1">Selecione pelo menos um colaborador</p>
+      )}
+      {selectedReaders.length > 0 && (
+        <div className="flex flex-wrap gap-1 px-1">
+          {selectedReaders.map(name => (
+            <Badge key={name} variant="secondary" className="text-[10px] px-1.5 py-0 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              {name}
+            </Badge>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
