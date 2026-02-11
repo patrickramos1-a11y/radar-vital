@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { supabase } from '@/integrations/supabase/client';
-import { ClientComment } from '@/types/comment';
+import { ClientComment, CommentType } from '@/types/comment';
 import { CommentPreview } from './CommentPreview';
 import { CommentsModal } from './CommentsModal';
 
@@ -18,7 +18,6 @@ export function CommentButton({ clientId, clientName, commentCount }: CommentBut
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isHoverOpen, setIsHoverOpen] = useState(false);
 
-  // Fetch preview comments when hover opens
   useEffect(() => {
     if (!isHoverOpen || commentCount === 0) return;
 
@@ -49,6 +48,12 @@ export function CommentButton({ clientId, clientName, commentCount }: CommentBut
             vanessa: row.read_vanessa ?? false,
             patrick: row.read_patrick ?? false,
           },
+          commentType: (row.comment_type as CommentType) || 'informativo',
+          requiredReaders: row.required_readers || [],
+          readTimestamps: (row.read_timestamps as Record<string, string>) || {},
+          isClosed: row.is_closed ?? false,
+          closedBy: row.closed_by || undefined,
+          closedAt: row.closed_at || undefined,
         }));
 
         setPreviewComments(mapped);
@@ -96,12 +101,7 @@ export function CommentButton({ clientId, clientName, commentCount }: CommentBut
             )}
           </button>
         </HoverCardTrigger>
-        <HoverCardContent 
-          side="right" 
-          align="start" 
-          className="p-0 w-auto"
-          sideOffset={8}
-        >
+        <HoverCardContent side="right" align="start" className="p-0 w-auto" sideOffset={8}>
           <CommentPreview
             comments={previewComments}
             isLoading={isLoadingPreview}
