@@ -39,7 +39,7 @@ const navigationItems: NavItem[] = [
     href: "/processos-unificado"
   },
   {
-    title: "Checklist",
+    title: "Tarefas",
     icon: Box,
     href: "/jackbox-unificado"
   },

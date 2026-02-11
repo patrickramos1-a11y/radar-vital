@@ -16,7 +16,8 @@ export type VisualSortOption =
   | 'expiring'
   | 'expired'
   | 'notStarted'
-  | 'tasks';
+  | 'tasks'
+  | 'days_open';
 
 export type SortDirection = 'asc' | 'desc';
 
