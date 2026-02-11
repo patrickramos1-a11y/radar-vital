@@ -1,91 +1,159 @@
 
-# Chat de Conversa no Backlog
+# SISRAMOS - Sistema de Comentarios com Ciencia Direcionada
 
 ## Resumo
 
-Adicionar uma aba "Conversa" no detalhe do item de backlog, funcionando como um chat onde os usuarios podem trocar mensagens sobre o item. Cada mensagem mostra nome do perfil, data/hora, e suporta edicao (com marcacao "editada") e exclusao silenciosa.
+Evolucao completa do sistema de comentarios atual, transformando-o de um registro textual simples em um mecanismo de comunicacao estruturado com tres niveis (Informativo, Relevante, Ciencia Obrigatoria), confirmacao de leitura direcionada e hierarquia administrativa.
 
 ---
 
-## 1. Tabela no Banco de Dados
+## Situacao Atual
 
-Nova tabela `backlog_messages`:
-
-| Coluna | Tipo | Descricao |
-|--------|------|-----------|
-| id | uuid (PK) | Identificador |
-| backlog_item_id | uuid (FK -> backlog_items) | Item vinculado |
-| author_name | text | Nome do perfil que enviou |
-| message | text | Conteudo da mensagem |
-| is_edited | boolean (default false) | Marca se foi editada |
-| created_at | timestamptz | Data/hora de envio |
-| updated_at | timestamptz | Ultima edicao |
-
-RLS permissiva (mesmo padrao das outras tabelas de backlog). Cascade delete quando o item de backlog for removido.
+- Tabela `client_comments` com colunas fixas `read_celine`, `read_gabi`, `read_darley`, `read_vanessa`, `read_patrick`
+- Todos os comentarios sao tratados igualmente -- sem distincao de tipo
+- Leitura e confirmacao sao toggle manual por colaborador, mas sem obrigatoriedade
+- 5 colaboradores fixos no codigo (hardcoded)
 
 ---
 
-## 2. Novo Componente: BacklogChat
+## Arquitetura da Solucao
 
-Componente `src/components/backlog/BacklogChat.tsx` com:
+### 1. Mudancas no Banco de Dados
 
-- **Area de mensagens** com scroll, ordenadas da mais antiga para a mais recente (estilo chat)
-- **Cada mensagem** mostra:
-  - Iniciais do autor em avatar colorido
-  - Nome do autor
-  - Data e horario formatados (ex: "10/02/2026 14:32")
-  - Texto da mensagem
-  - Tag "(editada)" ao lado do horario, se aplicavel
-  - Botoes de editar/excluir visíveis apenas para o autor da mensagem
-- **Campo de input** fixo na parte inferior com botao de enviar
-- **Edicao inline**: ao clicar em editar, o texto da mensagem vira um campo editavel com botoes Salvar/Cancelar
-- **Exclusao silenciosa**: ao excluir, a mensagem simplesmente desaparece sem notificacao para outros
+**Alteracoes na tabela `client_comments`:**
 
----
+Adicionar colunas:
+- `comment_type` (text, default `'informativo'`) -- valores: `informativo`, `relevante`, `ciencia`
+- `required_readers` (text[], default `'{}'`) -- nomes dos colaboradores que devem confirmar (usado apenas quando `comment_type = 'ciencia'`)
+- `read_timestamps` (jsonb, default `'{}'`) -- registro de data/hora de cada confirmacao (ex: `{"Patrick": "2026-02-11T14:00:00Z"}`)
+- `is_closed` (boolean, default `false`) -- permite encerramento manual pelo admin
+- `closed_by` (text) -- nome de quem encerrou
+- `closed_at` (timestamptz) -- data/hora do encerramento
 
-## 3. Hook: useBacklogMessages
+As colunas legadas `read_celine`, `read_gabi`, etc. serao mantidas para compatibilidade mas o novo fluxo usara `required_readers` + `read_timestamps`.
 
-Novo hook `src/hooks/useBacklogMessages.ts` com:
+**Nova coluna em `clients`:**
+- `pending_ciencia_count` (integer, default 0) -- contador de comentarios com ciencia pendente (para exibir no card da empresa)
 
-- `messages` -- lista de mensagens do item (query por backlog_item_id)
-- `sendMessage(text)` -- insere nova mensagem com o nome do usuario atual
-- `editMessage(id, newText)` -- atualiza texto e marca `is_edited = true`
-- `deleteMessage(id)` -- remove silenciosamente
+**Trigger de contagem:**
+- Funcao que recalcula `pending_ciencia_count` quando um comentario de ciencia e criado, deletado, ou quando todos os obrigatorios confirmam leitura.
 
 ---
 
-## 4. Integracao na Pagina BacklogDetail
+### 2. Tipos TypeScript
 
-- Adicionar uma **quarta aba** "Conversa" ao TabsList existente (ao lado de Anexos, Implementacoes, Historico)
-- O icone sera `MessageSquare` do lucide-react
-- Mostra contagem de mensagens no badge da aba
+**Atualizar `src/types/comment.ts`:**
+
+```text
+CommentType = 'informativo' | 'relevante' | 'ciencia'
+
+ClientComment (atualizado):
+  + commentType: CommentType
+  + requiredReaders: string[]
+  + readTimestamps: Record<string, string>  // nome -> ISO timestamp
+  + isClosed: boolean
+  + closedBy?: string
+  + closedAt?: string
+
+CommentFormData (atualizado):
+  + commentType: CommentType
+  + requiredReaders: string[]  // apenas para tipo 'ciencia'
+```
 
 ---
 
-## Detalhes Tecnicos
+### 3. Componentes Modificados
 
-### Migracao SQL
+**`src/components/comments/CommentsModal.tsx`** (modal dentro do card da empresa):
 
-Criar tabela `backlog_messages` com:
-- Foreign key para `backlog_items(id)` com ON DELETE CASCADE
-- RLS habilitado com politicas permissivas para select, insert, update, delete
-- Indices em `backlog_item_id` e `created_at`
+- Campo de selecao de tipo de comentario ao criar (3 opcoes com icones)
+- Quando tipo = `ciencia`: exibir seletor de colaboradores obrigatorios (checkboxes)
+- Cada comentario exibe:
+  - Badge de tipo (Informativo = cinza, Relevante = amarelo, Ciencia = vermelho)
+  - Para tipo `ciencia`: lista de usuarios obrigatorios com status individual e timestamp de confirmacao
+  - Estado dinamico: "Pendente", "Parcial", "Completo"
+  - Botao de confirmar leitura (apenas para o usuario logado, se ele estiver na lista)
+- Acoes do admin (Patrick):
+  - Encerrar/reabrir comentario
+  - Adicionar/remover leitores obrigatorios apos criacao
 
-### Arquivos
+**`src/pages/CommentsPanel.tsx`** (painel central):
 
-1. **Migracao SQL** -- criar tabela `backlog_messages`
-2. **Novo:** `src/hooks/useBacklogMessages.ts` -- CRUD de mensagens
-3. **Novo:** `src/components/backlog/BacklogChat.tsx` -- componente visual do chat
-4. **Editado:** `src/pages/BacklogDetail.tsx` -- adicionar aba "Conversa" ao TabsList
-5. **Editado:** `src/types/backlog.ts` -- adicionar interface `BacklogMessage`
+- Novo filtro por tipo de comentario
+- Novo filtro "Aguardando minha ciencia" (mostra apenas comentarios onde o usuario logado esta pendente)
+- KPIs atualizados: total, fixados, pendentes de ciencia (global), e por tipo
+- Cards de comentario atualizados com badges de tipo e status de ciencia
 
-### Identificacao do autor
+**`src/components/comments/CommentButton.tsx`** e **`src/components/comments/CommentPreview.tsx`**:
 
-Usa `getCurrentUserName()` do AuthContext (mesmo padrao usado no historico do backlog). Botoes de editar/excluir so aparecem quando `message.author_name === currentUserName`.
+- Contador no card da empresa reflete apenas comentarios com ciencia pendente (nao informativos)
 
-### Visual do chat
+---
 
-- Mensagens do usuario atual alinhadas a direita com fundo azul
-- Mensagens de outros alinhadas a esquerda com fundo cinza
-- Avatar com iniciais coloridas
-- Scroll automatico para a mensagem mais recente ao abrir ou enviar
+### 4. Hook Atualizado
+
+**`src/hooks/useClientComments.ts`:**
+
+- `addComment` aceita `commentType` e `requiredReaders`
+- Nova funcao `confirmReading(commentId)` -- marca leitura do usuario atual com timestamp
+- Nova funcao `closeComment(commentId)` -- encerra (admin only)
+- Nova funcao `reopenComment(commentId)` -- reabre (admin only)
+- Nova funcao `updateRequiredReaders(commentId, readers)` -- modifica lista (admin only)
+- Logica de verificacao de admin: `currentUser === 'Patrick'`
+
+---
+
+### 5. Logica de Permissoes
+
+| Acao | Admin (Patrick) | Outros |
+|------|----------------|--------|
+| Criar qualquer tipo | Sim | Sim |
+| Selecionar leitores obrigatorios | Qualquer usuario | Qualquer usuario |
+| Confirmar propria leitura | Sim | Sim (se estiver na lista) |
+| Visualizar pendencias de todos | Sim | Apenas as proprias |
+| Adicionar/remover leitores apos criacao | Sim | Nao |
+| Encerrar comentario com ciencia | Sim | Nao |
+| Reabrir comentario encerrado | Sim | Nao |
+
+---
+
+### 6. Experiencia Visual
+
+**Badge de tipo no comentario:**
+- Informativo: `bg-gray-100 text-gray-600` (sem destaque)
+- Relevante: `bg-amber-100 text-amber-700` (destaque visual)
+- Ciencia Obrigatoria: `bg-red-100 text-red-700` (alerta)
+
+**Status de ciencia no card:**
+- Pendente (0 confirmacoes): icone vermelho, borda vermelha sutil
+- Parcial: icone amarelo com fração (ex: "2/4"), borda amarela
+- Completo: icone verde, visual neutro
+- Encerrado manualmente: badge "Encerrado" cinza
+
+**Card da empresa:**
+- Contador mostra apenas ciencias pendentes (nao informativos)
+- Tooltip com resumo: "3 comentarios aguardando ciencia"
+
+---
+
+### 7. Area "Aguardando minha ciencia"
+
+No painel de comentarios, filtro rapido que mostra ao usuario logado apenas os comentarios onde:
+- `comment_type = 'ciencia'`
+- O nome do usuario esta em `required_readers`
+- O nome do usuario NAO esta em `read_timestamps`
+- O comentario nao esta encerrado (`is_closed = false`)
+
+---
+
+## Arquivos Impactados
+
+1. **Migracao SQL** -- alterar `client_comments`, adicionar coluna em `clients`, criar trigger
+2. **`src/types/comment.ts`** -- novos tipos
+3. **`src/hooks/useClientComments.ts`** -- CRUD expandido
+4. **`src/components/comments/CommentsModal.tsx`** -- formulario e exibicao
+5. **`src/pages/CommentsPanel.tsx`** -- filtros e cards
+6. **`src/components/comments/CommentButton.tsx`** -- contador atualizado
+7. **`src/components/comments/CommentPreview.tsx`** -- preview atualizado
+
+Nenhuma mudanca em autenticacao ou rotas. A hierarquia admin usa a verificacao existente pelo nome do usuario (`Patrick`).
