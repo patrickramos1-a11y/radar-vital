@@ -1,41 +1,36 @@
 
-# Fix: Lock button click being silently consumed
 
-## Problem confirmed via browser testing
-- Clicking the lock button with various selectors (xpath, CSS) reports "success" but state never changes
-- Other buttons in the same FilterBar (like "Prioridade" sort) work perfectly
-- No console errors appear
-- The code logic is correct - the issue is at the event level
+# Correção: Adicionar Painel retorna erro 401
 
-## Root Cause Analysis
-The lock button sits adjacent to the `GridSizePicker` component, which nests `Popover > Tooltip > PopoverTrigger asChild > button`. The Radix `Popover` component tracks pointer events (pointerdown/pointerup) at the document level to manage open/close behavior. When the lock button receives a click, the Popover's document-level pointer handler may consume the event before the `click` event fires on the lock button.
+## Problema Identificado
 
-The `click` event requires both `mousedown` and `mouseup` to complete on the same target. If Radix's pointer event system intercepts `pointerup`, the browser never synthesizes the `click`.
+Ao tentar adicionar um novo painel pelo gerenciador, a requisição POST retorna **erro 401 (não autorizado)** com a mensagem: `"new row violates row-level security policy for table panel_links"`.
 
-## Solution
-Replace `onClick` with `onPointerDown` for the lock button. The `pointerdown` event fires before any Radix handler can intercept it, ensuring the state toggle always executes.
+**Causa raiz:** As políticas de RLS (Row-Level Security) para INSERT, UPDATE e DELETE na tabela `panel_links` estão configuradas como **RESTRICTIVE** (não permissivas). No PostgreSQL, mesmo que a expressão seja `true`, políticas restritivas sozinhas não concedem acesso — é necessário que pelo menos uma política **PERMISSIVE** também exista e seja aprovada. Como não há políticas permissivas para INSERT/UPDATE/DELETE, todas as operações de escrita são bloqueadas.
 
-## Technical Details
+## Solução
 
-### File: `src/components/dashboard/FilterBar.tsx` (line 208)
+Recriar as políticas de INSERT, UPDATE e DELETE como **PERMISSIVE** para que qualquer usuário (inclusive anônimo) possa gerenciar os painéis.
 
-Change the lock button's event handler:
+## Detalhes Técnicos
+
+Uma migração SQL será executada para:
+
+1. Remover as políticas restritivas atuais de INSERT, UPDATE e DELETE
+2. Criar novas políticas **permissivas** para essas operações
+3. A política de SELECT permanece como está (já funciona corretamente)
 
 ```text
-Before:
-  onClick={() => onFitAllLockedChange(!fitAllLocked)}
+Políticas atuais (RESTRICTIVE - bloqueiam):
+  - "Authenticated users can insert panel links" -> RESTRICTIVE
+  - "Authenticated users can update panel links" -> RESTRICTIVE  
+  - "Authenticated users can delete panel links" -> RESTRICTIVE
 
-After:
-  onPointerDown={(e) => {
-    e.preventDefault();
-    onFitAllLockedChange(!fitAllLocked);
-  }}
+Novas políticas (PERMISSIVE - permitirão acesso):
+  - "Public can insert panel links" -> PERMISSIVE, WITH CHECK (true)
+  - "Public can update panel links" -> PERMISSIVE, USING (true)
+  - "Public can delete panel links" -> PERMISSIVE, USING (true)
 ```
 
-The `e.preventDefault()` prevents the button from receiving focus-related side effects from the pointer event, keeping behavior clean.
+Nenhuma alteração de código será necessária -- apenas a correção das políticas no banco de dados.
 
-### Summary
-
-| File | Change |
-|------|--------|
-| `src/components/dashboard/FilterBar.tsx` | Replace `onClick` with `onPointerDown` on the lock button |

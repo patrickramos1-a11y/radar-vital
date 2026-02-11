@@ -200,27 +200,29 @@ export function FilterBar({
             selectedSize={gridSize} 
             onSizeSelect={onGridSizeChange}
           />
-          <button
-            type="button"
-            title={fitAllLocked 
-              ? "Desativar Travamento de Espaço - retornar ao modo anterior" 
-              : "Ativar Travamento de Espaço - todos os cards cabem na tela sem scroll"}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              onFitAllLockedChange(!fitAllLocked);
-            }}
-            className={`p-1.5 rounded-md border transition-all ${
-              fitAllLocked 
-                ? 'bg-green-500 border-green-600 text-white hover:bg-green-600' 
-                : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
-            }`}
-          >
-            {fitAllLocked ? (
-              <Lock className="w-4 h-4" />
-            ) : (
-              <LockOpen className="w-4 h-4" />
-            )}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onFitAllLockedChange(!fitAllLocked)}
+                className={`p-1.5 rounded-md border transition-all ${
+                  fitAllLocked 
+                    ? 'bg-green-500 border-green-600 text-white hover:bg-green-600' 
+                    : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }`}
+              >
+                {fitAllLocked ? (
+                  <Lock className="w-4 h-4" />
+                ) : (
+                  <LockOpen className="w-4 h-4" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs max-w-[200px]">
+              {fitAllLocked 
+                ? "Desativar Travamento de Espaço - retornar ao modo anterior" 
+                : "Ativar Travamento de Espaço - todos os cards cabem na tela sem scroll"}
+            </TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Link

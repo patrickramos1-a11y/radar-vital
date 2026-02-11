@@ -233,9 +233,8 @@ export function ClientCard({
 
   return (
     <div
-      className={`client-card-compact h-full min-h-0 min-w-0 overflow-hidden ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+      className={`client-card-compact h-full min-h-0 min-w-0 ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
       onClick={() => onSelect(client.id)}
-      style={fitAll ? { maxHeight: '100%' } : {}}
     >
       {/* Top right icons - Comments + Checklist + Highlight + Priority */}
       <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
@@ -289,7 +288,7 @@ export function ClientCard({
       </div>
 
       {/* Collaborator Row - Compact layout */}
-      <div className={`flex items-center gap-0.5 px-1.5 ${fitAll ? 'py-0' : 'py-0.5'} bg-muted/30 border-b border-border/50 overflow-hidden`}>
+      <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-muted/30 border-b border-border/50">
         {activeCollaboratorsList.map((name) => (
           <CollaboratorBadge
             key={name}
@@ -352,7 +351,7 @@ export function ClientCard({
       </div>
 
       {/* Indicators Row - P, L, D with chips */}
-      <div className={`${fitAll ? 'px-1 py-0.5' : indicatorSizes.chipPadding} border-t border-border bg-card-elevated/50 overflow-hidden`}>
+      <div className={`${indicatorSizes.chipPadding} border-t border-border bg-card-elevated/50`}>
         <div className="flex items-center justify-between gap-0.5">
           {/* P - Processos */}
           <div className="flex flex-col items-center min-w-[16px]">

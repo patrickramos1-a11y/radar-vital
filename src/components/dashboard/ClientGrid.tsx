@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState, useRef, useCallback } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { ClientCard } from "./ClientCard";
 import { Client, CollaboratorName } from "@/types/client";
 import { ViewMode, GridSize } from "./FilterBar";
@@ -19,6 +19,33 @@ interface ClientGridProps {
   fitAllLocked: boolean;
 }
 
+// Calcula o layout do grid de forma orgânica - sem limite de clientes
+function getGridLayout(count: number): { columns: number; rows: number } {
+  if (count <= 0) return { columns: 1, rows: 1 };
+  if (count <= 2) return { columns: 2, rows: 1 };
+  if (count <= 4) return { columns: 2, rows: 2 };
+  if (count <= 6) return { columns: 3, rows: 2 };
+  if (count <= 9) return { columns: 3, rows: 3 };
+  if (count <= 12) return { columns: 4, rows: 3 };
+  if (count <= 16) return { columns: 4, rows: 4 };
+  if (count <= 20) return { columns: 5, rows: 4 };
+  if (count <= 25) return { columns: 5, rows: 5 };
+  if (count <= 30) return { columns: 6, rows: 5 };
+  if (count <= 36) return { columns: 6, rows: 6 };
+  if (count <= 42) return { columns: 7, rows: 6 };
+  if (count <= 49) return { columns: 7, rows: 7 };
+  if (count <= 56) return { columns: 8, rows: 7 };
+  if (count <= 64) return { columns: 8, rows: 8 };
+  if (count <= 72) return { columns: 9, rows: 8 };
+  if (count <= 81) return { columns: 9, rows: 9 };
+  if (count <= 90) return { columns: 10, rows: 9 };
+  
+  // Para mais de 90 clientes, calcula dinamicamente
+  const cols = Math.ceil(Math.sqrt(count * 1.2)); // Levemente mais colunas que linhas
+  const rows = Math.ceil(count / cols);
+  return { columns: cols, rows };
+}
+
 export function ClientGrid({ 
   clients, 
   selectedClientId, 
@@ -34,58 +61,69 @@ export function ClientGrid({
   gridSize,
   fitAllLocked,
 }: ClientGridProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
+  // Track container dimensions for responsive calculations
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // Use ResizeObserver to measure the real container dimensions
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+    const updateSize = () => {
+      // Get viewport dimensions minus header/filter bar height (approx 180px)
+      const width = window.innerWidth - 280; // Subtract sidebar width
+      const height = window.innerHeight - 180; // Subtract headers
+      setContainerSize({ width: Math.max(width, 400), height: Math.max(height, 300) });
+    };
 
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setContainerSize({ width, height });
-        }
-      }
-    });
-
-    observer.observe(el);
-    return () => observer.disconnect();
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, []);
 
   // Calculate grid layout based on mode and settings
   const gridLayout = useMemo(() => {
+    // Priority 1: fitAllLocked mode - calculate optimal fit for all clients
     if (fitAllLocked) {
       const clientCount = clients.length;
       if (clientCount === 0) return { columns: 7, rows: 1, useFixedGrid: true };
 
+      // Minimum card dimensions for fit-all locked mode (smaller to allow more clients)
       const minCardWidth = 80;
       const minCardHeight = 70;
       const gap = 8;
 
+      // Calculate max possible columns and rows based on container
       const maxCols = Math.floor((containerSize.width + gap) / (minCardWidth + gap));
       const maxRows = Math.floor((containerSize.height + gap) / (minCardHeight + gap));
 
-      let bestCols = Math.ceil(Math.sqrt(clientCount * 1.3));
+      // Find optimal columns that fit all clients within the available rows
+      let bestCols = Math.ceil(Math.sqrt(clientCount * 1.3)); // Start with slightly more columns than rows
       let bestRows = Math.ceil(clientCount / bestCols);
 
+      // If rows exceed max, increase columns
       while (bestRows > maxRows && bestCols < maxCols) {
         bestCols++;
         bestRows = Math.ceil(clientCount / bestCols);
       }
 
+      // Clamp to valid ranges
       bestCols = Math.max(Math.min(bestCols, maxCols), 4);
       bestRows = Math.max(Math.ceil(clientCount / bestCols), 1);
 
-      return { columns: bestCols, rows: bestRows, useFixedGrid: true };
+      return {
+        columns: bestCols,
+        rows: bestRows,
+        useFixedGrid: true,
+      };
     }
 
+    // Priority 2: User selected a fixed grid size
     if (gridSize) {
-      return { columns: gridSize.cols, rows: gridSize.rows, useFixedGrid: true };
+      return {
+        columns: gridSize.cols,
+        rows: gridSize.rows,
+        useFixedGrid: true,
+      };
     }
 
+    // Priority 3: Auto-calculate based on view mode
     if (viewMode === 'fit-all') {
       const clientCount = clients.length;
       if (clientCount === 0) return { columns: 7, rows: 1, useFixedGrid: false };
@@ -110,28 +148,39 @@ export function ClientGrid({
         bestRows = Math.ceil(clientCount / bestCols);
       }
 
-      return { columns: Math.max(bestCols, 4), rows: Math.max(bestRows, 1), useFixedGrid: true };
+      return {
+        columns: Math.max(bestCols, 4),
+        rows: Math.max(bestRows, 1),
+        useFixedGrid: true,
+      };
     }
 
+    // Default: Scroll mode - responsive columns based on screen width
     const baseColumns = Math.floor((containerSize.width + 8) / 168);
-    return { columns: Math.max(Math.min(baseColumns, 6), 4), rows: null, useFixedGrid: false };
+    return {
+      columns: Math.max(Math.min(baseColumns, 6), 4),
+      rows: null,
+      useFixedGrid: false,
+    };
   }, [fitAllLocked, gridSize, viewMode, clients.length, containerSize]);
 
   // Calculate styles based on layout
   const gridStyles = useMemo((): React.CSSProperties => {
+    // When fitAllLocked is active, force fixed dimensions and no overflow
     if (fitAllLocked) {
       return {
         display: 'grid',
         gridTemplateColumns: `repeat(${gridLayout.columns}, 1fr)`,
         gridTemplateRows: `repeat(${gridLayout.rows || 1}, 1fr)`,
         overflow: 'hidden',
-        height: '100%',
-        maxHeight: '100%',
+        height: `${containerSize.height}px`,
+        maxHeight: `${containerSize.height}px`,
         width: '100%',
       };
     }
 
     if (gridLayout.useFixedGrid && gridLayout.rows) {
+      // Fixed grid - force both columns and rows
       return {
         display: 'grid',
         gridTemplateColumns: `repeat(${gridLayout.columns}, 1fr)`,
@@ -141,6 +190,7 @@ export function ClientGrid({
       };
     }
 
+    // Scroll mode - auto rows
     return {
       display: 'grid',
       gridTemplateColumns: `repeat(${gridLayout.columns}, minmax(140px, 1fr))`,
@@ -148,14 +198,14 @@ export function ClientGrid({
       overflow: 'auto',
       height: 'auto',
     };
-  }, [gridLayout, fitAllLocked]);
+  }, [gridLayout, containerSize, fitAllLocked]);
 
+  // Determine if we should use fit-all layout
   const useFitAll = fitAllLocked || gridLayout.useFixedGrid;
 
   return (
     <div 
-      ref={containerRef}
-      className={`grid gap-2 p-3 w-full transition-all duration-300 ${fitAllLocked ? 'h-full' : 'h-full'}`}
+      className={`grid gap-2 p-3 w-full transition-all duration-300 ${fitAllLocked ? '' : 'h-full'}`}
       style={gridStyles}
     >
       {clients.map((client, index) => (
