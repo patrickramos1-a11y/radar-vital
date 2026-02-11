@@ -1,159 +1,64 @@
 
-# SISRAMOS - Sistema de Comentarios com Ciencia Direcionada
+
+# Substituir sistema "Lido" por vistos estilo WhatsApp
 
 ## Resumo
 
-Evolucao completa do sistema de comentarios atual, transformando-o de um registro textual simples em um mecanismo de comunicacao estruturado com tres niveis (Informativo, Relevante, Ciencia Obrigatoria), confirmacao de leitura direcionada e hierarquia administrativa.
+Remover a linha legada "Lido: P C G D V" (onde qualquer pessoa marca qualquer pessoa) e substituir por um sistema inspirado no WhatsApp:
+
+- Um botao **V** (check) colorido com a cor do usuario logado, que so ele pode clicar para marcar como lido
+- Um botao **i** (info) que abre um popover mostrando a lista completa de quem leu e quem falta, com cores individuais de cada colaborador e timestamps
+- Apenas o administrador (Patrick) pode, pela lista de info, marcar leitura de outros usuarios
 
 ---
 
-## Situacao Atual
+## Mudancas Tecnicas
 
-- Tabela `client_comments` com colunas fixas `read_celine`, `read_gabi`, `read_darley`, `read_vanessa`, `read_patrick`
-- Todos os comentarios sao tratados igualmente -- sem distincao de tipo
-- Leitura e confirmacao sao toggle manual por colaborador, mas sem obrigatoriedade
-- 5 colaboradores fixos no codigo (hardcoded)
+### Arquivo: `src/components/comments/CommentsModal.tsx`
 
----
+**Remover** (linhas 475-497): A secao legada inteira "Lido: P C G D V" com os botoes toggle por colaborador.
 
-## Arquitetura da Solucao
-
-### 1. Mudancas no Banco de Dados
-
-**Alteracoes na tabela `client_comments`:**
-
-Adicionar colunas:
-- `comment_type` (text, default `'informativo'`) -- valores: `informativo`, `relevante`, `ciencia`
-- `required_readers` (text[], default `'{}'`) -- nomes dos colaboradores que devem confirmar (usado apenas quando `comment_type = 'ciencia'`)
-- `read_timestamps` (jsonb, default `'{}'`) -- registro de data/hora de cada confirmacao (ex: `{"Patrick": "2026-02-11T14:00:00Z"}`)
-- `is_closed` (boolean, default `false`) -- permite encerramento manual pelo admin
-- `closed_by` (text) -- nome de quem encerrou
-- `closed_at` (timestamptz) -- data/hora do encerramento
-
-As colunas legadas `read_celine`, `read_gabi`, etc. serao mantidas para compatibilidade mas o novo fluxo usara `required_readers` + `read_timestamps`.
-
-**Nova coluna em `clients`:**
-- `pending_ciencia_count` (integer, default 0) -- contador de comentarios com ciencia pendente (para exibir no card da empresa)
-
-**Trigger de contagem:**
-- Funcao que recalcula `pending_ciencia_count` quando um comentario de ciencia e criado, deletado, ou quando todos os obrigatorios confirmam leitura.
-
----
-
-### 2. Tipos TypeScript
-
-**Atualizar `src/types/comment.ts`:**
+**Substituir por** novo componente `ReadStatusBar`:
 
 ```text
-CommentType = 'informativo' | 'relevante' | 'ciencia'
+Layout:
+[V colorido do usuario] ────────────────────── [i]
 
-ClientComment (atualizado):
-  + commentType: CommentType
-  + requiredReaders: string[]
-  + readTimestamps: Record<string, string>  // nome -> ISO timestamp
-  + isClosed: boolean
-  + closedBy?: string
-  + closedAt?: string
+- V (CheckCheck icon): botao com a cor do colaborador logado
+  - Se o usuario ja marcou como lido: check preenchido com sua cor
+  - Se ainda nao marcou: check cinza/outline, clicavel
+  - Ao clicar: chama toggleReadStatus para o colaborador correspondente ao usuario logado
+  - So aparece se o usuario logado tem um ReadStatusName correspondente
 
-CommentFormData (atualizado):
-  + commentType: CommentType
-  + requiredReaders: string[]  // apenas para tipo 'ciencia'
+- i (Info icon): abre Popover com lista completa:
+  - Titulo "Lida por" (como no WhatsApp)
+  - Cada colaborador com:
+    - Bolinha colorida (cor do banco de dados via collaborator.color)
+    - Nome
+    - Se leu: timestamp formatado + check verde
+    - Se nao leu: texto "Pendente"
+  - Admin (Patrick): ao lado de cada pendente, botao para marcar como lido
 ```
 
----
+**Mapeamento usuario -> ReadStatusName**: Usar o nome do usuario logado (via `currentUser.name`) e mapear para o `ReadStatusName` correspondente (celine, gabi, darley, vanessa, patrick). Isso ja existe parcialmente no codigo.
 
-### 3. Componentes Modificados
+### Logica de permissao no ReadStatusBar
 
-**`src/components/comments/CommentsModal.tsx`** (modal dentro do card da empresa):
+| Acao | Usuario comum | Admin (Patrick) |
+|------|--------------|-----------------|
+| Marcar proprio "lido" | Sim (clica no V) | Sim |
+| Marcar outro como "lido" | Nao | Sim (via popover info) |
+| Ver lista de lidos | Sim (via i) | Sim (via i) |
 
-- Campo de selecao de tipo de comentario ao criar (3 opcoes com icones)
-- Quando tipo = `ciencia`: exibir seletor de colaboradores obrigatorios (checkboxes)
-- Cada comentario exibe:
-  - Badge de tipo (Informativo = cinza, Relevante = amarelo, Ciencia = vermelho)
-  - Para tipo `ciencia`: lista de usuarios obrigatorios com status individual e timestamp de confirmacao
-  - Estado dinamico: "Pendente", "Parcial", "Completo"
-  - Botao de confirmar leitura (apenas para o usuario logado, se ele estiver na lista)
-- Acoes do admin (Patrick):
-  - Encerrar/reabrir comentario
-  - Adicionar/remover leitores obrigatorios apos criacao
+### Cores dos colaboradores
 
-**`src/pages/CommentsPanel.tsx`** (painel central):
-
-- Novo filtro por tipo de comentario
-- Novo filtro "Aguardando minha ciencia" (mostra apenas comentarios onde o usuario logado esta pendente)
-- KPIs atualizados: total, fixados, pendentes de ciencia (global), e por tipo
-- Cards de comentario atualizados com badges de tipo e status de ciencia
-
-**`src/components/comments/CommentButton.tsx`** e **`src/components/comments/CommentPreview.tsx`**:
-
-- Contador no card da empresa reflete apenas comentarios com ciencia pendente (nao informativos)
+Usar `collaborator.color` do banco de dados (tabela `collaborators`) em vez das cores hardcoded do `COLLABORATOR_COLORS`. O AuthContext ja fornece os colaboradores com suas cores.
 
 ---
 
-### 4. Hook Atualizado
+## Arquivos impactados
 
-**`src/hooks/useClientComments.ts`:**
+1. **`src/components/comments/CommentsModal.tsx`** -- remover secao legada, adicionar `ReadStatusBar` com popover de info
 
-- `addComment` aceita `commentType` e `requiredReaders`
-- Nova funcao `confirmReading(commentId)` -- marca leitura do usuario atual com timestamp
-- Nova funcao `closeComment(commentId)` -- encerra (admin only)
-- Nova funcao `reopenComment(commentId)` -- reabre (admin only)
-- Nova funcao `updateRequiredReaders(commentId, readers)` -- modifica lista (admin only)
-- Logica de verificacao de admin: `currentUser === 'Patrick'`
+Nenhuma mudanca no banco de dados ou hooks (os metodos `toggleReadStatus` ja existem).
 
----
-
-### 5. Logica de Permissoes
-
-| Acao | Admin (Patrick) | Outros |
-|------|----------------|--------|
-| Criar qualquer tipo | Sim | Sim |
-| Selecionar leitores obrigatorios | Qualquer usuario | Qualquer usuario |
-| Confirmar propria leitura | Sim | Sim (se estiver na lista) |
-| Visualizar pendencias de todos | Sim | Apenas as proprias |
-| Adicionar/remover leitores apos criacao | Sim | Nao |
-| Encerrar comentario com ciencia | Sim | Nao |
-| Reabrir comentario encerrado | Sim | Nao |
-
----
-
-### 6. Experiencia Visual
-
-**Badge de tipo no comentario:**
-- Informativo: `bg-gray-100 text-gray-600` (sem destaque)
-- Relevante: `bg-amber-100 text-amber-700` (destaque visual)
-- Ciencia Obrigatoria: `bg-red-100 text-red-700` (alerta)
-
-**Status de ciencia no card:**
-- Pendente (0 confirmacoes): icone vermelho, borda vermelha sutil
-- Parcial: icone amarelo com fração (ex: "2/4"), borda amarela
-- Completo: icone verde, visual neutro
-- Encerrado manualmente: badge "Encerrado" cinza
-
-**Card da empresa:**
-- Contador mostra apenas ciencias pendentes (nao informativos)
-- Tooltip com resumo: "3 comentarios aguardando ciencia"
-
----
-
-### 7. Area "Aguardando minha ciencia"
-
-No painel de comentarios, filtro rapido que mostra ao usuario logado apenas os comentarios onde:
-- `comment_type = 'ciencia'`
-- O nome do usuario esta em `required_readers`
-- O nome do usuario NAO esta em `read_timestamps`
-- O comentario nao esta encerrado (`is_closed = false`)
-
----
-
-## Arquivos Impactados
-
-1. **Migracao SQL** -- alterar `client_comments`, adicionar coluna em `clients`, criar trigger
-2. **`src/types/comment.ts`** -- novos tipos
-3. **`src/hooks/useClientComments.ts`** -- CRUD expandido
-4. **`src/components/comments/CommentsModal.tsx`** -- formulario e exibicao
-5. **`src/pages/CommentsPanel.tsx`** -- filtros e cards
-6. **`src/components/comments/CommentButton.tsx`** -- contador atualizado
-7. **`src/components/comments/CommentPreview.tsx`** -- preview atualizado
-
-Nenhuma mudanca em autenticacao ou rotas. A hierarquia admin usa a verificacao existente pelo nome do usuario (`Patrick`).
