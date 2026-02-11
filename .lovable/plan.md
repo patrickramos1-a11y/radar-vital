@@ -1,148 +1,51 @@
 
-# Evolucao do Checklist para Painel de Tarefas Gerencial
+# Ranking Analitico em Cards Visuais
 
 ## Resumo
 
-Transformar a aba "Checklist" (Jackbox Unificado) em um **Painel de Tarefas** com capacidade analitica e gerencial. A visualizacao por cards sera mantida, mas com layout responsivo melhorado, filtros simplificados e uma nova tabela detalhada por colaborador.
+Transformar a barra de ranking atual (texto inline em uma linha) em **cards visuais** individuais, com icones grandes, cores distintas e layout de dashboard, facilitando a leitura rapida.
 
----
+## Design Visual
 
-## 1. Tabela Detalhada por Colaborador
+Tres cards lado a lado, cada um com:
 
-Ao clicar em um colaborador (nos badges do header ou nos filtros), uma secao expansivel aparecera **abaixo do grid de cards**, mostrando uma tabela com:
+- Icone grande e colorido no topo
+- Titulo do indicador (ex: "Mais Pendencias")
+- Nome do colaborador em destaque com a cor dele
+- Valor numerico grande (quantidade ou dias)
+- Detalhe contextual (empresa, etc.)
 
-| Coluna | Descricao |
-|--------|-----------|
-| Tarefa | Titulo da tarefa |
-| Empresa | Nome do cliente vinculado |
-| Criada em | Data de criacao (formatada) |
-| Dias em aberto | Calculo automatico: diferenca entre hoje e `created_at` |
-| Status | Pendente / Concluida (com data de conclusao) |
+Adicionalmente, incluir um **quarto card** mostrando a distribuicao geral por colaborador com mini barras horizontais proporcionais.
 
-A tabela tera ordenacao por qualquer coluna e um resumo no topo (total de tarefas, media de dias em aberto, tarefas mais antiga).
-
----
-
-## 2. Indicadores Analiticos no Header
-
-Os KPIs do header serao expandidos para incluir:
-
-- **Pendentes** (ja existe)
-- **Concluidas** (ja existe)
-- **Empresas com tarefas** (ja existe)
-- **Tarefa mais antiga** -- quantidade de dias da tarefa pendente mais antiga
-- **Media de dias em aberto** -- media calculada sobre todas as tarefas pendentes
-
-Os badges de colaborador continuarao mostrando contagem e ganharao tooltip com detalhes (total pendente, media de dias, tarefa mais antiga).
-
----
-
-## 3. Renomeacao: Checklist para Tarefas
-
-- Sidebar: "Checklist" passa a se chamar **"Tarefas"**
-- Titulo da pagina: "Painel de Tarefas"
-- Rotas mantidas (`/jackbox-unificado`, `/jackbox-detalhado`) para compatibilidade
-
----
-
-## 4. Layout Responsivo do Grid
-
-O `VisualGrid` atual usa ate 7 colunas com `minmax(200px)`. Sera ajustado para:
-
-- **Desktop grande**: maximo 3 colunas
-- **Desktop/notebook**: 2-3 colunas
-- **Tablet**: 2 colunas
-- **Mobile**: 1 coluna
-
-Os nomes das empresas poderao quebrar em ate 2 linhas, com fonte maior e espacamento confortavel.
-
----
-
-## 5. Filtros Simplificados
-
-A barra de filtros sera reorganizada com foco gerencial:
-
-**Filtros principais (mantidos com destaque):**
-- Busca por empresa (texto)
-- Filtro por colaborador (badges interativos)
-- Filtro por status: Pendentes / Concluidas / Todas
-
-**Filtros secundarios (mantidos mas com menor destaque visual):**
-- Prioridade e Destaque permanecem como indicadores visuais nos cards, nao como filtros primarios
-
----
-
-## 6. Ordenacao Corrigida
-
-Opcoes de ordenacao que respeitam os filtros ativos:
-
-- **Tarefas** -- quantidade de tarefas (pendentes ou conforme filtro de status)
-- **Dias em aberto** -- empresa com tarefa mais antiga primeiro
-- **Prioridade** -- clientes prioritarios primeiro
-- **Nome** -- ordem alfabetica
-
-A ordenacao sera aplicada **apos** os filtros, garantindo consistencia.
-
----
-
-## 7. Ranking de Colaboradores
-
-Dentro da tabela do colaborador, um mini-ranking sera exibido:
-
-- Colaborador com mais tarefas pendentes
-- Colaborador com mais tarefas concluidas (no periodo visivel)
-- Tarefa ha mais tempo em aberto (com nome da empresa)
-
----
+```text
++---------------------+  +---------------------+  +---------------------+  +---------------------+
+|  /!\ ALERTA         |  |  TROPHY             |  |  CLOCK              |  |  DISTRIBUICAO       |
+|                     |  |                     |  |                     |  |                     |
+|  Mais Pendencias    |  |  Mais Concluidas    |  |  Mais Antiga        |  |  Celine  ████░ 12   |
+|  GABI               |  |  CELINE             |  |  VANESSA            |  |  Gabi    ██████ 21  |
+|  21 tarefas         |  |  11 tarefas         |  |  30 dias            |  |  Darley  ██░░░  5   |
+|                     |  |                     |  |  PHS DA MATA        |  |  Vanessa ███░░  8   |
++---------------------+  +---------------------+  +---------------------+  +---------------------+
+```
 
 ## Detalhes Tecnicos
 
-### Arquivos modificados:
+### Arquivo modificado: `src/components/tasks/TaskAnalytics.tsx`
 
-1. **`src/pages/JackboxUnified.tsx`** -- Refatoracao principal:
-   - Adicionar estado `selectedCollaborator` para controlar a tabela expandida
-   - Adicionar filtro por status (pendente/concluida/todas) substituindo o checkbox "Mostrar concluidas"
-   - Adicionar secao de tabela detalhada abaixo do grid
-   - Adicionar KPIs analiticos (dias em aberto, tarefa mais antiga)
-   - Ajustar logica de ordenacao para respeitar filtros
+Refatoracao completa do componente:
 
-2. **`src/components/visual-panels/VisualGrid.tsx`** -- Ajustar grid responsivo:
-   - Maximo 3 colunas em desktop
-   - `minmax(280px, 1fr)` para cards mais largos
-   - Media queries para tablet (2 colunas) e mobile (1 coluna)
+1. **Layout**: Trocar de `flex items-center` (linha unica) para um `grid grid-cols-2 lg:grid-cols-4` com cards
+2. **Cards individuais**: Cada indicador sera um card com bordas arredondadas, fundo sutil colorido, icone grande e tipografia hierarquica
+3. **Card de distribuicao**: Quarto card com mini barras horizontais mostrando o volume de tarefas pendentes por colaborador, usando as cores ja definidas em `COLLABORATOR_COLORS`
+4. **Responsividade**: 2 colunas em mobile, 4 colunas em desktop
+5. **Props**: Manter a mesma interface `TaskAnalyticsProps` -- nenhuma alteracao no componente pai
 
-3. **`src/components/layout/AppSidebar.tsx`** -- Renomear "Checklist" para "Tarefas"
+### Estilo dos cards:
 
-4. **Novo componente: `src/components/tasks/CollaboratorTaskTable.tsx`**:
-   - Tabela com colunas: Tarefa, Empresa, Criada em, Dias em aberto, Status
-   - Ordenavel por qualquer coluna
-   - Resumo no topo com indicadores
-   - Usa componentes Table do shadcn/ui
+- Fundo: `bg-amber-500/10`, `bg-emerald-500/10`, `bg-red-500/10`, `bg-blue-500/10`
+- Bordas: `border border-{color}/20 rounded-xl`
+- Icone: `w-8 h-8` com cor forte
+- Nome do colaborador: fonte bold, cor do colaborador
+- Valor: `text-2xl font-bold`
 
-5. **Novo componente: `src/components/tasks/TaskAnalytics.tsx`**:
-   - Mini-ranking de colaboradores
-   - Indicadores comparativos
-
-6. **`src/hooks/useTasks.ts`** -- Adicionar helpers:
-   - `getDaysOpen(task)` -- calcula dias em aberto
-   - `getOldestTask()` -- retorna tarefa mais antiga
-   - `getAverageDaysOpen()` -- media de dias
-
-### Nenhuma alteracao de banco de dados necessaria
-
-A tabela `tasks` ja possui `created_at` e `completed_at`, que sao suficientes para calcular todos os indicadores analiticos propostos.
-
-### Logica de calculo de dias em aberto:
-
-```text
-diasEmAberto = diferencaEmDias(hoje, task.created_at)
-// Para tarefas concluidas: diferencaEmDias(task.completed_at, task.created_at)
-```
-
-### Responsividade do grid (nova logica):
-
-```text
-Mobile (< 640px):    1 coluna
-Tablet (640-1024px): 2 colunas  
-Desktop (> 1024px):  3 colunas
-```
+Nenhuma alteracao de banco de dados ou em outros arquivos.
