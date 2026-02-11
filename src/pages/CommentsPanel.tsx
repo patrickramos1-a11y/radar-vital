@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, User, Clock, Check, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2 } from "lucide-react";
+import { MessageSquare, User, Clock, Check, CheckCheck, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -8,6 +8,7 @@ import { VisualGrid } from "@/components/visual-panels/VisualGrid";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -42,7 +43,7 @@ interface CommentWithClient {
 
 export default function CommentsPanel() {
   const { activeClients } = useClients();
-  const { currentUser } = useAuth();
+  const { currentUser, collaborators } = useAuth();
   const [comments, setComments] = useState<CommentWithClient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -316,6 +317,7 @@ export default function CommentsPanel() {
               key={comment.id}
               comment={comment}
               currentUserName={currentUserName}
+              collaborators={collaborators}
               onToggleRead={toggleReadStatus}
               onTogglePinned={togglePinned}
               onDelete={deleteComment}
@@ -339,12 +341,13 @@ export default function CommentsPanel() {
 interface CommentCardProps {
   comment: CommentWithClient;
   currentUserName: string;
+  collaborators: { id: string; name: string; color?: string }[];
   onToggleRead: (id: string, collaborator: ReadStatus) => void;
   onTogglePinned: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-function CommentCard({ comment, currentUserName, onToggleRead, onTogglePinned, onDelete }: CommentCardProps) {
+function CommentCard({ comment, currentUserName, collaborators, onToggleRead, onTogglePinned, onDelete }: CommentCardProps) {
   const isCiencia = comment.commentType === 'ciencia';
   const confirmedCount = isCiencia ? comment.requiredReaders.filter(r => comment.readTimestamps[r]).length : 0;
   const totalRequired = isCiencia ? comment.requiredReaders.length : 0;
@@ -434,29 +437,133 @@ function CommentCard({ comment, currentUserName, onToggleRead, onTogglePinned, o
         </div>
       )}
 
-      {/* Read Status Row */}
-      <div className="flex items-center gap-1 pt-2 border-t border-border">
-        <span className="text-[10px] text-muted-foreground mr-1">Lido:</span>
-        {READ_STATUS_NAMES.map((name) => {
-          const color = name === 'patrick' ? '#10B981' : COLLABORATOR_COLORS[name as CollaboratorName];
-          const isRead = comment.readStatus[name];
-          return (
-            <button
-              key={name}
-              onClick={() => onToggleRead(comment.id, name)}
-              className={cn(
-                "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all",
-                isRead ? "text-white" : "text-muted-foreground bg-muted hover:bg-muted/80"
-              )}
-              style={isRead ? { backgroundColor: color } : {}}
-              title={`${name}: ${isRead ? 'Lido' : 'Não lido'}`}
-            >
-              {isRead ? <Check className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
-              <span className="capitalize">{name.charAt(0).toUpperCase()}</span>
-            </button>
-          );
-        })}
+      {/* WhatsApp-style Read Status */}
+      <PanelReadStatusBar
+        comment={comment}
+        currentUserName={currentUserName}
+        isAdmin={currentUserName === 'Patrick'}
+        collaborators={collaborators}
+        onToggleRead={(name) => onToggleRead(comment.id, name)}
+      />
+    </div>
+  );
+}
+
+// --- PanelReadStatusBar (WhatsApp-style) ---
+
+
+interface PanelReadStatusBarProps {
+  comment: CommentWithClient;
+  currentUserName: string;
+  isAdmin: boolean;
+  collaborators: { id: string; name: string; color?: string }[];
+  onToggleRead: (collaborator: ReadStatus) => void;
+}
+
+function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onToggleRead }: PanelReadStatusBarProps) {
+  const [showInfo, setShowInfo] = useState(false);
+
+  const currentReadStatusName = currentUserName.toLowerCase() as ReadStatus;
+  const canMarkSelf = READ_STATUS_NAMES.includes(currentReadStatusName);
+  const selfIsRead = canMarkSelf && comment.readStatus[currentReadStatusName];
+
+  const currentCollaborator = collaborators.find(c => c.name.toLowerCase() === currentReadStatusName);
+  const selfColor = currentCollaborator?.color || '#6B7280';
+
+  const readCount = READ_STATUS_NAMES.filter(n => comment.readStatus[n]).length;
+  const allRead = readCount === READ_STATUS_NAMES.length;
+
+  return (
+    <div className="flex items-center justify-between pt-2 border-t border-border">
+      <div className="flex items-center gap-1.5">
+        {canMarkSelf && (
+          <button
+            onClick={() => onToggleRead(currentReadStatusName)}
+            className={cn(
+              'flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all',
+              selfIsRead ? 'text-white' : 'text-muted-foreground bg-muted hover:bg-muted/80'
+            )}
+            style={selfIsRead ? { backgroundColor: selfColor } : {}}
+            title={selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
+          >
+            {selfIsRead ? <CheckCheck className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+            {selfIsRead ? 'Lido' : 'Marcar lido'}
+          </button>
+        )}
+        <span className="text-[9px] text-muted-foreground">
+          {allRead ? (
+            <span className="text-green-600 dark:text-green-400">Todos leram</span>
+          ) : (
+            `${readCount}/${READ_STATUS_NAMES.length}`
+          )}
+        </span>
       </div>
+
+      <Popover open={showInfo} onOpenChange={setShowInfo}>
+        <PopoverTrigger asChild>
+          <button className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted text-muted-foreground transition-colors" title="Ver quem leu">
+            <Info className="w-3.5 h-3.5" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-0" align="end">
+          <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+            <p className="text-xs font-semibold text-foreground">Lida por</p>
+            {isAdmin && (
+              <div className="flex gap-1">
+                <button
+                  onClick={() => READ_STATUS_NAMES.forEach(n => { if (!comment.readStatus[n]) onToggleRead(n); })}
+                  className="text-[9px] font-medium text-primary hover:underline"
+                >
+                  Todos
+                </button>
+                <span className="text-[9px] text-muted-foreground">|</span>
+                <button
+                  onClick={() => READ_STATUS_NAMES.forEach(n => { if (comment.readStatus[n]) onToggleRead(n); })}
+                  className="text-[9px] font-medium text-destructive hover:underline"
+                >
+                  Nenhum
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="p-2 space-y-1">
+            {READ_STATUS_NAMES.map((name) => {
+              const collab = collaborators.find(c => c.name.toLowerCase() === name);
+              const color = collab?.color || '#6B7280';
+              const isRead = comment.readStatus[name];
+              return (
+                <div key={name} className="flex items-center justify-between gap-2 px-1.5 py-1 rounded hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                    <span className="text-xs capitalize">{name}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {isRead ? (
+                      <span className="flex items-center gap-0.5 text-[9px] text-green-600 dark:text-green-400">
+                        <CheckCheck className="w-3 h-3" />
+                        {isAdmin && (
+                          <button onClick={() => onToggleRead(name)} className="ml-0.5 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={`Desmarcar ${name}`}>
+                            <EyeOff className="w-3 h-3" />
+                          </button>
+                        )}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-[9px] text-muted-foreground">Pendente</span>
+                        {isAdmin && (
+                          <button onClick={() => onToggleRead(name)} className="ml-1 p-0.5 rounded hover:bg-primary/10 text-primary transition-colors" title={`Marcar ${name} como lido`}>
+                            <Check className="w-3 h-3" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
