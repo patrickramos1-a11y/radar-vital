@@ -219,17 +219,28 @@ export function useClientComments(clientId: string) {
   };
 }
 
-// Hook to get comment counts for all clients
+// A comment is "pending" if at least one collaborator hasn't read it
+function hasPendingReads(row: any): boolean {
+  return !(row.read_celine && row.read_darley && row.read_gabi && row.read_vanessa && row.read_patrick);
+}
+
+// Hook to get PENDING comment counts for all clients
 export function useAllClientsCommentCounts(): Map<string, number> {
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const fetchCounts = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('clients').select('id, comment_count');
+      const { data, error } = await supabase
+        .from('client_comments')
+        .select('client_id, read_celine, read_darley, read_gabi, read_vanessa, read_patrick');
       if (error) throw error;
       const countMap = new Map<string, number>();
-      (data || []).forEach(row => { countMap.set(row.id, row.comment_count || 0); });
+      (data || []).forEach(row => {
+        if (hasPendingReads(row)) {
+          countMap.set(row.client_id, (countMap.get(row.client_id) || 0) + 1);
+        }
+      });
       setCounts(countMap);
     } catch (error) {
       console.error('Error fetching comment counts:', error);
@@ -248,22 +259,8 @@ export function useAllClientsCommentCounts(): Map<string, number> {
       })
       .subscribe();
 
-    const clientsChannel = supabase
-      .channel('clients_comment_count_realtime')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clients' }, (payload) => {
-        if (payload.new && 'id' in payload.new && 'comment_count' in payload.new) {
-          setCounts(prev => {
-            const newMap = new Map(prev);
-            newMap.set(payload.new.id as string, payload.new.comment_count as number);
-            return newMap;
-          });
-        }
-      })
-      .subscribe();
-
     return () => {
       supabase.removeChannel(commentsChannel);
-      supabase.removeChannel(clientsChannel);
     };
   }, []);
 
@@ -281,10 +278,16 @@ export function useAllClientsCommentCountsWithRefresh(): [Map<string, number>, (
 
   const fetchCounts = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('clients').select('id, comment_count');
+      const { data, error } = await supabase
+        .from('client_comments')
+        .select('client_id, read_celine, read_darley, read_gabi, read_vanessa, read_patrick');
       if (error) throw error;
       const countMap = new Map<string, number>();
-      (data || []).forEach(row => { countMap.set(row.id, row.comment_count || 0); });
+      (data || []).forEach(row => {
+        if (hasPendingReads(row)) {
+          countMap.set(row.client_id, (countMap.get(row.client_id) || 0) + 1);
+        }
+      });
       setCounts(countMap);
     } catch (error) {
       console.error('Error fetching comment counts:', error);
