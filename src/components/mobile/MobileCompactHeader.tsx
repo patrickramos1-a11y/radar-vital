@@ -3,6 +3,8 @@ import { COLLABORATOR_COLORS, CollaboratorName } from "@/types/client";
 
 interface MobileCompactHeaderProps {
   totalClients: number;
+  acCount: number;
+  avCount: number;
   collaboratorSelectedStats: Record<CollaboratorName, number>;
   priorityCount: number;
   highlightedCount: number;
@@ -21,6 +23,8 @@ interface MobileCompactHeaderProps {
 
 export function MobileCompactHeader({
   totalClients,
+  acCount,
+  avCount,
   collaboratorSelectedStats,
   priorityCount,
   highlightedCount,
@@ -38,6 +42,8 @@ export function MobileCompactHeader({
       {/* Row 1: Main stats */}
       <div className="flex items-center gap-2 px-3 py-2 overflow-x-auto scrollbar-hide">
         <StatCard icon={<Users className="w-3.5 h-3.5" />} value={totalClients} label="CLIENTES" />
+        <StatCard value={acCount} label="AC" variant="success" />
+        <StatCard value={avCount} label="AV" variant="warning" />
       </div>
 
       {/* Row 2: Collaborator cards - clickable as filters */}
@@ -107,16 +113,27 @@ export function MobileCompactHeader({
 }
 
 interface StatCardProps {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   value: number;
   label: string;
+  variant?: 'default' | 'success' | 'warning';
 }
 
-function StatCard({ icon, value, label }: StatCardProps) {
+function StatCard({ icon, value, label, variant = 'default' }: StatCardProps) {
+  const variantClasses = {
+    default: 'border-border bg-background',
+    success: 'border-emerald-500/30 bg-emerald-500/5',
+    warning: 'border-amber-500/30 bg-amber-500/5',
+  };
+  const textClasses = {
+    default: 'text-foreground',
+    success: 'text-emerald-600',
+    warning: 'text-amber-600',
+  };
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-background shrink-0">
-      <span className="text-muted-foreground">{icon}</span>
-      <span className="text-sm font-bold text-foreground">{value}</span>
+    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border shrink-0 ${variantClasses[variant]}`}>
+      {icon && <span className="text-muted-foreground">{icon}</span>}
+      <span className={`text-sm font-bold ${textClasses[variant]}`}>{value}</span>
       <span className="text-[9px] text-muted-foreground uppercase">{label}</span>
     </div>
   );

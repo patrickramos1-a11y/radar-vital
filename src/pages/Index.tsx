@@ -260,6 +260,8 @@ const Index = () => {
           {/* Header with macro indicators */}
           <MobileCompactHeader
             totalClients={totalClients}
+            acCount={acCount}
+            avCount={avCount}
             collaboratorSelectedStats={collaboratorStats}
             priorityCount={priorityCount}
             highlightedCount={highlightedClients.size}
