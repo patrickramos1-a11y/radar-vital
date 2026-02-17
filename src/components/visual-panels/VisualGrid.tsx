@@ -1,24 +1,32 @@
-import { ReactNode } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import React from "react";
 
 interface VisualGridProps {
-  children: ReactNode;
+  children: React.ReactNode;
   itemCount: number;
 }
 
+function getGridColumns(count: number): number {
+  if (count <= 4) return 2;
+  if (count <= 9) return 3;
+  if (count <= 16) return 4;
+  if (count <= 25) return 5;
+  if (count <= 36) return 6;
+  return 7;
+}
+
 export function VisualGrid({ children, itemCount }: VisualGridProps) {
-  const gap = itemCount > 20 ? "gap-3" : "gap-4";
+  const columns = getGridColumns(itemCount);
 
   return (
-    <ScrollArea className="flex-1">
-      <div 
-        className={`grid p-6 ${gap} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`}
+    <div className="flex-1 overflow-auto p-3">
+      <div
+        className="grid gap-3"
         style={{
-          gridTemplateColumns: undefined,
+          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
         }}
       >
         {children}
       </div>
-    </ScrollArea>
+    </div>
   );
 }

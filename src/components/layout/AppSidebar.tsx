@@ -1,81 +1,27 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, ClipboardList, Shield, FileText, Box, MessageSquare, Bell, FileUp, LucideIcon, BarChart3, ListChecks, Tv } from "lucide-react";
+import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, ListChecks, Tv } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 
-// Type for navigation items
 interface NavItem {
   title: string;
   icon: LucideIcon;
   href: string;
 }
 
-// Navigation items - direct links only
 const navigationItems: NavItem[] = [
-  {
-    title: "Painel AC",
-    icon: LayoutDashboard,
-    href: "/"
-  },
-  {
-    title: "Dashboard",
-    icon: BarChart3,
-    href: "/dashboard"
-  },
-  {
-    title: "Demandas",
-    icon: ClipboardList,
-    href: "/demandas-unificado"
-  },
-  {
-    title: "Licenças",
-    icon: Shield,
-    href: "/licencas-unificado"
-  },
-  {
-    title: "Processos",
-    icon: FileText,
-    href: "/processos-unificado"
-  },
-  {
-    title: "Tarefas",
-    icon: Box,
-    href: "/jackbox-unificado"
-  },
-  {
-    title: "Comentários",
-    icon: MessageSquare,
-    href: "/comentarios"
-  },
-  {
-    title: "Notificações",
-    icon: Bell,
-    href: "/notificacoes"
-  },
-  {
-    title: "Relatórios PDF",
-    icon: FileUp,
-    href: "/relatorios-pdf"
-  },
-  {
-    title: "Modo TV",
-    icon: Tv,
-    href: "/tv"
-  }
+  { title: "Painel AC", icon: LayoutDashboard, href: "/" },
+  { title: "Dashboard", icon: BarChart3, href: "/dashboard" },
+  { title: "Tarefas", icon: Box, href: "/jackbox-unificado" },
+  { title: "Comentários", icon: MessageSquare, href: "/comentarios" },
+  { title: "Relatórios PDF", icon: FileUp, href: "/relatorios-pdf" },
+  { title: "Modo TV", icon: Tv, href: "/tv" },
 ];
 
 const configItems: NavItem[] = [
-  {
-    title: "Backlog",
-    icon: ListChecks,
-    href: "/backlog"
-  },
-  {
-    title: "Configurar",
-    icon: Settings,
-    href: "/config"
-  }
+  { title: "Backlog", icon: ListChecks, href: "/backlog" },
+  { title: "Configurar", icon: Settings, href: "/config" },
 ];
 
 export function AppSidebar() {
@@ -90,7 +36,6 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      {/* Header with Logo */}
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
@@ -107,7 +52,6 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      {/* Main Navigation */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navegação</SidebarGroupLabel>
@@ -130,7 +74,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Settings Group */}
         <SidebarGroup>
           <SidebarGroupLabel>Sistema</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -153,7 +96,6 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer */}
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="px-2 py-2">
           {!isCollapsed && (
