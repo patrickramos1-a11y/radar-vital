@@ -479,21 +479,19 @@ const Index = () => {
 };
 
 function StatCardMini({ icon, value, label, variant = 'default' }: { icon?: React.ReactNode; value: number; label: string; variant?: 'default' | 'success' | 'warning' }) {
-  const variantClasses = {
-    default: 'bg-card border-border',
-    success: 'bg-emerald-500/5 border-emerald-500/30',
-    warning: 'bg-amber-500/5 border-amber-500/30',
-  };
-  const textClasses = {
-    default: 'text-foreground',
-    success: 'text-emerald-600',
-    warning: 'text-amber-600',
-  };
+  const accentColor = {
+    default: undefined,
+    success: '#10B981',
+    warning: '#F59E0B',
+  }[variant];
   return (
-    <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border ${variantClasses[variant]}`}>
-      {icon}
+    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-card border-border">
+      {icon && <span className="text-muted-foreground">{icon}</span>}
+      {!icon && accentColor && (
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accentColor }} />
+      )}
       <div className="flex flex-col">
-        <span className={`text-sm font-bold leading-none ${textClasses[variant]}`}>{value}</span>
+        <span className="text-sm font-bold text-foreground leading-none">{value}</span>
         <span className="text-[8px] text-muted-foreground uppercase">{label}</span>
       </div>
     </div>
