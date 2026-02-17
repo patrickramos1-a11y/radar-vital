@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, ListChecks, Tv } from "lucide-react";
+import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, ListChecks } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 
 interface NavItem {
@@ -16,7 +16,6 @@ const navigationItems: NavItem[] = [
   { title: "Tarefas", icon: Box, href: "/jackbox-unificado" },
   { title: "Comentários", icon: MessageSquare, href: "/comentarios" },
   { title: "Relatórios PDF", icon: FileUp, href: "/relatorios-pdf" },
-  { title: "Modo TV", icon: Tv, href: "/tv" },
 ];
 
 const configItems: NavItem[] = [
