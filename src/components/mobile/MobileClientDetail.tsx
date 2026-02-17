@@ -11,7 +11,7 @@ import {
   X
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Client, calculateTotalDemands, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import { TaskModal } from "@/components/checklist/TaskModal";
 import { CommentsModal } from "@/components/comments/CommentsModal";
 import { Task, TaskFormData } from "@/types/task";
@@ -56,7 +56,7 @@ export function MobileClientDetail({
 
   if (!client) return null;
 
-  const totalDemands = calculateTotalDemands(client.demands);
+  
 
   return (
     <>
@@ -125,51 +125,6 @@ export function MobileClientDetail({
               />
             </div>
 
-            {/* Stats cards */}
-            <div className="grid grid-cols-3 gap-3">
-              <StatCard
-                icon={<FileText className="w-5 h-5 text-blue-500" />}
-                value={client.processes}
-                label="Processos"
-              />
-              <StatCard
-                icon={<Shield className="w-5 h-5 text-green-500" />}
-                value={client.licenses}
-                label="Licenças"
-              />
-              <StatCard
-                icon={<ClipboardList className="w-5 h-5 text-purple-500" />}
-                value={totalDemands}
-                label="Demandas"
-              />
-            </div>
-
-            {/* Demand breakdown */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-foreground">Status das Demandas</h4>
-              <div className="grid grid-cols-4 gap-2">
-                <DemandStatusCard 
-                  label="Concluído" 
-                  count={client.demands.completed} 
-                  color="bg-green-600" 
-                />
-                <DemandStatusCard 
-                  label="Em Exec." 
-                  count={client.demands.inProgress} 
-                  color="bg-emerald-400" 
-                />
-                <DemandStatusCard 
-                  label="Não Feito" 
-                  count={client.demands.notStarted} 
-                  color="bg-gray-400" 
-                />
-                <DemandStatusCard 
-                  label="Cancelado" 
-                  count={client.demands.cancelled} 
-                  color="bg-red-500" 
-                />
-              </div>
-            </div>
 
             {/* Collaborators */}
             <div className="space-y-2">

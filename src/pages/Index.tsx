@@ -7,8 +7,8 @@ import { CommentsModal } from "@/components/comments/CommentsModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
-import { calculateTotals, calculateTotalDemands, CollaboratorName, Client } from "@/types/client";
-import { Users, FileText, Shield, ClipboardList, Star, Sparkles, UserCheck, MessageCircle } from "lucide-react";
+import { CollaboratorName, Client } from "@/types/client";
+import { Users, Star, Sparkles, UserCheck, MessageCircle } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -70,16 +70,6 @@ const Index = () => {
   });
   const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
 
-  const collaboratorDemandStats = useMemo(() => {
-    const stats = { celine: 0, gabi: 0, darley: 0, vanessa: 0 };
-    activeClients.forEach((client) => {
-      stats.celine += client.demandsByCollaborator?.celine || 0;
-      stats.gabi += client.demandsByCollaborator?.gabi || 0;
-      stats.darley += client.demandsByCollaborator?.darley || 0;
-      stats.vanessa += client.demandsByCollaborator?.vanessa || 0;
-    });
-    return stats;
-  }, [activeClients]);
 
   const jackboxCount = useMemo(() => 
     activeClients.filter(c => getActiveTaskCount(c.id) > 0).length,
@@ -209,14 +199,8 @@ const Index = () => {
           return (a.isPriority ? -1 : 1) * multiplier;
         });
         break;
-      case 'processes':
-        result.sort((a, b) => (b.processes - a.processes) * multiplier);
-        break;
-      case 'licenses':
-        result.sort((a, b) => (b.licenses - a.licenses) * multiplier);
-        break;
-      case 'demands':
-        result.sort((a, b) => (calculateTotalDemands(b.demands) - calculateTotalDemands(a.demands)) * multiplier);
+      case 'comments':
+        result.sort((a, b) => (getCommentCount(b.id) - getCommentCount(a.id)) * multiplier);
         break;
       case 'name':
         result.sort((a, b) => a.name.localeCompare(b.name) * multiplier);
@@ -229,7 +213,7 @@ const Index = () => {
     return result;
   }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery]);
 
-  const totals = useMemo(() => calculateTotals(activeClients), [activeClients]);
+  const totalClients = activeClients.length;
 
   const collaboratorStats = useMemo(() => ({
     celine: activeClients.filter(c => c.collaborators.celine).length,
@@ -275,11 +259,7 @@ const Index = () => {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Header with macro indicators */}
           <MobileCompactHeader
-            totalClients={totals.totalClients}
-            totalProcesses={totals.totalProcesses}
-            totalLicenses={totals.totalLicenses}
-            totalDemands={totals.totalDemands}
-            collaboratorDemandStats={collaboratorDemandStats}
+            totalClients={totalClients}
             collaboratorSelectedStats={collaboratorStats}
             priorityCount={priorityCount}
             highlightedCount={highlightedClients.size}
@@ -392,25 +372,15 @@ const Index = () => {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Stats Bar */}
           <div className="flex items-center justify-center gap-2 px-4 py-2 bg-card border-b border-border flex-wrap">
-            <StatCardMini icon={<Users className="w-3.5 h-3.5" />} value={totals.totalClients} label="Clientes" />
-            <StatCardMini icon={<FileText className="w-3.5 h-3.5" />} value={totals.totalProcesses} label="Processos" />
-            <StatCardMini icon={<Shield className="w-3.5 h-3.5" />} value={totals.totalLicenses} label="Licenças" />
-            <StatCardMini icon={<ClipboardList className="w-3.5 h-3.5" />} value={totals.totalDemands} label="Demandas" />
+            <StatCardMini icon={<Users className="w-3.5 h-3.5" />} value={totalClients} label="Clientes" />
             <div className="w-px h-6 bg-border mx-1" />
             {(['celine', 'gabi', 'darley', 'vanessa'] as const).map((name) => (
-              <div key={name} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[52px]">
+              <div key={name} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
                 <div className="px-2 py-0.5 text-center" style={{ backgroundColor: COLLABORATOR_COLORS[name] }}>
                   <span className="text-[9px] font-semibold text-white uppercase">{name}</span>
                 </div>
-                <div className="flex items-stretch divide-x divide-border">
-                  <div className="flex flex-col items-center px-2 py-1 flex-1">
-                    <span className="text-sm font-bold leading-none">{collaboratorDemandStats[name]}</span>
-                    <span className="text-[7px] text-muted-foreground uppercase">Dem</span>
-                  </div>
-                  <div className="flex flex-col items-center px-2 py-1 flex-1">
-                    <span className="text-sm font-bold leading-none">{collaboratorStats[name]}</span>
-                    <span className="text-[7px] text-muted-foreground uppercase">Sel</span>
-                  </div>
+                <div className="flex items-center justify-center px-2 py-1">
+                  <span className="text-sm font-bold leading-none">{collaboratorStats[name]}</span>
                 </div>
               </div>
             ))}

@@ -7,8 +7,8 @@ import {
 } from "lucide-react";
 import { useClients } from "@/contexts/ClientContext";
 import { 
-  Client, ClientFormData, generateInitials, calculateTotalDemands,
-  COLLABORATOR_NAMES, COLLABORATOR_COLORS, CollaboratorName, DEFAULT_COLLABORATORS, DEFAULT_PROCESS_BREAKDOWN
+  Client, ClientFormData, generateInitials,
+  COLLABORATOR_NAMES, COLLABORATOR_COLORS, CollaboratorName, DEFAULT_COLLABORATORS
 } from "@/types/client";
 import { useMunicipalities } from "@/hooks/useMunicipalities";
 import {
@@ -327,10 +327,7 @@ const Config = () => {
                   <th className="pb-3 text-sm font-medium text-muted-foreground">Logo</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground">Nome</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Tipo</th>
-                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">P</th>
-                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">L</th>
-                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">D</th>
-                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Demandas</th>
+                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Equipe</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Equipe</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">★</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Ativo</th>
@@ -431,55 +428,6 @@ const Config = () => {
                       >
                         {client.clientType}
                       </button>
-                    </td>
-                    <td className="py-3">
-                      <InlineNumberInput
-                        value={client.processes}
-                        onChange={(val) => updateClient(client.id, { processes: val })}
-                        min={0}
-                      />
-                    </td>
-                    <td className="py-3">
-                      <InlineNumberInput
-                        value={client.licenses}
-                        onChange={(val) => updateClient(client.id, { licenses: val })}
-                        min={0}
-                      />
-                    </td>
-                    <td className="py-3 text-sm text-center text-foreground font-semibold">
-                      {calculateTotalDemands(client.demands)}
-                    </td>
-                    <td className="py-3">
-                      <div className="flex items-center justify-center gap-0.5">
-                        <InlineDemandInput
-                          value={client.demands.completed}
-                          onChange={(val) => updateClient(client.id, { 
-                            demands: { ...client.demands, completed: val } 
-                          })}
-                          className="completed"
-                        />
-                        <InlineDemandInput
-                          value={client.demands.inProgress}
-                          onChange={(val) => updateClient(client.id, { 
-                            demands: { ...client.demands, inProgress: val } 
-                          })}
-                          className="in-progress"
-                        />
-                        <InlineDemandInput
-                          value={client.demands.notStarted}
-                          onChange={(val) => updateClient(client.id, { 
-                            demands: { ...client.demands, notStarted: val } 
-                          })}
-                          className="not-started"
-                        />
-                        <InlineDemandInput
-                          value={client.demands.cancelled}
-                          onChange={(val) => updateClient(client.id, { 
-                            demands: { ...client.demands, cancelled: val } 
-                          })}
-                          className="cancelled"
-                        />
-                      </div>
                     </td>
                     <td className="py-3">
                       <div className="flex items-center justify-center gap-0.5">
@@ -645,7 +593,7 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     clientType: client?.clientType || 'AC',
     order: client?.order || nextOrder,
     processes: client?.processes || 0,
-    processBreakdown: client?.processBreakdown || DEFAULT_PROCESS_BREAKDOWN,
+    processBreakdown: client?.processBreakdown || { total: 0, deferido: 0, emAnaliseOrgao: 0, emAnaliseRamos: 0, notificado: 0, reprovado: 0 },
     licenses: client?.licenses || 0,
     licenseBreakdown: client?.licenseBreakdown || { validas: 0, proximoVencimento: 0, foraValidade: 0, proximaDataVencimento: null },
     demands: client?.demands || { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 },
@@ -662,12 +610,6 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     if (!formData.name.trim()) {
       newErrors.name = 'Nome é obrigatório';
     }
-    if (formData.processes < 0) newErrors.processes = 'Não pode ser negativo';
-    if (formData.licenses < 0) newErrors.licenses = 'Não pode ser negativo';
-    if (formData.demands.completed < 0) newErrors.completed = 'Não pode ser negativo';
-    if (formData.demands.inProgress < 0) newErrors.inProgress = 'Não pode ser negativo';
-    if (formData.demands.notStarted < 0) newErrors.notStarted = 'Não pode ser negativo';
-    if (formData.demands.cancelled < 0) newErrors.cancelled = 'Não pode ser negativo';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -701,7 +643,6 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     }
   };
 
-  const totalDemands = calculateTotalDemands(formData.demands);
 
   const toggleCollaborator = (name: CollaboratorName) => {
     setFormData(prev => ({
@@ -713,13 +654,6 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     }));
   };
 
-  // Zero functions
-  const zeroProcesses = () => setFormData(prev => ({ ...prev, processes: 0 }));
-  const zeroLicenses = () => setFormData(prev => ({ ...prev, licenses: 0 }));
-  const zeroDemands = () => setFormData(prev => ({ 
-    ...prev, 
-    demands: { completed: 0, inProgress: 0, notStarted: 0, cancelled: 0 } 
-  }));
 
   return (
     <form onSubmit={handleSubmit} className="admin-card">
@@ -809,117 +743,6 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
           />
         </div>
 
-        {/* P - Processos */}
-        <div>
-          <label className="admin-label flex items-center justify-between">
-            P (Processos)
-            <button type="button" onClick={zeroProcesses} className="text-xs text-muted-foreground hover:text-foreground">
-              Zerar
-            </button>
-          </label>
-          <input
-            type="number"
-            value={formData.processes}
-            onChange={e => setFormData(prev => ({ ...prev, processes: parseInt(e.target.value) || 0 }))}
-            className={`admin-input ${errors.processes ? 'border-destructive' : ''}`}
-            min={0}
-          />
-        </div>
-
-        {/* L - Licenças */}
-        <div>
-          <label className="admin-label flex items-center justify-between">
-            L (Licenças Ativas)
-            <button type="button" onClick={zeroLicenses} className="text-xs text-muted-foreground hover:text-foreground">
-              Zerar
-            </button>
-          </label>
-          <input
-            type="number"
-            value={formData.licenses}
-            onChange={e => setFormData(prev => ({ ...prev, licenses: parseInt(e.target.value) || 0 }))}
-            className={`admin-input ${errors.licenses ? 'border-destructive' : ''}`}
-            min={0}
-          />
-        </div>
-
-        {/* Demandas */}
-        <div className="lg:col-span-3">
-          <label className="admin-label flex items-center justify-between">
-            <span>D (Demandas) - Total: <strong>{totalDemands}</strong></span>
-            <button type="button" onClick={zeroDemands} className="text-xs text-muted-foreground hover:text-foreground">
-              Zerar Todas
-            </button>
-          </label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }}></span>
-                <span className="text-xs text-muted-foreground">Concluídas</span>
-              </div>
-              <input
-                type="number"
-                value={formData.demands.completed}
-                onChange={e => setFormData(prev => ({ 
-                  ...prev, 
-                  demands: { ...prev.demands, completed: parseInt(e.target.value) || 0 }
-                }))}
-                className="admin-input"
-                min={0}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(142, 69%, 58%)' }}></span>
-                <span className="text-xs text-muted-foreground">Em Execução</span>
-              </div>
-              <input
-                type="number"
-                value={formData.demands.inProgress}
-                onChange={e => setFormData(prev => ({ 
-                  ...prev, 
-                  demands: { ...prev.demands, inProgress: parseInt(e.target.value) || 0 }
-                }))}
-                className="admin-input"
-                min={0}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(215, 14%, 55%)' }}></span>
-                <span className="text-xs text-muted-foreground">Não Iniciadas</span>
-              </div>
-              <input
-                type="number"
-                value={formData.demands.notStarted}
-                onChange={e => setFormData(prev => ({ 
-                  ...prev, 
-                  demands: { ...prev.demands, notStarted: parseInt(e.target.value) || 0 }
-                }))}
-                className="admin-input"
-                min={0}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(0, 72%, 51%)' }}></span>
-                <span className="text-xs text-muted-foreground">Canceladas</span>
-              </div>
-              <input
-                type="number"
-                value={formData.demands.cancelled}
-                onChange={e => setFormData(prev => ({ 
-                  ...prev, 
-                  demands: { ...prev.demands, cancelled: parseInt(e.target.value) || 0 }
-                }))}
-                className="admin-input"
-                min={0}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Collaborators */}
         <div className="lg:col-span-3">
           <label className="admin-label">Equipe / Colaboradores</label>
           <div className="flex items-center gap-3">

@@ -1,18 +1,13 @@
-import { Users, FileText, Shield, ClipboardList, Star, Sparkles, UserCheck, MessageCircle } from "lucide-react";
+import { Users, Star, Sparkles, UserCheck, MessageCircle } from "lucide-react";
 import { COLLABORATOR_COLORS, CollaboratorName } from "@/types/client";
 
 interface MobileCompactHeaderProps {
   totalClients: number;
-  totalProcesses: number;
-  totalLicenses: number;
-  totalDemands: number;
-  collaboratorDemandStats: Record<CollaboratorName, number>;
   collaboratorSelectedStats: Record<CollaboratorName, number>;
   priorityCount: number;
   highlightedCount: number;
-  responsaveisCount: number; // clients with at least one collaborator assigned
+  responsaveisCount: number;
   commentsCount: number;
-  // Filter state
   filterFlags: {
     priority: boolean;
     highlighted: boolean;
@@ -26,10 +21,6 @@ interface MobileCompactHeaderProps {
 
 export function MobileCompactHeader({
   totalClients,
-  totalProcesses,
-  totalLicenses,
-  totalDemands,
-  collaboratorDemandStats,
   collaboratorSelectedStats,
   priorityCount,
   highlightedCount,
@@ -47,9 +38,6 @@ export function MobileCompactHeader({
       {/* Row 1: Main stats */}
       <div className="flex items-center gap-2 px-3 py-2 overflow-x-auto scrollbar-hide">
         <StatCard icon={<Users className="w-3.5 h-3.5" />} value={totalClients} label="CLIENTES" />
-        <StatCard icon={<FileText className="w-3.5 h-3.5" />} value={totalProcesses} label="PROCESSOS" />
-        <StatCard icon={<Shield className="w-3.5 h-3.5" />} value={totalLicenses} label="LICENÇAS" />
-        <StatCard icon={<ClipboardList className="w-3.5 h-3.5" />} value={totalDemands} label="DEMANDAS" />
       </div>
 
       {/* Row 2: Collaborator cards - clickable as filters */}
@@ -72,15 +60,8 @@ export function MobileCompactHeader({
                 {name}
               </span>
             </div>
-            <div className="flex items-stretch divide-x divide-border bg-card">
-              <div className="flex flex-col items-center px-2.5 py-1">
-                <span className="text-sm font-bold leading-none">{collaboratorDemandStats[name]}</span>
-                <span className="text-[8px] text-muted-foreground uppercase">DEM</span>
-              </div>
-              <div className="flex flex-col items-center px-2.5 py-1">
-                <span className="text-sm font-bold leading-none">{collaboratorSelectedStats[name]}</span>
-                <span className="text-[8px] text-muted-foreground uppercase">SEL</span>
-              </div>
+            <div className="flex items-center justify-center px-2.5 py-1 bg-card">
+              <span className="text-sm font-bold leading-none">{collaboratorSelectedStats[name]}</span>
             </div>
           </button>
         ))}

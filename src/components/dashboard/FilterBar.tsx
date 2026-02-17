@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Input } from "@/components/ui/input";
 import { GridSizePicker } from "./GridSizePicker";
 
-export type SortOption = 'order' | 'processes' | 'licenses' | 'demands' | 'name' | 'priority' | 'jackbox' | 'comments';
+export type SortOption = 'order' | 'name' | 'priority' | 'jackbox' | 'comments';
 export type SortDirection = 'asc' | 'desc';
 export type ClientTypeFilter = 'all' | 'AC' | 'AV';
 export type ViewMode = 'fit-all' | 'scroll';
@@ -142,27 +142,6 @@ export function FilterBar({
               icon={<ListChecks className="w-3 h-3" />}
             >
               Jackbox
-            </SortButton>
-            <SortButton 
-              active={sortBy === 'processes'} 
-              direction={sortBy === 'processes' ? sortDirection : undefined}
-              onClick={() => handleSortClick('processes')}
-            >
-              Processos
-            </SortButton>
-            <SortButton 
-              active={sortBy === 'licenses'} 
-              direction={sortBy === 'licenses' ? sortDirection : undefined}
-              onClick={() => handleSortClick('licenses')}
-            >
-              Licenças
-            </SortButton>
-            <SortButton 
-              active={sortBy === 'demands'} 
-              direction={sortBy === 'demands' ? sortDirection : undefined}
-              onClick={() => handleSortClick('demands')}
-            >
-              Demandas
             </SortButton>
             <SortButton 
               active={sortBy === 'name'} 

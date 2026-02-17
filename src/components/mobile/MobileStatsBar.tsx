@@ -1,34 +1,23 @@
-import { Users, FileText, Shield, ClipboardList } from "lucide-react";
+import { Users } from "lucide-react";
 import { COLLABORATOR_COLORS, CollaboratorName } from "@/types/client";
 
 interface MobileStatsBarProps {
   totalClients: number;
-  totalProcesses: number;
-  totalLicenses: number;
-  totalDemands: number;
   collaboratorStats: Record<CollaboratorName, number>;
 }
 
 export function MobileStatsBar({
   totalClients,
-  totalProcesses,
-  totalLicenses,
-  totalDemands,
   collaboratorStats,
 }: MobileStatsBarProps) {
   return (
     <div className="flex items-center gap-1.5 px-3 py-2 bg-card border-b border-border overflow-x-auto">
-      {/* Main stats - horizontal scroll */}
       <div className="flex items-center gap-1.5">
         <MiniStat icon={<Users className="w-3.5 h-3.5" />} value={totalClients} />
-        <MiniStat icon={<FileText className="w-3.5 h-3.5" />} value={totalProcesses} />
-        <MiniStat icon={<Shield className="w-3.5 h-3.5" />} value={totalLicenses} />
-        <MiniStat icon={<ClipboardList className="w-3.5 h-3.5" />} value={totalDemands} />
       </div>
 
       <div className="w-px h-5 bg-border shrink-0" />
 
-      {/* Collaborator stats - colored dots with count */}
       <div className="flex items-center gap-1.5">
         {(Object.keys(collaboratorStats) as CollaboratorName[]).map(name => (
           <div
