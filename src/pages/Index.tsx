@@ -375,6 +375,8 @@ const Index = () => {
           {/* Stats Bar */}
           <div className="flex items-center justify-center gap-2 px-4 py-2 bg-card border-b border-border flex-wrap">
             <StatCardMini icon={<Users className="w-3.5 h-3.5" />} value={totalClients} label="Clientes" />
+            <StatCardMini value={acCount} label="AC" variant="success" />
+            <StatCardMini value={avCount} label="AV" variant="warning" />
             <div className="w-px h-6 bg-border mx-1" />
             {(['celine', 'gabi', 'darley', 'vanessa'] as const).map((name) => (
               <div key={name} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
@@ -476,12 +478,22 @@ const Index = () => {
   );
 };
 
-function StatCardMini({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
+function StatCardMini({ icon, value, label, variant = 'default' }: { icon?: React.ReactNode; value: number; label: string; variant?: 'default' | 'success' | 'warning' }) {
+  const variantClasses = {
+    default: 'bg-card border-border',
+    success: 'bg-emerald-500/5 border-emerald-500/30',
+    warning: 'bg-amber-500/5 border-amber-500/30',
+  };
+  const textClasses = {
+    default: 'text-foreground',
+    success: 'text-emerald-600',
+    warning: 'text-amber-600',
+  };
   return (
-    <div className="flex items-center gap-1 px-2 py-1 rounded-lg border bg-card border-border">
+    <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border ${variantClasses[variant]}`}>
       {icon}
       <div className="flex flex-col">
-        <span className="text-sm font-bold text-foreground leading-none">{value}</span>
+        <span className={`text-sm font-bold leading-none ${textClasses[variant]}`}>{value}</span>
         <span className="text-[8px] text-muted-foreground uppercase">{label}</span>
       </div>
     </div>
