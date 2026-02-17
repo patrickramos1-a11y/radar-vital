@@ -49,9 +49,6 @@ export function MobileCompactFilters({
     { key: 'order', label: 'Ordem' },
     { key: 'priority', label: 'Prioridade' },
     { key: 'jackbox', label: 'Jackbox' },
-    { key: 'processes', label: 'Processos' },
-    { key: 'licenses', label: 'Licenças' },
-    { key: 'demands', label: 'Demandas' },
     { key: 'name', label: 'Nome' },
   ];
 

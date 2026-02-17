@@ -1,5 +1,5 @@
 import { Star, Sparkles, Building2, Plus } from "lucide-react";
-import { Client, calculateTotalDemands, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, Collaborators } from "@/types/client";
+import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, Collaborators } from "@/types/client";
 import { ChecklistButton } from "@/components/checklist/ChecklistButton";
 import { CommentButton } from "@/components/comments/CommentButton";
 import {
@@ -167,20 +167,6 @@ function getHeaderSizes(clientCount: number): { numberSize: string; nameSize: st
   }
 }
 
-// Dynamic sizes for indicators (P, L, D, demand chips)
-function getIndicatorSizes(clientCount: number): { labelSize: string; valueSize: string; chipSize: string; chipPadding: string } {
-  if (clientCount <= 4) {
-    return { labelSize: 'text-sm', valueSize: 'text-2xl', chipSize: 'min-w-[28px] h-7 text-sm', chipPadding: 'px-2 py-1.5' };
-  } else if (clientCount <= 8) {
-    return { labelSize: 'text-xs', valueSize: 'text-xl', chipSize: 'min-w-[22px] h-6 text-xs', chipPadding: 'px-1.5 py-1' };
-  } else if (clientCount <= 12) {
-    return { labelSize: 'text-[10px]', valueSize: 'text-lg', chipSize: 'min-w-[18px] h-5 text-[10px]', chipPadding: 'px-1.5 py-1' };
-  } else if (clientCount <= 20) {
-    return { labelSize: 'text-[8px]', valueSize: 'text-base', chipSize: 'min-w-[16px] h-4.5 text-[9px]', chipPadding: 'px-1 py-0.5' };
-  } else {
-    return { labelSize: 'text-[6px]', valueSize: 'text-[10px]', chipSize: 'min-w-[14px] h-4 text-[8px]', chipPadding: 'px-1 py-0.5' };
-  }
-}
 
 
 export function ClientCard({ 
@@ -198,14 +184,12 @@ export function ClientCard({
   clientCount = 40,
   fitAll = false,
 }: ClientCardProps) {
-  const totalDemands = calculateTotalDemands(client.demands);
   const hasCollaborators = hasActiveCollaborators(client.collaborators);
   const collaboratorBg = getCollaboratorGradient(client.collaborators);
   const logoAreaStyle = getLogoAreaStyle(clientCount);
   const fontStyle = getOptimalFontSize(client.name, clientCount);
   const logoMaxHeight = getLogoMaxHeight(clientCount);
   const headerSizes = getHeaderSizes(clientCount);
-  const indicatorSizes = getIndicatorSizes(clientCount);
   
 
   const handleHighlightClick = (e: React.MouseEvent) => {
@@ -350,60 +334,10 @@ export function ClientCard({
         )}
       </div>
 
-      {/* Indicators Row - P, L, D with chips */}
-      <div className={`${indicatorSizes.chipPadding} border-t border-border bg-card-elevated/50`}>
-        <div className="flex items-center justify-between gap-0.5">
-          {/* P - Processos */}
-          <div className="flex flex-col items-center min-w-[16px]">
-            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-medium leading-none`}>P</span>
-            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight`}>{client.processes}</span>
-          </div>
-
-          {/* L - Licenças */}
-          <div className="flex flex-col items-center min-w-[16px]">
-            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-medium leading-none`}>L</span>
-            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight`}>{client.licenses}</span>
-          </div>
-
-          {/* D - Demandas with total */}
-          <div className="flex flex-col items-center min-w-[16px]">
-            <span className={`${indicatorSizes.labelSize} text-muted-foreground font-medium leading-none`}>D</span>
-            <span className={`${indicatorSizes.valueSize} font-bold text-foreground leading-tight`}>{totalDemands}</span>
-          </div>
-
-          {/* Status chips */}
-          <div className="flex items-center gap-px">
-            <DemandChipSmall status="completed" count={client.demands.completed} sizeClass={indicatorSizes.chipSize} />
-            <DemandChipSmall status="in-progress" count={client.demands.inProgress} sizeClass={indicatorSizes.chipSize} />
-            <DemandChipSmall status="not-started" count={client.demands.notStarted} sizeClass={indicatorSizes.chipSize} />
-            <DemandChipSmall status="cancelled" count={client.demands.cancelled} sizeClass={indicatorSizes.chipSize} />
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
 
-interface DemandChipSmallProps {
-  status: 'completed' | 'in-progress' | 'not-started' | 'cancelled';
-  count: number;
-  sizeClass: string;
-}
-
-function DemandChipSmall({ status, count, sizeClass }: DemandChipSmallProps) {
-  const statusColors = {
-    'completed': 'bg-green-600',
-    'in-progress': 'bg-emerald-400', 
-    'not-started': 'bg-gray-400',
-    'cancelled': 'bg-red-500',
-  };
-  
-  return (
-    <div className={`flex items-center justify-center ${sizeClass} px-0.5 rounded font-bold text-white ${statusColors[status]}`}>
-      {count}
-    </div>
-  );
-}
 
 // Badge size based on client count - compact sizes
 function getBadgeSize(clientCount: number): { size: string; fontSize: string } {

@@ -1,5 +1,5 @@
 import { Star, MessageSquare, CheckSquare, Building2 } from "lucide-react";
-import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, calculateTotalDemands } from "@/types/client";
+import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES } from "@/types/client";
 import { TVDensidade } from "@/types/tvMode";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +52,7 @@ export function TVClientCard({
   taskCount,
   density,
 }: TVClientCardProps) {
-  const totalDemands = calculateTotalDemands(client.demands);
+  
   const hasCollaborators = hasActiveCollaborators(client.collaborators);
   const collaboratorBg = getCollaboratorGradient(client.collaborators);
 
@@ -177,41 +177,6 @@ export function TVClientCard({
         )}
       </div>
 
-      {/* Indicators */}
-      <div className={cn("border-t border-border bg-card", s.padding)}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="text-center">
-              <div className={cn(s.indicatorSize, "text-muted-foreground font-medium")}>P</div>
-              <div className={cn(s.valueSize, "font-bold text-foreground")}>{client.processes}</div>
-            </div>
-            <div className="text-center">
-              <div className={cn(s.indicatorSize, "text-muted-foreground font-medium")}>L</div>
-              <div className={cn(s.valueSize, "font-bold text-foreground")}>{client.licenses}</div>
-            </div>
-            <div className="text-center">
-              <div className={cn(s.indicatorSize, "text-muted-foreground font-medium")}>D</div>
-              <div className={cn(s.valueSize, "font-bold text-foreground")}>{totalDemands}</div>
-            </div>
-          </div>
-          
-          {/* Status chips */}
-          <div className="flex items-center gap-px">
-            <div className="min-w-[14px] h-4 px-0.5 rounded bg-green-600 text-white text-[8px] font-bold flex items-center justify-center">
-              {client.demands.completed}
-            </div>
-            <div className="min-w-[14px] h-4 px-0.5 rounded bg-emerald-400 text-white text-[8px] font-bold flex items-center justify-center">
-              {client.demands.inProgress}
-            </div>
-            <div className="min-w-[14px] h-4 px-0.5 rounded bg-gray-400 text-white text-[8px] font-bold flex items-center justify-center">
-              {client.demands.notStarted}
-            </div>
-            <div className="min-w-[14px] h-4 px-0.5 rounded bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">
-              {client.demands.cancelled}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

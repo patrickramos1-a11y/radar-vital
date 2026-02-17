@@ -1,39 +1,17 @@
-import { Users, FileText, Shield, ClipboardList, Settings, Star, Sparkles } from "lucide-react";
+import { Users, Settings, Star, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { COLLABORATOR_COLORS, CollaboratorName } from "@/types/client";
 
-interface CollaboratorStats {
-  celine: number;
-  gabi: number;
-  darley: number;
-  vanessa: number;
-}
-
-interface CollaboratorDemandStats {
-  celine: number;
-  gabi: number;
-  darley: number;
-  vanessa: number;
-}
-
 interface DashboardHeaderProps {
   totalClients: number;
-  totalProcesses: number;
-  totalLicenses: number;
-  totalDemands: number;
-  collaboratorStats: CollaboratorStats;
-  collaboratorDemandStats: CollaboratorDemandStats;
+  collaboratorStats: Record<CollaboratorName, number>;
   priorityCount: number;
   highlightedCount: number;
 }
 
 export function DashboardHeader({
   totalClients,
-  totalProcesses,
-  totalLicenses,
-  totalDemands,
   collaboratorStats,
-  collaboratorDemandStats,
   priorityCount,
   highlightedCount,
 }: DashboardHeaderProps) {
@@ -56,45 +34,30 @@ export function DashboardHeader({
 
       {/* Global Stats - Compact */}
       <div className="flex items-center gap-1.5 flex-wrap justify-center">
-        {/* Main stats */}
         <StatCardCompact 
           icon={<Users className="w-3.5 h-3.5" />} 
           value={totalClients} 
           label="Clientes" 
         />
-        <StatCardCompact 
-          icon={<FileText className="w-3.5 h-3.5" />} 
-          value={totalProcesses} 
-          label="Processos" 
-        />
-        <StatCardCompact 
-          icon={<Shield className="w-3.5 h-3.5" />} 
-          value={totalLicenses} 
-          label="Licenças" 
-        />
-        <StatCardCompact 
-          icon={<ClipboardList className="w-3.5 h-3.5" />} 
-          value={totalDemands} 
-          label="Demandas" 
-        />
         
-        {/* Divider */}
         <div className="w-px h-6 bg-border mx-1" />
         
-        {/* Collaborator stats - with color bar and dual numbers */}
-        {collaborators.map((collab) => (
-          <CollaboratorStatCard
-            key={collab}
-            collaborator={collab}
-            demandCount={collaboratorDemandStats[collab]}
-            selectionCount={collaboratorStats[collab]}
-          />
+        {/* Collaborator stats */}
+        {(['celine', 'gabi', 'darley', 'vanessa'] as CollaboratorName[]).map((collab) => (
+          <div key={collab} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
+            <div className="px-2 py-0.5 text-center" style={{ backgroundColor: COLLABORATOR_COLORS[collab] }}>
+              <span className="text-[9px] font-semibold text-white uppercase tracking-wide">
+                {collab}
+              </span>
+            </div>
+            <div className="flex items-center justify-center px-2 py-1">
+              <span className="text-sm font-bold text-foreground leading-none">{collaboratorStats[collab]}</span>
+            </div>
+          </div>
         ))}
         
-        {/* Divider */}
         <div className="w-px h-6 bg-border mx-1" />
         
-        {/* Priority and Highlight stats */}
         <StatCardCompact 
           icon={<Star className="w-3.5 h-3.5" />} 
           value={priorityCount} 
@@ -121,41 +84,6 @@ export function DashboardHeader({
   );
 }
 
-interface CollaboratorStatCardProps {
-  collaborator: CollaboratorName;
-  demandCount: number;
-  selectionCount: number;
-}
-
-function CollaboratorStatCard({ collaborator, demandCount, selectionCount }: CollaboratorStatCardProps) {
-  const color = COLLABORATOR_COLORS[collaborator];
-  const displayName = collaborator.charAt(0).toUpperCase() + collaborator.slice(1);
-  
-  return (
-    <div className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[52px]">
-      {/* Name at top with colored background */}
-      <div 
-        className="px-2 py-0.5 text-center"
-        style={{ backgroundColor: color }}
-      >
-        <span className="text-[9px] font-semibold text-white uppercase tracking-wide">
-          {displayName}
-        </span>
-      </div>
-      {/* Dual numbers */}
-      <div className="flex items-stretch divide-x divide-border">
-        <div className="flex flex-col items-center justify-center px-2 py-1 flex-1">
-          <span className="text-sm font-bold text-foreground leading-none">{demandCount}</span>
-          <span className="text-[7px] text-muted-foreground uppercase">Dem</span>
-        </div>
-        <div className="flex flex-col items-center justify-center px-2 py-1 flex-1">
-          <span className="text-sm font-bold text-foreground leading-none">{selectionCount}</span>
-          <span className="text-[7px] text-muted-foreground uppercase">Sel</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 interface StatCardCompactProps {
   icon?: React.ReactNode;

@@ -16,7 +16,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { useTVMode } from "@/hooks/useTVMode";
 import { TVClientCard } from "@/components/tv/TVClientCard";
-import { Client, COLLABORATOR_NAMES, COLLABORATOR_COLORS, calculateTotalDemands } from "@/types/client";
+import { Client, COLLABORATOR_NAMES, COLLABORATOR_COLORS } from "@/types/client";
 import { cn } from "@/lib/utils";
 
 export default function TVMode() {
@@ -97,9 +97,6 @@ export default function TVMode() {
         break;
       case 'nome':
         result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'demandas':
-        result.sort((a, b) => calculateTotalDemands(b.demands) - calculateTotalDemands(a.demands));
         break;
       case 'ordem':
       default:
