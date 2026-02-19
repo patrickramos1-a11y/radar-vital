@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -120,36 +120,41 @@ export function FilterBar({
             Ordenar:
           </span>
           <div className="flex items-center gap-0.5 flex-wrap">
-            <SortButton 
+            <SortIconButton 
               active={sortBy === 'order'} 
               direction={sortBy === 'order' ? sortDirection : undefined}
               onClick={() => handleSortClick('order')}
-            >
-              Ordem
-            </SortButton>
-            <SortButton 
+              icon={<ArrowUpDown className="w-3.5 h-3.5" />}
+              tooltip="Ordem"
+            />
+            <SortIconButton 
               active={sortBy === 'priority'} 
               direction={sortBy === 'priority' ? sortDirection : undefined}
               onClick={() => handleSortClick('priority')}
-              icon={<Star className="w-3 h-3" />}
-            >
-              Prioridade
-            </SortButton>
-            <SortButton 
+              icon={<Star className="w-3.5 h-3.5" />}
+              tooltip="Prioridade"
+            />
+            <SortIconButton 
               active={sortBy === 'jackbox'} 
               direction={sortBy === 'jackbox' ? sortDirection : undefined}
               onClick={() => handleSortClick('jackbox')}
-              icon={<ListChecks className="w-3 h-3" />}
-            >
-              Jackbox
-            </SortButton>
-            <SortButton 
+              icon={<ListChecks className="w-3.5 h-3.5" />}
+              tooltip="Jackbox"
+            />
+            <SortIconButton 
+              active={sortBy === 'comments'} 
+              direction={sortBy === 'comments' ? sortDirection : undefined}
+              onClick={() => handleSortClick('comments')}
+              icon={<MessageCircle className="w-3.5 h-3.5" />}
+              tooltip="Comentários"
+            />
+            <SortIconButton 
               active={sortBy === 'name'} 
               direction={sortBy === 'name' ? sortDirection : undefined}
               onClick={() => handleSortClick('name')}
-            >
-              Nome
-            </SortButton>
+              icon={<ArrowDownAZ className="w-3.5 h-3.5" />}
+              tooltip="Nome"
+            />
           </div>
         </div>
 
@@ -316,6 +321,41 @@ function SortButton({ active, direction, onClick, children, icon }: SortButtonPr
         </span>
       )}
     </button>
+  );
+}
+
+interface SortIconButtonProps {
+  active: boolean;
+  direction?: SortDirection;
+  onClick: () => void;
+  icon: React.ReactNode;
+  tooltip: string;
+}
+
+function SortIconButton({ active, direction, onClick, icon, tooltip }: SortIconButtonProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          className={`p-1.5 rounded-md transition-all flex items-center gap-0.5 border ${
+            active 
+              ? 'bg-primary text-primary-foreground border-primary' 
+              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent'
+          }`}
+        >
+          {icon}
+          {active && direction && (
+            <span className="text-[9px] font-bold opacity-80">
+              {direction === 'desc' ? '↓' : '↑'}
+            </span>
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="text-xs">
+        Ordenar por {tooltip}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
