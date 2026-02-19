@@ -6,6 +6,13 @@ import { ActivityLogger } from '@/lib/activityLogger';
 
 const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
+// Global refresh callback — must be declared before hooks that use it
+let globalRefreshCallback: (() => void) | null = null;
+
+export function triggerCommentCountRefresh() {
+  if (globalRefreshCallback) globalRefreshCallback();
+}
+
 function mapRow(row: any): ClientComment {
   return {
     id: row.id,
@@ -125,6 +132,8 @@ export function useClientComments(clientId: string) {
       setComments(prev => prev.map(c =>
         c.id === id ? { ...c, readStatus: { ...c.readStatus, [collaborator]: newValue } } : c
       ));
+      // Refresh badge counts immediately after marking read/unread
+      triggerCommentCountRefresh();
     } catch (error) {
       console.error('Error updating read status:', error);
       toast.error('Erro ao atualizar status');
@@ -219,12 +228,25 @@ export function useClientComments(clientId: string) {
   };
 }
 
-// A comment is "pending" if at least one collaborator hasn't read it
-function hasPendingReads(row: any): boolean {
-  return !(row.read_celine && row.read_darley && row.read_gabi && row.read_vanessa && row.read_patrick);
+// Map collaborator name → database column
+const USER_COLUMN_MAP: Record<string, string> = {
+  'celine':  'read_celine',
+  'gabi':    'read_gabi',
+  'darley':  'read_darley',
+  'vanessa': 'read_vanessa',
+  'patrick': 'read_patrick',
+};
+
+// A comment is "pending" for a specific user (or globally if no user)
+function hasPendingForUser(row: any, userColumn: string | null): boolean {
+  if (!userColumn) {
+    // Global view: pending if any collaborator hasn't read
+    return !(row.read_celine && row.read_darley && row.read_gabi && row.read_vanessa && row.read_patrick);
+  }
+  return !row[userColumn];
 }
 
-// Hook to get PENDING comment counts for all clients
+// Hook to get PENDING comment counts for all clients (legacy, kept for compatibility)
 export function useAllClientsCommentCounts(): Map<string, number> {
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -237,7 +259,7 @@ export function useAllClientsCommentCounts(): Map<string, number> {
       if (error) throw error;
       const countMap = new Map<string, number>();
       (data || []).forEach(row => {
-        if (hasPendingReads(row)) {
+        if (hasPendingForUser(row, null)) {
           countMap.set(row.client_id, (countMap.get(row.client_id) || 0) + 1);
         }
       });
@@ -267,14 +289,14 @@ export function useAllClientsCommentCounts(): Map<string, number> {
   return counts;
 }
 
-let globalRefreshCallback: (() => void) | null = null;
 
-export function triggerCommentCountRefresh() {
-  if (globalRefreshCallback) globalRefreshCallback();
-}
-
-export function useAllClientsCommentCountsWithRefresh(): [Map<string, number>, () => void] {
+export function useAllClientsCommentCountsWithRefresh(currentUserName?: string): [Map<string, number>, () => void] {
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
+
+  // Resolve which DB column to filter by based on the logged-in user
+  const userColumn = currentUserName
+    ? (USER_COLUMN_MAP[currentUserName.toLowerCase()] ?? null)
+    : null;
 
   const fetchCounts = useCallback(async () => {
     try {
@@ -284,7 +306,7 @@ export function useAllClientsCommentCountsWithRefresh(): [Map<string, number>, (
       if (error) throw error;
       const countMap = new Map<string, number>();
       (data || []).forEach(row => {
-        if (hasPendingReads(row)) {
+        if (hasPendingForUser(row, userColumn)) {
           countMap.set(row.client_id, (countMap.get(row.client_id) || 0) + 1);
         }
       });
@@ -292,7 +314,8 @@ export function useAllClientsCommentCountsWithRefresh(): [Map<string, number>, (
     } catch (error) {
       console.error('Error fetching comment counts:', error);
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userColumn]);
 
   useEffect(() => {
     fetchCounts();
