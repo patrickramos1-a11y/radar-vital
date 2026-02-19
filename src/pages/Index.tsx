@@ -8,7 +8,7 @@ import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { CollaboratorName, Client } from "@/types/client";
-import { Users, Star, Sparkles, UserCheck, MessageCircle } from "lucide-react";
+import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -91,6 +91,22 @@ const Index = () => {
     [activeClients]
   );
 
+  // "De Boa" classification: client has no alerts
+  const isClienteDeBoa = useCallback((client: Client) => {
+    return !client.isPriority &&
+      !client.isHighlighted &&
+      !client.isChecked &&
+      !Object.values(client.collaborators).some(v => v) &&
+      getCommentCount(client.id) === 0 &&
+      getActiveTaskCount(client.id) === 0;
+  }, [getCommentCount, getActiveTaskCount]);
+
+  const deBoaCount = useMemo(() => activeClients.filter(c => isClienteDeBoa(c)).length, [activeClients, isClienteDeBoa]);
+  const comAlertaCount = useMemo(() => activeClients.filter(c => !isClienteDeBoa(c)).length, [activeClients, isClienteDeBoa]);
+
+  type AlertFilter = 'all' | 'deBoa' | 'comAlerta';
+  const [alertFilter, setAlertFilter] = useState<AlertFilter>('all');
+
   const handleFilterFlagToggle = (flag: keyof FilterFlags) => {
     setFilterFlags(prev => ({
       ...prev,
@@ -116,6 +132,7 @@ const Index = () => {
     setCollaboratorFilters([]);
     setClientTypeFilter('all');
     setSearchQuery('');
+    setAlertFilter('all');
   };
 
   const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {
@@ -149,6 +166,13 @@ const Index = () => {
 
     if (clientTypeFilter !== 'all') {
       result = result.filter(c => c.clientType === clientTypeFilter);
+    }
+
+    // Alert filter (De Boa / Com Alerta)
+    if (alertFilter === 'deBoa') {
+      result = result.filter(c => isClienteDeBoa(c));
+    } else if (alertFilter === 'comAlerta') {
+      result = result.filter(c => !isClienteDeBoa(c));
     }
 
     const hasAnyFilterActive = 
@@ -211,7 +235,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery]);
+  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, alertFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery, isClienteDeBoa]);
 
   const totalClients = activeClients.length;
 
@@ -250,6 +274,7 @@ const Index = () => {
     filterFlags.withComments ||
     collaboratorFilters.length > 0 ||
     clientTypeFilter !== 'all' ||
+    alertFilter !== 'all' ||
     searchQuery.trim() !== '';
 
   // Mobile View
@@ -377,6 +402,23 @@ const Index = () => {
             <StatCardMini icon={<Users className="w-3.5 h-3.5" />} value={totalClients} label="Clientes" />
             <StatCardMini value={acCount} label="AC" variant="success" />
             <StatCardMini value={avCount} label="AV" variant="warning" />
+            <div className="w-px h-6 bg-border mx-1" />
+            <AlertFilterButton
+              icon={<ShieldCheck className="w-3.5 h-3.5" />}
+              value={deBoaCount}
+              label="De Boa"
+              color="#10B981"
+              active={alertFilter === 'deBoa'}
+              onClick={() => setAlertFilter(alertFilter === 'deBoa' ? 'all' : 'deBoa')}
+            />
+            <AlertFilterButton
+              icon={<AlertTriangle className="w-3.5 h-3.5" />}
+              value={comAlertaCount}
+              label="Com Alerta"
+              color="#EF4444"
+              active={alertFilter === 'comAlerta'}
+              onClick={() => setAlertFilter(alertFilter === 'comAlerta' ? 'all' : 'comAlerta')}
+            />
             <div className="w-px h-6 bg-border mx-1" />
             {(['celine', 'gabi', 'darley', 'vanessa'] as const).map((name) => (
               <div key={name} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
@@ -531,6 +573,35 @@ function StatBadge({ icon, value, label, color, active, onClick }: StatBadgeProp
       </TooltipTrigger>
       <TooltipContent side="bottom" className="text-xs">
         {active ? `Filtrar por ${label}` : `Clique para filtrar por ${label}`}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function AlertFilterButton({ icon, value, label, color, active, onClick }: StatBadgeProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer hover:scale-105 ${
+            active ? 'ring-2 ring-offset-1 ring-offset-background' : ''
+          }`}
+          style={{
+            backgroundColor: active ? color : 'transparent',
+            borderColor: color,
+            color: active ? '#fff' : color,
+          }}
+        >
+          {icon}
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-bold leading-none">{value}</span>
+            <span className="text-[7px] uppercase opacity-80">{label}</span>
+          </div>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="text-xs">
+        {active ? `Mostrando: ${label}` : `Filtrar: ${label}`}
       </TooltipContent>
     </Tooltip>
   );
