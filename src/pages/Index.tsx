@@ -7,6 +7,7 @@ import { CommentsModal } from "@/components/comments/CommentsModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
+import { useAuth } from "@/contexts/AuthContext";
 import { CollaboratorName, Client } from "@/types/client";
 import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
@@ -19,6 +20,7 @@ import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 const Index = () => {
   const isMobile = useIsMobile();
+  const { currentUser } = useAuth();
   
   const { 
     activeClients, 
@@ -42,7 +44,7 @@ const Index = () => {
     toggleComplete,
   } = useTasks();
 
-  const [commentCounts, refreshCommentCounts] = useAllClientsCommentCountsWithRefresh();
+  const [commentCounts, refreshCommentCounts] = useAllClientsCommentCountsWithRefresh(currentUser?.name);
   const getCommentCount = useCallback((clientId: string) => commentCounts.get(clientId) || 0, [commentCounts]);
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
