@@ -1,0 +1,1 @@
+ALTER TABLE public.client_comments ADD COLUMN is_edited boolean NOT NULL DEFAULT false;

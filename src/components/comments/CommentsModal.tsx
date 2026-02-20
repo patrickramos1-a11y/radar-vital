@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ClientComment, ReadStatusName, READ_STATUS_NAMES, CommentType, COMMENT_TYPE_LABELS } from '@/types/comment';
 import { useClientComments, triggerCommentCountRefresh } from '@/hooks/useClientComments';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pin, Trash2, Send, Loader2, Check, CheckCheck, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users } from 'lucide-react';
+import { Pin, Trash2, Send, Loader2, Check, CheckCheck, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users, Pencil, X } from 'lucide-react';
 import { COLLABORATOR_COLORS, CollaboratorName } from '@/types/client';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +30,7 @@ interface CommentsModalProps {
 }
 
 export function CommentsModal({ clientId, clientName, isOpen, onClose }: CommentsModalProps) {
-  const { comments, isLoading, addComment, deleteComment, togglePinned, toggleReadStatus, confirmReading, closeComment, reopenComment, updateRequiredReaders } = useClientComments(clientId);
+  const { comments, isLoading, addComment, editComment, deleteComment, togglePinned, toggleReadStatus, confirmReading, closeComment, reopenComment, updateRequiredReaders } = useClientComments(clientId);
   const { currentUser, collaborators } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [commentType, setCommentType] = useState<CommentType>('informativo');
@@ -174,6 +174,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
                   onClose={() => closeComment(comment.id)}
                   onReopen={() => reopenComment(comment.id)}
                   onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
+                  onEdit={(newText) => editComment(comment.id, newText)}
                 />
               ))}
             </div>
@@ -303,11 +304,14 @@ interface CommentItemProps {
   onClose: () => void;
   onReopen: () => void;
   onUpdateReaders: (readers: string[]) => void;
+  onEdit: (newText: string) => void;
 }
 
-function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders }: CommentItemProps) {
+function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders, onEdit }: CommentItemProps) {
   const [showEditReaders, setShowEditReaders] = useState(false);
   const [editReaders, setEditReaders] = useState<string[]>(comment.requiredReaders);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.commentText);
 
   const typeBadgeStyles: Record<CommentType, string> = {
     informativo: 'bg-muted text-muted-foreground',
@@ -338,6 +342,18 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
     setShowEditReaders(false);
   };
 
+  const handleSaveEdit = () => {
+    if (editText.trim() && editText.trim() !== comment.commentText) {
+      onEdit(editText.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditText(comment.commentText);
+    setIsEditing(false);
+  };
+
   return (
     <div
       className={cn(
@@ -356,6 +372,9 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
           <span className="text-xs text-muted-foreground">
             {format(new Date(comment.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </span>
+          {comment.isEdited && (
+            <span className="text-[9px] text-muted-foreground italic">(editada)</span>
+          )}
           {comment.isClosed && (
             <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-muted text-muted-foreground">
               <Lock className="w-2.5 h-2.5 mr-0.5" /> Encerrado
@@ -382,6 +401,9 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
               </button>
             </>
           )}
+          <button onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Editar">
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
           <button onClick={onDelete} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Excluir">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -389,7 +411,27 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
       </div>
 
       {/* Comment Text */}
-      <p className="text-sm text-foreground whitespace-pre-wrap mb-3">{comment.commentText}</p>
+      {isEditing ? (
+        <div className="space-y-2 mb-3">
+          <Textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
+            className="min-h-[60px] resize-none text-sm"
+            autoFocus
+          />
+          <div className="flex gap-1 justify-end">
+            <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={handleCancelEdit}>
+              <X className="w-3 h-3 mr-1" /> Cancelar
+            </Button>
+            <Button size="sm" className="h-6 text-xs" onClick={handleSaveEdit} disabled={!editText.trim()}>
+              <Check className="w-3 h-3 mr-1" /> Salvar
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-foreground whitespace-pre-wrap mb-3">{comment.commentText}</p>
+      )}
 
       {/* Ciência status */}
       {isCiencia && totalRequired > 0 && (

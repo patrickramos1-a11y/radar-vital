@@ -54,6 +54,7 @@ export function CommentButton({ clientId, clientName, commentCount }: CommentBut
           isClosed: row.is_closed ?? false,
           closedBy: row.closed_by || undefined,
           closedAt: row.closed_at || undefined,
+          isEdited: row.is_edited ?? false,
         }));
 
         setPreviewComments(mapped);

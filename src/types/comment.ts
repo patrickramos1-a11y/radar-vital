@@ -25,6 +25,7 @@ export interface ClientComment {
   isClosed: boolean;
   closedBy?: string;
   closedAt?: string;
+  isEdited: boolean;
 }
 
 export interface CommentFormData {

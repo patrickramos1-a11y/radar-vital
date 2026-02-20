@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, User, Clock, Check, CheckCheck, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2, Send, Loader2, ChevronDown, Search, Users, Plus } from "lucide-react";
+import { MessageSquare, User, Clock, Check, CheckCheck, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2, Send, Loader2, ChevronDown, Search, Users, Plus, Pencil, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -41,6 +41,7 @@ interface CommentWithClient {
   isClosed: boolean;
   closedBy?: string;
   closedAt?: string;
+  isEdited: boolean;
 }
 
 export default function CommentsPanel() {
@@ -106,6 +107,7 @@ export default function CommentsPanel() {
           isClosed: row.is_closed ?? false,
           closedBy: row.closed_by || undefined,
           closedAt: row.closed_at || undefined,
+          isEdited: row.is_edited ?? false,
         };
       });
 
@@ -217,6 +219,23 @@ export default function CommentsPanel() {
     } catch (error) {
       console.error('Error deleting comment:', error);
       toast.error('Erro ao excluir comentário');
+    }
+  };
+
+  const editComment = async (commentId: string, newText: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ comment_text: newText, is_edited: true })
+        .eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, commentText: newText, isEdited: true } : c
+      ));
+      toast.success('Comentário editado');
+    } catch (error) {
+      console.error('Error editing comment:', error);
+      toast.error('Erro ao editar comentário');
     }
   };
 
@@ -504,6 +523,7 @@ export default function CommentsPanel() {
               onToggleRead={toggleReadStatus}
               onTogglePinned={togglePinned}
               onDelete={deleteComment}
+              onEdit={editComment}
               onConfirmReading={confirmReading}
               onClose={closeComment}
               onReopen={reopenComment}
@@ -531,13 +551,16 @@ interface CommentCardProps {
   onToggleRead: (id: string, collaborator: ReadStatus) => void;
   onTogglePinned: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string, newText: string) => void;
   onConfirmReading: (id: string) => void;
   onClose: (id: string) => void;
   onReopen: (id: string) => void;
 }
 
-function CommentCard({ comment, currentUserName, collaborators, onToggleRead, onTogglePinned, onDelete, onConfirmReading, onClose, onReopen }: CommentCardProps) {
+function CommentCard({ comment, currentUserName, collaborators, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen }: CommentCardProps) {
   const isAdmin = currentUserName === 'Patrick';
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.commentText);
   const isCiencia = comment.commentType === 'ciencia';
   const confirmedCount = isCiencia ? comment.requiredReaders.filter(r => comment.readTimestamps[r]).length : 0;
   const totalRequired = isCiencia ? comment.requiredReaders.length : 0;
@@ -590,6 +613,9 @@ function CommentCard({ comment, currentUserName, collaborators, onToggleRead, on
             <span>•</span>
             <Clock className="w-2.5 h-2.5" />
             <span>{format(new Date(comment.createdAt), "dd/MM HH:mm", { locale: ptBR })}</span>
+            {comment.isEdited && (
+              <span className="italic text-[9px]">(editada)</span>
+            )}
           </div>
         </div>
 
@@ -610,6 +636,9 @@ function CommentCard({ comment, currentUserName, collaborators, onToggleRead, on
               )}
             </>
           )}
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} title="Editar">
+            <Pencil className="h-3 w-3" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => onDelete(comment.id)}>
             <Trash2 className="h-3 w-3" />
           </Button>
@@ -617,7 +646,33 @@ function CommentCard({ comment, currentUserName, collaborators, onToggleRead, on
       </div>
 
       {/* Text */}
-      <p className="text-sm text-foreground mb-3 line-clamp-4">{comment.commentText}</p>
+      {isEditing ? (
+        <div className="space-y-2 mb-3">
+          <Textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                if (editText.trim() && editText.trim() !== comment.commentText) onEdit(comment.id, editText.trim());
+                setIsEditing(false);
+              }
+              if (e.key === 'Escape') { setEditText(comment.commentText); setIsEditing(false); }
+            }}
+            className="min-h-[60px] resize-none text-sm"
+            autoFocus
+          />
+          <div className="flex gap-1 justify-end">
+            <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => { setEditText(comment.commentText); setIsEditing(false); }}>
+              <X className="w-3 h-3 mr-1" /> Cancelar
+            </Button>
+            <Button size="sm" className="h-6 text-xs" onClick={() => { if (editText.trim() && editText.trim() !== comment.commentText) onEdit(comment.id, editText.trim()); setIsEditing(false); }} disabled={!editText.trim()}>
+              <Check className="w-3 h-3 mr-1" /> Salvar
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-foreground mb-3 line-clamp-4">{comment.commentText}</p>
+      )}
 
       {/* Ciência status - full version matching CommentsModal */}
       {isCiencia && totalRequired > 0 && (
