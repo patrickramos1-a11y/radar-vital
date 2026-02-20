@@ -412,6 +412,7 @@ const Index = () => {
               color="#10B981"
               active={alertFilter === 'deBoa'}
               onClick={() => setAlertFilter(alertFilter === 'deBoa' ? 'all' : 'deBoa')}
+              tooltip="Clientes estáveis — sem prioridade, destaque, tarefas ativas, comentários pendentes ou colaboradores vinculados."
             />
             <AlertFilterButton
               icon={<AlertTriangle className="w-3.5 h-3.5" />}
@@ -420,6 +421,7 @@ const Index = () => {
               color="#EF4444"
               active={alertFilter === 'comAlerta'}
               onClick={() => setAlertFilter(alertFilter === 'comAlerta' ? 'all' : 'comAlerta')}
+              tooltip="Clientes que demandam atenção — possuem prioridade, destaque, tarefas, comentários não lidos ou colaboradores vinculados."
             />
             <div className="w-px h-6 bg-border mx-1" />
             {(['celine', 'gabi', 'darley', 'vanessa'] as const).map((name) => (
@@ -580,7 +582,7 @@ function StatBadge({ icon, value, label, color, active, onClick }: StatBadgeProp
   );
 }
 
-function AlertFilterButton({ icon, value, label, color, active, onClick }: StatBadgeProps) {
+function AlertFilterButton({ icon, value, label, color, active, onClick, tooltip }: StatBadgeProps & { tooltip?: string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -602,8 +604,8 @@ function AlertFilterButton({ icon, value, label, color, active, onClick }: StatB
           </div>
         </button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="text-xs">
-        {active ? `Mostrando: ${label}` : `Filtrar: ${label}`}
+      <TooltipContent side="bottom" className="text-xs max-w-[250px]">
+        {tooltip || (active ? `Mostrando: ${label}` : `Filtrar: ${label}`)}
       </TooltipContent>
     </Tooltip>
   );
