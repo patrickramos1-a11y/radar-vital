@@ -35,6 +35,7 @@ function mapRow(row: any): ClientComment {
     isClosed: row.is_closed ?? false,
     closedBy: row.closed_by || undefined,
     closedAt: row.closed_at || undefined,
+    isEdited: row.is_edited ?? false,
   };
 }
 
@@ -92,6 +93,23 @@ export function useClientComments(clientId: string) {
       toast.error('Erro ao adicionar comentário');
     }
   }, [clientId, fetchComments]);
+
+  const editComment = useCallback(async (id: string, newText: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ comment_text: newText, is_edited: true })
+        .eq('id', id);
+      if (error) throw error;
+      setComments(prev => prev.map(c =>
+        c.id === id ? { ...c, commentText: newText, isEdited: true } : c
+      ));
+      toast.success('Comentário editado');
+    } catch (error) {
+      console.error('Error editing comment:', error);
+      toast.error('Erro ao editar comentário');
+    }
+  }, []);
 
   const deleteComment = useCallback(async (id: string, clientName?: string) => {
     try {
@@ -217,6 +235,7 @@ export function useClientComments(clientId: string) {
     comments,
     isLoading,
     addComment,
+    editComment,
     deleteComment,
     togglePinned,
     toggleReadStatus,

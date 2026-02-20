@@ -364,6 +364,7 @@ export type Database = {
           created_at: string
           id: string
           is_closed: boolean
+          is_edited: boolean
           is_pinned: boolean
           read_celine: boolean
           read_darley: boolean
@@ -384,6 +385,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_closed?: boolean
+          is_edited?: boolean
           is_pinned?: boolean
           read_celine?: boolean
           read_darley?: boolean
@@ -404,6 +406,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_closed?: boolean
+          is_edited?: boolean
           is_pinned?: boolean
           read_celine?: boolean
           read_darley?: boolean
