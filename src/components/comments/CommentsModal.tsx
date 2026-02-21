@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ClientComment, ReadStatusName, READ_STATUS_NAMES, CommentType, COMMENT_TYPE_LABELS } from '@/types/comment';
 import { useClientComments, triggerCommentCountRefresh } from '@/hooks/useClientComments';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pin, Trash2, Send, Loader2, Check, CheckCheck, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users, Pencil, X } from 'lucide-react';
+import { Pin, Trash2, Send, Loader2, Check, CheckCheck, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users, Pencil, X, Archive } from 'lucide-react';
 import { COLLABORATOR_COLORS, CollaboratorName } from '@/types/client';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +21,19 @@ const COMMENT_TYPE_DESCRIPTIONS: Record<CommentType, string> = {
   relevante: 'Destaque visual para informações importantes. Não exige confirmação, mas chama atenção na listagem.',
   ciencia: 'Comunicação formal que exige confirmação de leitura dos colaboradores selecionados. Use para decisões, alertas críticos ou informações que precisam de rastreabilidade.',
 };
+
+// Helper: is a comment fully read by all 5 collaborators?
+function isCommentFullyRead(comment: ClientComment): boolean {
+  return READ_STATUS_NAMES.every(n => comment.readStatus[n]);
+}
+
+// Helper: is Patrick blocked from marking as read?
+function isPatrickBlocked(comment: ClientComment): boolean {
+  const othersNames = READ_STATUS_NAMES.filter(n => n !== 'patrick');
+  return !othersNames.every(n => comment.readStatus[n]);
+}
+
+type ViewFilter = 'pendentes' | 'resolvidos' | 'todos';
 
 interface CommentsModalProps {
   clientId: string;
@@ -36,6 +49,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
   const [commentType, setCommentType] = useState<CommentType>('informativo');
   const [selectedReaders, setSelectedReaders] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewFilter, setViewFilter] = useState<ViewFilter>('pendentes');
 
   const currentUserName = currentUser?.name || 'Sistema';
   const isAdmin = currentUserName === 'Patrick';
@@ -71,11 +85,22 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
     setSelectedReaders(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
   };
 
-  const sortedComments = [...comments].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  const pendingCount = comments.filter(c => !isCommentFullyRead(c)).length;
+  const resolvedCount = comments.filter(c => isCommentFullyRead(c)).length;
+
+  const filteredComments = useMemo(() => {
+    let result = comments;
+    if (viewFilter === 'pendentes') {
+      result = result.filter(c => !isCommentFullyRead(c));
+    } else if (viewFilter === 'resolvidos') {
+      result = result.filter(c => isCommentFullyRead(c));
+    }
+    return [...result].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [comments, viewFilter]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -150,17 +175,41 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
           </div>
         </div>
 
+        {/* View filter tabs */}
+        <div className="flex gap-1 py-1">
+          <button
+            onClick={() => setViewFilter('pendentes')}
+            className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'pendentes' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
+          >
+            Pendentes ({pendingCount})
+          </button>
+          <button
+            onClick={() => setViewFilter('resolvidos')}
+            className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'resolvidos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
+          >
+            Resolvidos ({resolvedCount})
+          </button>
+          <button
+            onClick={() => setViewFilter('todos')}
+            className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'todos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
+          >
+            Todos ({comments.length})
+          </button>
+        </div>
+
         {/* Comments list */}
         <ScrollArea className="flex-1 -mr-4 pr-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-          ) : sortedComments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">Nenhum comentário ainda</div>
+          ) : filteredComments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {viewFilter === 'pendentes' ? 'Nenhum comentário pendente' : viewFilter === 'resolvidos' ? 'Nenhum comentário resolvido' : 'Nenhum comentário ainda'}
+            </div>
           ) : (
             <div className="space-y-3 py-2">
-              {sortedComments.map((comment) => (
+              {filteredComments.map((comment) => (
                 <CommentItem
                   key={comment.id}
                   comment={comment}
@@ -322,10 +371,12 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
   const isCiencia = comment.commentType === 'ciencia';
   const confirmedCount = isCiencia ? comment.requiredReaders.filter(r => comment.readTimestamps[r]).length : 0;
   const totalRequired = isCiencia ? comment.requiredReaders.length : 0;
-  const isFullyRead = isCiencia && totalRequired > 0 && confirmedCount === totalRequired;
+  const isFullyReadCiencia = isCiencia && totalRequired > 0 && confirmedCount === totalRequired;
   const isPending = isCiencia && confirmedCount === 0 && totalRequired > 0;
   const isPartial = isCiencia && confirmedCount > 0 && confirmedCount < totalRequired;
   const userNeedsToConfirm = isCiencia && !comment.isClosed && comment.requiredReaders.includes(currentUserName) && !comment.readTimestamps[currentUserName];
+
+  const fullyRead = isCommentFullyRead(comment);
 
   const cienciaBorderClass = comment.isClosed
     ? 'border-muted'
@@ -333,7 +384,7 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
       ? 'border-red-300 dark:border-red-700'
       : isPartial
         ? 'border-amber-300 dark:border-amber-700'
-        : isFullyRead
+        : isFullyReadCiencia
           ? 'border-green-300 dark:border-green-700'
           : 'border-border';
 
@@ -358,6 +409,7 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
     <div
       className={cn(
         'p-3 rounded-lg border',
+        fullyRead && 'opacity-60',
         comment.isPinned ? 'bg-amber-500/5 border-amber-500/30' : 'bg-muted/30',
         isCiencia && !comment.isPinned && cienciaBorderClass,
       )}
@@ -368,6 +420,11 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
           <Badge variant="secondary" className={cn('text-[9px] px-1.5 py-0', typeBadgeStyles[comment.commentType])}>
             {COMMENT_TYPE_LABELS[comment.commentType]}
           </Badge>
+          {fullyRead && (
+            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              <Archive className="w-2.5 h-2.5 mr-0.5" /> Resolvido
+            </Badge>
+          )}
           <span className="text-sm font-medium text-primary">{comment.authorName}</span>
           <span className="text-xs text-muted-foreground">
             {format(new Date(comment.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
@@ -443,7 +500,7 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
               <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-muted-foreground/30 text-muted-foreground gap-1">
                 <Lock className="w-2.5 h-2.5" /> Encerrado por {comment.closedBy}
               </Badge>
-            ) : isFullyRead ? (
+            ) : isFullyReadCiencia ? (
               <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-green-400 text-green-600 dark:text-green-400 gap-1">
                 <CheckCircle2 className="w-2.5 h-2.5" /> {confirmedCount}/{totalRequired}
               </Badge>
@@ -542,11 +599,19 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
   const canMarkSelf = READ_STATUS_NAMES.includes(currentReadStatusName);
   const selfIsRead = canMarkSelf && comment.readStatus[currentReadStatusName];
 
+  // Patrick lock rule: Patrick can only mark as read when all others have read
+  const isPatrick = currentReadStatusName === 'patrick';
+  const patrickLocked = isPatrick && !selfIsRead && isPatrickBlocked(comment);
+
   const currentCollaborator = collaborators.find(c => c.name.toLowerCase() === currentReadStatusName);
   const selfColor = currentCollaborator?.color || '#6B7280';
 
   const readCount = READ_STATUS_NAMES.filter(n => comment.readStatus[n]).length;
   const allRead = readCount === READ_STATUS_NAMES.length;
+
+  // Separate read and pending lists
+  const readNames = READ_STATUS_NAMES.filter(n => comment.readStatus[n]);
+  const pendingNames = READ_STATUS_NAMES.filter(n => !comment.readStatus[n]);
 
   return (
     <div className="flex items-center justify-between pt-2 border-t border-border">
@@ -554,16 +619,18 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
       <div className="flex items-center gap-1.5">
         {canMarkSelf && (
           <button
-            onClick={() => onToggleRead(currentReadStatusName)}
+            onClick={() => !patrickLocked && onToggleRead(currentReadStatusName)}
+            disabled={patrickLocked}
             className={cn(
               'flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all',
+              patrickLocked && 'opacity-50 cursor-not-allowed',
               selfIsRead ? 'text-white' : 'text-muted-foreground bg-muted hover:bg-muted/80'
             )}
             style={selfIsRead ? { backgroundColor: selfColor } : {}}
-            title={selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
+            title={patrickLocked ? 'Aguardando equipe ler primeiro' : selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
           >
             {selfIsRead ? <CheckCheck className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
-            {selfIsRead ? 'Lido' : 'Marcar lido'}
+            {patrickLocked ? 'Aguardando equipe' : selfIsRead ? 'Lido' : 'Marcar lido'}
           </button>
         )}
         <span className="text-[9px] text-muted-foreground">
@@ -585,9 +652,9 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
             <Info className="w-3.5 h-3.5" />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-0" align="end">
+        <PopoverContent className="w-60 p-0" align="end">
           <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-            <p className="text-xs font-semibold text-foreground">Lida por</p>
+            <p className="text-xs font-semibold text-foreground">Leitura: {readCount}/{READ_STATUS_NAMES.length}</p>
             {isAdmin && (
               <div className="flex gap-1">
                 <button
@@ -608,50 +675,56 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
               </div>
             )}
           </div>
-          <div className="p-2 space-y-1">
-            {READ_STATUS_NAMES.map((name) => {
-              const collab = collaborators.find(c => c.name.toLowerCase() === name);
-              const color = collab?.color || '#6B7280';
-              const isRead = comment.readStatus[name];
-              return (
-                <div key={name} className="flex items-center justify-between gap-2 px-1.5 py-1 rounded hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                    <span className="text-xs capitalize">{name}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {isRead ? (
-                      <span className="flex items-center gap-0.5 text-[9px] text-green-600 dark:text-green-400">
-                        <CheckCheck className="w-3 h-3" />
-                        {isAdmin && (
-                          <button
-                            onClick={() => onToggleRead(name)}
-                            className="ml-0.5 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                            title={`Desmarcar ${name}`}
-                          >
-                            <EyeOff className="w-3 h-3" />
-                          </button>
-                        )}
-                      </span>
-                    ) : (
-                      <>
-                        <span className="text-[9px] text-muted-foreground">Pendente</span>
-                        {isAdmin && (
-                          <button
-                            onClick={() => onToggleRead(name)}
-                            className="ml-1 p-0.5 rounded hover:bg-primary/10 text-primary transition-colors"
-                            title={`Marcar ${name} como lido`}
-                          >
-                            <Check className="w-3 h-3" />
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {/* Read list */}
+          {readNames.length > 0 && (
+            <div className="px-3 py-1.5">
+              <p className="text-[9px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider mb-1">✅ Lido</p>
+              <div className="space-y-1">
+                {readNames.map((name) => {
+                  const collab = collaborators.find(c => c.name.toLowerCase() === name);
+                  const color = collab?.color || '#6B7280';
+                  return (
+                    <div key={name} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        <span className="text-xs capitalize">{name}</span>
+                      </div>
+                      {isAdmin && (
+                        <button onClick={() => onToggleRead(name)} className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={`Desmarcar ${name}`}>
+                          <EyeOff className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* Pending list */}
+          {pendingNames.length > 0 && (
+            <div className="px-3 py-1.5 border-t border-border">
+              <p className="text-[9px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1">⏳ Pendente</p>
+              <div className="space-y-1">
+                {pendingNames.map((name) => {
+                  const collab = collaborators.find(c => c.name.toLowerCase() === name);
+                  const color = collab?.color || '#6B7280';
+                  return (
+                    <div key={name} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        <span className="text-xs capitalize">{name}</span>
+                      </div>
+                      {isAdmin && (
+                        <button onClick={() => onToggleRead(name)} className="p-0.5 rounded hover:bg-primary/10 text-primary transition-colors" title={`Marcar ${name} como lido`}>
+                          <Check className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
     </div>
