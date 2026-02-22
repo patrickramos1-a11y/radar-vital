@@ -95,31 +95,9 @@ export function MobileCompactFilters({
         </div>
       </div>
 
-      {/* Row 2: Sort pills + Type filters inline */}
+      {/* Row 2: Type filters first, then sort pills */}
       <div className="flex items-center gap-1.5 px-3 pb-2 overflow-x-auto scrollbar-hide">
-        {/* Sort pills */}
-        {sortOptions.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => handleSortClick(key)}
-            className={`flex items-center gap-0.5 px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
-              sortBy === key
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground'
-            }`}
-          >
-            {label}
-            {sortBy === key && (
-              <span className="text-[10px]">
-                {sortDirection === 'desc' ? '↓' : '↑'}
-              </span>
-            )}
-          </button>
-        ))}
-
-        <div className="w-px h-5 bg-border shrink-0" />
-
-        {/* Type filters */}
+        {/* Type filters - fixed at start */}
         <button
           onClick={() => onClientTypeFilterChange('all')}
           className={`flex items-center gap-0.5 px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
@@ -153,6 +131,28 @@ export function MobileCompactFilters({
           <Briefcase className="w-3 h-3" />
           AV
         </button>
+
+        <div className="w-px h-5 bg-border shrink-0" />
+
+        {/* Sort pills */}
+        {sortOptions.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => handleSortClick(key)}
+            className={`flex items-center gap-0.5 px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
+              sortBy === key
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            {label}
+            {sortBy === key && (
+              <span className="text-[10px]">
+                {sortDirection === 'desc' ? '↓' : '↑'}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
     </div>
   );
