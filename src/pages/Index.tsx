@@ -232,7 +232,8 @@ const Index = () => {
         result.sort((a, b) => a.name.localeCompare(b.name) * multiplier);
         break;
       default:
-        result.sort((a, b) => (a.order - b.order) * multiplier);
+        // Default 'order' sorts alphabetically by name
+        result.sort((a, b) => a.name.localeCompare(b.name));
         break;
     }
 
@@ -294,22 +295,23 @@ const Index = () => {
             highlightedCount={highlightedClients.size}
             responsaveisCount={responsaveisCount}
             commentsCount={withCommentsCount}
+            jackboxCount={jackboxCount}
+            selectedCount={selectedCount}
+            deBoaCount={deBoaCount}
+            comAlertaCount={comAlertaCount}
             filterFlags={{
               priority: filterFlags.priority,
               highlighted: filterFlags.highlighted,
               hasCollaborators: filterFlags.hasCollaborators,
               withComments: filterFlags.withComments,
+              withJackbox: filterFlags.withJackbox,
+              selected: filterFlags.selected,
             }}
             collaboratorFilters={collaboratorFilters}
-            onFilterFlagToggle={(flag) => {
-              // Map mobile flags to full FilterFlags
-              if (flag === 'hasCollaborators') {
-                handleFilterFlagToggle('hasCollaborators');
-              } else {
-                handleFilterFlagToggle(flag);
-              }
-            }}
+            alertFilter={alertFilter}
+            onFilterFlagToggle={(flag) => handleFilterFlagToggle(flag)}
             onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
+            onAlertFilterChange={setAlertFilter}
           />
 
           {/* Filters: sort, search, type */}
