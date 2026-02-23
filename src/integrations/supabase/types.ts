@@ -354,6 +354,8 @@ export type Database = {
       }
       client_comments: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           author_name: string
           author_user_id: string | null
           client_id: string
@@ -363,6 +365,7 @@ export type Database = {
           comment_type: string
           created_at: string
           id: string
+          is_archived: boolean
           is_closed: boolean
           is_edited: boolean
           is_pinned: boolean
@@ -375,6 +378,8 @@ export type Database = {
           required_readers: string[]
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           author_name?: string
           author_user_id?: string | null
           client_id: string
@@ -384,6 +389,7 @@ export type Database = {
           comment_type?: string
           created_at?: string
           id?: string
+          is_archived?: boolean
           is_closed?: boolean
           is_edited?: boolean
           is_pinned?: boolean
@@ -396,6 +402,8 @@ export type Database = {
           required_readers?: string[]
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           author_name?: string
           author_user_id?: string | null
           client_id?: string
@@ -405,6 +413,7 @@ export type Database = {
           comment_type?: string
           created_at?: string
           id?: string
+          is_archived?: boolean
           is_closed?: boolean
           is_edited?: boolean
           is_pinned?: boolean

@@ -36,6 +36,9 @@ function mapRow(row: any): ClientComment {
     closedBy: row.closed_by || undefined,
     closedAt: row.closed_at || undefined,
     isEdited: row.is_edited ?? false,
+    isArchived: row.is_archived ?? false,
+    archivedBy: row.archived_by || undefined,
+    archivedAt: row.archived_at || undefined,
   };
 }
 
@@ -150,7 +153,6 @@ export function useClientComments(clientId: string) {
       setComments(prev => prev.map(c =>
         c.id === id ? { ...c, readStatus: { ...c.readStatus, [collaborator]: newValue } } : c
       ));
-      // Refresh badge counts immediately after marking read/unread
       triggerCommentCountRefresh();
     } catch (error) {
       console.error('Error updating read status:', error);
@@ -231,6 +233,43 @@ export function useClientComments(clientId: string) {
     }
   }, []);
 
+  const archiveComment = useCallback(async (commentId: string) => {
+    const userName = getCurrentUserName();
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ is_archived: true, archived_by: userName, archived_at: new Date().toISOString() })
+        .eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, isArchived: true, archivedBy: userName, archivedAt: new Date().toISOString() } : c
+      ));
+      toast.success('Comentário arquivado');
+      triggerCommentCountRefresh();
+    } catch (error) {
+      console.error('Error archiving comment:', error);
+      toast.error('Erro ao arquivar comentário');
+    }
+  }, []);
+
+  const unarchiveComment = useCallback(async (commentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ is_archived: false, archived_by: null, archived_at: null })
+        .eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, isArchived: false, archivedBy: undefined, archivedAt: undefined } : c
+      ));
+      toast.success('Comentário desarquivado');
+      triggerCommentCountRefresh();
+    } catch (error) {
+      console.error('Error unarchiving comment:', error);
+      toast.error('Erro ao desarquivar comentário');
+    }
+  }, []);
+
   return {
     comments,
     isLoading,
@@ -243,29 +282,15 @@ export function useClientComments(clientId: string) {
     closeComment,
     reopenComment,
     updateRequiredReaders,
+    archiveComment,
+    unarchiveComment,
     refetch: fetchComments,
   };
 }
 
-// Map collaborator name → database column
-const USER_COLUMN_MAP: Record<string, string> = {
-  'celine':  'read_celine',
-  'gabi':    'read_gabi',
-  'darley':  'read_darley',
-  'vanessa': 'read_vanessa',
-  'patrick': 'read_patrick',
-};
+// ---- GLOBAL comment count hooks (count non-archived comments only) ----
 
-// A comment is "pending" for a specific user (or globally if no user)
-function hasPendingForUser(row: any, userColumn: string | null): boolean {
-  if (!userColumn) {
-    // Global view: pending if any collaborator hasn't read
-    return !(row.read_celine && row.read_darley && row.read_gabi && row.read_vanessa && row.read_patrick);
-  }
-  return !row[userColumn];
-}
-
-// Hook to get PENDING comment counts for all clients (legacy, kept for compatibility)
+// Hook to get comment counts for all clients (global, non-archived only)
 export function useAllClientsCommentCounts(): Map<string, number> {
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -274,11 +299,11 @@ export function useAllClientsCommentCounts(): Map<string, number> {
     try {
       const { data, error } = await supabase
         .from('client_comments')
-        .select('client_id, read_celine, read_darley, read_gabi, read_vanessa, read_patrick');
+        .select('client_id, is_archived');
       if (error) throw error;
       const countMap = new Map<string, number>();
       (data || []).forEach(row => {
-        if (hasPendingForUser(row, null)) {
+        if (!row.is_archived) {
           countMap.set(row.client_id, (countMap.get(row.client_id) || 0) + 1);
         }
       });
@@ -308,24 +333,19 @@ export function useAllClientsCommentCounts(): Map<string, number> {
   return counts;
 }
 
-
-export function useAllClientsCommentCountsWithRefresh(currentUserName?: string): [Map<string, number>, () => void] {
+// Global count hook with refresh — counts non-archived comments only (same for all users)
+export function useAllClientsCommentCountsWithRefresh(_currentUserName?: string): [Map<string, number>, () => void] {
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
-
-  // Resolve which DB column to filter by based on the logged-in user
-  const userColumn = currentUserName
-    ? (USER_COLUMN_MAP[currentUserName.toLowerCase()] ?? null)
-    : null;
 
   const fetchCounts = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('client_comments')
-        .select('client_id, read_celine, read_darley, read_gabi, read_vanessa, read_patrick');
+        .select('client_id, is_archived');
       if (error) throw error;
       const countMap = new Map<string, number>();
       (data || []).forEach(row => {
-        if (hasPendingForUser(row, userColumn)) {
+        if (!row.is_archived) {
           countMap.set(row.client_id, (countMap.get(row.client_id) || 0) + 1);
         }
       });
@@ -333,8 +353,7 @@ export function useAllClientsCommentCountsWithRefresh(currentUserName?: string):
     } catch (error) {
       console.error('Error fetching comment counts:', error);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userColumn]);
+  }, []);
 
   useEffect(() => {
     fetchCounts();
