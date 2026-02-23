@@ -232,8 +232,8 @@ const Index = () => {
         result.sort((a, b) => a.name.localeCompare(b.name) * multiplier);
         break;
       default:
-        // Default 'order' sorts alphabetically by name
-        result.sort((a, b) => a.name.localeCompare(b.name));
+        // Default 'order' sorts by display_order
+        result.sort((a, b) => (a.order - b.order) * multiplier);
         break;
     }
 
