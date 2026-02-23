@@ -55,6 +55,9 @@ export function CommentButton({ clientId, clientName, commentCount }: CommentBut
           closedBy: row.closed_by || undefined,
           closedAt: row.closed_at || undefined,
           isEdited: row.is_edited ?? false,
+          isArchived: row.is_archived ?? false,
+          archivedBy: row.archived_by || undefined,
+          archivedAt: row.archived_at || undefined,
         }));
 
         setPreviewComments(mapped);

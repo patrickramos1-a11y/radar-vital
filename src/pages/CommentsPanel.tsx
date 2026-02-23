@@ -42,6 +42,9 @@ interface CommentWithClient {
   closedBy?: string;
   closedAt?: string;
   isEdited: boolean;
+  isArchived: boolean;
+  archivedBy?: string;
+  archivedAt?: string;
 }
 
 // Helper: is a comment fully read by all 5 collaborators?
@@ -55,7 +58,7 @@ function isPatrickBlocked(comment: CommentWithClient): boolean {
   return !othersNames.every(n => comment.readStatus[n]);
 }
 
-type ViewFilter = 'pendentes' | 'resolvidos' | 'todos';
+type ViewFilter = 'pendentes' | 'lidos' | 'arquivados' | 'todos';
 
 export default function CommentsPanel() {
   const { activeClients } = useClients();
@@ -121,6 +124,9 @@ export default function CommentsPanel() {
           closedBy: row.closed_by || undefined,
           closedAt: row.closed_at || undefined,
           isEdited: row.is_edited ?? false,
+          isArchived: row.is_archived ?? false,
+          archivedBy: row.archived_by || undefined,
+          archivedAt: row.archived_at || undefined,
         };
       });
 
@@ -252,6 +258,25 @@ export default function CommentsPanel() {
     }
   };
 
+  const archiveComment = async (commentId: string) => {
+    const userName = currentUserName;
+    try {
+      const { error } = await supabase.from('client_comments').update({ is_archived: true, archived_by: userName, archived_at: new Date().toISOString() }).eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, isArchived: true, archivedBy: userName, archivedAt: new Date().toISOString() } : c));
+      toast.success('Comentário arquivado');
+    } catch (error) { console.error('Error archiving:', error); toast.error('Erro ao arquivar'); }
+  };
+
+  const unarchiveComment = async (commentId: string) => {
+    try {
+      const { error } = await supabase.from('client_comments').update({ is_archived: false, archived_by: null, archived_at: null }).eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, isArchived: false, archivedBy: undefined, archivedAt: undefined } : c));
+      toast.success('Comentário desarquivado');
+    } catch (error) { console.error('Error unarchiving:', error); toast.error('Erro ao desarquivar'); }
+  };
+
   const addComment = async () => {
     if (!newComment.trim() || !newClientId) return;
     setIsSubmitting(true);
@@ -292,13 +317,18 @@ export default function CommentsPanel() {
     return Array.from(clients.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [comments]);
 
-  // Counts based on pending (not fully read) comments only
-  const pendingComments = useMemo(() => comments.filter(c => !isCommentFullyRead(c)), [comments]);
-  const resolvedComments = useMemo(() => comments.filter(c => isCommentFullyRead(c)), [comments]);
+  const currentReadStatusName = currentUserName.toLowerCase() as ReadStatus;
+  const canReadSelf = READ_STATUS_NAMES.includes(currentReadStatusName);
+
+  // Global: active (non-archived) comments
+  const activeComments = useMemo(() => comments.filter(c => !c.isArchived), [comments]);
+  const archivedComments = useMemo(() => comments.filter(c => c.isArchived), [comments]);
+  // Per-user: pending = active + not read by me; read = active + read by me
+  const pendingComments = useMemo(() => activeComments.filter(c => !canReadSelf || !c.readStatus[currentReadStatusName]), [activeComments, canReadSelf, currentReadStatusName]);
+  const readComments = useMemo(() => activeComments.filter(c => canReadSelf && c.readStatus[currentReadStatusName]), [activeComments, canReadSelf, currentReadStatusName]);
 
   const filteredComments = useMemo(() => {
-    // Apply view filter first
-    let result = viewFilter === 'pendentes' ? pendingComments : viewFilter === 'resolvidos' ? resolvedComments : comments;
+    let result = viewFilter === 'pendentes' ? pendingComments : viewFilter === 'lidos' ? readComments : viewFilter === 'arquivados' ? archivedComments : comments;
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -322,10 +352,10 @@ export default function CommentsPanel() {
     }
 
     return result;
-  }, [comments, pendingComments, resolvedComments, viewFilter, searchQuery, authorFilter, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
+  }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilter, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
 
   const kpis = useMemo(() => {
-    const totalPending = pendingComments.length;
+    const totalActive = activeComments.length;
     const pinned = comments.filter(c => c.isPinned).length;
     const pendingCiencia = comments.filter(c =>
       c.commentType === 'ciencia' && !c.isClosed &&
@@ -336,13 +366,13 @@ export default function CommentsPanel() {
       c.requiredReaders.includes(currentUserName) &&
       !c.readTimestamps[currentUserName]
     ).length;
-    // Pending per collaborator: count of comments where that person hasn't read
+    // Pending per collaborator: count of NON-ARCHIVED comments where that person hasn't read
     const pendingByCollaborator: Record<ReadStatus, number> = { patrick: 0, celine: 0, gabi: 0, darley: 0, vanessa: 0 };
-    comments.forEach(c => {
+    activeComments.forEach(c => {
       READ_STATUS_NAMES.forEach(name => { if (!c.readStatus[name]) pendingByCollaborator[name]++; });
     });
-    return { totalPending, pinned, pendingCiencia, myCiencia, pendingByCollaborator };
-  }, [comments, pendingComments, currentUserName]);
+    return { totalActive, pinned, pendingCiencia, myCiencia, pendingByCollaborator };
+  }, [comments, activeComments, currentUserName]);
 
   const typeBadgeStyles: Record<CommentType, string> = {
     informativo: 'bg-muted text-muted-foreground',
@@ -358,7 +388,7 @@ export default function CommentsPanel() {
           subtitle="Todos os comentários por cliente"
           icon={<MessageSquare className="w-5 h-5" />}
         >
-          <KPICard icon={<MessageSquare className="w-4 h-4" />} value={kpis.totalPending} label="Pendentes" variant="danger" />
+          <KPICard icon={<MessageSquare className="w-4 h-4" />} value={kpis.totalActive} label="Ativos" variant="danger" />
           <KPICard icon={<Pin className="w-4 h-4" />} value={kpis.pinned} label="Fixados" variant="info" />
           <KPICard icon={<ShieldAlert className="w-4 h-4" />} value={kpis.pendingCiencia} label="Ciência Pend." variant="danger" />
           {kpis.myCiencia > 0 && (
@@ -402,10 +432,16 @@ export default function CommentsPanel() {
               Pendentes ({pendingComments.length})
             </button>
             <button
-              onClick={() => setViewFilter('resolvidos')}
-              className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', viewFilter === 'resolvidos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
+              onClick={() => setViewFilter('lidos')}
+              className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', viewFilter === 'lidos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
             >
-              Resolvidos ({resolvedComments.length})
+              Lidos ({readComments.length})
+            </button>
+            <button
+              onClick={() => setViewFilter('arquivados')}
+              className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', viewFilter === 'arquivados' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
+            >
+              Arquivados ({archivedComments.length})
             </button>
             <button
               onClick={() => setViewFilter('todos')}
@@ -568,6 +604,8 @@ export default function CommentsPanel() {
               onConfirmReading={confirmReading}
               onClose={closeComment}
               onReopen={reopenComment}
+              onArchive={archiveComment}
+              onUnarchive={unarchiveComment}
             />
           ))}
         </VisualGrid>
@@ -576,7 +614,7 @@ export default function CommentsPanel() {
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>{viewFilter === 'pendentes' ? 'Nenhum comentário pendente' : viewFilter === 'resolvidos' ? 'Nenhum comentário resolvido' : 'Nenhum comentário encontrado'}</p>
+              <p>{viewFilter === 'pendentes' ? 'Nenhum comentário pendente' : viewFilter === 'lidos' ? 'Nenhum comentário lido' : viewFilter === 'arquivados' ? 'Nenhum comentário arquivado' : 'Nenhum comentário encontrado'}</p>
             </div>
           </div>
         )}
@@ -596,9 +634,11 @@ interface CommentCardProps {
   onConfirmReading: (id: string) => void;
   onClose: (id: string) => void;
   onReopen: (id: string) => void;
+  onArchive: (id: string) => void;
+  onUnarchive: (id: string) => void;
 }
 
-function CommentCard({ comment, currentUserName, collaborators, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen }: CommentCardProps) {
+function CommentCard({ comment, currentUserName, collaborators, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen, onArchive, onUnarchive }: CommentCardProps) {
   const isAdmin = currentUserName === 'Patrick';
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.commentText);
@@ -644,9 +684,9 @@ function CommentCard({ comment, currentUserName, collaborators, onToggleRead, on
             <Badge variant="secondary" className={cn('text-[8px] px-1 py-0 h-4 shrink-0', typeBadgeStyles[comment.commentType])}>
               {COMMENT_TYPE_LABELS[comment.commentType]}
             </Badge>
-            {fullyRead && (
-              <Badge variant="secondary" className="text-[8px] px-1 py-0 h-4 shrink-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                <Archive className="w-2 h-2 mr-0.5" />Resolvido
+            {comment.isArchived && (
+              <Badge variant="secondary" className="text-[8px] px-1 py-0 h-4 shrink-0 bg-muted text-muted-foreground">
+                <Archive className="w-2 h-2 mr-0.5" />Arquivado
               </Badge>
             )}
             {comment.isClosed && (
@@ -683,6 +723,15 @@ function CommentCard({ comment, currentUserName, collaborators, onToggleRead, on
                 </Button>
               )}
             </>
+          )}
+          {!comment.isArchived ? (
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={() => onArchive(comment.id)} title="Arquivar">
+              <Archive className="h-3 w-3" />
+            </Button>
+          ) : (
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-green-500" onClick={() => onUnarchive(comment.id)} title="Desarquivar">
+              <Archive className="h-3 w-3" />
+            </Button>
           )}
           <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} title="Editar">
             <Pencil className="h-3 w-3" />

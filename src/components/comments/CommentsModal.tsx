@@ -33,7 +33,7 @@ function isPatrickBlocked(comment: ClientComment): boolean {
   return !othersNames.every(n => comment.readStatus[n]);
 }
 
-type ViewFilter = 'pendentes' | 'resolvidos' | 'todos';
+type ViewFilter = 'pendentes' | 'lidos' | 'arquivados' | 'todos';
 
 interface CommentsModalProps {
   clientId: string;
@@ -43,7 +43,7 @@ interface CommentsModalProps {
 }
 
 export function CommentsModal({ clientId, clientName, isOpen, onClose }: CommentsModalProps) {
-  const { comments, isLoading, addComment, editComment, deleteComment, togglePinned, toggleReadStatus, confirmReading, closeComment, reopenComment, updateRequiredReaders } = useClientComments(clientId);
+  const { comments, isLoading, addComment, editComment, deleteComment, togglePinned, toggleReadStatus, confirmReading, closeComment, reopenComment, updateRequiredReaders, archiveComment, unarchiveComment } = useClientComments(clientId);
   const { currentUser, collaborators } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [commentType, setCommentType] = useState<CommentType>('informativo');
@@ -85,22 +85,31 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
     setSelectedReaders(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
   };
 
-  const pendingCount = comments.filter(c => !isCommentFullyRead(c)).length;
-  const resolvedCount = comments.filter(c => isCommentFullyRead(c)).length;
+  const currentReadStatusName = currentUserName.toLowerCase() as ReadStatusName;
+  const canReadSelf = READ_STATUS_NAMES.includes(currentReadStatusName);
+
+  const activeComments = comments.filter(c => !c.isArchived);
+  const archivedComments = comments.filter(c => c.isArchived);
+  const pendingComments = activeComments.filter(c => !canReadSelf || !c.readStatus[currentReadStatusName]);
+  const readComments = activeComments.filter(c => canReadSelf && c.readStatus[currentReadStatusName]);
 
   const filteredComments = useMemo(() => {
-    let result = comments;
+    let result: ClientComment[];
     if (viewFilter === 'pendentes') {
-      result = result.filter(c => !isCommentFullyRead(c));
-    } else if (viewFilter === 'resolvidos') {
-      result = result.filter(c => isCommentFullyRead(c));
+      result = pendingComments;
+    } else if (viewFilter === 'lidos') {
+      result = readComments;
+    } else if (viewFilter === 'arquivados') {
+      result = archivedComments;
+    } else {
+      result = comments;
     }
     return [...result].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [comments, viewFilter]);
+  }, [comments, pendingComments, readComments, archivedComments, viewFilter]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -181,13 +190,19 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
             onClick={() => setViewFilter('pendentes')}
             className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'pendentes' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
           >
-            Pendentes ({pendingCount})
+            Pendentes ({pendingComments.length})
           </button>
           <button
-            onClick={() => setViewFilter('resolvidos')}
-            className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'resolvidos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
+            onClick={() => setViewFilter('lidos')}
+            className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'lidos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
           >
-            Resolvidos ({resolvedCount})
+            Lidos ({readComments.length})
+          </button>
+          <button
+            onClick={() => setViewFilter('arquivados')}
+            className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'arquivados' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
+          >
+            Arquivados ({archivedComments.length})
           </button>
           <button
             onClick={() => setViewFilter('todos')}
@@ -205,7 +220,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
             </div>
           ) : filteredComments.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {viewFilter === 'pendentes' ? 'Nenhum comentário pendente' : viewFilter === 'resolvidos' ? 'Nenhum comentário resolvido' : 'Nenhum comentário ainda'}
+              {viewFilter === 'pendentes' ? 'Nenhum comentário pendente' : viewFilter === 'lidos' ? 'Nenhum comentário lido' : viewFilter === 'arquivados' ? 'Nenhum comentário arquivado' : 'Nenhum comentário ainda'}
             </div>
           ) : (
             <div className="space-y-3 py-2">
@@ -224,6 +239,8 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
                   onReopen={() => reopenComment(comment.id)}
                   onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
                   onEdit={(newText) => editComment(comment.id, newText)}
+                  onArchive={() => archiveComment(comment.id)}
+                  onUnarchive={() => unarchiveComment(comment.id)}
                 />
               ))}
             </div>
@@ -354,9 +371,11 @@ interface CommentItemProps {
   onReopen: () => void;
   onUpdateReaders: (readers: string[]) => void;
   onEdit: (newText: string) => void;
+  onArchive: () => void;
+  onUnarchive: () => void;
 }
 
-function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders, onEdit }: CommentItemProps) {
+function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders, onEdit, onArchive, onUnarchive }: CommentItemProps) {
   const [showEditReaders, setShowEditReaders] = useState(false);
   const [editReaders, setEditReaders] = useState<string[]>(comment.requiredReaders);
   const [isEditing, setIsEditing] = useState(false);
@@ -420,9 +439,9 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
           <Badge variant="secondary" className={cn('text-[9px] px-1.5 py-0', typeBadgeStyles[comment.commentType])}>
             {COMMENT_TYPE_LABELS[comment.commentType]}
           </Badge>
-          {fullyRead && (
-            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-              <Archive className="w-2.5 h-2.5 mr-0.5" /> Resolvido
+          {comment.isArchived && (
+            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-muted text-muted-foreground">
+              <Archive className="w-2.5 h-2.5 mr-0.5" /> Arquivado
             </Badge>
           )}
           <span className="text-sm font-medium text-primary">{comment.authorName}</span>
@@ -457,6 +476,15 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
                 <UserPlus className="w-3.5 h-3.5" />
               </button>
             </>
+          )}
+          {!comment.isArchived ? (
+            <button onClick={onArchive} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Arquivar">
+              <Archive className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button onClick={onUnarchive} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-green-500 transition-colors" title="Desarquivar">
+              <Archive className="w-3.5 h-3.5" />
+            </button>
           )}
           <button onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Editar">
             <Pencil className="w-3.5 h-3.5" />
