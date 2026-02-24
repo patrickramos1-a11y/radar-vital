@@ -42,42 +42,40 @@ export function CommentPreview({ comments, isLoading, onViewAll }: CommentPrevie
 
   return (
     <div className="w-72">
-      <ScrollArea className="max-h-80">
-        <div className="p-2 space-y-2">
-          {previewComments.map((comment) => {
-            const Icon = typeIcons[comment.commentType];
-            const isCiencia = comment.commentType === 'ciencia';
-            const confirmedCount = isCiencia ? comment.requiredReaders.filter(r => comment.readTimestamps[r]).length : 0;
-            const totalRequired = isCiencia ? comment.requiredReaders.length : 0;
+      <div className="max-h-80 overflow-y-auto p-2 space-y-2">
+        {previewComments.map((comment) => {
+          const Icon = typeIcons[comment.commentType];
+          const isCiencia = comment.commentType === 'ciencia';
+          const confirmedCount = isCiencia ? comment.requiredReaders.filter(r => comment.readTimestamps[r]).length : 0;
+          const totalRequired = isCiencia ? comment.requiredReaders.length : 0;
 
-            return (
-              <div key={comment.id} className="p-2 rounded-md bg-muted/50 border border-border/50">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <div className="flex items-center gap-1">
-                    <Badge variant="secondary" className={cn('text-[8px] px-1 py-0 h-4', typeBadgeStyles[comment.commentType])}>
-                      <Icon className="w-2 h-2 mr-0.5" />
-                      {COMMENT_TYPE_LABELS[comment.commentType]}
-                    </Badge>
-                    <span className="text-[10px] font-medium text-primary">{comment.authorName}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {comment.isPinned && <Pin className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />}
-                    {isCiencia && totalRequired > 0 && (
-                      <span className={cn('text-[8px] font-medium', confirmedCount === totalRequired ? 'text-green-600' : 'text-red-600')}>
-                        {confirmedCount}/{totalRequired}
-                      </span>
-                    )}
-                    <span className="text-[9px] text-muted-foreground">
-                      {format(new Date(comment.createdAt), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
-                    </span>
-                  </div>
+          return (
+            <div key={comment.id} className="p-2 rounded-md bg-muted/50 border border-border/50">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-1">
+                  <Badge variant="secondary" className={cn('text-[8px] px-1 py-0 h-4', typeBadgeStyles[comment.commentType])}>
+                    <Icon className="w-2 h-2 mr-0.5" />
+                    {COMMENT_TYPE_LABELS[comment.commentType]}
+                  </Badge>
+                  <span className="text-[10px] font-medium text-primary">{comment.authorName}</span>
                 </div>
-                <p className="text-xs text-foreground line-clamp-3 whitespace-pre-wrap">{comment.commentText}</p>
+                <div className="flex items-center gap-1">
+                  {comment.isPinned && <Pin className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />}
+                  {isCiencia && totalRequired > 0 && (
+                    <span className={cn('text-[8px] font-medium', confirmedCount === totalRequired ? 'text-green-600' : 'text-red-600')}>
+                      {confirmedCount}/{totalRequired}
+                    </span>
+                  )}
+                  <span className="text-[9px] text-muted-foreground">
+                    {format(new Date(comment.createdAt), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
+                  </span>
+                </div>
               </div>
-            );
-          })}
-        </div>
-      </ScrollArea>
+              <p className="text-xs text-foreground line-clamp-3 whitespace-pre-wrap">{comment.commentText}</p>
+            </div>
+          );
+        })}
+      </div>
 
       <div className="px-3 pb-2">
         <button onClick={onViewAll} className="text-xs text-primary hover:underline">
