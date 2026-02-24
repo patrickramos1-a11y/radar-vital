@@ -48,7 +48,7 @@ export function MobileCompactFilters({
   const sortOptions: { key: SortOption; label: string }[] = [
     { key: 'order', label: 'Nome' },
     { key: 'priority', label: 'Prioridade' },
-    { key: 'jackbox', label: 'Jackbox' },
+    { key: 'jackbox', label: 'Tarefas' },
     { key: 'comments', label: 'Coment.' },
     { key: 'name', label: 'A-Z' },
   ];

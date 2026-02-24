@@ -122,7 +122,7 @@ export const BACKLOG_CATEGORY_LABELS: Record<BacklogCategory, string> = {
 export const BACKLOG_MODULE_LABELS: Record<BacklogModule, string> = {
   DASHBOARD: 'Dashboard Geral',
   DEMANDAS: 'Painel de Demandas',
-  JACKBOX: 'Jackbox',
+  JACKBOX: 'Tarefas',
   PROCESSOS: 'Processos',
   LICENCAS: 'Licenças',
   FILTROS: 'Filtros e Ordenações',

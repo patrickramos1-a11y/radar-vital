@@ -9,7 +9,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { useAuth } from "@/contexts/AuthContext";
 import { CollaboratorName, Client } from "@/types/client";
-import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks } from "lucide-react";
 import { COLLABORATOR_COLORS } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -93,15 +93,12 @@ const Index = () => {
     [activeClients]
   );
 
-  // "De Boa" classification: client has no alerts
+  // "De Boa" classification: client has no priority, highlight or active tasks
   const isClienteDeBoa = useCallback((client: Client) => {
     return !client.isPriority &&
       !client.isHighlighted &&
-      !client.isChecked &&
-      !Object.values(client.collaborators).some(v => v) &&
-      getCommentCount(client.id) === 0 &&
       getActiveTaskCount(client.id) === 0;
-  }, [getCommentCount, getActiveTaskCount]);
+  }, [getActiveTaskCount]);
 
   const deBoaCount = useMemo(() => activeClients.filter(c => isClienteDeBoa(c)).length, [activeClients, isClienteDeBoa]);
   const comAlertaCount = useMemo(() => activeClients.filter(c => !isClienteDeBoa(c)).length, [activeClients, isClienteDeBoa]);
@@ -414,7 +411,7 @@ const Index = () => {
               color="#10B981"
               active={alertFilter === 'deBoa'}
               onClick={() => setAlertFilter(alertFilter === 'deBoa' ? 'all' : 'deBoa')}
-              tooltip="Clientes estáveis — sem prioridade, destaque, tarefas ativas, comentários pendentes ou colaboradores vinculados."
+              tooltip="Clientes estáveis — sem prioridade, destaque ou tarefas ativas."
             />
             <AlertFilterButton
               icon={<AlertTriangle className="w-3.5 h-3.5" />}
@@ -423,7 +420,7 @@ const Index = () => {
               color="#EF4444"
               active={alertFilter === 'comAlerta'}
               onClick={() => setAlertFilter(alertFilter === 'comAlerta' ? 'all' : 'comAlerta')}
-              tooltip="Clientes que demandam atenção — possuem prioridade, destaque, tarefas, comentários não lidos ou colaboradores vinculados."
+              tooltip="Clientes que demandam atenção — possuem prioridade, destaque ou tarefas ativas."
             />
             <div className="w-px h-6 bg-border mx-1" />
             {(['celine', 'gabi', 'darley', 'vanessa'] as const).map((name) => (
@@ -441,6 +438,7 @@ const Index = () => {
             <StatBadge icon={<Sparkles className="w-3.5 h-3.5" />} value={highlightedClients.size} label="Destaque" color="rgb(59, 130, 246)" active={filterFlags.highlighted} onClick={() => handleFilterFlagToggle('highlighted')} />
             <StatBadge icon={<UserCheck className="w-3.5 h-3.5" />} value={responsaveisCount} label="Responsáveis" color="rgb(16, 185, 129)" active={filterFlags.hasCollaborators} onClick={() => handleFilterFlagToggle('hasCollaborators')} />
             <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(99, 102, 241)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
+            <StatBadge icon={<ListChecks className="w-3.5 h-3.5" />} value={jackboxCount} label="Tarefas" color="rgb(234, 179, 8)" active={filterFlags.withJackbox} onClick={() => handleFilterFlagToggle('withJackbox')} />
           </div>
 
           {/* Panel Navigation Bar */}

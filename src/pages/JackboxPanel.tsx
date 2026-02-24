@@ -98,7 +98,7 @@ export default function JackboxPanel() {
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header with KPIs */}
         <VisualPanelHeader 
-          title="Micro-Demandas (Jackbox)" 
+          title="Micro-Demandas (Tarefas)" 
           subtitle="Tarefas rápidas por empresa"
           icon={<Box className="w-5 h-5" />}
           detailRoute="/jackbox-detalhado"
