@@ -141,7 +141,7 @@ export function MobileCompactHeader({
         <FilterBadge
           icon={<ListChecks className="w-3 h-3" />}
           value={jackboxCount}
-          label="JACK"
+          label="TAREFA"
           active={filterFlags.withJackbox}
           onClick={() => onFilterFlagToggle('withJackbox')}
           activeColor="rgb(234, 179, 8)"

@@ -139,7 +139,7 @@ export function FilterBar({
               direction={sortBy === 'jackbox' ? sortDirection : undefined}
               onClick={() => handleSortClick('jackbox')}
               icon={<ListChecks className="w-3.5 h-3.5" />}
-              tooltip="Jackbox"
+              tooltip="Tarefas"
             />
             <SortIconButton 
               active={sortBy === 'comments'} 

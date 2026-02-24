@@ -58,7 +58,7 @@ export function PanelFilters({
               sortBy === key ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-secondary-foreground'
             }`}
           >
-            {key === 'order' ? 'Ordem' : key === 'name' ? 'Nome' : key === 'priority' ? 'Prioridade' : 'Jackbox'}
+            {key === 'order' ? 'Ordem' : key === 'name' ? 'Nome' : key === 'priority' ? 'Prioridade' : 'Tarefas'}
             {sortBy === key && sortDirection && (
               <span className="ml-1 text-[10px]">{sortDirection === 'desc' ? '↓' : '↑'}</span>
             )}

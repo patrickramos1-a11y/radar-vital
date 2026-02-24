@@ -26,7 +26,7 @@ export function CommentPreview({ comments, isLoading, onViewAll }: CommentPrevie
     );
   }
 
-  const previewComments = comments.slice(0, 3);
+  const previewComments = comments.slice(0, 8);
 
   const typeBadgeStyles: Record<CommentType, string> = {
     informativo: 'bg-muted text-muted-foreground',
@@ -42,7 +42,7 @@ export function CommentPreview({ comments, isLoading, onViewAll }: CommentPrevie
 
   return (
     <div className="w-72">
-      <ScrollArea className="max-h-64">
+      <ScrollArea className="max-h-80">
         <div className="p-2 space-y-2">
           {previewComments.map((comment) => {
             const Icon = typeIcons[comment.commentType];
