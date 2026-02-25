@@ -1,80 +1,106 @@
 
-## Correcoes e Ajustes: Filtros, Comentarios, Nomenclatura e Paridade Mobile/Desktop
 
-### Bloco 1 -- Correcao do Filtro "De Boa" / "Com Alerta"
+## Sistema de Respostas a Comentarios Especificos (Threading)
 
-**Problema**: A funcao `isClienteDeBoa` atualmente verifica 6 criterios, incluindo comentarios e colaboradores vinculados. Isso gera excesso de empresas em "Com Alerta" (40 de 49, conforme screenshot).
+### Objetivo
 
-**Solucao**: Simplificar `isClienteDeBoa` para considerar apenas:
-- Prioridade ativa (`isPriority`)
-- Destaque ativo (`isHighlighted`)
-- Tarefas ativas (`getActiveTaskCount > 0`)
+Adicionar a capacidade de responder a um comentario especifico, criando uma conexao visual entre a resposta e o comentario original. Isso organiza a conversa por contexto, evitando que respostas pareçam comentarios soltos sobre outro assunto.
 
-Remover da verificacao:
-- `isChecked` (selecionado)
-- Colaboradores vinculados (`Object.values(client.collaborators)`)
-- Comentarios (`getCommentCount`)
+### Como Vai Funcionar
 
-**Arquivo**: `src/pages/Index.tsx` (linhas 97-104)
-
-**Tooltip atualizado**: "Clientes estaveis -- sem prioridade, destaque ou tarefas ativas." / "Clientes que demandam atencao -- possuem prioridade, destaque ou tarefas ativas."
+- Cada comentario tera um botao "Responder"
+- Ao clicar, o formulario de novo comentario exibe uma barra indicando a qual comentario a resposta e direcionada (com preview do texto original e nome do autor)
+- A resposta e salva com referencia ao comentario pai (`reply_to_id`)
+- Na listagem, respostas aparecem visualmente conectadas ao comentario pai: com uma barra lateral colorida e recuo, mostrando "Em resposta a [Autor]: [trecho do texto]"
+- Comentarios raiz (sem resposta) continuam com a aparencia atual
+- O usuario pode cancelar a resposta e voltar a escrever um comentario normal
 
 ---
 
-### Bloco 2 -- Rolagem na Janela Suspensa de Comentarios
+### Detalhamento Tecnico
 
-**Problema**: O `CommentPreview` (hover card nos cards) tem `max-h-64` mas mostra apenas 3 comentarios. Quando ha muitos, nao ha como ver todos no preview.
+#### 1. Migracao de Banco de Dados
 
-**Solucao**: Aumentar o `max-h` do `ScrollArea` dentro do `CommentPreview` para permitir visualizacao de mais comentarios e garantir rolagem visivel.
+Adicionar coluna `reply_to_id` na tabela `client_comments`:
 
-**Arquivo**: `src/components/comments/CommentPreview.tsx` -- ajustar `max-h-64` para `max-h-80` e remover o `slice(0, 3)` ou aumentar para mostrar mais itens no preview.
+```sql
+ALTER TABLE public.client_comments
+  ADD COLUMN reply_to_id uuid REFERENCES public.client_comments(id) ON DELETE SET NULL;
+```
+
+Quando o comentario pai e apagado, a referencia vira `NULL` e a resposta permanece como comentario independente.
+
+#### 2. `src/types/comment.ts`
+
+Adicionar campo `replyToId?: string` ao tipo `ClientComment`.
+
+Adicionar campo `replyToId?: string` ao tipo `CommentFormData`.
+
+#### 3. `src/hooks/useClientComments.ts`
+
+- Mapear `reply_to_id` no `mapRow` para `replyToId`
+- No `addComment`, incluir `reply_to_id` no insert quando fornecido
+- Sem mudancas nos demais metodos
+
+#### 4. `src/components/comments/CommentsModal.tsx`
+
+**Estado novo**: `replyingTo: ClientComment | null` -- controla a qual comentario o usuario esta respondendo.
+
+**Formulario de input**:
+- Quando `replyingTo` nao e null, exibir uma barra acima do textarea com:
+  - Borda lateral verde/primary
+  - "Respondendo a [AuthorName]"
+  - Trecho do texto original (truncado em 80 chars)
+  - Botao X para cancelar a resposta
+
+**Cada CommentItem**:
+- Adicionar botao "Responder" (icone Reply) na barra de acoes
+- Quando o comentario tem `replyToId`, exibir bloco de citacao acima do texto:
+  - Barra lateral colorida + "Em resposta a [Autor]:" + trecho truncado
+  - Clicavel para scroll ate o comentario original (opcional, melhoria futura)
+
+**Agrupamento visual**:
+- Comentarios com `replyToId` recebem um recuo leve (`ml-4`) e uma barra lateral (`border-l-2 border-primary/30`)
+- O comentario pai permanece com a indentacao normal
+
+#### 5. `src/pages/CommentsPanel.tsx`
+
+Mesmas alteracoes visuais: botao Responder, barra de citacao, e passagem de `replyingTo` para o formulario de criacao.
+
+#### 6. `src/components/comments/CommentPreview.tsx`
+
+Quando um comentario no preview tem `replyToId`, exibir uma linha sutil "↩ Resposta" antes do texto.
 
 ---
 
-### Bloco 3 -- Filtro "Tarefas" Visivel no Desktop
-
-**Problema**: No desktop, a barra de stats (linha 439-443 de Index.tsx) tem badges para Prioridade, Destaque, Responsaveis e Comentarios, mas NAO tem para Tarefas. No mobile ja existe como "JACK".
-
-**Solucao**: Adicionar um `StatBadge` de "Tarefas" na barra de stats do desktop, entre Comentarios e o final, usando o icone `ListChecks` e o `jackboxCount`.
-
-**Arquivo**: `src/pages/Index.tsx` -- adicionar badge apos Comentarios na linha 443.
-
----
-
-### Bloco 4 -- Padronizacao de Nomenclatura (Jackbox/Checklist/Jack -> Tarefa)
-
-Substituicao global em todos os arquivos:
-
-| De | Para |
-|---|---|
-| `Jackbox` (label visivel) | `Tarefa` / `Tarefas` |
-| `Jack` (label visivel) | `Tarefa` |
-| `Checklist` (label visivel) | `Tarefa` |
-| `JACK` (mobile pill label) | `TAREFA` |
-
-**Arquivos afetados** (apenas labels/textos visiveis ao usuario, nao nomes de variaveis internas):
+### Arquivos Afetados
 
 | Arquivo | Mudanca |
 |---|---|
-| `src/components/mobile/MobileCompactFilters.tsx` | `'Jackbox'` -> `'Tarefas'` na sortOptions |
-| `src/components/mobile/MobileCompactHeader.tsx` | `'JACK'` -> `'TAREFA'` no FilterBadge |
-| `src/components/dashboard/FilterBar.tsx` | Tooltip `"Jackbox"` -> `"Tarefas"` no SortIconButton |
-| `src/pages/JackboxPanel.tsx` | Titulo `"Micro-Demandas (Jackbox)"` -> `"Micro-Demandas (Tarefas)"` |
-| `src/pages/JackboxUnified.tsx` | Labels visiveis com Jackbox -> Tarefas |
-| `src/components/checklist/ChecklistButton.tsx` | Tooltip `"tarefa(s)"` ja esta correto |
-| `src/components/panels/PanelFilters.tsx` | Sort button label `'Jackbox'` -> `'Tarefas'` |
+| `supabase/migrations/` | Nova coluna `reply_to_id` |
+| `src/types/comment.ts` | Campo `replyToId` nos tipos |
+| `src/hooks/useClientComments.ts` | Mapear e inserir `reply_to_id` |
+| `src/components/comments/CommentsModal.tsx` | Botao Responder + barra de citacao + estado `replyingTo` |
+| `src/pages/CommentsPanel.tsx` | Mesmas alteracoes de resposta |
+| `src/components/comments/CommentPreview.tsx` | Indicador visual de resposta |
 
-**Nota**: Nomes de variaveis e rotas (`/jackbox-unificado`, `sortBy === 'jackbox'`) permanecem inalterados para evitar quebra de funcionalidade. Apenas textos exibidos ao usuario serao alterados.
+### Experiencia Visual Esperada
 
----
+```text
++------------------------------------------+
+| [Informativo] Patrick  14/02 10:18       |
+| Chegou uma nova notificacao na unidade   |
+| de benivides. O que iremos fazer?        |
+| [Lido 4/5]              [Responder] [..] |
++------------------------------------------+
+  | +--------------------------------------+
+  | | ↩ Em resposta a Patrick:             |
+  | | "Chegou uma nova notificacao na..."  |
+  | |                                      |
+  | | [Informativo] Darley  14/02 11:30    |
+  | | Ja enviei email para o responsavel.  |
+  | | [Lido 2/5]            [Responder]    |
+  | +--------------------------------------+
+```
 
-### Resumo de Arquivos a Editar
-
-1. **`src/pages/Index.tsx`**: Simplificar `isClienteDeBoa`, atualizar tooltips, adicionar badge "Tarefas" no desktop
-2. **`src/components/comments/CommentPreview.tsx`**: Melhorar rolagem do preview
-3. **`src/components/mobile/MobileCompactHeader.tsx`**: Renomear "JACK" -> "TAREFA"
-4. **`src/components/mobile/MobileCompactFilters.tsx`**: Renomear "Jackbox" -> "Tarefas"
-5. **`src/components/dashboard/FilterBar.tsx`**: Renomear tooltip "Jackbox" -> "Tarefas"
-6. **`src/pages/JackboxPanel.tsx`**: Renomear titulo visivel
-7. **`src/pages/JackboxUnified.tsx`**: Renomear labels visiveis
-8. **`src/components/panels/PanelFilters.tsx`**: Renomear label "Jackbox" -> "Tarefas"
+O recuo e a barra lateral deixam claro que a resposta de Darley e direcionada ao comentario de Patrick, e nao um comentario novo sobre outro assunto.
