@@ -39,6 +39,7 @@ function mapRow(row: any): ClientComment {
     isArchived: row.is_archived ?? false,
     archivedBy: row.archived_by || undefined,
     archivedAt: row.archived_at || undefined,
+    replyToId: row.reply_to_id || undefined,
   };
 }
 
@@ -81,6 +82,7 @@ export function useClientComments(clientId: string) {
         comment_type: data.commentType || 'informativo',
         required_readers: data.commentType === 'ciencia' ? data.requiredReaders : [],
         read_timestamps: {},
+        ...(data.replyToId ? { reply_to_id: data.replyToId } : {}),
       };
 
       const { error } = await supabase

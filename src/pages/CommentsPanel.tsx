@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, User, Clock, Check, CheckCheck, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2, Send, Loader2, ChevronDown, Search, Users, Plus, Pencil, X, Archive } from "lucide-react";
+import { MessageSquare, User, Clock, Check, CheckCheck, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2, Send, Loader2, ChevronDown, Search, Users, Plus, Pencil, X, Archive, Reply } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -45,6 +45,7 @@ interface CommentWithClient {
   isArchived: boolean;
   archivedBy?: string;
   archivedAt?: string;
+  replyToId?: string;
 }
 
 // Helper: is a comment fully read by all 5 collaborators?
@@ -78,6 +79,7 @@ export default function CommentsPanel() {
   const [newSelectedReaders, setNewSelectedReaders] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewFilter, setViewFilter] = useState<ViewFilter>('pendentes');
+  const [replyingTo, setReplyingTo] = useState<CommentWithClient | null>(null);
 
   const currentUserName = currentUser?.name || 'Sistema';
 
@@ -127,6 +129,7 @@ export default function CommentsPanel() {
           isArchived: row.is_archived ?? false,
           archivedBy: row.archived_by || undefined,
           archivedAt: row.archived_at || undefined,
+          replyToId: row.reply_to_id || undefined,
         };
       });
 
@@ -288,6 +291,7 @@ export default function CommentsPanel() {
         comment_type: newCommentType,
         required_readers: newCommentType === 'ciencia' ? newSelectedReaders : [],
         read_timestamps: {},
+        ...(replyingTo ? { reply_to_id: replyingTo.id } : {}),
       };
       const { error } = await supabase.from('client_comments').insert(insertData);
       if (error) throw error;
@@ -295,6 +299,7 @@ export default function CommentsPanel() {
       setNewCommentType('informativo');
       setNewClientId('');
       setNewSelectedReaders([]);
+      setReplyingTo(null);
       setShowNewForm(false);
       toast.success('Comentário adicionado');
       await fetchComments();
@@ -508,9 +513,24 @@ export default function CommentsPanel() {
           <div className="px-6 py-4 bg-card border-b border-border space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">Novo Comentário</h3>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowNewForm(false)}>Fechar</Button>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setShowNewForm(false); setReplyingTo(null); }}>Fechar</Button>
             </div>
 
+            {/* Reply indicator */}
+            {replyingTo && (
+              <div className="flex items-stretch gap-0 rounded-md overflow-hidden border border-primary/30 bg-primary/5">
+                <div className="w-1 bg-primary shrink-0" />
+                <div className="flex-1 px-3 py-2 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-primary">Respondendo a {replyingTo.authorName} ({replyingTo.clientName})</span>
+                    <button onClick={() => setReplyingTo(null)} className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground truncate">{replyingTo.commentText.slice(0, 80)}{replyingTo.commentText.length > 80 ? '...' : ''}</p>
+                </div>
+              </div>
+            )}
             {/* Client selector */}
             <Select value={newClientId} onValueChange={setNewClientId}>
               <SelectTrigger className="h-9">
@@ -597,6 +617,7 @@ export default function CommentsPanel() {
               comment={comment}
               currentUserName={currentUserName}
               collaborators={collaborators}
+              allComments={comments}
               onToggleRead={toggleReadStatus}
               onTogglePinned={togglePinned}
               onDelete={deleteComment}
@@ -606,6 +627,7 @@ export default function CommentsPanel() {
               onReopen={reopenComment}
               onArchive={archiveComment}
               onUnarchive={unarchiveComment}
+              onReply={(c) => { setReplyingTo(c); setNewClientId(c.clientId); setShowNewForm(true); }}
             />
           ))}
         </VisualGrid>
@@ -627,6 +649,7 @@ interface CommentCardProps {
   comment: CommentWithClient;
   currentUserName: string;
   collaborators: { id: string; name: string; color?: string }[];
+  allComments: CommentWithClient[];
   onToggleRead: (id: string, collaborator: ReadStatus) => void;
   onTogglePinned: (id: string) => void;
   onDelete: (id: string) => void;
@@ -636,9 +659,10 @@ interface CommentCardProps {
   onReopen: (id: string) => void;
   onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
+  onReply: (comment: CommentWithClient) => void;
 }
 
-function CommentCard({ comment, currentUserName, collaborators, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen, onArchive, onUnarchive }: CommentCardProps) {
+function CommentCard({ comment, currentUserName, collaborators, allComments, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen, onArchive, onUnarchive, onReply }: CommentCardProps) {
   const isAdmin = currentUserName === 'Patrick';
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.commentText);
@@ -733,6 +757,9 @@ function CommentCard({ comment, currentUserName, collaborators, onToggleRead, on
               <Archive className="h-3 w-3" />
             </Button>
           )}
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={() => onReply(comment)} title="Responder">
+            <Reply className="h-3 w-3" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} title="Editar">
             <Pencil className="h-3 w-3" />
           </Button>
@@ -741,6 +768,24 @@ function CommentCard({ comment, currentUserName, collaborators, onToggleRead, on
           </Button>
         </div>
       </div>
+
+      {/* Reply quote */}
+      {comment.replyToId && (() => {
+        const parentComment = allComments.find(c => c.id === comment.replyToId);
+        return parentComment ? (
+          <div className="flex items-stretch gap-0 rounded-md overflow-hidden mb-2 bg-muted/50 border border-border/50">
+            <div className="w-1 bg-primary/40 shrink-0" />
+            <div className="px-2 py-1.5">
+              <span className="text-[10px] font-medium text-primary">↩ Em resposta a {parentComment.authorName}:</span>
+              <p className="text-[11px] text-muted-foreground truncate">&ldquo;{parentComment.commentText.slice(0, 80)}{parentComment.commentText.length > 80 ? '...' : ''}&rdquo;</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 mb-2 text-[10px] text-muted-foreground italic">
+            <Reply className="w-3 h-3" /> Resposta a comentário removido
+          </div>
+        );
+      })()}
 
       {/* Text */}
       {isEditing ? (

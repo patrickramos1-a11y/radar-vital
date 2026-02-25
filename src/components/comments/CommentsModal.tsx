@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ClientComment, ReadStatusName, READ_STATUS_NAMES, CommentType, COMMENT_TYPE_LABELS } from '@/types/comment';
 import { useClientComments, triggerCommentCountRefresh } from '@/hooks/useClientComments';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pin, Trash2, Send, Loader2, Check, CheckCheck, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users, Pencil, X, Archive } from 'lucide-react';
+import { Pin, Trash2, Send, Loader2, Check, CheckCheck, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users, Pencil, X, Archive, Reply } from 'lucide-react';
 import { COLLABORATOR_COLORS, CollaboratorName } from '@/types/client';
 import { cn } from '@/lib/utils';
 
@@ -50,6 +50,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
   const [selectedReaders, setSelectedReaders] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewFilter, setViewFilter] = useState<ViewFilter>('pendentes');
+  const [replyingTo, setReplyingTo] = useState<ClientComment | null>(null);
 
   const currentUserName = currentUser?.name || 'Sistema';
   const isAdmin = currentUserName === 'Patrick';
@@ -62,10 +63,12 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
         commentText: newComment.trim(),
         commentType,
         requiredReaders: commentType === 'ciencia' ? selectedReaders : [],
+        replyToId: replyingTo?.id,
       });
       setNewComment('');
       setCommentType('informativo');
       setSelectedReaders([]);
+      setReplyingTo(null);
       setTimeout(() => triggerCommentCountRefresh(), 200);
     } finally {
       setIsSubmitting(false);
@@ -120,6 +123,22 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
             Visualize e adicione comentários para este cliente
           </DialogDescription>
         </DialogHeader>
+
+        {/* Reply indicator */}
+        {replyingTo && (
+          <div className="flex items-stretch gap-0 rounded-md overflow-hidden border border-primary/30 bg-primary/5">
+            <div className="w-1 bg-primary shrink-0" />
+            <div className="flex-1 px-3 py-2 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-primary">Respondendo a {replyingTo.authorName}</span>
+                <button onClick={() => setReplyingTo(null)} className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground truncate">{replyingTo.commentText.slice(0, 80)}{replyingTo.commentText.length > 80 ? '...' : ''}</p>
+            </div>
+          </div>
+        )}
 
         {/* New comment input */}
         <div className="space-y-3 pb-3 border-b border-border">
@@ -225,23 +244,26 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
           ) : (
             <div className="space-y-3 py-2">
               {filteredComments.map((comment) => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  currentUserName={currentUserName}
-                  isAdmin={isAdmin}
-                  collaborators={collaborators}
-                  onDelete={() => handleDelete(comment.id)}
-                  onTogglePin={() => togglePinned(comment.id)}
-                  onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
-                  onConfirmReading={() => confirmReading(comment.id)}
-                  onClose={() => closeComment(comment.id)}
-                  onReopen={() => reopenComment(comment.id)}
-                  onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
-                  onEdit={(newText) => editComment(comment.id, newText)}
-                  onArchive={() => archiveComment(comment.id)}
-                  onUnarchive={() => unarchiveComment(comment.id)}
-                />
+                <div key={comment.id} className={cn(comment.replyToId && 'ml-4 border-l-2 border-primary/30 pl-0')}>
+                  <CommentItem
+                    comment={comment}
+                    currentUserName={currentUserName}
+                    isAdmin={isAdmin}
+                    collaborators={collaborators}
+                    allComments={comments}
+                    onDelete={() => handleDelete(comment.id)}
+                    onTogglePin={() => togglePinned(comment.id)}
+                    onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
+                    onConfirmReading={() => confirmReading(comment.id)}
+                    onClose={() => closeComment(comment.id)}
+                    onReopen={() => reopenComment(comment.id)}
+                    onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
+                    onEdit={(newText) => editComment(comment.id, newText)}
+                    onArchive={() => archiveComment(comment.id)}
+                    onUnarchive={() => unarchiveComment(comment.id)}
+                    onReply={() => setReplyingTo(comment)}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -363,6 +385,7 @@ interface CommentItemProps {
   currentUserName: string;
   isAdmin: boolean;
   collaborators: { id: string; name: string }[];
+  allComments: ClientComment[];
   onDelete: () => void;
   onTogglePin: () => void;
   onToggleRead: (collaborator: ReadStatusName) => void;
@@ -373,9 +396,10 @@ interface CommentItemProps {
   onEdit: (newText: string) => void;
   onArchive: () => void;
   onUnarchive: () => void;
+  onReply: () => void;
 }
 
-function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders, onEdit, onArchive, onUnarchive }: CommentItemProps) {
+function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComments, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders, onEdit, onArchive, onUnarchive, onReply }: CommentItemProps) {
   const [showEditReaders, setShowEditReaders] = useState(false);
   const [editReaders, setEditReaders] = useState<string[]>(comment.requiredReaders);
   const [isEditing, setIsEditing] = useState(false);
@@ -486,6 +510,9 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
               <Archive className="w-3.5 h-3.5" />
             </button>
           )}
+          <button onClick={onReply} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Responder">
+            <Reply className="w-3.5 h-3.5" />
+          </button>
           <button onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Editar">
             <Pencil className="w-3.5 h-3.5" />
           </button>
@@ -494,6 +521,24 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, onDelet
           </button>
         </div>
       </div>
+
+      {/* Reply quote */}
+      {comment.replyToId && (() => {
+        const parentComment = allComments.find(c => c.id === comment.replyToId);
+        return parentComment ? (
+          <div className="flex items-stretch gap-0 rounded-md overflow-hidden mb-2 bg-muted/50 border border-border/50">
+            <div className="w-1 bg-primary/40 shrink-0" />
+            <div className="px-2 py-1.5">
+              <span className="text-[10px] font-medium text-primary">↩ Em resposta a {parentComment.authorName}:</span>
+              <p className="text-[11px] text-muted-foreground truncate">&ldquo;{parentComment.commentText.slice(0, 80)}{parentComment.commentText.length > 80 ? '...' : ''}&rdquo;</p>
+            </div>
+          </div>
+        ) : comment.replyToId ? (
+          <div className="flex items-center gap-1 mb-2 text-[10px] text-muted-foreground italic">
+            <Reply className="w-3 h-3" /> Resposta a comentário removido
+          </div>
+        ) : null;
+      })()}
 
       {/* Comment Text */}
       {isEditing ? (

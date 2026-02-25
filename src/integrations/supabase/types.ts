@@ -375,6 +375,7 @@ export type Database = {
           read_patrick: boolean
           read_timestamps: Json
           read_vanessa: boolean
+          reply_to_id: string | null
           required_readers: string[]
         }
         Insert: {
@@ -399,6 +400,7 @@ export type Database = {
           read_patrick?: boolean
           read_timestamps?: Json
           read_vanessa?: boolean
+          reply_to_id?: string | null
           required_readers?: string[]
         }
         Update: {
@@ -423,6 +425,7 @@ export type Database = {
           read_patrick?: boolean
           read_timestamps?: Json
           read_vanessa?: boolean
+          reply_to_id?: string | null
           required_readers?: string[]
         }
         Relationships: [
@@ -431,6 +434,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_comments_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "client_comments"
             referencedColumns: ["id"]
           },
         ]
