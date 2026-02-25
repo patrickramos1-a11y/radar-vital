@@ -71,6 +71,9 @@ export function CommentPreview({ comments, isLoading, onViewAll }: CommentPrevie
                   </span>
                 </div>
               </div>
+              {comment.replyToId && (
+                <p className="text-[9px] text-muted-foreground italic mb-0.5">↩ Resposta</p>
+              )}
               <p className="text-xs text-foreground line-clamp-3 whitespace-pre-wrap">{comment.commentText}</p>
             </div>
           );

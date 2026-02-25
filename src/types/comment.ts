@@ -29,6 +29,7 @@ export interface ClientComment {
   isArchived: boolean;
   archivedBy?: string;
   archivedAt?: string;
+  replyToId?: string;
 }
 
 export interface CommentFormData {
@@ -36,4 +37,5 @@ export interface CommentFormData {
   authorName?: string;
   commentType: CommentType;
   requiredReaders: string[];
+  replyToId?: string;
 }
