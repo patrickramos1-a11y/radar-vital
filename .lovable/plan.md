@@ -1,81 +1,21 @@
 
 
-## Redesign Visual dos Comentarios (Estilo WhatsApp) + Correcao de Filtros
+## Aplicar melhorias de "Marcar como lido" e "Responder" no modal de comentarios do cliente
 
-### 1. Redesign Visual - Estilo WhatsApp
+As mudancas feitas na aba global de comentarios (CommentsPanel) precisam ser replicadas no modal de comentarios que abre ao clicar em um cliente (CommentsModal).
 
-Transformar os comentarios de "cards formais" para "baloes de conversa" inspirados no WhatsApp:
+### Mudancas no arquivo `src/components/comments/CommentsModal.tsx`
 
-**Layout dos baloes:**
-- Comentarios do usuario atual: alinhados a direita, fundo verde claro (`bg-emerald-100/80`)
-- Comentarios de outros: alinhados a esquerda, fundo branco/card (`bg-card`)
-- Cantos arredondados assimetricos (ponta no canto superior do lado do autor)
-- Largura maxima de ~80% do container
-- Timestamp discreto no canto inferior direito do balao
-- Nome do autor em texto colorido no topo (usando a cor do colaborador)
-- Badge de tipo (Informativo/Relevante/Ciencia) compacto ao lado do nome
-- Indicador "(editada)" discreto junto ao timestamp
-- Botoes de acao (pin, responder, editar, excluir, arquivar) aparecem no hover, flutuando acima do balao
+**1. Aumentar o botao de "Marcar como lido" no ReadStatusBar (linha ~738)**
+- Trocar `px-1.5 py-0.5 text-[9px]` por `px-2.5 py-1 text-xs`
+- Trocar icones `w-3 h-3` por `w-4 h-4`
+- Adicionar `shadow-sm` quando lido e `border border-border` quando nao lido
+- Aumentar a contagem de `text-[9px]` para `text-[10px] font-medium`
 
-**Citacao de resposta (reply quote):**
-- Bloco colorido dentro do balao, acima do texto
-- Barra lateral com cor do autor original
-- Nome do autor + trecho do texto truncado
+**2. Mover botao "Responder" do hover para o rodape do balao**
+- Remover o botao de Reply do bloco de hover actions (linha ~518)
+- Adicionar botao de Reply no footer do balao (linha ~689), ao lado do ReadStatusBar, igual ao CommentsPanel
+- Agrupar Reply + ReadStatusBar em um `flex items-center gap-1.5`
 
-**Status de leitura (V / VV):**
-- Simplificado no canto inferior do balao junto ao horario
-- Check simples ou duplo, com contagem discreta
-- Popover de info permanece acessivel via clique no check
-
-**Ciencia obrigatoria:**
-- Mantida como secao interna do balao, porem mais compacta
-
-### 2. Reordenacao dos Filtros
-
-Ordem atual: `Pendentes | Lidos | Arquivados | Todos`
-
-Nova ordem: `Todos | Pendentes | Lidos | Arquivados`
-
-Aplicar em ambos:
-- `CommentsModal.tsx` (modal do cliente)
-- `CommentsPanel.tsx` (painel global)
-
-### 3. Contagem de "Todos" sem Arquivados
-
-Atualmente "Todos" mostra `comments.length` (inclui arquivados).
-
-Correcao: "Todos" deve mostrar apenas comentarios nao-arquivados (`activeComments.length`) e filtrar por `activeComments` em vez de `comments`.
-
-O estado padrao de `viewFilter` muda para `'todos'` (em vez de `'pendentes'`).
-
-### Arquivos Afetados
-
-| Arquivo | Mudanca |
-|---|---|
-| `src/components/comments/CommentsModal.tsx` | Redesign visual WhatsApp dos baloes (CommentItem), reordenar filtros, corrigir contagem "Todos" |
-| `src/pages/CommentsPanel.tsx` | Redesign visual WhatsApp dos cards (CommentCard), reordenar filtros, corrigir contagem "Todos" |
-
-### Detalhamento Tecnico
-
-**CommentsModal.tsx - CommentItem:**
-- Adicionar logica `const isOwnComment = comment.authorName === currentUserName`
-- Container: `flex` com `justify-end` (proprio) ou `justify-start` (outros)
-- Balao: `max-w-[80%]` com `rounded-2xl` + `rounded-tr-sm` (proprio) ou `rounded-tl-sm` (outros)
-- Cores: proprio = `bg-emerald-50 dark:bg-emerald-900/20`, outros = `bg-card border border-border`
-- Mover timestamp para inline com o status de leitura no rodape do balao
-- Acoes no hover: container `absolute -top-3 right-2` com botoes em linha
-
-**CommentsModal.tsx - Filtros:**
-- Reordenar botoes: Todos, Pendentes, Lidos, Arquivados
-- "Todos" usa `activeComments` (sem arquivados) na contagem e filtragem
-- Default `viewFilter` = `'todos'`
-
-**CommentsPanel.tsx - CommentCard:**
-- Mesmo redesign de balao aplicado ao grid de cards
-- Adaptar para funcionar dentro do VisualGrid mantendo responsividade
-- Mesmas correcoes de filtros e contagem
-
-**CommentsPanel.tsx - Filtros:**
-- Mesma reordenacao: Todos, Pendentes, Lidos, Arquivados
-- Mesma correcao de contagem
+Essas mudancas vao deixar o modal consistente com o painel global.
 
