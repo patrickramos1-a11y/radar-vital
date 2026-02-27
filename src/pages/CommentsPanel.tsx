@@ -849,7 +849,7 @@ function CommentCard({ comment, currentUserName, collaborators, allComments, onT
           </div>
         </div>
       ) : (
-        <p className="text-sm text-foreground mb-2 line-clamp-3 flex-1">{comment.commentText}</p>
+        <p className="text-sm text-foreground mb-2 flex-1 whitespace-pre-wrap">{comment.commentText}</p>
       )}
 
       {/* Ciência status */}
