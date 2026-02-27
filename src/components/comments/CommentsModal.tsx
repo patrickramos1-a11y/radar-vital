@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -111,7 +111,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
     return [...result].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
   }, [comments, pendingComments, readComments, archivedComments, viewFilter]);
 
@@ -233,43 +233,104 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
         </div>
 
         {/* Comments list */}
-        <div className="flex-1 min-h-0 -mr-4 pr-4 overflow-y-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredComments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {viewFilter === 'pendentes' ? 'Nenhum comentário pendente' : viewFilter === 'lidos' ? 'Nenhum comentário lido' : viewFilter === 'arquivados' ? 'Nenhum comentário arquivado' : 'Nenhum comentário ainda'}
-            </div>
-          ) : (
-            <div className="space-y-3 py-2">
-              {filteredComments.map((comment) => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  currentUserName={currentUserName}
-                  isAdmin={isAdmin}
-                  collaborators={collaborators}
-                  allComments={comments}
-                  onDelete={() => handleDelete(comment.id)}
-                  onTogglePin={() => togglePinned(comment.id)}
-                  onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
-                  onConfirmReading={() => confirmReading(comment.id)}
-                  onClose={() => closeComment(comment.id)}
-                  onReopen={() => reopenComment(comment.id)}
-                  onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
-                  onEdit={(newText) => editComment(comment.id, newText)}
-                  onArchive={() => archiveComment(comment.id)}
-                  onUnarchive={() => unarchiveComment(comment.id)}
-                  onReply={() => setReplyingTo(comment)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        <CommentsListWithAutoScroll
+          isLoading={isLoading}
+          filteredComments={filteredComments}
+          viewFilter={viewFilter}
+          comments={comments}
+          currentUserName={currentUserName}
+          isAdmin={isAdmin}
+          collaborators={collaborators}
+          handleDelete={handleDelete}
+          togglePinned={togglePinned}
+          toggleReadStatus={toggleReadStatus}
+          confirmReading={confirmReading}
+          closeComment={closeComment}
+          reopenComment={reopenComment}
+          updateRequiredReaders={updateRequiredReaders}
+          editComment={editComment}
+          archiveComment={archiveComment}
+          unarchiveComment={unarchiveComment}
+          setReplyingTo={setReplyingTo}
+        />
       </DialogContent>
     </Dialog>
+  );
+}
+
+// --- Auto-scroll comments list ---
+function CommentsListWithAutoScroll({
+  isLoading, filteredComments, viewFilter, comments, currentUserName, isAdmin, collaborators,
+  handleDelete, togglePinned, toggleReadStatus, confirmReading, closeComment, reopenComment,
+  updateRequiredReaders, editComment, archiveComment, unarchiveComment, setReplyingTo,
+}: {
+  isLoading: boolean;
+  filteredComments: ClientComment[];
+  viewFilter: ViewFilter;
+  comments: ClientComment[];
+  currentUserName: string;
+  isAdmin: boolean;
+  collaborators: { id: string; name: string }[];
+  handleDelete: (id: string) => void;
+  togglePinned: (id: string) => void;
+  toggleReadStatus: (id: string, c: ReadStatusName) => void;
+  confirmReading: (id: string) => void;
+  closeComment: (id: string) => void;
+  reopenComment: (id: string) => void;
+  updateRequiredReaders: (id: string, r: string[]) => void;
+  editComment: (id: string, t: string) => void;
+  archiveComment: (id: string) => void;
+  unarchiveComment: (id: string) => void;
+  setReplyingTo: (c: ClientComment) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current && filteredComments.length > 0) {
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      });
+    }
+  }, [filteredComments]);
+
+  return (
+    <div ref={scrollRef} className="flex-1 min-h-0 -mr-4 pr-4 overflow-y-auto">
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : filteredComments.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          {viewFilter === 'pendentes' ? 'Nenhum comentário pendente' : viewFilter === 'lidos' ? 'Nenhum comentário lido' : viewFilter === 'arquivados' ? 'Nenhum comentário arquivado' : 'Nenhum comentário ainda'}
+        </div>
+      ) : (
+        <div className="space-y-3 py-2">
+          {filteredComments.map((comment) => (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              currentUserName={currentUserName}
+              isAdmin={isAdmin}
+              collaborators={collaborators}
+              allComments={comments}
+              onDelete={() => handleDelete(comment.id)}
+              onTogglePin={() => togglePinned(comment.id)}
+              onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
+              onConfirmReading={() => confirmReading(comment.id)}
+              onClose={() => closeComment(comment.id)}
+              onReopen={() => reopenComment(comment.id)}
+              onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
+              onEdit={(newText) => editComment(comment.id, newText)}
+              onArchive={() => archiveComment(comment.id)}
+              onUnarchive={() => unarchiveComment(comment.id)}
+              onReply={() => setReplyingTo(comment)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
