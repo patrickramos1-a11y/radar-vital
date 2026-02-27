@@ -976,7 +976,11 @@ function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, 
         </button>
       )}
       <span className="text-[10px] text-muted-foreground font-medium">
-        {readCount}/{READ_STATUS_NAMES.length}
+        {allRead ? (
+          <span className="text-green-600 dark:text-green-400">✓✓</span>
+        ) : (
+          `${readCount}/${READ_STATUS_NAMES.length}`
+        )}
       </span>
       <Popover open={showInfo} onOpenChange={setShowInfo}>
         <PopoverTrigger asChild>
