@@ -370,8 +370,8 @@ export default function CommentsPanel() {
       );
     }
 
-    // Only show root comments at top level
-    return result.filter(c => !c.replyToId);
+    // Show all comments flat (no threading)
+    return result;
   }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilter, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
 
   const kpis = useMemo(() => {
@@ -644,27 +644,6 @@ export default function CommentsPanel() {
                 onUnarchive={unarchiveComment}
                 onReply={(c) => { setReplyingTo(c); setNewClientId(c.clientId); setShowNewForm(true); }}
               />
-              {/* Threaded replies */}
-              {(repliesMap.get(comment.id) || []).map((reply) => (
-                <div key={reply.id} className="ml-6 mt-1 border-l-2 border-primary/30">
-                  <CommentCard
-                    comment={reply}
-                    currentUserName={currentUserName}
-                    collaborators={collaborators}
-                    allComments={comments}
-                    onToggleRead={toggleReadStatus}
-                    onTogglePinned={togglePinned}
-                    onDelete={deleteComment}
-                    onEdit={editComment}
-                    onConfirmReading={confirmReading}
-                    onClose={closeComment}
-                    onReopen={reopenComment}
-                    onArchive={archiveComment}
-                    onUnarchive={unarchiveComment}
-                    onReply={(c) => { setReplyingTo(c); setNewClientId(c.clientId); setShowNewForm(true); }}
-                  />
-                </div>
-              ))}
             </div>
           ))}
         </VisualGrid>
