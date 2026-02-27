@@ -742,9 +742,6 @@ function CommentCard({ comment, currentUserName, collaborators, allComments, onT
         <button className={cn("p-1 rounded hover:bg-muted transition-colors", comment.isPinned && "text-amber-500")} onClick={() => onTogglePinned(comment.id)} title={comment.isPinned ? 'Desafixar' : 'Fixar'}>
           <Pin className={cn("w-3 h-3", comment.isPinned && "fill-current")} />
         </button>
-        <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" onClick={() => onReply(comment)} title="Responder">
-          <Reply className="w-3 h-3" />
-        </button>
         <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} title="Editar">
           <Pencil className="w-3 h-3" />
         </button>
@@ -905,18 +902,27 @@ function CommentCard({ comment, currentUserName, collaborators, allComments, onT
       )}
 
       {/* Timestamp + read status footer */}
-      <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/50 mt-auto">
-        <span className="text-[9px] text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50 mt-auto">
+        <span className="text-[10px] text-muted-foreground">
           {format(new Date(comment.createdAt), "dd/MM HH:mm", { locale: ptBR })}
           {comment.isEdited && <span className="italic ml-1">(editada)</span>}
         </span>
-        <PanelReadStatusBar
-          comment={comment}
-          currentUserName={currentUserName}
-          isAdmin={currentUserName === 'Patrick'}
-          collaborators={collaborators}
-          onToggleRead={(name) => onToggleRead(comment.id, name)}
-        />
+        <div className="flex items-center gap-1.5">
+          <button
+            className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted text-muted-foreground hover:text-primary transition-colors text-xs"
+            onClick={() => onReply(comment)}
+            title="Responder"
+          >
+            <Reply className="w-3.5 h-3.5" />
+          </button>
+          <PanelReadStatusBar
+            comment={comment}
+            currentUserName={currentUserName}
+            isAdmin={currentUserName === 'Patrick'}
+            collaborators={collaborators}
+            onToggleRead={(name) => onToggleRead(comment.id, name)}
+          />
+        </div>
       </div>
     </div>
   );
@@ -959,17 +965,17 @@ function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, 
           onClick={() => !patrickLocked && onToggleRead(currentReadStatusName)}
           disabled={patrickLocked}
           className={cn(
-            'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all',
+            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all',
             patrickLocked && 'opacity-50 cursor-not-allowed',
-            selfIsRead ? 'text-white' : 'text-muted-foreground hover:bg-muted/80'
+            selfIsRead ? 'text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/80 border border-border'
           )}
           style={selfIsRead ? { backgroundColor: selfColor } : {}}
           title={patrickLocked ? 'Aguardando equipe ler primeiro' : selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
         >
-          {selfIsRead ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+          {selfIsRead ? <CheckCheck className="w-4 h-4" /> : <Check className="w-4 h-4" />}
         </button>
       )}
-      <span className="text-[9px] text-muted-foreground">
+      <span className="text-[10px] text-muted-foreground font-medium">
         {allRead ? (
           <span className="text-green-600 dark:text-green-400">✓✓</span>
         ) : (
