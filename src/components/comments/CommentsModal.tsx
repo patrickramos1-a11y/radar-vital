@@ -116,7 +116,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col" aria-describedby="comments-dialog-description">
+      <DialogContent className="max-w-lg max-h-[85vh] min-h-0 flex flex-col" aria-describedby="comments-dialog-description">
         <DialogHeader>
           <DialogTitle className="text-lg">Comentários - {clientName}</DialogTitle>
           <DialogDescription id="comments-dialog-description" className="sr-only">
@@ -232,7 +232,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
         </div>
 
         {/* Comments list */}
-        <ScrollArea className="flex-1 -mr-4 pr-4">
+        <div className="flex-1 min-h-0 -mr-4 pr-4 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -267,7 +267,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
