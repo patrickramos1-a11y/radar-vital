@@ -96,36 +96,6 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
   const pendingComments = activeComments.filter(c => !canReadSelf || !c.readStatus[currentReadStatusName]);
   const readComments = activeComments.filter(c => canReadSelf && c.readStatus[currentReadStatusName]);
 
-  // Build replies map from ALL comments
-  const repliesMap = useMemo(() => {
-    const map = new Map<string, ClientComment[]>();
-    comments.forEach(c => {
-      if (c.replyToId) {
-        const list = map.get(c.replyToId) || [];
-        list.push(c);
-        map.set(c.replyToId, list);
-      }
-    });
-    // Sort replies chronologically (oldest first)
-    map.forEach((replies) => replies.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
-    return map;
-  }, [comments]);
-
-  // Recursively collect ALL descendants of a root comment
-  const getAllDescendants = (rootId: string): ClientComment[] => {
-    const result: ClientComment[] = [];
-    const queue = [rootId];
-    while (queue.length > 0) {
-      const parentId = queue.shift()!;
-      const children = repliesMap.get(parentId) || [];
-      for (const child of children) {
-        result.push(child);
-        queue.push(child.id);
-      }
-    }
-    return result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  };
-
   const filteredComments = useMemo(() => {
     let result: ClientComment[];
     if (viewFilter === 'pendentes') {
@@ -137,9 +107,8 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
     } else {
       result = activeComments;
     }
-    // Only show root comments (no replyToId) at top level
-    const roots = result.filter(c => !c.replyToId);
-    return [...roots].sort((a, b) => {
+    // Flat list: all comments shown individually (WhatsApp style)
+    return [...result].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -276,48 +245,25 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
           ) : (
             <div className="space-y-3 py-2">
               {filteredComments.map((comment) => (
-                <div key={comment.id}>
-                  <CommentItem
-                    comment={comment}
-                    currentUserName={currentUserName}
-                    isAdmin={isAdmin}
-                    collaborators={collaborators}
-                    allComments={comments}
-                    onDelete={() => handleDelete(comment.id)}
-                    onTogglePin={() => togglePinned(comment.id)}
-                    onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
-                    onConfirmReading={() => confirmReading(comment.id)}
-                    onClose={() => closeComment(comment.id)}
-                    onReopen={() => reopenComment(comment.id)}
-                    onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
-                    onEdit={(newText) => editComment(comment.id, newText)}
-                    onArchive={() => archiveComment(comment.id)}
-                    onUnarchive={() => unarchiveComment(comment.id)}
-                    onReply={() => setReplyingTo(comment)}
-                  />
-                  {getAllDescendants(comment.id).map((reply) => (
-                    <div key={reply.id} className="ml-4 mt-1 border-l-2 border-primary/30 pl-0">
-                      <CommentItem
-                        comment={reply}
-                        currentUserName={currentUserName}
-                        isAdmin={isAdmin}
-                        collaborators={collaborators}
-                        allComments={comments}
-                        onDelete={() => handleDelete(reply.id)}
-                        onTogglePin={() => togglePinned(reply.id)}
-                        onToggleRead={(collaborator) => toggleReadStatus(reply.id, collaborator)}
-                        onConfirmReading={() => confirmReading(reply.id)}
-                        onClose={() => closeComment(reply.id)}
-                        onReopen={() => reopenComment(reply.id)}
-                        onUpdateReaders={(readers) => updateRequiredReaders(reply.id, readers)}
-                        onEdit={(newText) => editComment(reply.id, newText)}
-                        onArchive={() => archiveComment(reply.id)}
-                        onUnarchive={() => unarchiveComment(reply.id)}
-                        onReply={() => setReplyingTo(reply)}
-                      />
-                    </div>
-                  ))}
-                </div>
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  currentUserName={currentUserName}
+                  isAdmin={isAdmin}
+                  collaborators={collaborators}
+                  allComments={comments}
+                  onDelete={() => handleDelete(comment.id)}
+                  onTogglePin={() => togglePinned(comment.id)}
+                  onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
+                  onConfirmReading={() => confirmReading(comment.id)}
+                  onClose={() => closeComment(comment.id)}
+                  onReopen={() => reopenComment(comment.id)}
+                  onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
+                  onEdit={(newText) => editComment(comment.id, newText)}
+                  onArchive={() => archiveComment(comment.id)}
+                  onUnarchive={() => unarchiveComment(comment.id)}
+                  onReply={() => setReplyingTo(comment)}
+                />
               ))}
             </div>
           )}
