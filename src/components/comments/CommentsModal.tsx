@@ -49,7 +49,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
   const [commentType, setCommentType] = useState<CommentType>('informativo');
   const [selectedReaders, setSelectedReaders] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [viewFilter, setViewFilter] = useState<ViewFilter>('pendentes');
+  const [viewFilter, setViewFilter] = useState<ViewFilter>('todos');
   const [replyingTo, setReplyingTo] = useState<ClientComment | null>(null);
 
   const currentUserName = currentUser?.name || 'Sistema';
@@ -120,7 +120,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
     } else if (viewFilter === 'arquivados') {
       result = archivedComments;
     } else {
-      result = comments;
+      result = activeComments;
     }
     // Only show root comments (no replyToId) at top level
     const roots = result.filter(c => !c.replyToId);
@@ -223,6 +223,12 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
         {/* View filter tabs */}
         <div className="flex gap-1 py-1">
           <button
+            onClick={() => setViewFilter('todos')}
+            className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'todos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
+          >
+            Todos ({activeComments.length})
+          </button>
+          <button
             onClick={() => setViewFilter('pendentes')}
             className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'pendentes' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
           >
@@ -239,12 +245,6 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
             className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'arquivados' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
           >
             Arquivados ({archivedComments.length})
-          </button>
-          <button
-            onClick={() => setViewFilter('todos')}
-            className={cn('px-3 py-1 rounded-md text-xs font-medium transition-all', viewFilter === 'todos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
-          >
-            Todos ({comments.length})
           </button>
         </div>
 
@@ -488,210 +488,218 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
     setIsEditing(false);
   };
 
+  const isOwnComment = comment.authorName.toLowerCase() === currentUserName.toLowerCase();
+
+  // Get author color from collaborators
+  const authorCollab = collaborators.find(c => c.name.toLowerCase() === comment.authorName.toLowerCase());
+  const authorColor = (authorCollab as any)?.color || '#6B7280';
+
   return (
-    <div
-      className={cn(
-        'p-3 rounded-lg border',
-        fullyRead && 'opacity-60',
-        comment.isPinned ? 'bg-amber-500/5 border-amber-500/30' : 'bg-muted/30',
-        isCiencia && !comment.isPinned && cienciaBorderClass,
-      )}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="secondary" className={cn('text-[9px] px-1.5 py-0', typeBadgeStyles[comment.commentType])}>
-            {COMMENT_TYPE_LABELS[comment.commentType]}
-          </Badge>
-          {comment.isArchived && (
-            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-muted text-muted-foreground">
-              <Archive className="w-2.5 h-2.5 mr-0.5" /> Arquivado
-            </Badge>
-          )}
-          <span className="text-sm font-medium text-primary">{comment.authorName}</span>
-          <span className="text-xs text-muted-foreground">
-            {format(new Date(comment.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-          </span>
-          {comment.isEdited && (
-            <span className="text-[9px] text-muted-foreground italic">(editada)</span>
-          )}
-          {comment.isClosed && (
-            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-muted text-muted-foreground">
-              <Lock className="w-2.5 h-2.5 mr-0.5" /> Encerrado
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
+    <div className={cn('flex w-full', isOwnComment ? 'justify-end' : 'justify-start')}>
+      <div
+        className={cn(
+          'group relative max-w-[85%] px-3 py-2 transition-all',
+          isOwnComment
+            ? 'bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl rounded-tr-sm'
+            : 'bg-card border border-border rounded-2xl rounded-tl-sm',
+          fullyRead && 'opacity-60',
+          comment.isPinned && 'ring-1 ring-amber-400/60',
+          isCiencia && !comment.isPinned && cienciaBorderClass && 'border-2',
+        )}
+      >
+        {/* Hover actions */}
+        <div className={cn(
+          'absolute -top-3 flex items-center gap-0.5 bg-card border border-border rounded-lg shadow-md px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10',
+          isOwnComment ? 'right-2' : 'left-2'
+        )}>
           <button onClick={onTogglePin} className={cn('p-1 rounded hover:bg-muted transition-colors', comment.isPinned ? 'text-amber-500' : 'text-muted-foreground')} title={comment.isPinned ? 'Desafixar' : 'Fixar'}>
-            <Pin className={cn('w-3.5 h-3.5', comment.isPinned && 'fill-current')} />
+            <Pin className={cn('w-3 h-3', comment.isPinned && 'fill-current')} />
+          </button>
+          <button onClick={onReply} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Responder">
+            <Reply className="w-3 h-3" />
+          </button>
+          <button onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Editar">
+            <Pencil className="w-3 h-3" />
           </button>
           {isAdmin && isCiencia && (
-            <>
-              {!comment.isClosed ? (
-                <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-orange-500 transition-colors" title="Encerrar">
-                  <Lock className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <button onClick={onReopen} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-green-500 transition-colors" title="Reabrir">
-                  <Unlock className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <button onClick={() => { setEditReaders(comment.requiredReaders); setShowEditReaders(!showEditReaders); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Editar leitores">
-                <UserPlus className="w-3.5 h-3.5" />
+            !comment.isClosed ? (
+              <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-orange-500 transition-colors" title="Encerrar">
+                <Lock className="w-3 h-3" />
               </button>
-            </>
+            ) : (
+              <button onClick={onReopen} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-green-500 transition-colors" title="Reabrir">
+                <Unlock className="w-3 h-3" />
+              </button>
+            )
+          )}
+          {isAdmin && isCiencia && (
+            <button onClick={() => { setEditReaders(comment.requiredReaders); setShowEditReaders(!showEditReaders); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Editar leitores">
+              <UserPlus className="w-3 h-3" />
+            </button>
           )}
           {!comment.isArchived ? (
             <button onClick={onArchive} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Arquivar">
-              <Archive className="w-3.5 h-3.5" />
+              <Archive className="w-3 h-3" />
             </button>
           ) : (
             <button onClick={onUnarchive} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-green-500 transition-colors" title="Desarquivar">
-              <Archive className="w-3.5 h-3.5" />
+              <Archive className="w-3 h-3" />
             </button>
           )}
-          <button onClick={onReply} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Responder">
-            <Reply className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Editar">
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
           <button onClick={onDelete} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Excluir">
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3 h-3" />
           </button>
         </div>
-      </div>
 
-      {/* Reply quote */}
-      {comment.replyToId && (() => {
-        const parentComment = allComments.find(c => c.id === comment.replyToId);
-        return parentComment ? (
-          <div className="flex items-stretch gap-0 rounded-md overflow-hidden mb-2 bg-muted/50 border border-border/50">
-            <div className="w-1 bg-primary/40 shrink-0" />
-            <div className="px-2 py-1.5">
-              <span className="text-[10px] font-medium text-primary">↩ Em resposta a {parentComment.authorName}:</span>
-              <p className="text-[11px] text-muted-foreground truncate">&ldquo;{parentComment.commentText.slice(0, 80)}{parentComment.commentText.length > 80 ? '...' : ''}&rdquo;</p>
-            </div>
-          </div>
-        ) : comment.replyToId ? (
-          <div className="flex items-center gap-1 mb-2 text-[10px] text-muted-foreground italic">
-            <Reply className="w-3 h-3" /> Resposta a comentário removido
-          </div>
-        ) : null;
-      })()}
-
-      {/* Comment Text */}
-      {isEditing ? (
-        <div className="space-y-2 mb-3">
-          <Textarea
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
-            className="min-h-[60px] resize-none text-sm"
-            autoFocus
-          />
-          <div className="flex gap-1 justify-end">
-            <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={handleCancelEdit}>
-              <X className="w-3 h-3 mr-1" /> Cancelar
-            </Button>
-            <Button size="sm" className="h-6 text-xs" onClick={handleSaveEdit} disabled={!editText.trim()}>
-              <Check className="w-3 h-3 mr-1" /> Salvar
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-foreground whitespace-pre-wrap mb-3">{comment.commentText}</p>
-      )}
-
-      {/* Ciência status */}
-      {isCiencia && totalRequired > 0 && (
-        <div className="space-y-2.5 mb-3 p-3 rounded-md bg-muted/40 border border-border/60">
-          {/* Status header */}
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Confirmações de ciência</span>
-            {comment.isClosed ? (
-              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-muted-foreground/30 text-muted-foreground gap-1">
-                <Lock className="w-2.5 h-2.5" /> Encerrado por {comment.closedBy}
-              </Badge>
-            ) : isFullyReadCiencia ? (
-              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-green-400 text-green-600 dark:text-green-400 gap-1">
-                <CheckCircle2 className="w-2.5 h-2.5" /> {confirmedCount}/{totalRequired}
-              </Badge>
-            ) : isPartial ? (
-              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-amber-400 text-amber-600 dark:text-amber-400 gap-1">
-                <Clock className="w-2.5 h-2.5" /> {confirmedCount}/{totalRequired}
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-red-400 text-red-600 dark:text-red-400 gap-1">
-                <Clock className="w-2.5 h-2.5" /> 0/{totalRequired}
-              </Badge>
-            )}
-          </div>
-          {/* Readers list */}
-          <div className="flex flex-wrap gap-1.5">
-            {comment.requiredReaders.map((reader) => {
-              const confirmed = !!comment.readTimestamps[reader];
-              return (
-                <div
-                  key={reader}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium border transition-colors',
-                    confirmed
-                      ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
-                      : 'bg-background text-muted-foreground border-border'
-                  )}
-                >
-                  {confirmed ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <Clock className="w-3 h-3 opacity-50" />}
-                  <span>{reader}</span>
-                  {confirmed && (
-                    <span className="text-[8px] opacity-60 ml-0.5">
-                      {format(new Date(comment.readTimestamps[reader]), 'dd/MM HH:mm', { locale: ptBR })}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {/* Confirm button */}
-          {userNeedsToConfirm && (
-            <Button size="sm" className="h-8 text-xs w-full mt-1 gap-1.5" onClick={onConfirmReading}>
-              <CheckCircle2 className="w-3.5 h-3.5" /> Confirmar minha ciência
-            </Button>
+        {/* Author name + type badge */}
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="text-xs font-semibold" style={{ color: authorColor }}>{comment.authorName}</span>
+          <Badge variant="secondary" className={cn('text-[8px] px-1 py-0 h-3.5', typeBadgeStyles[comment.commentType])}>
+            {COMMENT_TYPE_LABELS[comment.commentType]}
+          </Badge>
+          {comment.isArchived && (
+            <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5 bg-muted text-muted-foreground">
+              <Archive className="w-2 h-2 mr-0.5" /> Arquivado
+            </Badge>
+          )}
+          {comment.isClosed && (
+            <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5 bg-muted text-muted-foreground">
+              <Lock className="w-2 h-2 mr-0.5" /> Encerrado
+            </Badge>
           )}
         </div>
-      )}
 
-      {/* Edit readers (admin) */}
-      {showEditReaders && (
-        <div className="space-y-2 mb-3 p-2 rounded bg-primary/5 border border-primary/20">
-          <p className="text-[10px] font-medium text-primary">Editar leitores obrigatórios:</p>
-          <div className="flex flex-wrap gap-1.5">
-            {collaborators.map((collab) => (
-              <label key={collab.id} className="flex items-center gap-1.5 cursor-pointer">
-                <Checkbox
-                  checked={editReaders.includes(collab.name)}
-                  onCheckedChange={() => setEditReaders(prev => prev.includes(collab.name) ? prev.filter(n => n !== collab.name) : [...prev, collab.name])}
-                  className="h-3.5 w-3.5"
-                />
-                <span className="text-xs">{collab.name}</span>
-              </label>
-            ))}
+        {/* Reply quote */}
+        {comment.replyToId && (() => {
+          const parentComment = allComments.find(c => c.id === comment.replyToId);
+          const parentCollab = parentComment ? collaborators.find(c => c.name.toLowerCase() === parentComment.authorName.toLowerCase()) : null;
+          const parentColor = (parentCollab as any)?.color || '#6B7280';
+          return parentComment ? (
+            <div className="flex items-stretch gap-0 rounded-lg overflow-hidden mb-1.5 bg-muted/50">
+              <div className="w-1 shrink-0" style={{ backgroundColor: parentColor }} />
+              <div className="px-2 py-1 min-w-0">
+                <span className="text-[10px] font-semibold" style={{ color: parentColor }}>{parentComment.authorName}</span>
+                <p className="text-[10px] text-muted-foreground truncate">{parentComment.commentText.slice(0, 80)}{parentComment.commentText.length > 80 ? '...' : ''}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 mb-1.5 text-[10px] text-muted-foreground italic">
+              <Reply className="w-3 h-3" /> Resposta a comentário removido
+            </div>
+          );
+        })()}
+
+        {/* Comment Text */}
+        {isEditing ? (
+          <div className="space-y-2 mb-1">
+            <Textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
+              className="min-h-[60px] resize-none text-sm"
+              autoFocus
+            />
+            <div className="flex gap-1 justify-end">
+              <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={handleCancelEdit}>
+                <X className="w-3 h-3 mr-1" /> Cancelar
+              </Button>
+              <Button size="sm" className="h-6 text-xs" onClick={handleSaveEdit} disabled={!editText.trim()}>
+                <Check className="w-3 h-3 mr-1" /> Salvar
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-1">
-            <Button size="sm" variant="default" className="h-6 text-[10px]" onClick={saveEditReaders}>Salvar</Button>
-            <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setShowEditReaders(false)}>Cancelar</Button>
+        ) : (
+          <p className="text-sm text-foreground whitespace-pre-wrap mb-1">{comment.commentText}</p>
+        )}
+
+        {/* Ciência status (compact inside bubble) */}
+        {isCiencia && totalRequired > 0 && (
+          <div className="space-y-2 mb-1.5 p-2 rounded-lg bg-muted/40 border border-border/40">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">Ciência</span>
+              {comment.isClosed ? (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-muted-foreground/30 text-muted-foreground gap-1">
+                  <Lock className="w-2 h-2" /> Encerrado
+                </Badge>
+              ) : isFullyReadCiencia ? (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-green-400 text-green-600 dark:text-green-400 gap-1">
+                  <CheckCircle2 className="w-2 h-2" /> {confirmedCount}/{totalRequired}
+                </Badge>
+              ) : isPartial ? (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-amber-400 text-amber-600 dark:text-amber-400 gap-1">
+                  <Clock className="w-2 h-2" /> {confirmedCount}/{totalRequired}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-red-400 text-red-600 dark:text-red-400 gap-1">
+                  <Clock className="w-2 h-2" /> 0/{totalRequired}
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {comment.requiredReaders.map((reader) => {
+                const confirmed = !!comment.readTimestamps[reader];
+                return (
+                  <div
+                    key={reader}
+                    className={cn(
+                      'flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium border transition-colors',
+                      confirmed
+                        ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
+                        : 'bg-background text-muted-foreground border-border'
+                    )}
+                  >
+                    {confirmed ? <CheckCircle2 className="w-2.5 h-2.5 text-green-500" /> : <Clock className="w-2.5 h-2.5 opacity-50" />}
+                    <span>{reader}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {userNeedsToConfirm && (
+              <Button size="sm" className="h-7 text-xs w-full gap-1.5" onClick={onConfirmReading}>
+                <CheckCircle2 className="w-3 h-3" /> Confirmar ciência
+              </Button>
+            )}
           </div>
+        )}
+
+        {/* Edit readers (admin) */}
+        {showEditReaders && (
+          <div className="space-y-2 mb-1.5 p-2 rounded-lg bg-primary/5 border border-primary/20">
+            <p className="text-[10px] font-medium text-primary">Editar leitores obrigatórios:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {collaborators.map((collab) => (
+                <label key={collab.id} className="flex items-center gap-1.5 cursor-pointer">
+                  <Checkbox
+                    checked={editReaders.includes(collab.name)}
+                    onCheckedChange={() => setEditReaders(prev => prev.includes(collab.name) ? prev.filter(n => n !== collab.name) : [...prev, collab.name])}
+                    className="h-3 w-3"
+                  />
+                  <span className="text-[10px]">{collab.name}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              <Button size="sm" variant="default" className="h-5 text-[9px]" onClick={saveEditReaders}>Salvar</Button>
+              <Button size="sm" variant="ghost" className="h-5 text-[9px]" onClick={() => setShowEditReaders(false)}>Cancelar</Button>
+            </div>
+          </div>
+        )}
+
+        {/* Timestamp + read status footer */}
+        <div className="flex items-center justify-between gap-2 mt-1">
+          <span className="text-[9px] text-muted-foreground">
+            {format(new Date(comment.createdAt), "dd/MM HH:mm", { locale: ptBR })}
+            {comment.isEdited && <span className="italic ml-1">(editada)</span>}
+          </span>
+          <ReadStatusBar
+            comment={comment}
+            currentUserName={currentUserName}
+            isAdmin={isAdmin}
+            collaborators={collaborators}
+            onToggleRead={onToggleRead}
+          />
         </div>
-      )}
-
-      {/* WhatsApp-style read status */}
-      <ReadStatusBar
-        comment={comment}
-        currentUserName={currentUserName}
-        isAdmin={isAdmin}
-        collaborators={collaborators}
-        onToggleRead={onToggleRead}
-      />
+      </div>
     </div>
   );
 }
@@ -727,35 +735,29 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
   const pendingNames = READ_STATUS_NAMES.filter(n => !comment.readStatus[n]);
 
   return (
-    <div className="flex items-center justify-between pt-2 border-t border-border">
-      {/* Left: self check button */}
-      <div className="flex items-center gap-1.5">
-        {canMarkSelf && (
-          <button
-            onClick={() => !patrickLocked && onToggleRead(currentReadStatusName)}
-            disabled={patrickLocked}
-            className={cn(
-              'flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all',
-              patrickLocked && 'opacity-50 cursor-not-allowed',
-              selfIsRead ? 'text-white' : 'text-muted-foreground bg-muted hover:bg-muted/80'
-            )}
-            style={selfIsRead ? { backgroundColor: selfColor } : {}}
-            title={patrickLocked ? 'Aguardando equipe ler primeiro' : selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
-          >
-            {selfIsRead ? <CheckCheck className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
-            {patrickLocked ? 'Aguardando equipe' : selfIsRead ? 'Lido' : 'Marcar lido'}
-          </button>
-        )}
-        <span className="text-[9px] text-muted-foreground">
-          {allRead ? (
-            <span className="text-green-600 dark:text-green-400">Todos leram</span>
-          ) : (
-            `${readCount}/${READ_STATUS_NAMES.length}`
+    <div className="flex items-center gap-1.5">
+      {canMarkSelf && (
+        <button
+          onClick={() => !patrickLocked && onToggleRead(currentReadStatusName)}
+          disabled={patrickLocked}
+          className={cn(
+            'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all',
+            patrickLocked && 'opacity-50 cursor-not-allowed',
+            selfIsRead ? 'text-white' : 'text-muted-foreground hover:bg-muted/80'
           )}
-        </span>
-      </div>
-
-      {/* Right: info popover */}
+          style={selfIsRead ? { backgroundColor: selfColor } : {}}
+          title={patrickLocked ? 'Aguardando equipe ler primeiro' : selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
+        >
+          {selfIsRead ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+        </button>
+      )}
+      <span className="text-[9px] text-muted-foreground">
+        {allRead ? (
+          <span className="text-green-600 dark:text-green-400">✓✓</span>
+        ) : (
+          `${readCount}/${READ_STATUS_NAMES.length}`
+        )}
+      </span>
       <Popover open={showInfo} onOpenChange={setShowInfo}>
         <PopoverTrigger asChild>
           <button
@@ -843,3 +845,5 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
     </div>
   );
 }
+
+
