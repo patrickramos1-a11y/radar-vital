@@ -727,7 +727,7 @@ function CommentCard({ comment, currentUserName, collaborators, allComments, onT
   return (
     <div
       className={cn(
-        "group relative rounded-xl bg-card p-3 transition-all duration-200",
+        "group relative rounded-xl bg-card p-3 transition-all duration-200 h-full flex flex-col",
         isOwnComment
           ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/30'
           : 'border border-border',
@@ -849,7 +849,7 @@ function CommentCard({ comment, currentUserName, collaborators, allComments, onT
           </div>
         </div>
       ) : (
-        <p className="text-sm text-foreground mb-2 line-clamp-4">{comment.commentText}</p>
+        <p className="text-sm text-foreground mb-2 line-clamp-3 flex-1">{comment.commentText}</p>
       )}
 
       {/* Ciência status */}
@@ -903,7 +903,7 @@ function CommentCard({ comment, currentUserName, collaborators, allComments, onT
       )}
 
       {/* Timestamp + read status footer */}
-      <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/50">
+      <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/50 mt-auto">
         <span className="text-[9px] text-muted-foreground">
           {format(new Date(comment.createdAt), "dd/MM HH:mm", { locale: ptBR })}
           {comment.isEdited && <span className="italic ml-1">(editada)</span>}
