@@ -1,21 +1,52 @@
 
 
-## Aplicar melhorias de "Marcar como lido" e "Responder" no modal de comentarios do cliente
+## Corrigir respostas de respostas que nao aparecem no modal de comentarios
 
-As mudancas feitas na aba global de comentarios (CommentsPanel) precisam ser replicadas no modal de comentarios que abre ao clicar em um cliente (CommentsModal).
+### Problema
+No `CommentsModal.tsx`, quando voce responde a um comentario que ja e uma resposta de outro, o novo comentario nao aparece. Isso acontece porque o codigo so renderiza respostas diretas ao comentario raiz (1 nivel de profundidade). Respostas de respostas (nivel 2+) ficam "perdidas".
+
+Exemplo:
+- Comentario A (raiz) -- aparece
+  - Comentario B (resposta de A) -- aparece via `repliesMap.get(A.id)`
+    - Comentario C (resposta de B) -- NAO aparece, pois `repliesMap.get(B.id)` nunca e renderizado
+
+### Solucao
+Modificar a logica de coleta de respostas em `CommentsModal.tsx` para coletar TODOS os descendentes de um comentario raiz recursivamente, nao apenas os filhos diretos. Todas as respostas (de qualquer profundidade) aparecerao abaixo do comentario raiz, ordenadas cronologicamente, cada uma com seu quote block referenciando o pai direto.
 
 ### Mudancas no arquivo `src/components/comments/CommentsModal.tsx`
 
-**1. Aumentar o botao de "Marcar como lido" no ReadStatusBar (linha ~738)**
-- Trocar `px-1.5 py-0.5 text-[9px]` por `px-2.5 py-1 text-xs`
-- Trocar icones `w-3 h-3` por `w-4 h-4`
-- Adicionar `shadow-sm` quando lido e `border border-border` quando nao lido
-- Aumentar a contagem de `text-[9px]` para `text-[10px] font-medium`
+**1. Substituir o repliesMap por uma funcao que coleta todos os descendentes**
 
-**2. Mover botao "Responder" do hover para o rodape do balao**
-- Remover o botao de Reply do bloco de hover actions (linha ~518)
-- Adicionar botao de Reply no footer do balao (linha ~689), ao lado do ReadStatusBar, igual ao CommentsPanel
-- Agrupar Reply + ReadStatusBar em um `flex items-center gap-1.5`
+Criar uma funcao `getAllDescendants(rootId)` que percorre recursivamente o `repliesMap` e retorna todos os descendentes de um comentario raiz, ordenados por data de criacao.
 
-Essas mudancas vao deixar o modal consistente com o painel global.
+**2. Atualizar a renderizacao (linhas 283-304)**
 
+Em vez de:
+```
+{(repliesMap.get(comment.id) || []).map((reply) => (
+  <div key={reply.id} className="ml-4 ...">
+    <CommentItem ... />
+  </div>
+))}
+```
+
+Usar:
+```
+{getAllDescendants(comment.id).map((reply) => (
+  <div key={reply.id} className="ml-4 ...">
+    <CommentItem ... />
+  </div>
+))}
+```
+
+A funcao `getAllDescendants` vai percorrer:
+- Filhos diretos de A -> [B]
+- Filhos diretos de B -> [C]
+- Resultado final: [B, C] (ordenado cronologicamente)
+
+Cada resposta continua mostrando o quote block do seu pai direto (via `replyToId`), entao a referencia visual fica correta.
+
+### Resultado esperado
+- Responder a um comentario que ja e resposta agora mostra o novo comentario abaixo do raiz
+- O quote block referencia corretamente o comentario pai direto
+- Compatibilidade mantida com a aba global de comentarios (CommentsPanel), que ja usa lista plana
