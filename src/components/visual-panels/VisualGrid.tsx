@@ -20,7 +20,7 @@ export function VisualGrid({ children, itemCount }: VisualGridProps) {
   return (
     <div className="flex-1 overflow-auto p-3">
       <div
-        className="grid gap-3"
+        className="grid gap-3 auto-rows-fr"
         style={{
           gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
         }}
