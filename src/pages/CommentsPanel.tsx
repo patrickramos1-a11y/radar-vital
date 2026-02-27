@@ -332,6 +332,20 @@ export default function CommentsPanel() {
   const pendingComments = useMemo(() => activeComments.filter(c => !canReadSelf || !c.readStatus[currentReadStatusName]), [activeComments, canReadSelf, currentReadStatusName]);
   const readComments = useMemo(() => activeComments.filter(c => canReadSelf && c.readStatus[currentReadStatusName]), [activeComments, canReadSelf, currentReadStatusName]);
 
+  // Build replies map from ALL comments
+  const repliesMap = useMemo(() => {
+    const map = new Map<string, CommentWithClient[]>();
+    comments.forEach(c => {
+      if (c.replyToId) {
+        const list = map.get(c.replyToId) || [];
+        list.push(c);
+        map.set(c.replyToId, list);
+      }
+    });
+    map.forEach((replies) => replies.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+    return map;
+  }, [comments]);
+
   const filteredComments = useMemo(() => {
     let result = viewFilter === 'pendentes' ? pendingComments : viewFilter === 'lidos' ? readComments : viewFilter === 'arquivados' ? archivedComments : comments;
 
@@ -356,7 +370,8 @@ export default function CommentsPanel() {
       );
     }
 
-    return result;
+    // Only show root comments at top level
+    return result.filter(c => !c.replyToId);
   }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilter, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
 
   const kpis = useMemo(() => {
@@ -612,23 +627,45 @@ export default function CommentsPanel() {
         {/* Comments Grid */}
         <VisualGrid itemCount={filteredComments.length}>
           {filteredComments.map((comment) => (
-            <CommentCard
-              key={comment.id}
-              comment={comment}
-              currentUserName={currentUserName}
-              collaborators={collaborators}
-              allComments={comments}
-              onToggleRead={toggleReadStatus}
-              onTogglePinned={togglePinned}
-              onDelete={deleteComment}
-              onEdit={editComment}
-              onConfirmReading={confirmReading}
-              onClose={closeComment}
-              onReopen={reopenComment}
-              onArchive={archiveComment}
-              onUnarchive={unarchiveComment}
-              onReply={(c) => { setReplyingTo(c); setNewClientId(c.clientId); setShowNewForm(true); }}
-            />
+            <div key={comment.id}>
+              <CommentCard
+                comment={comment}
+                currentUserName={currentUserName}
+                collaborators={collaborators}
+                allComments={comments}
+                onToggleRead={toggleReadStatus}
+                onTogglePinned={togglePinned}
+                onDelete={deleteComment}
+                onEdit={editComment}
+                onConfirmReading={confirmReading}
+                onClose={closeComment}
+                onReopen={reopenComment}
+                onArchive={archiveComment}
+                onUnarchive={unarchiveComment}
+                onReply={(c) => { setReplyingTo(c); setNewClientId(c.clientId); setShowNewForm(true); }}
+              />
+              {/* Threaded replies */}
+              {(repliesMap.get(comment.id) || []).map((reply) => (
+                <div key={reply.id} className="ml-6 mt-1 border-l-2 border-primary/30">
+                  <CommentCard
+                    comment={reply}
+                    currentUserName={currentUserName}
+                    collaborators={collaborators}
+                    allComments={comments}
+                    onToggleRead={toggleReadStatus}
+                    onTogglePinned={togglePinned}
+                    onDelete={deleteComment}
+                    onEdit={editComment}
+                    onConfirmReading={confirmReading}
+                    onClose={closeComment}
+                    onReopen={reopenComment}
+                    onArchive={archiveComment}
+                    onUnarchive={unarchiveComment}
+                    onReply={(c) => { setReplyingTo(c); setNewClientId(c.clientId); setShowNewForm(true); }}
+                  />
+                </div>
+              ))}
+            </div>
           ))}
         </VisualGrid>
 
