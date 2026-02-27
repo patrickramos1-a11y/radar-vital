@@ -111,6 +111,21 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
     return map;
   }, [comments]);
 
+  // Recursively collect ALL descendants of a root comment
+  const getAllDescendants = (rootId: string): ClientComment[] => {
+    const result: ClientComment[] = [];
+    const queue = [rootId];
+    while (queue.length > 0) {
+      const parentId = queue.shift()!;
+      const children = repliesMap.get(parentId) || [];
+      for (const child of children) {
+        result.push(child);
+        queue.push(child.id);
+      }
+    }
+    return result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  };
+
   const filteredComments = useMemo(() => {
     let result: ClientComment[];
     if (viewFilter === 'pendentes') {
@@ -280,7 +295,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
                     onUnarchive={() => unarchiveComment(comment.id)}
                     onReply={() => setReplyingTo(comment)}
                   />
-                  {(repliesMap.get(comment.id) || []).map((reply) => (
+                  {getAllDescendants(comment.id).map((reply) => (
                     <div key={reply.id} className="ml-4 mt-1 border-l-2 border-primary/30 pl-0">
                       <CommentItem
                         comment={reply}
