@@ -122,8 +122,9 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
     } else {
       result = activeComments;
     }
-    // Show all comments flat (no threading)
-    return [...result].sort((a, b) => {
+    // Only show root comments (no replyToId) at top level
+    const roots = result.filter(c => !c.replyToId);
+    return [...roots].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -260,25 +261,48 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
           ) : (
             <div className="space-y-3 py-2">
               {filteredComments.map((comment) => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  currentUserName={currentUserName}
-                  isAdmin={isAdmin}
-                  collaborators={collaborators}
-                  allComments={comments}
-                  onDelete={() => handleDelete(comment.id)}
-                  onTogglePin={() => togglePinned(comment.id)}
-                  onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
-                  onConfirmReading={() => confirmReading(comment.id)}
-                  onClose={() => closeComment(comment.id)}
-                  onReopen={() => reopenComment(comment.id)}
-                  onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
-                  onEdit={(newText) => editComment(comment.id, newText)}
-                  onArchive={() => archiveComment(comment.id)}
-                  onUnarchive={() => unarchiveComment(comment.id)}
-                  onReply={() => setReplyingTo(comment)}
-                />
+                <div key={comment.id}>
+                  <CommentItem
+                    comment={comment}
+                    currentUserName={currentUserName}
+                    isAdmin={isAdmin}
+                    collaborators={collaborators}
+                    allComments={comments}
+                    onDelete={() => handleDelete(comment.id)}
+                    onTogglePin={() => togglePinned(comment.id)}
+                    onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
+                    onConfirmReading={() => confirmReading(comment.id)}
+                    onClose={() => closeComment(comment.id)}
+                    onReopen={() => reopenComment(comment.id)}
+                    onUpdateReaders={(readers) => updateRequiredReaders(comment.id, readers)}
+                    onEdit={(newText) => editComment(comment.id, newText)}
+                    onArchive={() => archiveComment(comment.id)}
+                    onUnarchive={() => unarchiveComment(comment.id)}
+                    onReply={() => setReplyingTo(comment)}
+                  />
+                  {(repliesMap.get(comment.id) || []).map((reply) => (
+                    <div key={reply.id} className="ml-4 mt-1 border-l-2 border-primary/30 pl-0">
+                      <CommentItem
+                        comment={reply}
+                        currentUserName={currentUserName}
+                        isAdmin={isAdmin}
+                        collaborators={collaborators}
+                        allComments={comments}
+                        onDelete={() => handleDelete(reply.id)}
+                        onTogglePin={() => togglePinned(reply.id)}
+                        onToggleRead={(collaborator) => toggleReadStatus(reply.id, collaborator)}
+                        onConfirmReading={() => confirmReading(reply.id)}
+                        onClose={() => closeComment(reply.id)}
+                        onReopen={() => reopenComment(reply.id)}
+                        onUpdateReaders={(readers) => updateRequiredReaders(reply.id, readers)}
+                        onEdit={(newText) => editComment(reply.id, newText)}
+                        onArchive={() => archiveComment(reply.id)}
+                        onUnarchive={() => unarchiveComment(reply.id)}
+                        onReply={() => setReplyingTo(reply)}
+                      />
+                    </div>
+                  ))}
+                </div>
               ))}
             </div>
           )}
