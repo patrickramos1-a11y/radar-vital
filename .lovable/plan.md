@@ -1,52 +1,25 @@
 
 
-## Corrigir respostas de respostas que nao aparecem no modal de comentarios
+## Inverter ordem dos comentarios e scroll automatico para os mais recentes
 
-### Problema
-No `CommentsModal.tsx`, quando voce responde a um comentario que ja e uma resposta de outro, o novo comentario nao aparece. Isso acontece porque o codigo so renderiza respostas diretas ao comentario raiz (1 nivel de profundidade). Respostas de respostas (nivel 2+) ficam "perdidas".
-
-Exemplo:
-- Comentario A (raiz) -- aparece
-  - Comentario B (resposta de A) -- aparece via `repliesMap.get(A.id)`
-    - Comentario C (resposta de B) -- NAO aparece, pois `repliesMap.get(B.id)` nunca e renderizado
-
-### Solucao
-Modificar a logica de coleta de respostas em `CommentsModal.tsx` para coletar TODOS os descendentes de um comentario raiz recursivamente, nao apenas os filhos diretos. Todas as respostas (de qualquer profundidade) aparecerao abaixo do comentario raiz, ordenadas cronologicamente, cada uma com seu quote block referenciando o pai direto.
+### Problema atual
+Os comentarios estao ordenados do mais novo (topo) para o mais antigo (fundo). O comportamento esperado e estilo WhatsApp: mais antigos no topo, mais novos embaixo, e ao abrir o modal ja estar posicionado nos comentarios mais recentes.
 
 ### Mudancas no arquivo `src/components/comments/CommentsModal.tsx`
 
-**1. Substituir o repliesMap por uma funcao que coleta todos os descendentes**
-
-Criar uma funcao `getAllDescendants(rootId)` que percorre recursivamente o `repliesMap` e retorna todos os descendentes de um comentario raiz, ordenados por data de criacao.
-
-**2. Atualizar a renderizacao (linhas 283-304)**
-
-Em vez de:
+**1. Inverter a ordenacao (linha 114)**
+Trocar a ordenacao de `b - a` (desc) para `a - b` (asc), mantendo pinados no topo:
 ```
-{(repliesMap.get(comment.id) || []).map((reply) => (
-  <div key={reply.id} className="ml-4 ...">
-    <CommentItem ... />
-  </div>
-))}
+return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
 ```
 
-Usar:
-```
-{getAllDescendants(comment.id).map((reply) => (
-  <div key={reply.id} className="ml-4 ...">
-    <CommentItem ... />
-  </div>
-))}
-```
-
-A funcao `getAllDescendants` vai percorrer:
-- Filhos diretos de A -> [B]
-- Filhos diretos de B -> [C]
-- Resultado final: [B, C] (ordenado cronologicamente)
-
-Cada resposta continua mostrando o quote block do seu pai direto (via `replyToId`), entao a referencia visual fica correta.
+**2. Auto-scroll para o final da lista**
+- Adicionar um `useRef` e `useEffect` no componente `CommentsModal` para fazer scroll automatico ate o final do container de comentarios sempre que os comentarios forem carregados ou atualizados.
+- Usar `ref.current.scrollTop = ref.current.scrollHeight` no container de overflow (linha 236).
+- Isso garante que ao abrir o modal, o usuario ja ve os comentarios mais recentes sem precisar rolar.
 
 ### Resultado esperado
-- Responder a um comentario que ja e resposta agora mostra o novo comentario abaixo do raiz
-- O quote block referencia corretamente o comentario pai direto
-- Compatibilidade mantida com a aba global de comentarios (CommentsPanel), que ja usa lista plana
+- Comentarios mais antigos ficam no topo, mais novos ficam embaixo
+- Ao abrir o modal, o scroll ja esta posicionado nos comentarios mais recentes
+- Para ver comentarios antigos, o usuario rola para cima
+
