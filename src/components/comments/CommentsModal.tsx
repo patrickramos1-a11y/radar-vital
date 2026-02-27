@@ -96,6 +96,21 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
   const pendingComments = activeComments.filter(c => !canReadSelf || !c.readStatus[currentReadStatusName]);
   const readComments = activeComments.filter(c => canReadSelf && c.readStatus[currentReadStatusName]);
 
+  // Build replies map from ALL comments
+  const repliesMap = useMemo(() => {
+    const map = new Map<string, ClientComment[]>();
+    comments.forEach(c => {
+      if (c.replyToId) {
+        const list = map.get(c.replyToId) || [];
+        list.push(c);
+        map.set(c.replyToId, list);
+      }
+    });
+    // Sort replies chronologically (oldest first)
+    map.forEach((replies) => replies.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+    return map;
+  }, [comments]);
+
   const filteredComments = useMemo(() => {
     let result: ClientComment[];
     if (viewFilter === 'pendentes') {
@@ -107,7 +122,9 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
     } else {
       result = comments;
     }
-    return [...result].sort((a, b) => {
+    // Only show root comments (no replyToId) at top level
+    const roots = result.filter(c => !c.replyToId);
+    return [...roots].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -244,7 +261,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
           ) : (
             <div className="space-y-3 py-2">
               {filteredComments.map((comment) => (
-                <div key={comment.id} className={cn(comment.replyToId && 'ml-4 border-l-2 border-primary/30 pl-0')}>
+                <div key={comment.id}>
                   <CommentItem
                     comment={comment}
                     currentUserName={currentUserName}
@@ -263,6 +280,29 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
                     onUnarchive={() => unarchiveComment(comment.id)}
                     onReply={() => setReplyingTo(comment)}
                   />
+                  {/* Threaded replies */}
+                  {(repliesMap.get(comment.id) || []).map((reply) => (
+                    <div key={reply.id} className="ml-4 mt-1 border-l-2 border-primary/30 pl-0">
+                      <CommentItem
+                        comment={reply}
+                        currentUserName={currentUserName}
+                        isAdmin={isAdmin}
+                        collaborators={collaborators}
+                        allComments={comments}
+                        onDelete={() => handleDelete(reply.id)}
+                        onTogglePin={() => togglePinned(reply.id)}
+                        onToggleRead={(collaborator) => toggleReadStatus(reply.id, collaborator)}
+                        onConfirmReading={() => confirmReading(reply.id)}
+                        onClose={() => closeComment(reply.id)}
+                        onReopen={() => reopenComment(reply.id)}
+                        onUpdateReaders={(readers) => updateRequiredReaders(reply.id, readers)}
+                        onEdit={(newText) => editComment(reply.id, newText)}
+                        onArchive={() => archiveComment(reply.id)}
+                        onUnarchive={() => unarchiveComment(reply.id)}
+                        onReply={() => setReplyingTo(reply)}
+                      />
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
