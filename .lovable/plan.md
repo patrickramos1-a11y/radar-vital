@@ -1,52 +1,81 @@
 
 
-## Correcao: Agrupar Respostas Sob o Comentario Pai (Threading Real)
+## Redesign Visual dos Comentarios (Estilo WhatsApp) + Correcao de Filtros
 
-### Problema Atual
+### 1. Redesign Visual - Estilo WhatsApp
 
-Todos os comentarios (pais e respostas) aparecem em uma lista plana cronologica. Quando alguem responde um comentario, a resposta mostra a citacao do texto original E o comentario original tambem aparece separadamente na lista. Isso cria a sensacao de duplicacao.
+Transformar os comentarios de "cards formais" para "baloes de conversa" inspirados no WhatsApp:
 
-### Solucao
+**Layout dos baloes:**
+- Comentarios do usuario atual: alinhados a direita, fundo verde claro (`bg-emerald-100/80`)
+- Comentarios de outros: alinhados a esquerda, fundo branco/card (`bg-card`)
+- Cantos arredondados assimetricos (ponta no canto superior do lado do autor)
+- Largura maxima de ~80% do container
+- Timestamp discreto no canto inferior direito do balao
+- Nome do autor em texto colorido no topo (usando a cor do colaborador)
+- Badge de tipo (Informativo/Relevante/Ciencia) compacto ao lado do nome
+- Indicador "(editada)" discreto junto ao timestamp
+- Botoes de acao (pin, responder, editar, excluir, arquivar) aparecem no hover, flutuando acima do balao
 
-Implementar agrupamento real de threads:
-- Comentarios raiz (sem `replyToId`) aparecem no nivel superior
-- Respostas ficam aninhadas logo abaixo do comentario pai, com recuo visual
-- Respostas NAO aparecem mais como itens separados na lista principal
+**Citacao de resposta (reply quote):**
+- Bloco colorido dentro do balao, acima do texto
+- Barra lateral com cor do autor original
+- Nome do autor + trecho do texto truncado
 
-### Mudancas
+**Status de leitura (V / VV):**
+- Simplificado no canto inferior do balao junto ao horario
+- Check simples ou duplo, com contagem discreta
+- Popover de info permanece acessivel via clique no check
 
-**Arquivo: `src/components/comments/CommentsModal.tsx`**
+**Ciencia obrigatoria:**
+- Mantida como secao interna do balao, porem mais compacta
 
-1. Na logica de `filteredComments` (linhas ~99-115), separar comentarios raiz dos que sao respostas
-2. Construir um mapa de `parentId -> replies[]` para agrupar respostas
-3. Na renderizacao (linhas ~245-268), para cada comentario raiz:
-   - Renderizar o comentario pai normalmente
-   - Logo abaixo, renderizar suas respostas com recuo (`ml-4 border-l-2 border-primary/30`)
-   - Respostas mantem a citacao do pai para contexto visual
-4. Respostas nao aparecem mais como itens independentes no nivel superior
+### 2. Reordenacao dos Filtros
 
-**Arquivo: `src/pages/CommentsPanel.tsx`**
+Ordem atual: `Pendentes | Lidos | Arquivados | Todos`
 
-Aplicar a mesma logica de agrupamento para manter paridade entre o modal e o painel global de comentarios.
+Nova ordem: `Todos | Pendentes | Lidos | Arquivados`
 
-### Logica de Agrupamento
+Aplicar em ambos:
+- `CommentsModal.tsx` (modal do cliente)
+- `CommentsPanel.tsx` (painel global)
 
-```text
-filteredComments (apenas raiz, sem replyToId)
-  |
-  +-- Comentario A (raiz)
-  |     +-- Resposta A1 (replyToId = A)
-  |     +-- Resposta A2 (replyToId = A)
-  |
-  +-- Comentario B (raiz)
-  |     +-- Resposta B1 (replyToId = B)
-  |
-  +-- Comentario C (raiz, sem respostas)
-```
+### 3. Contagem de "Todos" sem Arquivados
 
-### Resultado Visual
+Atualmente "Todos" mostra `comments.length` (inclui arquivados).
 
-- Cada resposta aparece diretamente abaixo do comentario que a originou
-- Sem duplicacao visual
-- A citacao (quote block) permanece para dar contexto rapido
-- Respostas sao ordenadas cronologicamente dentro de cada thread
+Correcao: "Todos" deve mostrar apenas comentarios nao-arquivados (`activeComments.length`) e filtrar por `activeComments` em vez de `comments`.
+
+O estado padrao de `viewFilter` muda para `'todos'` (em vez de `'pendentes'`).
+
+### Arquivos Afetados
+
+| Arquivo | Mudanca |
+|---|---|
+| `src/components/comments/CommentsModal.tsx` | Redesign visual WhatsApp dos baloes (CommentItem), reordenar filtros, corrigir contagem "Todos" |
+| `src/pages/CommentsPanel.tsx` | Redesign visual WhatsApp dos cards (CommentCard), reordenar filtros, corrigir contagem "Todos" |
+
+### Detalhamento Tecnico
+
+**CommentsModal.tsx - CommentItem:**
+- Adicionar logica `const isOwnComment = comment.authorName === currentUserName`
+- Container: `flex` com `justify-end` (proprio) ou `justify-start` (outros)
+- Balao: `max-w-[80%]` com `rounded-2xl` + `rounded-tr-sm` (proprio) ou `rounded-tl-sm` (outros)
+- Cores: proprio = `bg-emerald-50 dark:bg-emerald-900/20`, outros = `bg-card border border-border`
+- Mover timestamp para inline com o status de leitura no rodape do balao
+- Acoes no hover: container `absolute -top-3 right-2` com botoes em linha
+
+**CommentsModal.tsx - Filtros:**
+- Reordenar botoes: Todos, Pendentes, Lidos, Arquivados
+- "Todos" usa `activeComments` (sem arquivados) na contagem e filtragem
+- Default `viewFilter` = `'todos'`
+
+**CommentsPanel.tsx - CommentCard:**
+- Mesmo redesign de balao aplicado ao grid de cards
+- Adaptar para funcionar dentro do VisualGrid mantendo responsividade
+- Mesmas correcoes de filtros e contagem
+
+**CommentsPanel.tsx - Filtros:**
+- Mesma reordenacao: Todos, Pendentes, Lidos, Arquivados
+- Mesma correcao de contagem
+
