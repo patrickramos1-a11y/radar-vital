@@ -515,9 +515,6 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
           <button onClick={onTogglePin} className={cn('p-1 rounded hover:bg-muted transition-colors', comment.isPinned ? 'text-amber-500' : 'text-muted-foreground')} title={comment.isPinned ? 'Desafixar' : 'Fixar'}>
             <Pin className={cn('w-3 h-3', comment.isPinned && 'fill-current')} />
           </button>
-          <button onClick={onReply} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Responder">
-            <Reply className="w-3 h-3" />
-          </button>
           <button onClick={() => { setEditText(comment.commentText); setIsEditing(true); }} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors" title="Editar">
             <Pencil className="w-3 h-3" />
           </button>
@@ -691,13 +688,23 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
             {format(new Date(comment.createdAt), "dd/MM HH:mm", { locale: ptBR })}
             {comment.isEdited && <span className="italic ml-1">(editada)</span>}
           </span>
-          <ReadStatusBar
-            comment={comment}
-            currentUserName={currentUserName}
-            isAdmin={isAdmin}
-            collaborators={collaborators}
-            onToggleRead={onToggleRead}
-          />
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={onReply}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
+              title="Responder"
+            >
+              <Reply className="w-3.5 h-3.5" />
+              <span>Responder</span>
+            </button>
+            <ReadStatusBar
+              comment={comment}
+              currentUserName={currentUserName}
+              isAdmin={isAdmin}
+              collaborators={collaborators}
+              onToggleRead={onToggleRead}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -741,17 +748,17 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
           onClick={() => !patrickLocked && onToggleRead(currentReadStatusName)}
           disabled={patrickLocked}
           className={cn(
-            'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all',
+            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all',
             patrickLocked && 'opacity-50 cursor-not-allowed',
-            selfIsRead ? 'text-white' : 'text-muted-foreground hover:bg-muted/80'
+            selfIsRead ? 'text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/80 border border-border'
           )}
           style={selfIsRead ? { backgroundColor: selfColor } : {}}
           title={patrickLocked ? 'Aguardando equipe ler primeiro' : selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
         >
-          {selfIsRead ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+          {selfIsRead ? <CheckCheck className="w-4 h-4" /> : <Check className="w-4 h-4" />}
         </button>
       )}
-      <span className="text-[9px] text-muted-foreground">
+      <span className="text-[10px] font-medium text-muted-foreground">
         {allRead ? (
           <span className="text-green-600 dark:text-green-400">✓✓</span>
         ) : (
