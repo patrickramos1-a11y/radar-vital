@@ -31,7 +31,7 @@ interface FilterBarProps {
   sortBy: SortOption;
   sortDirection: SortDirection;
   filterFlags: FilterFlags;
-  collaboratorFilters: CollaboratorName[];
+  collaboratorFilters: string[];
   clientTypeFilter: ClientTypeFilter;
   priorityCount: number;
   highlightedCount: number;
