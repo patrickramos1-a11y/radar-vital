@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useVisualPanelFilters } from "@/hooks/useVisualPanelFilters";
-import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { Client } from "@/types/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Task } from "@/types/task";
 import { CollaboratorTaskTable } from "@/components/tasks/CollaboratorTaskTable";
 import { TaskAnalytics } from "@/components/tasks/TaskAnalytics";
@@ -21,6 +22,7 @@ import { TaskAnalytics } from "@/components/tasks/TaskAnalytics";
 type StatusFilter = "pendentes" | "concluidas" | "todas";
 
 export default function JackboxUnified() {
+  const { collaborators: allCollaborators } = useAuth();
   const { activeClients, highlightedClients } = useClients();
   const { 
     tasks, 
@@ -36,7 +38,7 @@ export default function JackboxUnified() {
   } = useTasks();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pendentes");
-  const [selectedCollaborator, setSelectedCollaborator] = useState<CollaboratorName | null>(null);
+  const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
 
   // Custom sorter for jackbox
   const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
@@ -109,21 +111,22 @@ export default function JackboxUnified() {
       clientsWithTasks: new Set(activeTasks.map(t => t.client_id)).size,
       oldestDays: oldestTask ? getDaysOpen(oldestTask) : 0,
       avgDays,
-      byCollaborator: COLLABORATOR_NAMES.reduce((acc, name) => {
-        const collabTasks = activeTasks.filter(t => t.assigned_to === name);
+      byCollaborator: allCollaborators.reduce((acc, collab) => {
+        const collabTasks = activeTasks.filter(t => t.assigned_to === collab.name);
         const collabAvg = collabTasks.length > 0
           ? Math.round(collabTasks.reduce((s, t) => s + getDaysOpen(t), 0) / collabTasks.length)
           : 0;
         const collabOldest = collabTasks.length > 0
           ? collabTasks.reduce((o, t) => new Date(t.created_at) < new Date(o.created_at) ? t : o)
           : null;
-        acc[name] = {
+        acc[collab.name] = {
           count: collabTasks.length,
           avgDays: collabAvg,
           oldestDays: collabOldest ? getDaysOpen(collabOldest) : 0,
+          color: collab.color,
         };
         return acc;
-      }, {} as Record<CollaboratorName, { count: number; avgDays: number; oldestDays: number }>),
+      }, {} as Record<string, { count: number; avgDays: number; oldestDays: number; color: string }>),
     };
   }, [tasks, getDaysOpen, getOldestTask, getAverageDaysOpen]);
 
