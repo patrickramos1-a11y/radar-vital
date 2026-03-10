@@ -239,15 +239,6 @@ export function FilterBar({
           </Tooltip>
         </div>
 
-        {/* Center: Visible Client Count */}
-        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 border border-primary/30">
-          <Users className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-bold text-primary">{visibleCount}</span>
-          {visibleCount !== totalCount && (
-            <span className="text-[10px] text-muted-foreground">/ {totalCount}</span>
-          )}
-        </div>
-
         {/* Right side: Client Type + Collaborators + Reset */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {/* Client Type Filter (AC/AV) */}
