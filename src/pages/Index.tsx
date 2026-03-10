@@ -533,10 +533,12 @@ const Index = () => {
                 highlightedClients={highlightedClients}
                 getActiveTaskCount={getActiveTaskCount}
                 getCommentCount={getCommentCount}
+                allCollaborators={allCollaborators}
+                getAssignedCollaboratorIds={getAssignedCollaboratorIds}
                 onSelectClient={handleSelectClient}
                 onHighlightClient={toggleHighlight}
                 onTogglePriority={togglePriority}
-                onToggleCollaborator={handleToggleCollaborator}
+                onToggleCollaboratorAssignment={handleToggleCollaboratorAssignment}
                 onOpenChecklist={handleOpenChecklist}
                 viewMode={viewMode}
                 gridSize={gridSize}
