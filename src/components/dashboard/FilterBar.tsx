@@ -479,31 +479,27 @@ function MunicipalityDropdown({ municipalities, selectedMunicipios, onToggle }: 
 
   const selectedCount = selectedMunicipios.length;
 
+  const displayLabel = selectedCount === 0
+    ? 'Todos'
+    : selectedCount === 1
+      ? items.find(i => selectedMunicipios.includes(i.key))?.label || 'Todos'
+      : `${selectedCount} municípios`;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <button
-              className={`p-1.5 rounded-md transition-all flex items-center gap-1 border ${
-                selectedCount > 0
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent'
-              }`}
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              {selectedCount > 0 && (
-                <span className="text-[9px] font-bold">{selectedCount}</span>
-              )}
-            </button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        {!open && (
-          <TooltipContent side="bottom" className="text-xs">
-            Filtrar por Município
-          </TooltipContent>
-        )}
-      </Tooltip>
+      <PopoverTrigger asChild>
+        <button
+          className={`h-7 px-2.5 rounded-md transition-all flex items-center gap-1.5 border text-xs font-medium ${
+            selectedCount > 0
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
+          }`}
+        >
+          <MapPin className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate max-w-[120px]">{displayLabel}</span>
+          <svg className="w-3 h-3 shrink-0 opacity-60" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+      </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="start">
         <div className="p-2 border-b border-border">
           <div className="relative">
