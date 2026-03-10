@@ -1,10 +1,10 @@
 import { Users, Settings, Star, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { COLLABORATOR_COLORS, CollaboratorName } from "@/types/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardHeaderProps {
   totalClients: number;
-  collaboratorStats: Record<CollaboratorName, number>;
+  collaboratorStats: Record<string, number>;
   priorityCount: number;
   highlightedCount: number;
 }
@@ -15,11 +15,10 @@ export function DashboardHeader({
   priorityCount,
   highlightedCount,
 }: DashboardHeaderProps) {
-  const collaborators: CollaboratorName[] = ['celine', 'gabi', 'darley', 'vanessa'];
+  const { collaborators } = useAuth();
 
   return (
     <header className="flex items-center justify-between px-4 py-2 bg-header-bg border-b border-header-border">
-      {/* Logo / Title - Compact */}
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
           <span className="text-primary-foreground font-bold text-sm">AC</span>
@@ -32,7 +31,6 @@ export function DashboardHeader({
         </div>
       </div>
 
-      {/* Global Stats - Compact */}
       <div className="flex items-center gap-1.5 flex-wrap justify-center">
         <StatCardCompact 
           icon={<Users className="w-3.5 h-3.5" />} 
@@ -42,16 +40,15 @@ export function DashboardHeader({
         
         <div className="w-px h-6 bg-border mx-1" />
         
-        {/* Collaborator stats */}
-        {(['celine', 'gabi', 'darley', 'vanessa'] as CollaboratorName[]).map((collab) => (
-          <div key={collab} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
-            <div className="px-2 py-0.5 text-center" style={{ backgroundColor: COLLABORATOR_COLORS[collab] }}>
+        {collaborators.map((collab) => (
+          <div key={collab.id} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
+            <div className="px-2 py-0.5 text-center" style={{ backgroundColor: collab.color }}>
               <span className="text-[9px] font-semibold text-white uppercase tracking-wide">
-                {collab}
+                {collab.name}
               </span>
             </div>
             <div className="flex items-center justify-center px-2 py-1">
-              <span className="text-sm font-bold text-foreground leading-none">{collaboratorStats[collab]}</span>
+              <span className="text-sm font-bold text-foreground leading-none">{collaboratorStats[collab.name] || 0}</span>
             </div>
           </div>
         ))}
@@ -72,7 +69,6 @@ export function DashboardHeader({
         />
       </div>
 
-      {/* Config Button */}
       <Link
         to="/config"
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 text-sm font-medium transition-colors"
