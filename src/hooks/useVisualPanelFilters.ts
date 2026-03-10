@@ -73,7 +73,7 @@ export function useVisualPanelFilters({
     return result;
   }, [clients, searchQuery, clientTypeFilter, collaboratorFilters, sortBy, sortDirection, highlightedClients, filterFlags, customSorter]);
 
-  const handleCollaboratorFilterToggle = (name: CollaboratorName) => {
+  const handleCollaboratorFilterToggle = (name: string) => {
     setCollaboratorFilters(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
   };
 
