@@ -34,18 +34,18 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-2.5 px-2 py-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 shadow-lg shadow-primary/25">
             <span className="text-primary-foreground font-bold text-sm">AC</span>
           </div>
           {!isCollapsed && (
             <div className="overflow-hidden">
-              <h1 className="text-base font-bold text-foreground tracking-tight leading-none truncate">
+              <h1 className="text-sm font-bold text-foreground tracking-tight leading-none truncate">
                 Painel de Indicadores
               </h1>
-              <p className="text-[10px] text-muted-foreground">SISRAMOS</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">SISRAMOS</p>
             </div>
           )}
         </div>
@@ -53,15 +53,19 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => {
                 const Icon = item.icon;
+                const active = isActiveRoute(item.href);
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActiveRoute(item.href)} tooltip={item.title}>
-                      <NavLink to={item.href}>
+                    <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
+                      <NavLink to={item.href} className={active ? 'relative' : ''}>
+                        {active && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-primary" />
+                        )}
                         <Icon className="w-4 h-4" />
                         <span>{item.title}</span>
                       </NavLink>
@@ -74,15 +78,19 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">Sistema</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {configItems.map((item) => {
                 const Icon = item.icon;
+                const active = isActiveRoute(item.href);
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActiveRoute(item.href)} tooltip={item.title}>
-                      <NavLink to={item.href}>
+                    <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
+                      <NavLink to={item.href} className={active ? 'relative' : ''}>
+                        {active && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-primary" />
+                        )}
                         <Icon className="w-4 h-4" />
                         <span>{item.title}</span>
                       </NavLink>
@@ -98,7 +106,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="px-2 py-2">
           {!isCollapsed && (
-            <p className="text-[10px] text-muted-foreground text-center">
+            <p className="text-[10px] text-muted-foreground/40 text-center">
               © 2024 SISRAMOS
             </p>
           )}

@@ -17,7 +17,7 @@ export function VisualGrid({ children, itemCount }: VisualGridProps) {
   const columns = getGridColumns(itemCount);
 
   return (
-    <div className="flex-1 overflow-auto p-3">
+    <div className="flex-1 overflow-auto p-4 custom-scrollbar">
       <div
         className="grid gap-3 auto-rows-fr"
         style={{
