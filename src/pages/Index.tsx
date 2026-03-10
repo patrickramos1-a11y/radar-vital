@@ -258,7 +258,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, alertFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery, isClienteDeBoa]);
+  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, alertFilter, municipioFilters, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery, isClienteDeBoa]);
 
   const totalClients = activeClients.length;
 
