@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ClientComment, CommentFormData, ReadStatusName, CommentType } from '@/types/comment';
+import { ClientComment, CommentFormData, ReadStatusName, CommentType, READ_STATUS_NAMES } from '@/types/comment';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
 
