@@ -77,6 +77,7 @@ export function FilterBar({
   gridSize,
   fitAllLocked,
   municipalities,
+  clientMunicipioNames,
   municipioFilters,
   onMunicipioFilterToggle,
   onSearchChange,
