@@ -1,11 +1,9 @@
-import { CollaboratorName } from './client';
-
 export interface Task {
   id: string;
   client_id: string;
   title: string;
   completed: boolean;
-  assigned_to: CollaboratorName | null;
+  assigned_to: string | null;
   created_at: string;
   completed_at: string | null;
 }

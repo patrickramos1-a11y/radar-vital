@@ -1,7 +1,8 @@
 import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
+import { ClientType } from "@/types/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { GridSizePicker } from "./GridSizePicker";
@@ -30,7 +31,7 @@ interface FilterBarProps {
   sortBy: SortOption;
   sortDirection: SortDirection;
   filterFlags: FilterFlags;
-  collaboratorFilters: CollaboratorName[];
+  collaboratorFilters: string[];
   clientTypeFilter: ClientTypeFilter;
   priorityCount: number;
   highlightedCount: number;
@@ -53,7 +54,7 @@ interface FilterBarProps {
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
   onFilterFlagToggle: (flag: keyof FilterFlags) => void;
-  onCollaboratorFilterToggle: (collaborator: CollaboratorName) => void;
+  onCollaboratorFilterToggle: (collaborator: string) => void;
   onClientTypeFilterChange: (type: ClientTypeFilter) => void;
   onClearHighlights: () => void;
   onClearAllFilters: () => void;
@@ -93,7 +94,7 @@ export function FilterBar({
   onFitAllLockedChange,
   highlightedCount,
 }: FilterBarProps) {
-
+  const { collaborators: allCollaborators } = useAuth();
   const handleSortClick = (sort: SortOption) => {
     if (sortBy === sort) {
       onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -271,12 +272,14 @@ export function FilterBar({
 
           {/* Collaborator filters - larger colored squares */}
           <div className="flex items-center gap-1">
-            {COLLABORATOR_NAMES.map((name) => (
+            {allCollaborators.map((collab) => (
               <CollaboratorColorSquare
-                key={name}
-                name={name}
-                active={collaboratorFilters.includes(name)}
-                onClick={() => onCollaboratorFilterToggle(name)}
+                key={collab.id}
+                name={collab.name}
+                color={collab.color}
+                initials={collab.initials}
+                active={collaboratorFilters.includes(collab.name)}
+                onClick={() => onCollaboratorFilterToggle(collab.name)}
               />
             ))}
           </div>
@@ -421,16 +424,14 @@ function ClientTypeButton({ type, active, onClick, count }: ClientTypeButtonProp
 }
 
 interface CollaboratorColorSquareProps {
-  name: CollaboratorName;
+  name: string;
+  color: string;
+  initials: string;
   active: boolean;
   onClick: () => void;
 }
 
-function CollaboratorColorSquare({ name, active, onClick }: CollaboratorColorSquareProps) {
-  const color = COLLABORATOR_COLORS[name];
-  const initials = name.slice(0, 2).toUpperCase();
-  const displayName = name.charAt(0).toUpperCase() + name.slice(1);
-  
+function CollaboratorColorSquare({ name, color, initials, active, onClick }: CollaboratorColorSquareProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -452,7 +453,7 @@ function CollaboratorColorSquare({ name, active, onClick }: CollaboratorColorSqu
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="text-xs">
-        {displayName}
+        {name}
       </TooltipContent>
     </Tooltip>
   );

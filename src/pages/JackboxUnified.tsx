@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Task } from "@/types/task";
 import { CollaboratorTaskTable } from "@/components/tasks/CollaboratorTaskTable";
 import { TaskAnalytics } from "@/components/tasks/TaskAnalytics";
+import { Collaborator } from "@/types/collaborator";
 
 type StatusFilter = "pendentes" | "concluidas" | "todas";
 
@@ -40,6 +41,13 @@ export default function JackboxUnified() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pendentes");
   const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
 
+  const collaboratorNames = useMemo(() => allCollaborators.map(c => c.name), [allCollaborators]);
+  const collaboratorColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    allCollaborators.forEach(c => { map[c.name] = c.color; });
+    return map;
+  }, [allCollaborators]);
+
   // Custom sorter for jackbox
   const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
     if (sortBy === 'tasks') {
@@ -57,21 +65,18 @@ export default function JackboxUnified() {
     return null;
   };
 
-  // Get task count based on current status filter
   const getTaskCountForStatus = (clientId: string) => {
     if (statusFilter === "pendentes") return getActiveTasksForClient(clientId).length;
     if (statusFilter === "concluidas") return getTasksForClient(clientId).filter(t => t.completed).length;
     return getTasksForClient(clientId).length;
   };
 
-  // Get oldest pending task for a client
   const getOldestClientTask = (clientId: string) => {
     const pending = getActiveTasksForClient(clientId);
     if (pending.length === 0) return null;
     return pending.reduce((o, t) => new Date(t.created_at) < new Date(o.created_at) ? t : o);
   };
 
-  // Filter clients based on status filter
   const clientsWithTasks = useMemo(() => {
     return activeClients.filter(c => getTaskCountForStatus(c.id) > 0);
   }, [activeClients, tasks, statusFilter]);
@@ -128,9 +133,8 @@ export default function JackboxUnified() {
         return acc;
       }, {} as Record<string, { count: number; avgDays: number; oldestDays: number; color: string }>),
     };
-  }, [tasks, getDaysOpen, getOldestTask, getAverageDaysOpen]);
+  }, [tasks, getDaysOpen, getOldestTask, getAverageDaysOpen, allCollaborators]);
 
-  // Filter tasks for card display
   const getFilteredTasks = (clientId: string) => {
     let clientTasks: Task[];
     if (statusFilter === "pendentes") clientTasks = getActiveTasksForClient(clientId);
@@ -154,13 +158,14 @@ export default function JackboxUnified() {
 
   // Find overloaded collaborators
   const overloadedCollaborators = useMemo(() => {
-    const counts = COLLABORATOR_NAMES.map(n => kpis.byCollaborator[n].count);
+    if (collaboratorNames.length === 0) return [];
+    const counts = collaboratorNames.map(n => kpis.byCollaborator[n]?.count || 0);
     const avg = counts.reduce((a, b) => a + b, 0) / counts.length;
     const threshold = avg * 1.5;
-    return COLLABORATOR_NAMES.filter(name => kpis.byCollaborator[name].count > threshold);
-  }, [kpis.byCollaborator]);
+    return collaboratorNames.filter(name => (kpis.byCollaborator[name]?.count || 0) > threshold);
+  }, [kpis.byCollaborator, collaboratorNames]);
 
-  const handleCollaboratorClick = (name: CollaboratorName) => {
+  const handleCollaboratorClick = (name: string) => {
     setSelectedCollaborator(prev => prev === name ? null : name);
   };
 
@@ -184,10 +189,11 @@ export default function JackboxUnified() {
           
           {/* Collaborator KPIs with tooltip and click */}
           <TooltipProvider>
-            {COLLABORATOR_NAMES.map((name) => {
-              const info = kpis.byCollaborator[name];
+            {collaboratorNames.map((name) => {
+              const info = kpis.byCollaborator[name] || { count: 0, avgDays: 0, oldestDays: 0, color: '#6B7280' };
               const isOverloaded = overloadedCollaborators.includes(name);
               const isSelected = selectedCollaborator === name;
+              const color = collaboratorColorMap[name] || '#6B7280';
               return (
                 <Tooltip key={name}>
                   <TooltipTrigger asChild>
@@ -199,11 +205,11 @@ export default function JackboxUnified() {
                         isSelected && "ring-2 ring-primary shadow-md",
                       )}
                       style={{ 
-                        borderColor: COLLABORATOR_COLORS[name],
-                        backgroundColor: `${COLLABORATOR_COLORS[name]}${isSelected ? '25' : '15'}`,
+                        borderColor: color,
+                        backgroundColor: `${color}${isSelected ? '25' : '15'}`,
                       }}
                     >
-                      <span className="text-sm font-bold" style={{ color: COLLABORATOR_COLORS[name] }}>
+                      <span className="text-sm font-bold" style={{ color }}>
                         {info.count}
                       </span>
                       <span className="text-[9px] text-muted-foreground uppercase">{name}</span>
@@ -282,6 +288,8 @@ export default function JackboxUnified() {
               onDeleteTask={(taskId) => deleteTask(taskId, client.name)}
               statusFilter={statusFilter}
               getDaysOpen={getDaysOpen}
+              collaborators={allCollaborators}
+              collaboratorColorMap={collaboratorColorMap}
             />
           ))}
         </VisualGrid>
@@ -290,6 +298,7 @@ export default function JackboxUnified() {
         {selectedCollaborator && (
           <CollaboratorTaskTable
             collaborator={selectedCollaborator}
+            collaboratorColor={collaboratorColorMap[selectedCollaborator] || '#6B7280'}
             tasks={tasks}
             clients={activeClients}
             getDaysOpen={getDaysOpen}
@@ -317,10 +326,12 @@ interface JackboxCardEnhancedProps {
   isHighlighted: boolean;
   tasks: Task[];
   onToggleTask: (taskId: string) => void;
-  onAddTask: (title: string, assignedTo: CollaboratorName | null) => Promise<boolean>;
+  onAddTask: (title: string, assignedTo: string | null) => Promise<boolean>;
   onDeleteTask: (taskId: string) => void;
   statusFilter: StatusFilter;
   getDaysOpen: (task: Task) => number;
+  collaborators: Collaborator[];
+  collaboratorColorMap: Record<string, string>;
 }
 
 function JackboxCardEnhanced({ 
@@ -332,23 +343,24 @@ function JackboxCardEnhanced({
   onDeleteTask,
   statusFilter,
   getDaysOpen,
+  collaborators,
+  collaboratorColorMap,
 }: JackboxCardEnhancedProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskAssignee, setNewTaskAssignee] = useState<CollaboratorName | ''>('');
+  const [newTaskAssignee, setNewTaskAssignee] = useState('');
 
   // Group tasks by collaborator for summary
   const tasksByCollaborator = useMemo(() => {
-    const summary: Record<CollaboratorName, number> = {
-      celine: 0, gabi: 0, darley: 0, vanessa: 0
-    };
+    const summary: Record<string, number> = {};
+    collaborators.forEach(c => { summary[c.name] = 0; });
     tasks.filter(t => !t.completed).forEach(t => {
-      if (t.assigned_to) {
+      if (t.assigned_to && summary[t.assigned_to] !== undefined) {
         summary[t.assigned_to]++;
       }
     });
     return summary;
-  }, [tasks]);
+  }, [tasks, collaborators]);
 
   const pendingCount = tasks.filter(t => !t.completed).length;
   const completedCount = tasks.filter(t => t.completed).length;
@@ -373,7 +385,6 @@ function JackboxCardEnhanced({
     >
       {/* Client Header */}
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-        {/* Logo */}
         <div className="relative flex-shrink-0">
           {client.logoUrl ? (
             <img
@@ -393,7 +404,6 @@ function JackboxCardEnhanced({
           )}
         </div>
         
-        {/* Name and Count */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
             {client.name}
@@ -406,7 +416,6 @@ function JackboxCardEnhanced({
           </div>
         </div>
 
-        {/* Add Task Button */}
         <Button 
           variant="ghost" 
           size="icon" 
@@ -419,15 +428,15 @@ function JackboxCardEnhanced({
 
       {/* Collaborator Summary Dots */}
       <div className="flex items-center gap-1 mb-2">
-        {COLLABORATOR_NAMES.map((name) => {
-          const count = tasksByCollaborator[name];
+        {collaborators.map((collab) => {
+          const count = tasksByCollaborator[collab.name] || 0;
           if (count === 0) return null;
           return (
             <div
-              key={name}
+              key={collab.name}
               className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold text-white"
-              style={{ backgroundColor: COLLABORATOR_COLORS[name] }}
-              title={`${name}: ${count} tarefas`}
+              style={{ backgroundColor: collab.color }}
+              title={`${collab.name}: ${count} tarefas`}
             >
               {count}
             </div>
@@ -446,17 +455,17 @@ function JackboxCardEnhanced({
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           />
           <div className="flex gap-2">
-            <Select value={newTaskAssignee} onValueChange={(v) => setNewTaskAssignee(v as CollaboratorName | '')}>
+            <Select value={newTaskAssignee} onValueChange={(v) => setNewTaskAssignee(v)}>
               <SelectTrigger className="h-7 text-xs flex-1">
                 <SelectValue placeholder="Responsável" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Nenhum</SelectItem>
-                {COLLABORATOR_NAMES.map((name) => (
-                  <SelectItem key={name} value={name}>
+                {collaborators.map((collab) => (
+                  <SelectItem key={collab.name} value={collab.name}>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLLABORATOR_COLORS[name] }} />
-                      {name}
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: collab.color }} />
+                      {collab.name}
                     </div>
                   </SelectItem>
                 ))}
@@ -499,10 +508,10 @@ function JackboxCardEnhanced({
                   {days}d
                 </span>
               )}
-              {task.assigned_to && (
+              {task.assigned_to && collaboratorColorMap[task.assigned_to] && (
                 <div
                   className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
-                  style={{ backgroundColor: COLLABORATOR_COLORS[task.assigned_to] }}
+                  style={{ backgroundColor: collaboratorColorMap[task.assigned_to] }}
                   title={task.assigned_to}
                 />
               )}

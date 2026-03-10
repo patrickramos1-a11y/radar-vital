@@ -10,7 +10,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClientAssignments } from "@/hooks/useClientAssignments";
-import { CollaboratorName, Client } from "@/types/client";
+import { Client } from "@/types/client";
 import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -72,7 +72,7 @@ const Index = () => {
     withComments: false,
     withoutComments: false,
   });
-  const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
+  const [collaboratorFilters, setCollaboratorFilters] = useState<string[]>([]);
   const [municipioFilters, setMunicipioFilters] = useState<string[]>([]);
   const { municipalities } = useMunicipalities();
 
@@ -156,7 +156,7 @@ const Index = () => {
     );
   };
 
-  const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {
+  const handleCollaboratorFilterToggle = (collaborator: string) => {
     setCollaboratorFilters(prev => 
       prev.includes(collaborator)
         ? prev.filter(c => c !== collaborator)

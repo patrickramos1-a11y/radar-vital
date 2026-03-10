@@ -6,11 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Task } from "@/types/task";
-import { Client, CollaboratorName, COLLABORATOR_COLORS } from "@/types/client";
+import { Client } from "@/types/client";
 import { cn } from "@/lib/utils";
 
 interface CollaboratorTaskTableProps {
-  collaborator: CollaboratorName;
+  collaborator: string;
+  collaboratorColor: string;
   tasks: Task[];
   clients: Client[];
   getDaysOpen: (task: Task) => number;
@@ -20,7 +21,7 @@ interface CollaboratorTaskTableProps {
 type SortKey = "title" | "client" | "created_at" | "days_open" | "status";
 type SortDir = "asc" | "desc";
 
-export function CollaboratorTaskTable({ collaborator, tasks, clients, getDaysOpen, onClose }: CollaboratorTaskTableProps) {
+export function CollaboratorTaskTable({ collaborator, collaboratorColor, tasks, clients, getDaysOpen, onClose }: CollaboratorTaskTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("days_open");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -75,11 +76,11 @@ export function CollaboratorTaskTable({ collaborator, tasks, clients, getDaysOpe
   );
 
   return (
-    <div className="mx-6 mb-6 rounded-xl border-2 bg-card overflow-hidden" style={{ borderColor: `${COLLABORATOR_COLORS[collaborator]}40` }}>
+    <div className="mx-6 mb-6 rounded-xl border-2 bg-card overflow-hidden" style={{ borderColor: `${collaboratorColor}40` }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ backgroundColor: `${COLLABORATOR_COLORS[collaborator]}10` }}>
+      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ backgroundColor: `${collaboratorColor}10` }}>
         <div className="flex items-center gap-3">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLLABORATOR_COLORS[collaborator] }} />
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: collaboratorColor }} />
           <h3 className="font-bold text-foreground capitalize">{collaborator}</h3>
           <div className="flex gap-2">
             <Badge variant="outline" className="text-xs">{stats.pending} pendentes</Badge>

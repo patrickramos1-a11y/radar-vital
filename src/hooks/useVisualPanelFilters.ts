@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Client, CollaboratorName } from "@/types/client";
+import { Client } from "@/types/client";
 import { VisualSortOption, VisualSortDirection, VisualClientTypeFilter, FilterFlags } from "@/components/visual-panels/VisualPanelFilters";
 
 interface UseVisualPanelFiltersOptions {
@@ -21,7 +21,7 @@ export function useVisualPanelFilters({
   const [sortBy, setSortBy] = useState<VisualSortOption>(defaultSort);
   const [sortDirection, setSortDirection] = useState<VisualSortDirection>('desc');
   const [clientTypeFilter, setClientTypeFilter] = useState<VisualClientTypeFilter>('all');
-  const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
+  const [collaboratorFilters, setCollaboratorFilters] = useState<string[]>([]);
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
@@ -73,7 +73,7 @@ export function useVisualPanelFilters({
     return result;
   }, [clients, searchQuery, clientTypeFilter, collaboratorFilters, sortBy, sortDirection, highlightedClients, filterFlags, customSorter]);
 
-  const handleCollaboratorFilterToggle = (name: CollaboratorName) => {
+  const handleCollaboratorFilterToggle = (name: string) => {
     setCollaboratorFilters(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
   };
 

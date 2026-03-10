@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { X, Plus, Check, Trash2, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Task, TaskFormData } from '@/types/task';
-import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from '@/types/client';
+import { Client } from '@/types/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -25,10 +26,14 @@ export function TaskModal({
   onUpdateTask,
   onDeleteTask,
 }: TaskModalProps) {
+  const { collaborators } = useAuth();
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskAssignee, setNewTaskAssignee] = useState<CollaboratorName | null>(null);
+  const [newTaskAssignee, setNewTaskAssignee] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+
+  const collaboratorColorMap: Record<string, string> = {};
+  collaborators.forEach(c => { collaboratorColorMap[c.name] = c.color; });
 
   const activeTasks = tasks.filter(t => !t.completed);
   const completedTasks = tasks.filter(t => t.completed);
@@ -59,7 +64,7 @@ export function TaskModal({
     setEditingTitle('');
   };
 
-  const handleAssigneeChange = async (taskId: string, assignee: CollaboratorName | null) => {
+  const handleAssigneeChange = async (taskId: string, assignee: string | null) => {
     await onUpdateTask(taskId, { assigned_to: assignee });
   };
 
@@ -103,19 +108,19 @@ export function TaskModal({
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Responsável:</span>
               <div className="flex gap-1">
-                {COLLABORATOR_NAMES.map((name) => (
+                {collaborators.map((collab) => (
                   <button
-                    key={name}
-                    onClick={() => setNewTaskAssignee(newTaskAssignee === name ? null : name)}
+                    key={collab.id}
+                    onClick={() => setNewTaskAssignee(newTaskAssignee === collab.name ? null : collab.name)}
                     className="w-6 h-6 rounded text-xs font-medium transition-all"
                     style={{
-                      backgroundColor: newTaskAssignee === name ? COLLABORATOR_COLORS[name] : 'transparent',
-                      border: `2px solid ${COLLABORATOR_COLORS[name]}`,
-                      color: newTaskAssignee === name ? 'white' : COLLABORATOR_COLORS[name],
+                      backgroundColor: newTaskAssignee === collab.name ? collab.color : 'transparent',
+                      border: `2px solid ${collab.color}`,
+                      color: newTaskAssignee === collab.name ? 'white' : collab.color,
                     }}
-                    title={name.charAt(0).toUpperCase() + name.slice(1)}
+                    title={collab.name}
                   >
-                    {name[0].toUpperCase()}
+                    {collab.initials[0]}
                   </button>
                 ))}
               </div>
@@ -147,6 +152,8 @@ export function TaskModal({
                     onCancelEdit={() => setEditingTaskId(null)}
                     onAssigneeChange={(a) => handleAssigneeChange(task.id, a)}
                     onDelete={() => onDeleteTask(task.id)}
+                    collaborators={collaborators}
+                    collaboratorColorMap={collaboratorColorMap}
                   />
                 ))}
               </div>
@@ -173,6 +180,8 @@ export function TaskModal({
                     onCancelEdit={() => {}}
                     onAssigneeChange={() => {}}
                     onDelete={() => onDeleteTask(task.id)}
+                    collaborators={collaborators}
+                    collaboratorColorMap={collaboratorColorMap}
                   />
                 ))}
                 {completedTasks.length > 5 && (
@@ -198,8 +207,10 @@ interface TaskItemProps {
   onStartEdit: () => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
-  onAssigneeChange: (a: CollaboratorName | null) => void;
+  onAssigneeChange: (a: string | null) => void;
   onDelete: () => void;
+  collaborators: { id: string; name: string; color: string; initials: string }[];
+  collaboratorColorMap: Record<string, string>;
 }
 
 function TaskItem({
@@ -213,6 +224,8 @@ function TaskItem({
   onCancelEdit,
   onAssigneeChange,
   onDelete,
+  collaborators,
+  collaboratorColorMap,
 }: TaskItemProps) {
   return (
     <div className="flex items-center gap-2 p-2 bg-card rounded border group">
@@ -251,26 +264,26 @@ function TaskItem({
 
       {!task.completed && (
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {COLLABORATOR_NAMES.map((name) => (
+          {collaborators.map((collab) => (
             <button
-              key={name}
-              onClick={() => onAssigneeChange(task.assigned_to === name ? null : name)}
+              key={collab.id}
+              onClick={() => onAssigneeChange(task.assigned_to === collab.name ? null : collab.name)}
               className="w-4 h-4 rounded-sm transition-all"
               style={{
-                backgroundColor: task.assigned_to === name ? COLLABORATOR_COLORS[name] : 'transparent',
-                border: `1px solid ${COLLABORATOR_COLORS[name]}`,
-                opacity: task.assigned_to === name ? 1 : 0.4,
+                backgroundColor: task.assigned_to === collab.name ? collab.color : 'transparent',
+                border: `1px solid ${collab.color}`,
+                opacity: task.assigned_to === collab.name ? 1 : 0.4,
               }}
-              title={name.charAt(0).toUpperCase() + name.slice(1)}
+              title={collab.name}
             />
           ))}
         </div>
       )}
 
-      {task.assigned_to && !task.completed && (
+      {task.assigned_to && !task.completed && collaboratorColorMap[task.assigned_to] && (
         <span
           className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
-          style={{ backgroundColor: COLLABORATOR_COLORS[task.assigned_to] }}
+          style={{ backgroundColor: collaboratorColorMap[task.assigned_to] }}
         >
           {task.assigned_to[0].toUpperCase()}
         </span>
