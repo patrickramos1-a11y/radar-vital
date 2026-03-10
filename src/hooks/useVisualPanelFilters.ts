@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Client, CollaboratorName } from "@/types/client";
+import { Client } from "@/types/client";
 import { VisualSortOption, VisualSortDirection, VisualClientTypeFilter, FilterFlags } from "@/components/visual-panels/VisualPanelFilters";
 
 interface UseVisualPanelFiltersOptions {
