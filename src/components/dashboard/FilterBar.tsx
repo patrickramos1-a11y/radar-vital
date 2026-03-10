@@ -179,7 +179,7 @@ export function FilterBar({
             placeholder="Pesquisar cliente, colaborador..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-7 pl-8 pr-8 text-xs border-border bg-background/50 focus:bg-background"
+            className="h-7 pl-8 pr-8 text-xs border-border/50 bg-background/30 focus:bg-background/60 rounded-lg"
           />
           {searchQuery && (
             <button
