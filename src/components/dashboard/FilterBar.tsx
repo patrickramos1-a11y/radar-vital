@@ -437,7 +437,7 @@ function CollaboratorColorSquare({ name, color, initials, active, onClick }: Col
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`w-8 h-8 rounded-md text-[11px] font-bold transition-all border-2 flex items-center justify-center shadow-sm hover:scale-105 ${
+          className={`w-8 h-8 rounded-lg text-[11px] font-bold transition-all border-2 flex items-center justify-center hover:scale-105 ${
             active 
               ? 'text-white ring-2 ring-offset-1 ring-offset-background' 
               : 'opacity-40 hover:opacity-70'

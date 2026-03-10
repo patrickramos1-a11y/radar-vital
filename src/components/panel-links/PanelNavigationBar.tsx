@@ -118,7 +118,7 @@ function PanelLinkChipDisabled({ link }: { link: PanelLink }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-border text-[11px] font-medium text-muted-foreground opacity-50 cursor-default">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border border-border/50 text-[11px] font-medium text-muted-foreground opacity-50 cursor-default">
           <ExternalLink className="w-3 h-3 shrink-0" />
           <span className="truncate max-w-[120px]">{link.name}</span>
         </span>
