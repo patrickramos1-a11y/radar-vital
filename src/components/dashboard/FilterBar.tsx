@@ -54,7 +54,7 @@ interface FilterBarProps {
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
   onFilterFlagToggle: (flag: keyof FilterFlags) => void;
-  onCollaboratorFilterToggle: (collaborator: CollaboratorName) => void;
+  onCollaboratorFilterToggle: (collaborator: string) => void;
   onClientTypeFilterChange: (type: ClientTypeFilter) => void;
   onClearHighlights: () => void;
   onClearAllFilters: () => void;
