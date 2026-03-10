@@ -636,19 +636,20 @@ function AlertFilterButton({ icon, value, label, color, active, onClick, tooltip
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer hover:scale-105 ${
-            active ? 'ring-2 ring-offset-1 ring-offset-background' : ''
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer hover:scale-[1.03] ${
+            active ? 'ring-2 ring-offset-1 ring-offset-background shadow-lg' : 'hover:brightness-110'
           }`}
           style={{
             backgroundColor: active ? color : 'transparent',
-            borderColor: color,
+            borderColor: active ? color : `${color}40`,
             color: active ? '#fff' : color,
+            boxShadow: active ? `0 4px 12px ${color}30` : 'none',
           }}
         >
           {icon}
           <div className="flex flex-col items-start">
             <span className="text-sm font-bold leading-none">{value}</span>
-            <span className="text-[7px] uppercase opacity-80">{label}</span>
+            <span className="text-[7px] uppercase opacity-80 tracking-wider">{label}</span>
           </div>
         </button>
       </TooltipTrigger>
