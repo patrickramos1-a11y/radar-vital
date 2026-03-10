@@ -394,7 +394,7 @@ function ClientTypeButton({ type, active, onClick, count }: ClientTypeButtonProp
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`px-2 py-1 rounded text-xs font-bold transition-all flex items-center gap-1 border ${
+          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border ${
             active 
               ? 'text-white border-transparent' 
               : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50 border-transparent'
