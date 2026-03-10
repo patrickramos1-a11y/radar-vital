@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { MessageSquare, User, Clock, Check, CheckCheck, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2, Send, Loader2, ChevronDown, Search, Users, Plus, Pencil, X, Archive, Reply } from "lucide-react";
+import { CreateTaskFromComment } from "@/components/comments/CreateTaskFromComment";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
