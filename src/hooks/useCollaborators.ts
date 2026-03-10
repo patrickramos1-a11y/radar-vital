@@ -70,6 +70,7 @@ export function useCollaborators() {
         initials: data.initials,
         userId: data.user_id,
         isActive: data.is_active,
+        role: (data as any).role || 'colaborador',
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
