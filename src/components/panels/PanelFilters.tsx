@@ -1,6 +1,6 @@
 import { Search, X, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { FilterFlags } from "@/components/visual-panels/VisualPanelFilters";
 
 export type PanelSortOption = 'order' | 'name' | 'priority' | 'jackbox';
@@ -13,10 +13,9 @@ interface PanelFiltersProps {
   sortDirection?: PanelSortDirection;
   onSortChange: (sort: PanelSortOption) => void;
   onSortDirectionChange?: (dir: PanelSortDirection) => void;
-  collaboratorFilters: CollaboratorName[];
-  onCollaboratorFilterToggle: (name: CollaboratorName) => void;
+  collaboratorFilters: string[];
+  onCollaboratorFilterToggle: (name: string) => void;
   
-  // Optional counts
   visibleCount?: number;
   totalCount?: number;
   highlightedCount?: number;
@@ -45,6 +44,7 @@ export function PanelFilters({
   onClearFilters,
   showCollaborators = true,
 }: PanelFiltersProps) {
+  const { collaborators } = useAuth();
   const hasFilters = collaboratorFilters.length > 0 || searchQuery.trim() !== '';
 
   return (
@@ -82,20 +82,20 @@ export function PanelFilters({
 
       {showCollaborators && (
         <div className="flex items-center gap-1">
-          {COLLABORATOR_NAMES.map(name => (
+          {collaborators.map(collab => (
             <button
-              key={name}
-              onClick={() => onCollaboratorFilterToggle(name)}
+              key={collab.id}
+              onClick={() => onCollaboratorFilterToggle(collab.name)}
               className={`w-6 h-6 rounded text-[9px] font-bold flex items-center justify-center border ${
-                collaboratorFilters.includes(name) ? 'text-white' : 'opacity-40'
+                collaboratorFilters.includes(collab.name) ? 'text-white' : 'opacity-40'
               }`}
               style={{
-                backgroundColor: collaboratorFilters.includes(name) ? COLLABORATOR_COLORS[name] : 'transparent',
-                borderColor: COLLABORATOR_COLORS[name],
-                color: collaboratorFilters.includes(name) ? '#fff' : COLLABORATOR_COLORS[name],
+                backgroundColor: collaboratorFilters.includes(collab.name) ? collab.color : 'transparent',
+                borderColor: collab.color,
+                color: collaboratorFilters.includes(collab.name) ? '#fff' : collab.color,
               }}
             >
-              {name[0].toUpperCase()}
+              {collab.initials}
             </button>
           ))}
         </div>
