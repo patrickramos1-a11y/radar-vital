@@ -46,6 +46,7 @@ interface FilterBarProps {
   gridSize: GridSize;
   fitAllLocked: boolean;
   municipalities: Municipality[];
+  clientMunicipioNames: Set<string>;
   municipioFilters: string[];
   onMunicipioFilterToggle: (municipio: string) => void;
   onSearchChange: (query: string) => void;
@@ -76,6 +77,7 @@ export function FilterBar({
   gridSize,
   fitAllLocked,
   municipalities,
+  clientMunicipioNames,
   municipioFilters,
   onMunicipioFilterToggle,
   onSearchChange,
@@ -191,6 +193,7 @@ export function FilterBar({
         {/* Municipality Filter */}
         <MunicipalityDropdown
           municipalities={municipalities}
+          clientMunicipioNames={clientMunicipioNames}
           selectedMunicipios={municipioFilters}
           onToggle={onMunicipioFilterToggle}
         />
@@ -458,20 +461,23 @@ function CollaboratorColorSquare({ name, active, onClick }: CollaboratorColorSqu
 // Municipality multi-select dropdown
 interface MunicipalityDropdownProps {
   municipalities: Municipality[];
+  clientMunicipioNames: Set<string>;
   selectedMunicipios: string[];
   onToggle: (municipio: string) => void;
 }
 
-function MunicipalityDropdown({ municipalities, selectedMunicipios, onToggle }: MunicipalityDropdownProps) {
+function MunicipalityDropdown({ municipalities, clientMunicipioNames, selectedMunicipios, onToggle }: MunicipalityDropdownProps) {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
 
-  // Build display items: "Name - STATE"
-  const items = municipalities.map(m => ({
-    id: m.id,
-    label: `${m.name} - ${m.state}`,
-    key: `${m.name}|${m.state}`,
-  }));
+  // Only show municipalities that have at least one client associated
+  const items = municipalities
+    .filter(m => clientMunicipioNames.has(m.name))
+    .map(m => ({
+      id: m.id,
+      label: `${m.name} - ${m.state}`,
+      key: `${m.name}|${m.state}`,
+    }));
 
   const filtered = search.trim()
     ? items.filter(i => i.label.toLowerCase().includes(search.toLowerCase()))

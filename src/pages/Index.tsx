@@ -75,6 +75,14 @@ const Index = () => {
   const [municipioFilters, setMunicipioFilters] = useState<string[]>([]);
   const { municipalities } = useMunicipalities();
 
+  const clientMunicipioNames = useMemo(() => {
+    const names = new Set<string>();
+    activeClients.forEach(c => {
+      if (c.municipios) c.municipios.forEach(m => names.add(m));
+    });
+    return names;
+  }, [activeClients]);
+
 
   const jackboxCount = useMemo(() => 
     activeClients.filter(c => getActiveTaskCount(c.id) > 0).length,
@@ -499,6 +507,7 @@ const Index = () => {
             onGridSizeChange={setGridSize}
             onFitAllLockedChange={setFitAllLocked}
             municipalities={municipalities}
+            clientMunicipioNames={clientMunicipioNames}
             municipioFilters={municipioFilters}
             onMunicipioFilterToggle={handleMunicipioFilterToggle}
           />
