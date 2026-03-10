@@ -6,27 +6,27 @@
 
 @layer base {
   :root {
-    /* Light Professional Theme — Slate/Indigo */
-    --background: 220 20% 97%;
-    --foreground: 222 25% 12%;
+    /* Light Professional Theme — SisRamos Green */
+    --background: 0 0% 100%;
+    --foreground: 150 10% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 25% 12%;
-    --card-elevated: 220 15% 96%;
+    --card-foreground: 150 10% 15%;
+    --card-elevated: 100 10% 97%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 25% 12%;
+    --popover-foreground: 150 10% 15%;
 
-    --primary: 230 75% 55%;
+    --primary: 95 55% 41%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 92%;
-    --secondary-foreground: 222 20% 30%;
+    --secondary: 100 12% 92%;
+    --secondary-foreground: 105 20% 25%;
 
-    --muted: 220 12% 93%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 100 8% 93%;
+    --muted-foreground: 100 5% 46%;
 
-    --accent: 250 60% 58%;
+    --accent: 105 45% 20%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -39,31 +39,31 @@
     --status-cancelled: 0 72% 51%;
 
     /* Dashboard specific */
-    --header-bg: 220 20% 98%;
-    --header-border: 220 15% 90%;
-    --card-highlight: 230 75% 55%;
-    --card-shadow: 220 20% 70%;
+    --header-bg: 100 15% 98%;
+    --header-border: 100 10% 90%;
+    --card-highlight: 95 55% 41%;
+    --card-shadow: 100 10% 70%;
 
-    --border: 220 15% 88%;
-    --input: 220 15% 92%;
-    --ring: 230 75% 55%;
+    --border: 100 10% 88%;
+    --input: 100 10% 92%;
+    --ring: 95 55% 41%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 220 20% 98%;
-    --sidebar-foreground: 222 25% 15%;
-    --sidebar-primary: 230 75% 55%;
+    --sidebar-background: 100 15% 98%;
+    --sidebar-foreground: 150 10% 15%;
+    --sidebar-primary: 95 55% 41%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 94%;
-    --sidebar-accent-foreground: 222 20% 25%;
-    --sidebar-border: 220 15% 90%;
-    --sidebar-ring: 230 75% 55%;
+    --sidebar-accent: 100 12% 94%;
+    --sidebar-accent-foreground: 105 20% 25%;
+    --sidebar-border: 100 10% 90%;
+    --sidebar-ring: 95 55% 41%;
 
     /* Glass variables */
     --glass-bg: 0 0% 100% / 0.75;
-    --glass-border: 220 20% 80% / 0.4;
-    --glass-hover: 220 20% 50% / 0.04;
+    --glass-border: 100 15% 80% / 0.4;
+    --glass-hover: 95 20% 50% / 0.04;
   }
 }
 

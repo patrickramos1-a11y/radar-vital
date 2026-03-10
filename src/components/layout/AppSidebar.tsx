@@ -38,9 +38,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2.5 px-2 py-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 shadow-lg shadow-primary/25">
-            <span className="text-primary-foreground font-bold text-sm">AC</span>
-          </div>
+          <img src={logoSisRamos} alt="SisRamos" className="w-8 h-8 rounded-lg object-contain shrink-0" />
           {!isCollapsed && (
             <div className="overflow-hidden">
               <h1 className="text-sm font-bold text-foreground tracking-tight leading-none truncate">
