@@ -72,6 +72,8 @@ const Index = () => {
     withoutComments: false,
   });
   const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
+  const [municipioFilters, setMunicipioFilters] = useState<string[]>([]);
+  const { municipalities } = useMunicipalities();
 
 
   const jackboxCount = useMemo(() => 
