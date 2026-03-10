@@ -6,6 +6,7 @@ export interface Collaborator {
   initials: string;
   userId: string | null;
   isActive: boolean;
+  role: string;
   createdAt: string;
   updatedAt: string;
 }
