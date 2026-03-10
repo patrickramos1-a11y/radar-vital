@@ -111,21 +111,22 @@ export default function JackboxUnified() {
       clientsWithTasks: new Set(activeTasks.map(t => t.client_id)).size,
       oldestDays: oldestTask ? getDaysOpen(oldestTask) : 0,
       avgDays,
-      byCollaborator: COLLABORATOR_NAMES.reduce((acc, name) => {
-        const collabTasks = activeTasks.filter(t => t.assigned_to === name);
+      byCollaborator: allCollaborators.reduce((acc, collab) => {
+        const collabTasks = activeTasks.filter(t => t.assigned_to === collab.name);
         const collabAvg = collabTasks.length > 0
           ? Math.round(collabTasks.reduce((s, t) => s + getDaysOpen(t), 0) / collabTasks.length)
           : 0;
         const collabOldest = collabTasks.length > 0
           ? collabTasks.reduce((o, t) => new Date(t.created_at) < new Date(o.created_at) ? t : o)
           : null;
-        acc[name] = {
+        acc[collab.name] = {
           count: collabTasks.length,
           avgDays: collabAvg,
           oldestDays: collabOldest ? getDaysOpen(collabOldest) : 0,
+          color: collab.color,
         };
         return acc;
-      }, {} as Record<CollaboratorName, { count: number; avgDays: number; oldestDays: number }>),
+      }, {} as Record<string, { count: number; avgDays: number; oldestDays: number; color: string }>),
     };
   }, [tasks, getDaysOpen, getOldestTask, getAverageDaysOpen]);
 
