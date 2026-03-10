@@ -460,6 +460,7 @@ function CollaboratorColorSquare({ name, active, onClick }: CollaboratorColorSqu
 // Municipality multi-select dropdown
 interface MunicipalityDropdownProps {
   municipalities: Municipality[];
+  clientMunicipioNames: Set<string>;
   selectedMunicipios: string[];
   onToggle: (municipio: string) => void;
 }
