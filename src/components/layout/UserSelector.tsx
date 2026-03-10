@@ -49,7 +49,7 @@ export function UserSelector() {
       <DropdownMenuTrigger className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors hover:bg-secondary/50 border border-transparent hover:border-border/50">
         <div
           className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold ring-2 ring-offset-1 ring-offset-background shadow-sm"
-          style={{ backgroundColor: currentUser.color, ringColor: currentUser.color }}
+          style={{ backgroundColor: currentUser.color }}
         >
           {currentUser.initials}
         </div>
