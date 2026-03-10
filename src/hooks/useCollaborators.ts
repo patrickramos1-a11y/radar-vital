@@ -25,6 +25,7 @@ export function useCollaborators() {
         initials: row.initials,
         userId: row.user_id,
         isActive: row.is_active,
+        role: (row as any).role || 'colaborador',
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));
