@@ -393,7 +393,7 @@ const Index = () => {
             onTogglePriority={togglePriority}
             onToggleHighlight={toggleHighlight}
             onToggleChecked={toggleChecked}
-            onToggleCollaborator={handleToggleCollaborator}
+            onToggleCollaborator={toggleCollaborator}
             onAddTask={addTask}
             onToggleComplete={toggleComplete}
             onUpdateTask={updateTask}
