@@ -94,7 +94,7 @@ export function FilterBar({
   onFitAllLockedChange,
   highlightedCount,
 }: FilterBarProps) {
-
+  const { collaborators: allCollaborators } = useAuth();
   const handleSortClick = (sort: SortOption) => {
     if (sortBy === sort) {
       onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc');
