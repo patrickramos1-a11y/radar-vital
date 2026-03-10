@@ -1,9 +1,12 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { GridSizePicker } from "./GridSizePicker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Municipality } from "@/hooks/useMunicipalities";
 
 export type SortOption = 'order' | 'name' | 'priority' | 'jackbox' | 'comments';
 export type SortDirection = 'asc' | 'desc';
