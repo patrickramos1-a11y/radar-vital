@@ -38,7 +38,7 @@ export default function JackboxUnified() {
   } = useTasks();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pendentes");
-  const [selectedCollaborator, setSelectedCollaborator] = useState<CollaboratorName | null>(null);
+  const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
 
   // Custom sorter for jackbox
   const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
