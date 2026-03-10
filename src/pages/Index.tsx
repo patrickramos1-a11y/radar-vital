@@ -272,12 +272,13 @@ const Index = () => {
 
   const totalClients = activeClients.length;
 
-  const collaboratorStats = useMemo(() => ({
-    celine: activeClients.filter(c => c.collaborators.celine).length,
-    gabi: activeClients.filter(c => c.collaborators.gabi).length,
-    darley: activeClients.filter(c => c.collaborators.darley).length,
-    vanessa: activeClients.filter(c => c.collaborators.vanessa).length,
-  }), [activeClients]);
+  const collaboratorStats = useMemo(() => {
+    const stats: Record<string, number> = {};
+    allCollaborators.forEach(c => {
+      stats[c.id] = activeClients.filter(client => getAssignedCollaboratorIds(client.id).includes(c.id)).length;
+    });
+    return stats;
+  }, [activeClients, allCollaborators, getAssignedCollaboratorIds]);
 
   const handleSelectClient = (id: string) => {
     setSelectedClientId(prev => prev === id ? null : id);
