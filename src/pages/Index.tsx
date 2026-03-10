@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useMunicipalities } from "@/hooks/useMunicipalities";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter, ViewMode, GridSize } from "@/components/dashboard/FilterBar";
@@ -71,6 +72,8 @@ const Index = () => {
     withoutComments: false,
   });
   const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
+  const [municipioFilters, setMunicipioFilters] = useState<string[]>([]);
+  const { municipalities } = useMunicipalities();
 
 
   const jackboxCount = useMemo(() => 
@@ -129,9 +132,18 @@ const Index = () => {
       withoutComments: false,
     });
     setCollaboratorFilters([]);
+    setMunicipioFilters([]);
     setClientTypeFilter('all');
     setSearchQuery('');
     setAlertFilter('all');
+  };
+
+  const handleMunicipioFilterToggle = (municipio: string) => {
+    setMunicipioFilters(prev =>
+      prev.includes(municipio)
+        ? prev.filter(m => m !== municipio)
+        : [...prev, municipio]
+    );
   };
 
   const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {
@@ -165,6 +177,17 @@ const Index = () => {
 
     if (clientTypeFilter !== 'all') {
       result = result.filter(c => c.clientType === clientTypeFilter);
+    }
+
+    // Municipality filter
+    if (municipioFilters.length > 0) {
+      result = result.filter(c => {
+        if (!c.municipios || c.municipios.length === 0) return false;
+        return municipioFilters.some(mf => {
+          const [name] = mf.split('|');
+          return c.municipios.some(cm => cm === name);
+        });
+      });
     }
 
     // Alert filter (De Boa / Com Alerta)
@@ -235,7 +258,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, alertFilter, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery, isClienteDeBoa]);
+  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, alertFilter, municipioFilters, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery, isClienteDeBoa]);
 
   const totalClients = activeClients.length;
 
@@ -275,6 +298,7 @@ const Index = () => {
     collaboratorFilters.length > 0 ||
     clientTypeFilter !== 'all' ||
     alertFilter !== 'all' ||
+    municipioFilters.length > 0 ||
     searchQuery.trim() !== '';
 
   // Mobile View
@@ -474,6 +498,9 @@ const Index = () => {
             onViewModeChange={setViewMode}
             onGridSizeChange={setGridSize}
             onFitAllLockedChange={setFitAllLocked}
+            municipalities={municipalities}
+            municipioFilters={municipioFilters}
+            onMunicipioFilterToggle={handleMunicipioFilterToggle}
           />
 
           <div 

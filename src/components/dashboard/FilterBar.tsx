@@ -1,9 +1,12 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
 import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName, ClientType } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { GridSizePicker } from "./GridSizePicker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Municipality } from "@/hooks/useMunicipalities";
 
 export type SortOption = 'order' | 'name' | 'priority' | 'jackbox' | 'comments';
 export type SortDirection = 'asc' | 'desc';
@@ -42,6 +45,9 @@ interface FilterBarProps {
   viewMode: ViewMode;
   gridSize: GridSize;
   fitAllLocked: boolean;
+  municipalities: Municipality[];
+  municipioFilters: string[];
+  onMunicipioFilterToggle: (municipio: string) => void;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
@@ -69,6 +75,9 @@ export function FilterBar({
   viewMode,
   gridSize,
   fitAllLocked,
+  municipalities,
+  municipioFilters,
+  onMunicipioFilterToggle,
   onSearchChange,
   onSortChange,
   onSortDirectionChange,
@@ -104,6 +113,7 @@ export function FilterBar({
     filterFlags.withoutComments ||
     collaboratorFilters.length > 0 ||
     clientTypeFilter !== 'all' ||
+    municipioFilters.length > 0 ||
     searchQuery.trim().length > 0;
 
   return (
@@ -177,6 +187,13 @@ export function FilterBar({
             </button>
           )}
         </div>
+
+        {/* Municipality Filter */}
+        <MunicipalityDropdown
+          municipalities={municipalities}
+          selectedMunicipios={municipioFilters}
+          onToggle={onMunicipioFilterToggle}
+        />
 
         {/* Grid Size Picker + Lock Toggle + TV Mode */}
         <div className="flex items-center gap-1">
@@ -444,5 +461,109 @@ function CollaboratorColorSquare({ name, active, onClick }: CollaboratorColorSqu
         {displayName}
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+// Municipality multi-select dropdown
+interface MunicipalityDropdownProps {
+  municipalities: Municipality[];
+  selectedMunicipios: string[];
+  onToggle: (municipio: string) => void;
+}
+
+function MunicipalityDropdown({ municipalities, selectedMunicipios, onToggle }: MunicipalityDropdownProps) {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+
+  // Build display items: "Name - STATE"
+  const items = municipalities.map(m => ({
+    id: m.id,
+    label: `${m.name} - ${m.state}`,
+    key: `${m.name}|${m.state}`,
+  }));
+
+  const filtered = search.trim()
+    ? items.filter(i => i.label.toLowerCase().includes(search.toLowerCase()))
+    : items;
+
+  const selectedCount = selectedMunicipios.length;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <button
+              className={`p-1.5 rounded-md transition-all flex items-center gap-1 border ${
+                selectedCount > 0
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent'
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              {selectedCount > 0 && (
+                <span className="text-[9px] font-bold">{selectedCount}</span>
+              )}
+            </button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        {!open && (
+          <TooltipContent side="bottom" className="text-xs">
+            Filtrar por Município
+          </TooltipContent>
+        )}
+      </Tooltip>
+      <PopoverContent className="w-64 p-0" align="start">
+        <div className="p-2 border-b border-border">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar município..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-7 pl-7 text-xs"
+              autoFocus
+            />
+          </div>
+        </div>
+        <div className="max-h-52 overflow-y-auto p-1">
+          {filtered.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-3">Nenhum município encontrado</p>
+          ) : (
+            filtered.map(item => {
+              const isSelected = selectedMunicipios.includes(item.key);
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onToggle(item.key)}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors text-left ${
+                    isSelected
+                      ? 'bg-primary/10 text-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-primary border-primary' : 'border-border'
+                  }`}>
+                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                  </div>
+                  {item.label}
+                </button>
+              );
+            })
+          )}
+        </div>
+        {selectedCount > 0 && (
+          <div className="p-2 border-t border-border">
+            <button
+              onClick={() => selectedMunicipios.forEach(m => onToggle(m))}
+              className="text-[10px] text-muted-foreground hover:text-foreground"
+            >
+              Limpar seleção ({selectedCount})
+            </button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
