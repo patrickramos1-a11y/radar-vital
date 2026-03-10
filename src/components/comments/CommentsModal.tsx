@@ -242,6 +242,8 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
           currentUserName={currentUserName}
           isAdmin={isAdmin}
           collaborators={collaborators}
+          clientId={clientId}
+          clientName={clientName}
           handleDelete={handleDelete}
           togglePinned={togglePinned}
           toggleReadStatus={toggleReadStatus}
