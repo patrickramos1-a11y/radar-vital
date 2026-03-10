@@ -49,7 +49,7 @@ export function MobileCompactHeader({
   onCollaboratorFilterToggle,
   onAlertFilterChange,
 }: MobileCompactHeaderProps) {
-  const collaborators: CollaboratorName[] = ['celine', 'gabi', 'darley', 'vanessa'];
+  const { collaborators: allCollaborators } = useAuth();
   
   return (
     <div className="flex flex-col bg-card border-b border-border">
