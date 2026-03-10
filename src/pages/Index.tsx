@@ -458,13 +458,13 @@ const Index = () => {
               tooltip="Clientes que demandam atenção — possuem prioridade, destaque ou tarefas ativas."
             />
             <div className="w-px h-6 bg-border mx-1" />
-            {(['celine', 'gabi', 'darley', 'vanessa'] as const).map((name) => (
-              <div key={name} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
-                <div className="px-2 py-0.5 text-center" style={{ backgroundColor: COLLABORATOR_COLORS[name] }}>
-                  <span className="text-[9px] font-semibold text-white uppercase">{name}</span>
+            {allCollaborators.map((collab) => (
+              <div key={collab.id} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
+                <div className="px-2 py-0.5 text-center" style={{ backgroundColor: collab.color }}>
+                  <span className="text-[9px] font-semibold text-white uppercase">{collab.name}</span>
                 </div>
                 <div className="flex items-center justify-center px-2 py-1">
-                  <span className="text-sm font-bold leading-none">{collaboratorStats[name]}</span>
+                  <span className="text-sm font-bold leading-none">{collaboratorStats[collab.id] || 0}</span>
                 </div>
               </div>
             ))}
