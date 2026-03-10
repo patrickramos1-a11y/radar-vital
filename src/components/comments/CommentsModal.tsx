@@ -321,6 +321,8 @@ function CommentsListWithAutoScroll({
               isAdmin={isAdmin}
               collaborators={collaborators}
               allComments={comments}
+              clientId={clientId}
+              clientName={clientName}
               onDelete={() => handleDelete(comment.id)}
               onTogglePin={() => togglePinned(comment.id)}
               onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
