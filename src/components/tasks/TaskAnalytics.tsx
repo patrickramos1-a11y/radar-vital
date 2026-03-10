@@ -1,15 +1,17 @@
 import { useMemo } from "react";
 import { Trophy, Clock, AlertTriangle, BarChart3 } from "lucide-react";
 import { Task } from "@/types/task";
-import { Client, COLLABORATOR_NAMES, COLLABORATOR_COLORS, CollaboratorName } from "@/types/client";
+import { Client } from "@/types/client";
+import { Collaborator } from "@/types/collaborator";
 
 interface TaskAnalyticsProps {
   tasks: Task[];
   clients: Client[];
   getDaysOpen: (task: Task) => number;
+  collaborators?: Collaborator[];
 }
 
-export function TaskAnalytics({ tasks, clients, getDaysOpen }: TaskAnalyticsProps) {
+export function TaskAnalytics({ tasks, clients, getDaysOpen, collaborators = [] }: TaskAnalyticsProps) {
   const clientMap = useMemo(() => {
     const map = new Map<string, string>();
     clients.forEach(c => map.set(c.id, c.name));
@@ -20,13 +22,17 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen }: TaskAnalyticsProp
     const pending = tasks.filter(t => !t.completed);
     const completed = tasks.filter(t => t.completed);
 
-    const pendingByCollab = COLLABORATOR_NAMES.map(name => ({
+    const collabNames = collaborators.map(c => c.name);
+
+    const pendingByCollab = collabNames.map(name => ({
       name,
+      color: collaborators.find(c => c.name === name)?.color || '#6B7280',
       count: pending.filter(t => t.assigned_to === name).length,
     })).sort((a, b) => b.count - a.count);
 
-    const completedByCollab = COLLABORATOR_NAMES.map(name => ({
+    const completedByCollab = collabNames.map(name => ({
       name,
+      color: collaborators.find(c => c.name === name)?.color || '#6B7280',
       count: completed.filter(t => t.assigned_to === name).length,
     })).sort((a, b) => b.count - a.count);
 
@@ -37,12 +43,13 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen }: TaskAnalyticsProp
     const maxPending = Math.max(...pendingByCollab.map(c => c.count), 1);
 
     return { pendingByCollab, completedByCollab, oldest, maxPending };
-  }, [tasks]);
+  }, [tasks, collaborators]);
 
   const topPending = rankings.pendingByCollab[0];
   const topCompleted = rankings.completedByCollab[0];
   const oldest = rankings.oldest;
   const oldestDays = oldest ? getDaysOpen(oldest) : 0;
+  const oldestCollab = oldest ? collaborators.find(c => c.name === oldest.assigned_to) : null;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 py-3">
@@ -54,12 +61,7 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen }: TaskAnalyticsProp
         </div>
         {topPending && topPending.count > 0 ? (
           <>
-            <p
-              className="text-lg font-bold capitalize truncate"
-              style={{ color: COLLABORATOR_COLORS[topPending.name as CollaboratorName] || undefined }}
-            >
-              {topPending.name}
-            </p>
+            <p className="text-lg font-bold capitalize truncate" style={{ color: topPending.color }}>{topPending.name}</p>
             <p className="text-2xl font-bold text-foreground">{topPending.count} <span className="text-sm font-normal text-muted-foreground">tarefas</span></p>
           </>
         ) : (
@@ -75,12 +77,7 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen }: TaskAnalyticsProp
         </div>
         {topCompleted && topCompleted.count > 0 ? (
           <>
-            <p
-              className="text-lg font-bold capitalize truncate"
-              style={{ color: COLLABORATOR_COLORS[topCompleted.name as CollaboratorName] || undefined }}
-            >
-              {topCompleted.name}
-            </p>
+            <p className="text-lg font-bold capitalize truncate" style={{ color: topCompleted.color }}>{topCompleted.name}</p>
             <p className="text-2xl font-bold text-foreground">{topCompleted.count} <span className="text-sm font-normal text-muted-foreground">tarefas</span></p>
           </>
         ) : (
@@ -96,10 +93,7 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen }: TaskAnalyticsProp
         </div>
         {oldest ? (
           <>
-            <p
-              className="text-lg font-bold capitalize truncate"
-              style={{ color: COLLABORATOR_COLORS[oldest.assigned_to as CollaboratorName] || undefined }}
-            >
+            <p className="text-lg font-bold capitalize truncate" style={{ color: oldestCollab?.color || undefined }}>
               {oldest.assigned_to || "Sem resp."}
             </p>
             <p className="text-2xl font-bold text-foreground">{oldestDays} <span className="text-sm font-normal text-muted-foreground">dias</span></p>
@@ -119,20 +113,9 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen }: TaskAnalyticsProp
         <div className="space-y-1.5">
           {rankings.pendingByCollab.filter(c => c.count > 0).map(collab => (
             <div key={collab.name} className="flex items-center gap-2">
-              <span
-                className="text-xs font-medium capitalize w-16 truncate"
-                style={{ color: COLLABORATOR_COLORS[collab.name as CollaboratorName] || undefined }}
-              >
-                {collab.name}
-              </span>
+              <span className="text-xs font-medium capitalize w-16 truncate" style={{ color: collab.color }}>{collab.name}</span>
               <div className="h-2 flex-1 rounded-full bg-muted/50 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${(collab.count / rankings.maxPending) * 100}%`,
-                    backgroundColor: COLLABORATOR_COLORS[collab.name as CollaboratorName] || 'hsl(var(--primary))',
-                  }}
-                />
+                <div className="h-full rounded-full transition-all" style={{ width: `${(collab.count / rankings.maxPending) * 100}%`, backgroundColor: collab.color }} />
               </div>
               <span className="text-xs font-bold text-foreground w-6 text-right">{collab.count}</span>
             </div>
