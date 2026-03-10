@@ -132,7 +132,7 @@ export function ClientGrid({
 
   return (
     <div 
-      className={`grid gap-2 p-3 w-full transition-all duration-300 ${fitAllLocked ? '' : 'h-full'}`}
+      className={`grid gap-2.5 p-3 w-full transition-all duration-300 ${fitAllLocked ? '' : 'h-full'}`}
       style={gridStyles}
     >
       {clients.map((client, index) => (

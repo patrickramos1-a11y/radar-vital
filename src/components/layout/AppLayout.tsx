@@ -17,39 +17,30 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="flex min-h-screen w-full">
-        {/* Sidebar */}
         <AppSidebar />
 
-        {/* Main Content Area */}
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
-          {/* Top Header Bar */}
-          <header className="flex items-center justify-between h-12 px-4 border-b border-header-border bg-header-bg shrink-0">
-            {/* Left: Menu trigger */}
+          {/* Top Header Bar — glass effect */}
+          <header className="flex items-center justify-between h-12 px-4 border-b border-header-border bg-header-bg/80 backdrop-blur-xl shrink-0">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1" />
+              <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
               
               {/* Mobile Logo */}
               <div className="flex items-center gap-2 md:hidden">
-                <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
                   <span className="text-primary-foreground font-bold text-xs">AC</span>
                 </div>
                 <span className="text-sm font-bold text-foreground">Painel AC</span>
               </div>
             </div>
 
-            {/* Right: User info and actions */}
-            <div className="flex items-center gap-2">
-              {/* Notifications / Activity History */}
+            <div className="flex items-center gap-3">
               <NotificationsPanel />
-
-              <div className="w-px h-6 bg-border" />
-
-              {/* User Selector */}
+              <div className="w-px h-5 bg-border/50" />
               <UserSelector />
             </div>
           </header>
 
-          {/* Main Content */}
           <main className="flex-1 overflow-hidden">
             {children}
           </main>

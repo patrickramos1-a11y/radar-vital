@@ -440,11 +440,11 @@ const Index = () => {
       <TooltipProvider delayDuration={200}>
         <div className="flex flex-col h-full overflow-hidden">
           {/* Stats Bar */}
-          <div className="flex items-center justify-center gap-2 px-4 py-2 bg-card border-b border-border flex-wrap">
+          <div className="flex items-center justify-center gap-2 px-4 py-2 bg-card/60 backdrop-blur-sm border-b border-border/50 flex-wrap">
             <StatCardMini icon={<Users className="w-3.5 h-3.5" />} value={totalClients} label="Clientes" />
             <StatCardMini value={acCount} label="AC" variant="success" />
             <StatCardMini value={avCount} label="AV" variant="warning" />
-            <div className="w-px h-6 bg-border mx-1" />
+            <div className="w-px h-6 bg-border/40 mx-1" />
             <AlertFilterButton
               icon={<ShieldCheck className="w-3.5 h-3.5" />}
               value={deBoaCount}
@@ -463,9 +463,9 @@ const Index = () => {
               onClick={() => setAlertFilter(alertFilter === 'comAlerta' ? 'all' : 'comAlerta')}
               tooltip="Clientes que demandam atenção — possuem prioridade, destaque ou tarefas ativas."
             />
-            <div className="w-px h-6 bg-border mx-1" />
+            <div className="w-px h-6 bg-border/40 mx-1" />
             {allCollaborators.map((collab) => (
-              <div key={collab.id} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
+              <div key={collab.id} className="flex flex-col rounded-xl border border-border/50 overflow-hidden bg-card/80 min-w-[40px]">
                 <div className="px-2 py-0.5 text-center" style={{ backgroundColor: collab.color }}>
                   <span className="text-[9px] font-semibold text-white uppercase">{collab.name}</span>
                 </div>
@@ -474,12 +474,12 @@ const Index = () => {
                 </div>
               </div>
             ))}
-            <div className="w-px h-6 bg-border mx-1" />
+            <div className="w-px h-6 bg-border/40 mx-1" />
             <StatBadge icon={<Star className="w-3.5 h-3.5" />} value={priorityCount} label="Prioridade" color="rgb(245, 158, 11)" active={filterFlags.priority} onClick={() => handleFilterFlagToggle('priority')} />
-            <StatBadge icon={<Sparkles className="w-3.5 h-3.5" />} value={highlightedClients.size} label="Destaque" color="rgb(59, 130, 246)" active={filterFlags.highlighted} onClick={() => handleFilterFlagToggle('highlighted')} />
+            <StatBadge icon={<Sparkles className="w-3.5 h-3.5" />} value={highlightedClients.size} label="Destaque" color="rgb(99, 130, 246)" active={filterFlags.highlighted} onClick={() => handleFilterFlagToggle('highlighted')} />
             <StatBadge icon={<UserCheck className="w-3.5 h-3.5" />} value={responsaveisCount} label="Responsáveis" color="rgb(16, 185, 129)" active={filterFlags.hasCollaborators} onClick={() => handleFilterFlagToggle('hasCollaborators')} />
-            <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(99, 102, 241)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
-            <StatBadge icon={<ListChecks className="w-3.5 h-3.5" />} value={jackboxCount} label="Tarefas" color="rgb(234, 179, 8)" active={filterFlags.withJackbox} onClick={() => handleFilterFlagToggle('withJackbox')} />
+            <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(129, 140, 248)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
+            <StatBadge icon={<ListChecks className="w-3.5 h-3.5" />} value={jackboxCount} label="Tarefas" color="rgb(250, 204, 21)" active={filterFlags.withJackbox} onClick={() => handleFilterFlagToggle('withJackbox')} />
           </div>
 
           {/* Panel Navigation Bar */}
@@ -578,14 +578,14 @@ function StatCardMini({ icon, value, label, variant = 'default' }: { icon?: Reac
     warning: '#F59E0B',
   }[variant];
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-card border-border">
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm hover:bg-card transition-colors">
       {icon && <span className="text-muted-foreground">{icon}</span>}
       {!icon && accentColor && (
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accentColor }} />
+        <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: accentColor }} />
       )}
       <div className="flex flex-col">
         <span className="text-sm font-bold text-foreground leading-none">{value}</span>
-        <span className="text-[8px] text-muted-foreground uppercase">{label}</span>
+        <span className="text-[8px] text-muted-foreground uppercase tracking-wider">{label}</span>
       </div>
     </div>
   );
@@ -606,19 +606,20 @@ function StatBadge({ icon, value, label, color, active, onClick }: StatBadgeProp
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer hover:scale-105 ${
-            active ? 'ring-2 ring-offset-1 ring-offset-background' : ''
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer hover:scale-[1.03] ${
+            active ? 'ring-2 ring-offset-1 ring-offset-background shadow-lg' : 'hover:brightness-110'
           }`}
           style={{
             backgroundColor: active ? color : 'transparent',
-            borderColor: color,
+            borderColor: active ? color : `${color}40`,
             color: active ? '#fff' : color,
+            boxShadow: active ? `0 4px 12px ${color}30` : 'none',
           }}
         >
           {icon}
           <div className="flex flex-col items-start">
             <span className="text-sm font-bold leading-none">{value}</span>
-            <span className="text-[7px] uppercase opacity-80">{label}</span>
+            <span className="text-[7px] uppercase opacity-80 tracking-wider">{label}</span>
           </div>
         </button>
       </TooltipTrigger>
@@ -635,19 +636,20 @@ function AlertFilterButton({ icon, value, label, color, active, onClick, tooltip
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer hover:scale-105 ${
-            active ? 'ring-2 ring-offset-1 ring-offset-background' : ''
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer hover:scale-[1.03] ${
+            active ? 'ring-2 ring-offset-1 ring-offset-background shadow-lg' : 'hover:brightness-110'
           }`}
           style={{
             backgroundColor: active ? color : 'transparent',
-            borderColor: color,
+            borderColor: active ? color : `${color}40`,
             color: active ? '#fff' : color,
+            boxShadow: active ? `0 4px 12px ${color}30` : 'none',
           }}
         >
           {icon}
           <div className="flex flex-col items-start">
             <span className="text-sm font-bold leading-none">{value}</span>
-            <span className="text-[7px] uppercase opacity-80">{label}</span>
+            <span className="text-[7px] uppercase opacity-80 tracking-wider">{label}</span>
           </div>
         </button>
       </TooltipTrigger>

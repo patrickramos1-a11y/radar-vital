@@ -121,7 +121,7 @@ export function FilterBar({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5 bg-card border-b border-border">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5 bg-card/60 backdrop-blur-sm border-b border-border/50">
         {/* Left side: Sort Options */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
@@ -179,7 +179,7 @@ export function FilterBar({
             placeholder="Pesquisar cliente, colaborador..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-7 pl-8 pr-8 text-xs border-border bg-background/50 focus:bg-background"
+            className="h-7 pl-8 pr-8 text-xs border-border/50 bg-background/30 focus:bg-background/60 rounded-lg"
           />
           {searchQuery && (
             <button
@@ -352,10 +352,10 @@ function SortIconButton({ active, direction, onClick, icon, tooltip }: SortIconB
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`p-1.5 rounded-md transition-all flex items-center gap-0.5 border ${
+          className={`p-1.5 rounded-lg transition-all flex items-center gap-0.5 border ${
             active 
-              ? 'bg-primary text-primary-foreground border-primary' 
-              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent'
+              ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20' 
+              : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground border-transparent'
           }`}
         >
           {icon}
@@ -394,7 +394,7 @@ function ClientTypeButton({ type, active, onClick, count }: ClientTypeButtonProp
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`px-2 py-1 rounded text-xs font-bold transition-all flex items-center gap-1 border ${
+          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border ${
             active 
               ? 'text-white border-transparent' 
               : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50 border-transparent'
@@ -437,7 +437,7 @@ function CollaboratorColorSquare({ name, color, initials, active, onClick }: Col
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`w-8 h-8 rounded-md text-[11px] font-bold transition-all border-2 flex items-center justify-center shadow-sm hover:scale-105 ${
+          className={`w-8 h-8 rounded-lg text-[11px] font-bold transition-all border-2 flex items-center justify-center hover:scale-105 ${
             active 
               ? 'text-white ring-2 ring-offset-1 ring-offset-background' 
               : 'opacity-40 hover:opacity-70'

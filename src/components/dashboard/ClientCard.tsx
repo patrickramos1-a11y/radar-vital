@@ -27,7 +27,6 @@ interface ClientCardProps {
   fitAll?: boolean;
 }
 
-// Get gradient background for active collaborators
 function getCollaboratorGradient(assignedCollaborators: Collaborator[]): string {
   if (assignedCollaborators.length === 0) return 'transparent';
   if (assignedCollaborators.length === 1) return assignedCollaborators[0].color;
@@ -42,7 +41,6 @@ function getCollaboratorGradient(assignedCollaborators: Collaborator[]): string 
   return `linear-gradient(90deg, ${gradientStops})`;
 }
 
-// Dynamic font size calculation
 function getOptimalFontSize(name: string, clientCount: number): { fontSize: string; lineHeight: string } {
   const len = name.trim().length;
   let baseSize: number;
@@ -152,16 +150,16 @@ export function ClientCard({
         <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
         <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />
         <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? "Remover destaque" : "Destacar cliente"}>
-          <Sparkles className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-blue-500 fill-blue-500' : 'text-muted-foreground/40 hover:text-blue-400'}`} />
+          <Sparkles className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-blue-400 fill-blue-400' : 'text-muted-foreground/40 hover:text-blue-400'}`} />
         </button>
         <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? "Remover prioridade" : "Marcar como prioritário"}>
-          <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
+          <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
         </button>
       </div>
 
       {/* Header */}
-      <div className={`flex items-center gap-1.5 ${headerSizes.headerPadding} bg-card-elevated border-b border-border`}>
-        <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded bg-primary text-primary-foreground font-bold shrink-0`}>
+      <div className={`flex items-center gap-1.5 ${headerSizes.headerPadding} bg-card-elevated/80 border-b border-border/50`}>
+        <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded-md bg-primary/90 text-primary-foreground font-bold shrink-0`}>
           {displayNumber.toString().padStart(2, '0')}
         </div>
         <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1 pr-12`}>
@@ -170,7 +168,7 @@ export function ClientCard({
       </div>
 
       {/* Collaborator Row */}
-      <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-muted/30 border-b border-border/50">
+      <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-muted/20 border-b border-border/30">
         {assignedCollaborators.map((collab) => (
           <CollaboratorBadge
             key={collab.id}
@@ -189,9 +187,9 @@ export function ClientCard({
 
       {/* Logo/Name Area */}
       <div
-        className={`flex flex-col items-center justify-center transition-colors overflow-hidden ${fitAll ? 'p-2' : 'p-3'}`}
+        className={`flex flex-col items-center justify-center transition-all overflow-hidden ${fitAll ? 'p-2' : 'p-3'}`}
         style={{
-          background: hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(220 90% 50% / 0.15)' : 'hsl(var(--muted) / 0.3)'),
+          background: hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(230 75% 62% / 0.15)' : 'hsl(var(--muted) / 0.2)'),
           ...(fitAll ? {} : { minHeight: logoAreaStyle.minHeight }),
           flex: logoAreaStyle.flex,
         }}
@@ -203,7 +201,7 @@ export function ClientCard({
         ) : (
           <div className="flex flex-col items-center justify-center w-full h-full px-2">
             <span
-              className={`font-bold text-center break-words ${hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground'}`}
+              className={`font-bold text-center break-words ${hasCollaborators || isHighlighted ? 'text-white drop-shadow-md' : 'text-foreground/80'}`}
               style={{
                 ...fontStyle,
                 display: '-webkit-box',
@@ -233,7 +231,7 @@ function CollaboratorBadge({ collaborator, onClick, clientCount }: CollaboratorB
   return (
     <button
       onClick={onClick}
-      className={`${size} rounded-full transition-all hover:opacity-80 hover:scale-110 flex items-center justify-center shadow-sm`}
+      className={`${size} rounded-full transition-all hover:opacity-80 hover:scale-110 flex items-center justify-center shadow-sm ring-1 ring-background/20`}
       style={{ backgroundColor: collaborator.color }}
       title={`${collaborator.name} - Clique para remover`}
     >
@@ -260,10 +258,10 @@ function CollaboratorAddButton({ allCollaborators, assignedCollaboratorIds, onTo
       <PopoverTrigger asChild>
         <button
           onClick={(e) => e.stopPropagation()}
-          className={`${size} rounded-full border-2 border-dashed border-muted-foreground/40 transition-all hover:border-muted-foreground hover:bg-muted/50 flex items-center justify-center`}
+          className={`${size} rounded-full border border-dashed border-muted-foreground/30 transition-all hover:border-muted-foreground/60 hover:bg-muted/30 flex items-center justify-center`}
           title="Adicionar colaborador"
         >
-          <Plus className={`${clientCount <= 8 ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-muted-foreground/60`} />
+          <Plus className={`${clientCount <= 8 ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-muted-foreground/50`} />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-2" align="end" onClick={(e) => e.stopPropagation()}>

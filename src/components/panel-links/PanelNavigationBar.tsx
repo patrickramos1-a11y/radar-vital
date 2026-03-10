@@ -43,7 +43,7 @@ export function PanelNavigationBar() {
 
   return (
     <>
-      <div className="flex items-center gap-1.5 px-4 py-1 bg-card/50 border-b border-border">
+      <div className="flex items-center gap-1.5 px-4 py-1 bg-card/30 backdrop-blur-sm border-b border-border/40">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
           Painéis:
         </span>
@@ -99,7 +99,7 @@ function PanelLinkChip({ link }: { link: PanelLink }) {
           href={link.url}
           target="_blank"
           rel="noopener noreferrer"
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-medium transition-all hover:scale-105 hover:shadow-sm cursor-pointer ${typeColor}`}
+          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[11px] font-medium transition-all hover:scale-105 hover:shadow-sm cursor-pointer ${typeColor}`}
         >
           <ExternalLink className="w-3 h-3 shrink-0" />
           <span className="truncate max-w-[120px]">{link.name}</span>
@@ -118,7 +118,7 @@ function PanelLinkChipDisabled({ link }: { link: PanelLink }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-border text-[11px] font-medium text-muted-foreground opacity-50 cursor-default">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border border-border/50 text-[11px] font-medium text-muted-foreground opacity-50 cursor-default">
           <ExternalLink className="w-3 h-3 shrink-0" />
           <span className="truncate max-w-[120px]">{link.name}</span>
         </span>
