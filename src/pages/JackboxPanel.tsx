@@ -9,10 +9,12 @@ import { cn } from "@/lib/utils";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useVisualPanelFilters } from "@/hooks/useVisualPanelFilters";
-import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Client } from "@/types/client";
 import { Task } from "@/types/task";
 
 export default function JackboxPanel() {
+  const { collaborators: allCollaborators } = useAuth();
   const { activeClients, highlightedClients } = useClients();
   const { 
     tasks, 
@@ -21,13 +23,16 @@ export default function JackboxPanel() {
     getActiveTaskCount,
   } = useTasks();
 
-  // Custom sorter for jackbox
   const customSorter = (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => {
     if (sortBy === 'tasks') {
       return (getActiveTaskCount(b.id) - getActiveTaskCount(a.id)) * multiplier;
     }
     return null;
   };
+
+  const clientsWithTasks = useMemo(() => {
+    return activeClients.filter(c => getActiveTaskCount(c.id) > 0);
+  }, [activeClients, tasks]);
 
   const {
     searchQuery,
@@ -44,7 +49,7 @@ export default function JackboxPanel() {
     handleCollaboratorFilterToggle,
     handleClearFilters,
   } = useVisualPanelFilters({
-    clients: activeClients.filter(c => getActiveTaskCount(c.id) > 0),
+    clients: clientsWithTasks,
     highlightedClients,
     getActiveTaskCount,
     defaultSort: 'tasks',
@@ -57,14 +62,13 @@ export default function JackboxPanel() {
     return {
       totalTasks: activeTasks.length,
       clientsWithTasks: new Set(activeTasks.map(t => t.client_id)).size,
-      byCollaborator: COLLABORATOR_NAMES.reduce((acc, name) => {
-        acc[name] = activeTasks.filter(t => t.assigned_to === name).length;
+      byCollaborator: allCollaborators.reduce((acc, collab) => {
+        acc[collab.name] = { count: activeTasks.filter(t => t.assigned_to === collab.name).length, color: collab.color };
         return acc;
-      }, {} as Record<CollaboratorName, number>),
+      }, {} as Record<string, { count: number; color: string }>),
     };
-  }, [tasks]);
+  }, [tasks, allCollaborators]);
 
-  // Filter tasks by collaborator - only show clients that have tasks matching the filter
   const getFilteredTasks = (clientId: string) => {
     let clientTasks = getActiveTasksForClient(clientId);
     if (collaboratorFilters.length > 0) {
@@ -75,7 +79,6 @@ export default function JackboxPanel() {
     return clientTasks;
   };
 
-  // Custom filter: when collaborator filters are active, only show clients with matching tasks
   const clientsWithMatchingTasks = useMemo(() => {
     if (collaboratorFilters.length === 0) return filteredClients;
     
@@ -93,10 +96,15 @@ export default function JackboxPanel() {
     { value: 'name', label: 'Nome' },
   ];
 
+  const collaboratorColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    allCollaborators.forEach(c => { map[c.name] = c.color; });
+    return map;
+  }, [allCollaborators]);
+
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Header with KPIs */}
         <VisualPanelHeader 
           title="Micro-Demandas (Tarefas)" 
           subtitle="Tarefas rápidas por empresa"
@@ -108,25 +116,23 @@ export default function JackboxPanel() {
           
           <div className="w-px h-8 bg-border" />
           
-          {/* Collaborator KPIs */}
-          {COLLABORATOR_NAMES.map((name) => (
+          {allCollaborators.map((collab) => (
             <div
-              key={name}
+              key={collab.id}
               className="flex items-center gap-1.5 px-2 py-1 rounded border"
               style={{ 
-                borderColor: COLLABORATOR_COLORS[name],
-                backgroundColor: `${COLLABORATOR_COLORS[name]}15`,
+                borderColor: collab.color,
+                backgroundColor: `${collab.color}15`,
               }}
             >
-              <span className="text-sm font-bold" style={{ color: COLLABORATOR_COLORS[name] }}>
-                {kpis.byCollaborator[name]}
+              <span className="text-sm font-bold" style={{ color: collab.color }}>
+                {kpis.byCollaborator[collab.name]?.count || 0}
               </span>
-              <span className="text-[9px] text-muted-foreground uppercase">{name}</span>
+              <span className="text-[9px] text-muted-foreground uppercase">{collab.name}</span>
             </div>
           ))}
         </VisualPanelHeader>
 
-        {/* Filters */}
         <VisualPanelFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -146,7 +152,6 @@ export default function JackboxPanel() {
           sortOptions={sortOptions}
         />
 
-        {/* Visual Grid */}
         <VisualGrid itemCount={clientsWithMatchingTasks.length}>
           {clientsWithMatchingTasks.map((client) => (
             <JackboxCard
@@ -155,11 +160,11 @@ export default function JackboxPanel() {
               isHighlighted={highlightedClients.has(client.id)}
               tasks={getFilteredTasks(client.id)}
               onToggleTask={toggleComplete}
+              collaboratorColorMap={collaboratorColorMap}
             />
           ))}
         </VisualGrid>
 
-        {/* Empty State */}
         {clientsWithMatchingTasks.length === 0 && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
@@ -173,12 +178,12 @@ export default function JackboxPanel() {
   );
 }
 
-// Jackbox Card Component
 interface JackboxCardProps {
   client: Client;
   isHighlighted: boolean;
   tasks: Task[];
   onToggleTask: (taskId: string) => void;
+  collaboratorColorMap: Record<string, string>;
 }
 
 function JackboxCard({ 
@@ -186,6 +191,7 @@ function JackboxCard({
   isHighlighted, 
   tasks, 
   onToggleTask,
+  collaboratorColorMap,
 }: JackboxCardProps) {
   return (
     <div
@@ -195,9 +201,7 @@ function JackboxCard({
         isHighlighted && "border-4 border-red-500 ring-2 ring-red-500/30"
       )}
     >
-      {/* Client Header */}
       <div className="flex items-center gap-3 mb-3 pb-3 border-b border-border">
-        {/* Logo */}
         <div className="relative flex-shrink-0">
           {client.logoUrl ? (
             <img
@@ -217,7 +221,6 @@ function JackboxCard({
           )}
         </div>
         
-        {/* Name and Count */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-foreground truncate text-sm">
             {client.name}
@@ -228,7 +231,6 @@ function JackboxCard({
         </div>
       </div>
 
-      {/* Task Checklist */}
       <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
         {tasks.slice(0, 11).map((task) => (
           <div
@@ -248,10 +250,10 @@ function JackboxCard({
                 {task.title}
               </span>
             </div>
-            {task.assigned_to && (
+            {task.assigned_to && collaboratorColorMap[task.assigned_to] && (
               <div
                 className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
-                style={{ backgroundColor: COLLABORATOR_COLORS[task.assigned_to] }}
+                style={{ backgroundColor: collaboratorColorMap[task.assigned_to] }}
                 title={task.assigned_to}
               />
             )}

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Client, CollaboratorName } from "@/types/client";
+import { Client } from "@/types/client";
 import { FilterFlags } from "@/components/visual-panels/VisualPanelFilters";
 
 export type PanelSortOption = 'order' | 'name' | 'priority' | 'jackbox';
@@ -23,7 +23,7 @@ export function usePanelFilters({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<PanelSortOption>(defaultSort);
   const [sortDirection, setSortDirection] = useState<PanelSortDirection>('desc');
-  const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
+  const [collaboratorFilters, setCollaboratorFilters] = useState<string[]>([]);
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
@@ -43,7 +43,7 @@ export function usePanelFilters({
     }
 
     if (collaboratorFilters.length > 0) {
-      result = result.filter(c => collaboratorFilters.some(name => c.collaborators[name]));
+      result = result.filter(c => collaboratorFilters.some(name => (c.collaborators as any)[name]));
     }
 
     const multiplier = sortDirection === 'desc' ? 1 : -1;
@@ -54,20 +54,18 @@ export function usePanelFilters({
       }
       
       switch (sortBy) {
-        case 'name': result.sort((a, b) => a.name.localeCompare(b.name)); break;
-        case 'priority': result.sort((a, b) => {
-          if (a.isPriority !== b.isPriority) return a.isPriority ? -1 : 1;
-          return a.order - b.order;
-        }); break;
-        default: result.sort((a, b) => a.order - b.order);
+        case 'name': return a.name.localeCompare(b.name) * multiplier;
+        case 'priority':
+          if (a.isPriority !== b.isPriority) return (a.isPriority ? -1 : 1) * multiplier;
+          return (a.order - b.order) * multiplier;
+        default: return (a.order - b.order) * multiplier;
       }
-      return 0;
     });
 
     return result;
   }, [clients, searchQuery, sortBy, sortDirection, collaboratorFilters, highlightedClients, customSorter]);
 
-  const handleCollaboratorFilterToggle = (name: CollaboratorName) => {
+  const handleCollaboratorFilterToggle = (name: string) => {
     setCollaboratorFilters(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
   };
 
