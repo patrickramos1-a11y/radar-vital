@@ -676,7 +676,8 @@ interface CommentCardProps {
 }
 
 function CommentCard({ comment, currentUserName, collaborators, collaboratorNames, allComments, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen, onArchive, onUnarchive, onReply }: CommentCardProps) {
-  const isAdmin = currentUser?.role === 'admin' || currentUserName === 'Patrick';
+  const currentCollaboratorForAdmin = collaborators.find(c => c.name.toLowerCase() === currentUserName.toLowerCase());
+  const isAdmin = (currentCollaboratorForAdmin as any)?.role === 'admin' || currentUserName === 'Patrick';
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.commentText);
   const isCiencia = comment.commentType === 'ciencia';
