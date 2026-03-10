@@ -1,0 +1,1 @@
+ALTER TABLE public.collaborators ADD COLUMN role text NOT NULL DEFAULT 'colaborador';

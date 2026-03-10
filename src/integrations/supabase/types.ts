@@ -643,6 +643,7 @@ export type Database = {
           initials: string
           is_active: boolean
           name: string
+          role: string
           updated_at: string
           user_id: string | null
         }
@@ -654,6 +655,7 @@ export type Database = {
           initials: string
           is_active?: boolean
           name: string
+          role?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -665,6 +667,7 @@ export type Database = {
           initials?: string
           is_active?: boolean
           name?: string
+          role?: string
           updated_at?: string
           user_id?: string | null
         }

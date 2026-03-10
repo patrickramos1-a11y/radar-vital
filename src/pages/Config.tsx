@@ -11,6 +11,7 @@ import {
   COLLABORATOR_NAMES, COLLABORATOR_COLORS, CollaboratorName, DEFAULT_COLLABORATORS
 } from "@/types/client";
 import { useMunicipalities } from "@/hooks/useMunicipalities";
+import { CollaboratorManager } from "@/components/config/CollaboratorManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -262,6 +263,9 @@ const Config = () => {
       </header>
 
       <main className="max-w-7xl mx-auto p-6">
+        {/* Collaborator Manager */}
+        <CollaboratorManager />
+
         {/* Municipality Manager */}
         <MunicipalityManager />
 

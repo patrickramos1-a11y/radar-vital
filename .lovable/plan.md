@@ -1,38 +1,25 @@
 
 
-## Cadastro de Usuários na página de Configurações
+## Inverter ordem dos comentarios e scroll automatico para os mais recentes
 
-### O que será feito
+### Problema atual
+Os comentarios estao ordenados do mais novo (topo) para o mais antigo (fundo). O comportamento esperado e estilo WhatsApp: mais antigos no topo, mais novos embaixo, e ao abrir o modal ja estar posicionado nos comentarios mais recentes.
 
-Adicionar uma seção "Cadastro de Usuários" na página Config (similar ao padrão do "Cadastro de Municípios"), com:
+### Mudancas no arquivo `src/components/comments/CommentsModal.tsx`
 
-1. **Lista de usuários** — tabela mostrando todos os colaboradores cadastrados na tabela `collaborators`, com nome, iniciais, cor, tipo de perfil (admin/colaborador) e status ativo/inativo
-2. **Tipo de perfil** — novo campo `role` na tabela `collaborators` (text, default 'colaborador'), com opções: "admin" e "colaborador"
-3. **Seletor de cor** — paleta visual para escolher a cor do perfil
-4. **Cadastro simples** — apenas nome (sem e-mail, sem senha)
-5. **Editar e excluir** — botões inline para cada colaborador
+**1. Inverter a ordenacao (linha 114)**
+Trocar a ordenacao de `b - a` (desc) para `a - b` (asc), mantendo pinados no topo:
+```
+return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+```
 
-### Mudanças técnicas
+**2. Auto-scroll para o final da lista**
+- Adicionar um `useRef` e `useEffect` no componente `CommentsModal` para fazer scroll automatico ate o final do container de comentarios sempre que os comentarios forem carregados ou atualizados.
+- Usar `ref.current.scrollTop = ref.current.scrollHeight` no container de overflow (linha 236).
+- Isso garante que ao abrir o modal, o usuario ja ve os comentarios mais recentes sem precisar rolar.
 
-**1. Migração de banco de dados**
-- Adicionar coluna `role text NOT NULL DEFAULT 'colaborador'` na tabela `collaborators`
-
-**2. Novo componente `CollaboratorManager`** (dentro de `Config.tsx`)
-- Seção colapsável (mesmo padrão do `MunicipalityManager`)
-- Formulário: campo nome + seletor de cor (círculos clicáveis) + select de perfil (admin/colaborador)
-- Tabela: avatar colorido, nome, perfil (badge), cor, ativo/inativo, ações (editar/excluir)
-- Edição inline ou modal simples para alterar nome, cor, perfil
-- Confirmação antes de excluir
-
-**3. Hook `useCollaborators`** 
-- Já existe e tem `addCollaborator`, `updateCollaborator`. Será estendido para incluir `deleteCollaborator` e suporte ao campo `role`.
-
-**4. Atualização do tipo `Collaborator`**
-- Adicionar campo `role: 'admin' | 'colaborador'` ao tipo em `src/types/collaborator.ts`
-
-### Fluxo do usuário
-- Abre Config → vê seção "Cadastro de Usuários" (colapsável)
-- Expande → vê lista de todos os colaboradores com cor, nome, perfil
-- Pode adicionar novo digitando nome, escolhendo cor e tipo
-- Pode editar (lápis) ou excluir (lixeira) qualquer colaborador existente
+### Resultado esperado
+- Comentarios mais antigos ficam no topo, mais novos ficam embaixo
+- Ao abrir o modal, o scroll ja esta posicionado nos comentarios mais recentes
+- Para ver comentarios antigos, o usuario rola para cima
 
