@@ -348,19 +348,24 @@ export function useAllClientsCommentCountsWithRefresh(_currentUserName?: string)
     try {
       const { data, error } = await supabase
         .from('client_comments')
-        .select('client_id, is_archived');
+        .select('client_id, is_archived, read_celine, read_gabi, read_darley, read_vanessa, read_patrick');
       if (error) throw error;
+      
+      const readField = _currentUserName ? `read_${_currentUserName.toLowerCase()}` : null;
+      const validFields = ['read_celine','read_gabi','read_darley','read_vanessa','read_patrick'];
+      const useUserFilter = readField && validFields.includes(readField);
+      
       const countMap = new Map<string, number>();
       (data || []).forEach(row => {
-        if (!row.is_archived) {
-          countMap.set(row.client_id, (countMap.get(row.client_id) || 0) + 1);
-        }
+        if (row.is_archived) return;
+        if (useUserFilter && (row as any)[readField]) return;
+        countMap.set(row.client_id, (countMap.get(row.client_id) || 0) + 1);
       });
       setCounts(countMap);
     } catch (error) {
       console.error('Error fetching comment counts:', error);
     }
-  }, []);
+  }, [_currentUserName]);
 
   useEffect(() => {
     fetchCounts();
