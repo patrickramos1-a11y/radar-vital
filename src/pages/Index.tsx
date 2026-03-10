@@ -179,6 +179,17 @@ const Index = () => {
       result = result.filter(c => c.clientType === clientTypeFilter);
     }
 
+    // Municipality filter
+    if (municipioFilters.length > 0) {
+      result = result.filter(c => {
+        if (!c.municipios || c.municipios.length === 0) return false;
+        return municipioFilters.some(mf => {
+          const [name] = mf.split('|');
+          return c.municipios.some(cm => cm === name);
+        });
+      });
+    }
+
     // Alert filter (De Boa / Com Alerta)
     if (alertFilter === 'deBoa') {
       result = result.filter(c => isClienteDeBoa(c));
