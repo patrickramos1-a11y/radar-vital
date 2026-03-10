@@ -21,7 +21,7 @@ export function useVisualPanelFilters({
   const [sortBy, setSortBy] = useState<VisualSortOption>(defaultSort);
   const [sortDirection, setSortDirection] = useState<VisualSortDirection>('desc');
   const [clientTypeFilter, setClientTypeFilter] = useState<VisualClientTypeFilter>('all');
-  const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
+  const [collaboratorFilters, setCollaboratorFilters] = useState<string[]>([]);
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
