@@ -11,6 +11,7 @@ import {
   COLLABORATOR_NAMES, COLLABORATOR_COLORS, CollaboratorName, DEFAULT_COLLABORATORS
 } from "@/types/client";
 import { useMunicipalities } from "@/hooks/useMunicipalities";
+import { CollaboratorManager } from "@/components/config/CollaboratorManager";
 import {
   AlertDialog,
   AlertDialogAction,
