@@ -17,12 +17,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useClients } from "@/contexts/ClientContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { COLLABORATOR_COLORS, CollaboratorName, COLLABORATOR_NAMES } from "@/types/client";
 import { CommentType, COMMENT_TYPE_LABELS } from "@/types/comment";
 import { toast } from "sonner";
-
-type ReadStatus = 'celine' | 'gabi' | 'darley' | 'vanessa' | 'patrick';
-const READ_STATUS_NAMES: ReadStatus[] = ['patrick', 'celine', 'gabi', 'darley', 'vanessa'];
 
 interface CommentWithClient {
   id: string;
@@ -34,10 +30,9 @@ interface CommentWithClient {
   commentText: string;
   createdAt: string;
   isPinned: boolean;
-  readStatus: Record<ReadStatus, boolean>;
+  readTimestamps: Record<string, string>;
   commentType: CommentType;
   requiredReaders: string[];
-  readTimestamps: Record<string, string>;
   isClosed: boolean;
   closedBy?: string;
   closedAt?: string;
@@ -48,15 +43,9 @@ interface CommentWithClient {
   replyToId?: string;
 }
 
-// Helper: is a comment fully read by all 5 collaborators?
-function isCommentFullyRead(comment: CommentWithClient): boolean {
-  return READ_STATUS_NAMES.every(n => comment.readStatus[n]);
-}
-
-// Helper: is Patrick blocked from marking as read?
-function isPatrickBlocked(comment: CommentWithClient): boolean {
-  const othersNames = READ_STATUS_NAMES.filter(n => n !== 'patrick');
-  return !othersNames.every(n => comment.readStatus[n]);
+// Helper: is a comment fully read by all collaborators?
+function isCommentFullyRead(comment: CommentWithClient, collaboratorNames: string[]): boolean {
+  return collaboratorNames.every(n => !!comment.readTimestamps[n]);
 }
 
 type ViewFilter = 'pendentes' | 'lidos' | 'arquivados' | 'todos';
@@ -82,6 +71,9 @@ export default function CommentsPanel() {
   const [replyingTo, setReplyingTo] = useState<CommentWithClient | null>(null);
 
   const currentUserName = currentUser?.name || 'Sistema';
+
+  // All collaborator names for read tracking
+  const collaboratorNames = useMemo(() => collaborators.map(c => c.name), [collaborators]);
 
   const clientsMap = useMemo(() => {
     const map = new Map<string, { name: string; initials: string; logoUrl?: string }>();
@@ -112,16 +104,9 @@ export default function CommentsPanel() {
           commentText: row.comment_text,
           createdAt: row.created_at,
           isPinned: row.is_pinned,
-          readStatus: {
-            celine: row.read_celine ?? false,
-            gabi: row.read_gabi ?? false,
-            darley: row.read_darley ?? false,
-            vanessa: row.read_vanessa ?? false,
-            patrick: row.read_patrick ?? false,
-          },
+          readTimestamps: (row.read_timestamps as Record<string, string>) || {},
           commentType: (row.comment_type as CommentType) || 'informativo',
           requiredReaders: row.required_readers || [],
-          readTimestamps: (row.read_timestamps as Record<string, string>) || {},
           isClosed: row.is_closed ?? false,
           closedBy: row.closed_by || undefined,
           closedAt: row.closed_at || undefined,
@@ -146,15 +131,20 @@ export default function CommentsPanel() {
     if (clientsMap.size > 0) fetchComments();
   }, [fetchComments, clientsMap]);
 
-  const toggleReadStatus = async (commentId: string, collaborator: ReadStatus) => {
+  const toggleReadStatus = async (commentId: string, collaboratorName: string) => {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return;
-    const newValue = !comment.readStatus[collaborator];
-    const updateField = `read_${collaborator}`;
+    const isRead = !!comment.readTimestamps[collaboratorName];
+    const newTimestamps = { ...comment.readTimestamps };
+    if (isRead) {
+      delete newTimestamps[collaboratorName];
+    } else {
+      newTimestamps[collaboratorName] = new Date().toISOString();
+    }
     try {
-      const { error } = await supabase.from('client_comments').update({ [updateField]: newValue }).eq('id', commentId);
+      const { error } = await supabase.from('client_comments').update({ read_timestamps: newTimestamps as any }).eq('id', commentId);
       if (error) throw error;
-      setComments(prev => prev.map(c => c.id === commentId ? { ...c, readStatus: { ...c.readStatus, [collaborator]: newValue } } : c));
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, readTimestamps: newTimestamps } : c));
     } catch (error) {
       console.error('Error updating read status:', error);
       toast.error('Erro ao atualizar status');
@@ -164,8 +154,7 @@ export default function CommentsPanel() {
   const confirmReading = async (commentId: string) => {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return;
-    const userName = currentUserName;
-    const newTimestamps = { ...comment.readTimestamps, [userName]: new Date().toISOString() };
+    const newTimestamps = { ...comment.readTimestamps, [currentUserName]: new Date().toISOString() };
     try {
       const { error } = await supabase
         .from('client_comments')
@@ -217,17 +206,49 @@ export default function CommentsPanel() {
     }
   };
 
+  const archiveComment = async (commentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ is_archived: true, archived_by: currentUserName, archived_at: new Date().toISOString() })
+        .eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, isArchived: true, archivedBy: currentUserName, archivedAt: new Date().toISOString() } : c
+      ));
+      toast.success('Comentário arquivado');
+    } catch (error) {
+      console.error('Error archiving comment:', error);
+      toast.error('Erro ao arquivar comentário');
+    }
+  };
+
+  const unarchiveComment = async (commentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_comments')
+        .update({ is_archived: false, archived_by: null, archived_at: null })
+        .eq('id', commentId);
+      if (error) throw error;
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, isArchived: false, archivedBy: undefined, archivedAt: undefined } : c
+      ));
+      toast.success('Comentário desarquivado');
+    } catch (error) {
+      console.error('Error unarchiving comment:', error);
+      toast.error('Erro ao desarquivar comentário');
+    }
+  };
+
   const togglePinned = async (commentId: string) => {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return;
-    const newValue = !comment.isPinned;
     try {
-      const { error } = await supabase.from('client_comments').update({ is_pinned: newValue }).eq('id', commentId);
+      const { error } = await supabase.from('client_comments').update({ is_pinned: !comment.isPinned }).eq('id', commentId);
       if (error) throw error;
-      setComments(prev => prev.map(c => c.id === commentId ? { ...c, isPinned: newValue } : c));
-      toast.success(newValue ? 'Comentário fixado' : 'Comentário desafixado');
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, isPinned: !c.isPinned } : c));
     } catch (error) {
-      console.error('Error toggling pinned:', error);
+      console.error('Error toggling pin:', error);
       toast.error('Erro ao fixar comentário');
     }
   };
@@ -246,14 +267,9 @@ export default function CommentsPanel() {
 
   const editComment = async (commentId: string, newText: string) => {
     try {
-      const { error } = await supabase
-        .from('client_comments')
-        .update({ comment_text: newText, is_edited: true })
-        .eq('id', commentId);
+      const { error } = await supabase.from('client_comments').update({ comment_text: newText, is_edited: true }).eq('id', commentId);
       if (error) throw error;
-      setComments(prev => prev.map(c =>
-        c.id === commentId ? { ...c, commentText: newText, isEdited: true } : c
-      ));
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, commentText: newText, isEdited: true } : c));
       toast.success('Comentário editado');
     } catch (error) {
       console.error('Error editing comment:', error);
@@ -261,37 +277,17 @@ export default function CommentsPanel() {
     }
   };
 
-  const archiveComment = async (commentId: string) => {
-    const userName = currentUserName;
-    try {
-      const { error } = await supabase.from('client_comments').update({ is_archived: true, archived_by: userName, archived_at: new Date().toISOString() }).eq('id', commentId);
-      if (error) throw error;
-      setComments(prev => prev.map(c => c.id === commentId ? { ...c, isArchived: true, archivedBy: userName, archivedAt: new Date().toISOString() } : c));
-      toast.success('Comentário arquivado');
-    } catch (error) { console.error('Error archiving:', error); toast.error('Erro ao arquivar'); }
-  };
-
-  const unarchiveComment = async (commentId: string) => {
-    try {
-      const { error } = await supabase.from('client_comments').update({ is_archived: false, archived_by: null, archived_at: null }).eq('id', commentId);
-      if (error) throw error;
-      setComments(prev => prev.map(c => c.id === commentId ? { ...c, isArchived: false, archivedBy: undefined, archivedAt: undefined } : c));
-      toast.success('Comentário desarquivado');
-    } catch (error) { console.error('Error unarchiving:', error); toast.error('Erro ao desarquivar'); }
-  };
-
   const addComment = async () => {
-    if (!newComment.trim() || !newClientId) return;
+    if (!newComment.trim() || !newClientId || isSubmitting) return;
     setIsSubmitting(true);
     try {
       const insertData: any = {
         client_id: newClientId,
-        author_name: currentUserName,
         comment_text: newComment.trim(),
+        author_name: currentUserName,
         comment_type: newCommentType,
         required_readers: newCommentType === 'ciencia' ? newSelectedReaders : [],
-        read_timestamps: {},
-        ...(replyingTo ? { reply_to_id: replyingTo.id } : {}),
+        reply_to_id: replyingTo?.id || null,
       };
       const { error } = await supabase.from('client_comments').insert(insertData);
       if (error) throw error;
@@ -322,15 +318,15 @@ export default function CommentsPanel() {
     return Array.from(clients.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [comments]);
 
-  const currentReadStatusName = currentUserName.toLowerCase() as ReadStatus;
-  const canReadSelf = READ_STATUS_NAMES.includes(currentReadStatusName);
+  // Check if current user is in the collaborators list
+  const canReadSelf = collaboratorNames.some(n => n.toLowerCase() === currentUserName.toLowerCase());
 
   // Global: active (non-archived) comments
   const activeComments = useMemo(() => comments.filter(c => !c.isArchived), [comments]);
   const archivedComments = useMemo(() => comments.filter(c => c.isArchived), [comments]);
   // Per-user: pending = active + not read by me; read = active + read by me
-  const pendingComments = useMemo(() => activeComments.filter(c => !canReadSelf || !c.readStatus[currentReadStatusName]), [activeComments, canReadSelf, currentReadStatusName]);
-  const readComments = useMemo(() => activeComments.filter(c => canReadSelf && c.readStatus[currentReadStatusName]), [activeComments, canReadSelf, currentReadStatusName]);
+  const pendingComments = useMemo(() => activeComments.filter(c => !canReadSelf || !c.readTimestamps[currentUserName]), [activeComments, canReadSelf, currentUserName]);
+  const readComments = useMemo(() => activeComments.filter(c => canReadSelf && !!c.readTimestamps[currentUserName]), [activeComments, canReadSelf, currentUserName]);
 
   // Build replies map from ALL comments
   const repliesMap = useMemo(() => {
@@ -370,7 +366,6 @@ export default function CommentsPanel() {
       );
     }
 
-    // Show all comments flat (no threading)
     return result;
   }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilter, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
 
@@ -386,13 +381,14 @@ export default function CommentsPanel() {
       c.requiredReaders.includes(currentUserName) &&
       !c.readTimestamps[currentUserName]
     ).length;
-    // Pending per collaborator: count of NON-ARCHIVED comments where that person hasn't read
-    const pendingByCollaborator: Record<ReadStatus, number> = { patrick: 0, celine: 0, gabi: 0, darley: 0, vanessa: 0 };
+    // Pending per collaborator using read_timestamps
+    const pendingByCollaborator: Record<string, number> = {};
+    collaboratorNames.forEach(name => { pendingByCollaborator[name] = 0; });
     activeComments.forEach(c => {
-      READ_STATUS_NAMES.forEach(name => { if (!c.readStatus[name]) pendingByCollaborator[name]++; });
+      collaboratorNames.forEach(name => { if (!c.readTimestamps[name]) pendingByCollaborator[name]++; });
     });
     return { totalActive, pinned, pendingCiencia, myCiencia, pendingByCollaborator };
-  }, [comments, activeComments, currentUserName]);
+  }, [comments, activeComments, currentUserName, collaboratorNames]);
 
   const typeBadgeStyles: Record<CommentType, string> = {
     informativo: 'bg-muted text-muted-foreground',
@@ -424,18 +420,17 @@ export default function CommentsPanel() {
 
           <div className="w-px h-8 bg-border" />
 
-          {READ_STATUS_NAMES.map((name) => {
-            const color = name === 'patrick' ? '#10B981' : COLLABORATOR_COLORS[name as CollaboratorName];
-            const pending = kpis.pendingByCollaborator[name];
+          {collaborators.map((collab) => {
+            const pending = kpis.pendingByCollaborator[collab.name] || 0;
             return (
               <div
-                key={name}
+                key={collab.id}
                 className="flex items-center gap-1.5 px-2 py-1 rounded border transition-all"
-                style={{ borderColor: color, backgroundColor: `${color}15` }}
+                style={{ borderColor: collab.color, backgroundColor: `${collab.color}15` }}
               >
-                <EyeOff className="w-3 h-3" style={{ color }} />
-                <span className="text-sm font-bold" style={{ color }}>{pending}</span>
-                <span className="text-[9px] text-muted-foreground uppercase">{name}</span>
+                <EyeOff className="w-3 h-3" style={{ color: collab.color }} />
+                <span className="text-sm font-bold" style={{ color: collab.color }}>{pending}</span>
+                <span className="text-[9px] text-muted-foreground uppercase">{collab.name}</span>
               </div>
             );
           })}
@@ -632,6 +627,7 @@ export default function CommentsPanel() {
                 comment={comment}
                 currentUserName={currentUserName}
                 collaborators={collaborators}
+                collaboratorNames={collaboratorNames}
                 allComments={comments}
                 onToggleRead={toggleReadStatus}
                 onTogglePinned={togglePinned}
@@ -665,8 +661,9 @@ interface CommentCardProps {
   comment: CommentWithClient;
   currentUserName: string;
   collaborators: { id: string; name: string; color?: string }[];
+  collaboratorNames: string[];
   allComments: CommentWithClient[];
-  onToggleRead: (id: string, collaborator: ReadStatus) => void;
+  onToggleRead: (id: string, collaboratorName: string) => void;
   onTogglePinned: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (id: string, newText: string) => void;
@@ -678,8 +675,8 @@ interface CommentCardProps {
   onReply: (comment: CommentWithClient) => void;
 }
 
-function CommentCard({ comment, currentUserName, collaborators, allComments, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen, onArchive, onUnarchive, onReply }: CommentCardProps) {
-  const isAdmin = currentUserName === 'Patrick';
+function CommentCard({ comment, currentUserName, collaborators, collaboratorNames, allComments, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen, onArchive, onUnarchive, onReply }: CommentCardProps) {
+  const isAdmin = currentUser?.role === 'admin' || currentUserName === 'Patrick';
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.commentText);
   const isCiencia = comment.commentType === 'ciencia';
@@ -689,7 +686,7 @@ function CommentCard({ comment, currentUserName, collaborators, allComments, onT
   const isPending = isCiencia && confirmedCount === 0 && totalRequired > 0;
   const isPartial = isCiencia && confirmedCount > 0 && confirmedCount < totalRequired;
   const userNeedsToConfirm = isCiencia && !comment.isClosed && comment.requiredReaders.includes(currentUserName) && !comment.readTimestamps[currentUserName];
-  const fullyRead = isCommentFullyRead(comment);
+  const fullyRead = isCommentFullyRead(comment, collaboratorNames);
 
   const typeBadgeStyles: Record<CommentType, string> = {
     informativo: 'bg-muted text-muted-foreground',
@@ -702,6 +699,9 @@ function CommentCard({ comment, currentUserName, collaborators, allComments, onT
   const isOwnComment = comment.authorName.toLowerCase() === currentUserName.toLowerCase();
   const authorCollab = collaborators.find(c => c.name.toLowerCase() === comment.authorName.toLowerCase());
   const authorColor = (authorCollab as any)?.color || '#6B7280';
+
+  // Get currentUser from useAuth - accessed via collaborators prop
+  const currentCollaborator = collaborators.find(c => c.name.toLowerCase() === currentUserName.toLowerCase());
 
   return (
     <div
@@ -897,8 +897,9 @@ function CommentCard({ comment, currentUserName, collaborators, allComments, onT
           <PanelReadStatusBar
             comment={comment}
             currentUserName={currentUserName}
-            isAdmin={currentUserName === 'Patrick'}
+            isAdmin={isAdmin}
             collaborators={collaborators}
+            collaboratorNames={collaboratorNames}
             onToggleRead={(name) => onToggleRead(comment.id, name)}
           />
         </div>
@@ -914,34 +915,35 @@ interface PanelReadStatusBarProps {
   currentUserName: string;
   isAdmin: boolean;
   collaborators: { id: string; name: string; color?: string }[];
-  onToggleRead: (collaborator: ReadStatus) => void;
+  collaboratorNames: string[];
+  onToggleRead: (collaboratorName: string) => void;
 }
 
-function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onToggleRead }: PanelReadStatusBarProps) {
+function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, collaboratorNames, onToggleRead }: PanelReadStatusBarProps) {
   const [showInfo, setShowInfo] = useState(false);
 
-  const currentReadStatusName = currentUserName.toLowerCase() as ReadStatus;
-  const canMarkSelf = READ_STATUS_NAMES.includes(currentReadStatusName);
-  const selfIsRead = canMarkSelf && comment.readStatus[currentReadStatusName];
+  const canMarkSelf = collaboratorNames.some(n => n.toLowerCase() === currentUserName.toLowerCase());
+  const selfIsRead = canMarkSelf && !!comment.readTimestamps[currentUserName];
 
-  // Patrick lock rule
-  const isPatrick = currentReadStatusName === 'patrick';
-  const patrickLocked = isPatrick && !selfIsRead && isPatrickBlocked(comment);
-
-  const currentCollaborator = collaborators.find(c => c.name.toLowerCase() === currentReadStatusName);
+  const currentCollaborator = collaborators.find(c => c.name.toLowerCase() === currentUserName.toLowerCase());
   const selfColor = currentCollaborator?.color || '#6B7280';
 
-  const readCount = READ_STATUS_NAMES.filter(n => comment.readStatus[n]).length;
-  const allRead = readCount === READ_STATUS_NAMES.length;
+  const readNames = collaboratorNames.filter(n => !!comment.readTimestamps[n]);
+  const pendingNames = collaboratorNames.filter(n => !comment.readTimestamps[n]);
+  const readCount = readNames.length;
+  const allRead = readCount === collaboratorNames.length;
 
-  const readNames = READ_STATUS_NAMES.filter(n => comment.readStatus[n]);
-  const pendingNames = READ_STATUS_NAMES.filter(n => !comment.readStatus[n]);
+  // Patrick lock rule: if current user is "Patrick", they can't mark as read until all others have read
+  const isPatrick = currentUserName.toLowerCase() === 'patrick';
+  const patrickLocked = isPatrick && !selfIsRead && !collaboratorNames
+    .filter(n => n.toLowerCase() !== 'patrick')
+    .every(n => !!comment.readTimestamps[n]);
 
   return (
     <div className="flex items-center gap-1.5">
       {canMarkSelf && (
         <button
-          onClick={() => !patrickLocked && onToggleRead(currentReadStatusName)}
+          onClick={() => !patrickLocked && onToggleRead(currentUserName)}
           disabled={patrickLocked}
           className={cn(
             'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all',
@@ -958,7 +960,7 @@ function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, 
         {allRead ? (
           <span className="text-green-600 dark:text-green-400">✓✓</span>
         ) : (
-          `${readCount}/${READ_STATUS_NAMES.length}`
+          `${readCount}/${collaboratorNames.length}`
         )}
       </span>
       <Popover open={showInfo} onOpenChange={setShowInfo}>
@@ -969,18 +971,18 @@ function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, 
         </PopoverTrigger>
         <PopoverContent className="w-60 p-0" align="end">
           <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-            <p className="text-xs font-semibold text-foreground">Leitura: {readCount}/{READ_STATUS_NAMES.length}</p>
+            <p className="text-xs font-semibold text-foreground">Leitura: {readCount}/{collaboratorNames.length}</p>
             {isAdmin && (
               <div className="flex gap-1">
                 <button
-                  onClick={() => READ_STATUS_NAMES.forEach(n => { if (!comment.readStatus[n]) onToggleRead(n); })}
+                  onClick={() => pendingNames.forEach(n => onToggleRead(n))}
                   className="text-[9px] font-medium text-primary hover:underline"
                 >
                   Todos
                 </button>
                 <span className="text-[9px] text-muted-foreground">|</span>
                 <button
-                  onClick={() => READ_STATUS_NAMES.forEach(n => { if (comment.readStatus[n]) onToggleRead(n); })}
+                  onClick={() => readNames.forEach(n => onToggleRead(n))}
                   className="text-[9px] font-medium text-destructive hover:underline"
                 >
                   Nenhum
@@ -994,13 +996,13 @@ function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, 
               <p className="text-[9px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider mb-1">✅ Lido</p>
               <div className="space-y-1">
                 {readNames.map((name) => {
-                  const collab = collaborators.find(c => c.name.toLowerCase() === name);
+                  const collab = collaborators.find(c => c.name === name);
                   const color = collab?.color || '#6B7280';
                   return (
                     <div key={name} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                        <span className="text-xs capitalize">{name}</span>
+                        <span className="text-xs">{name}</span>
                       </div>
                       {isAdmin && (
                         <button onClick={() => onToggleRead(name)} className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={`Desmarcar ${name}`}>
@@ -1019,13 +1021,13 @@ function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, 
               <p className="text-[9px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1">⏳ Pendente</p>
               <div className="space-y-1">
                 {pendingNames.map((name) => {
-                  const collab = collaborators.find(c => c.name.toLowerCase() === name);
+                  const collab = collaborators.find(c => c.name === name);
                   const color = collab?.color || '#6B7280';
                   return (
                     <div key={name} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                        <span className="text-xs capitalize">{name}</span>
+                        <span className="text-xs">{name}</span>
                       </div>
                       {isAdmin && (
                         <button onClick={() => onToggleRead(name)} className="p-0.5 rounded hover:bg-primary/10 text-primary transition-colors" title={`Marcar ${name} como lido`}>
