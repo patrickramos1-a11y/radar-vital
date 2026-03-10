@@ -99,7 +99,7 @@ function PanelLinkChip({ link }: { link: PanelLink }) {
           href={link.url}
           target="_blank"
           rel="noopener noreferrer"
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-medium transition-all hover:scale-105 hover:shadow-sm cursor-pointer ${typeColor}`}
+          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[11px] font-medium transition-all hover:scale-105 hover:shadow-sm cursor-pointer ${typeColor}`}
         >
           <ExternalLink className="w-3 h-3 shrink-0" />
           <span className="truncate max-w-[120px]">{link.name}</span>
