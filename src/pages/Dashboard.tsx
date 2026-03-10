@@ -102,10 +102,14 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <BarChartCard
                   title="Distribuição Geográfica por Município"
-                  data={(clientsData?.byMunicipio || []).slice(0, 10).map(m => ({
-                    name: m.municipio,
-                    value: m.count,
-                  }))}
+                  data={(clientsData?.byMunicipio || []).slice(0, 10).map((m, i) => {
+                    const MUNI_COLORS = ['#10B981','#3B82F6','#1F2937','#6366F1','#8B5CF6','#06B6D4','#EC4899','#F59E0B','#14B8A6','#F97316'];
+                    return {
+                      name: m.municipio,
+                      value: m.count,
+                      color: MUNI_COLORS[i % MUNI_COLORS.length],
+                    };
+                  })}
                   horizontal
                 />
                 <div className="bg-card rounded-lg border p-4">
