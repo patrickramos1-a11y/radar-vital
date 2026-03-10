@@ -497,6 +497,9 @@ const Index = () => {
             onViewModeChange={setViewMode}
             onGridSizeChange={setGridSize}
             onFitAllLockedChange={setFitAllLocked}
+            municipalities={municipalities}
+            municipioFilters={municipioFilters}
+            onMunicipioFilterToggle={handleMunicipioFilterToggle}
           />
 
           <div 
