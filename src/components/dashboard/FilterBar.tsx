@@ -424,16 +424,14 @@ function ClientTypeButton({ type, active, onClick, count }: ClientTypeButtonProp
 }
 
 interface CollaboratorColorSquareProps {
-  name: CollaboratorName;
+  name: string;
+  color: string;
+  initials: string;
   active: boolean;
   onClick: () => void;
 }
 
-function CollaboratorColorSquare({ name, active, onClick }: CollaboratorColorSquareProps) {
-  const color = COLLABORATOR_COLORS[name];
-  const initials = name.slice(0, 2).toUpperCase();
-  const displayName = name.charAt(0).toUpperCase() + name.slice(1);
-  
+function CollaboratorColorSquare({ name, color, initials, active, onClick }: CollaboratorColorSquareProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -455,7 +453,7 @@ function CollaboratorColorSquare({ name, active, onClick }: CollaboratorColorSqu
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="text-xs">
-        {displayName}
+        {name}
       </TooltipContent>
     </Tooltip>
   );
