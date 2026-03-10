@@ -22,6 +22,7 @@ import { TaskAnalytics } from "@/components/tasks/TaskAnalytics";
 type StatusFilter = "pendentes" | "concluidas" | "todas";
 
 export default function JackboxUnified() {
+  const { collaborators: allCollaborators } = useAuth();
   const { activeClients, highlightedClients } = useClients();
   const { 
     tasks, 
