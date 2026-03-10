@@ -43,7 +43,7 @@ export function PanelNavigationBar() {
 
   return (
     <>
-      <div className="flex items-center gap-1.5 px-4 py-1 bg-card/50 border-b border-border">
+      <div className="flex items-center gap-1.5 px-4 py-1 bg-card/30 backdrop-blur-sm border-b border-border/40">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
           Painéis:
         </span>
