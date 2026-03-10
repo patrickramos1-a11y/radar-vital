@@ -188,6 +188,13 @@ export function FilterBar({
           )}
         </div>
 
+        {/* Municipality Filter */}
+        <MunicipalityDropdown
+          municipalities={municipalities}
+          selectedMunicipios={municipioFilters}
+          onToggle={onMunicipioFilterToggle}
+        />
+
         {/* Grid Size Picker + Lock Toggle + TV Mode */}
         <div className="flex items-center gap-1">
           <GridSizePicker 
