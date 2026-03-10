@@ -730,8 +730,8 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
             </button>
             <CreateTaskFromComment
               commentText={comment.commentText}
-              clientId={comment.clientId}
-              clientName=""
+              clientId={clientId}
+              clientName={clientName}
               collaborators={collaborators}
             />
             <ReadStatusBar

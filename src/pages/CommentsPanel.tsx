@@ -896,6 +896,12 @@ function CommentCard({ comment, currentUserName, collaborators, collaboratorName
           >
             <Reply className="w-3.5 h-3.5" />
           </button>
+          <CreateTaskFromComment
+            commentText={comment.commentText}
+            clientId={comment.clientId}
+            clientName={comment.clientName}
+            collaborators={collaborators}
+          />
           <PanelReadStatusBar
             comment={comment}
             currentUserName={currentUserName}
