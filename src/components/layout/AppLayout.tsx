@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 import { UserSelector } from "./UserSelector";
 import { AppSidebar } from "./AppSidebar";
+import logoSisRamos from "@/assets/logo-sisramos.png";
 import {
   SidebarProvider,
   SidebarTrigger,
