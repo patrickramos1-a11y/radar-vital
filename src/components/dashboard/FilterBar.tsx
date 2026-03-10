@@ -466,16 +466,18 @@ interface MunicipalityDropdownProps {
   onToggle: (municipio: string) => void;
 }
 
-function MunicipalityDropdown({ municipalities, selectedMunicipios, onToggle }: MunicipalityDropdownProps) {
+function MunicipalityDropdown({ municipalities, clientMunicipioNames, selectedMunicipios, onToggle }: MunicipalityDropdownProps) {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
 
-  // Build display items: "Name - STATE"
-  const items = municipalities.map(m => ({
-    id: m.id,
-    label: `${m.name} - ${m.state}`,
-    key: `${m.name}|${m.state}`,
-  }));
+  // Only show municipalities that have at least one client associated
+  const items = municipalities
+    .filter(m => clientMunicipioNames.has(m.name))
+    .map(m => ({
+      id: m.id,
+      label: `${m.name} - ${m.state}`,
+      key: `${m.name}|${m.state}`,
+    }));
 
   const filtered = search.trim()
     ? items.filter(i => i.label.toLowerCase().includes(search.toLowerCase()))
