@@ -352,10 +352,10 @@ function SortIconButton({ active, direction, onClick, icon, tooltip }: SortIconB
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
-          className={`p-1.5 rounded-md transition-all flex items-center gap-0.5 border ${
+          className={`p-1.5 rounded-lg transition-all flex items-center gap-0.5 border ${
             active 
-              ? 'bg-primary text-primary-foreground border-primary' 
-              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent'
+              ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20' 
+              : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground border-transparent'
           }`}
         >
           {icon}
