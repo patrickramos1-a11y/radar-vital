@@ -27,13 +27,13 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen, collaborators = [] 
     const pendingByCollab = collabNames.map(name => ({
       name,
       color: collaborators.find(c => c.name === name)?.color || '#6B7280',
-      count: pending.filter(t => t.assigned_to === name).length,
+      count: pending.filter(t => t.assigned_to?.toLowerCase() === name.toLowerCase()).length,
     })).sort((a, b) => b.count - a.count);
 
     const completedByCollab = collabNames.map(name => ({
       name,
       color: collaborators.find(c => c.name === name)?.color || '#6B7280',
-      count: completed.filter(t => t.assigned_to === name).length,
+      count: completed.filter(t => t.assigned_to?.toLowerCase() === name.toLowerCase()).length,
     })).sort((a, b) => b.count - a.count);
 
     const oldest = pending.length > 0
@@ -49,7 +49,7 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen, collaborators = [] 
   const topCompleted = rankings.completedByCollab[0];
   const oldest = rankings.oldest;
   const oldestDays = oldest ? getDaysOpen(oldest) : 0;
-  const oldestCollab = oldest ? collaborators.find(c => c.name === oldest.assigned_to) : null;
+  const oldestCollab = oldest ? collaborators.find(c => c.name.toLowerCase() === oldest.assigned_to?.toLowerCase()) : null;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 py-3">
