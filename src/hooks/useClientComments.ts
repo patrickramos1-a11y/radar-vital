@@ -149,8 +149,20 @@ export function useClientComments(clientId: string) {
     if (!comment) return;
     const newValue = !comment.readStatus[collaborator];
     const updateField = `read_${collaborator}`;
+    const collaboratorName = collaborator.charAt(0).toUpperCase() + collaborator.slice(1);
     try {
-      const { error } = await supabase.from('client_comments').update({ [updateField]: newValue }).eq('id', id);
+      // Update legacy column + read_timestamps JSONB
+      const newTimestamps = { ...comment.readTimestamps };
+      if (newValue) {
+        newTimestamps[collaboratorName] = new Date().toISOString();
+      } else {
+        delete newTimestamps[collaboratorName];
+      }
+      
+      const { error } = await supabase.from('client_comments').update({ 
+        [updateField]: newValue,
+        read_timestamps: newTimestamps as any,
+      }).eq('id', id);
       if (error) throw error;
       const newReadStatus = { ...comment.readStatus, [collaborator]: newValue };
       
@@ -163,7 +175,7 @@ export function useClientComments(clientId: string) {
           .eq('id', id);
         if (!archiveError) {
           setComments(prev => prev.map(c =>
-            c.id === id ? { ...c, readStatus: newReadStatus, isArchived: true, archivedBy: 'Sistema', archivedAt: new Date().toISOString() } : c
+            c.id === id ? { ...c, readStatus: newReadStatus, readTimestamps: newTimestamps, isArchived: true, archivedBy: 'Sistema', archivedAt: new Date().toISOString() } : c
           ));
           triggerCommentCountRefresh();
           return;
@@ -171,7 +183,7 @@ export function useClientComments(clientId: string) {
       }
       
       setComments(prev => prev.map(c =>
-        c.id === id ? { ...c, readStatus: newReadStatus } : c
+        c.id === id ? { ...c, readStatus: newReadStatus, readTimestamps: newTimestamps } : c
       ));
       triggerCommentCountRefresh();
     } catch (error) {

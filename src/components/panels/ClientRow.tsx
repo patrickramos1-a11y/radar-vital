@@ -1,5 +1,7 @@
 import { Star } from "lucide-react";
-import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES } from "@/types/client";
+import { Client } from "@/types/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useClientAssignments } from "@/hooks/useClientAssignments";
 
 interface ClientRowProps {
   client: Client;
@@ -13,7 +15,10 @@ interface ClientRowProps {
 }
 
 export function ClientRow({ client, isHighlighted, activeTaskCount, children, onTogglePriority }: ClientRowProps) {
-  const activeCollaborators = COLLABORATOR_NAMES.filter(name => client.collaborators[name]);
+  const { collaborators: allCollaborators } = useAuth();
+  const { getAssignedCollaboratorIds } = useClientAssignments();
+  const assignedIds = getAssignedCollaboratorIds(client.id);
+  const activeCollaborators = allCollaborators.filter(c => assignedIds.includes(c.id));
 
   return (
     <div className={`border rounded-lg p-3 bg-card ${isHighlighted ? 'border-blue-500 ring-1 ring-blue-500/30' : 'border-border'}`}>
@@ -36,9 +41,9 @@ export function ClientRow({ client, isHighlighted, activeTaskCount, children, on
         
         {activeCollaborators.length > 0 && (
           <div className="flex gap-0.5">
-            {activeCollaborators.map(name => (
-              <div key={name} className="w-4 h-4 rounded-full text-white text-[7px] font-bold flex items-center justify-center" style={{ backgroundColor: COLLABORATOR_COLORS[name] }}>
-                {name[0].toUpperCase()}
+            {activeCollaborators.map(collab => (
+              <div key={collab.id} className="w-4 h-4 rounded-full text-white text-[7px] font-bold flex items-center justify-center" style={{ backgroundColor: collab.color }}>
+                {collab.name[0].toUpperCase()}
               </div>
             ))}
           </div>

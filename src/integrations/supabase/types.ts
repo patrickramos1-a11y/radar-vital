@@ -352,6 +352,42 @@ export type Database = {
           },
         ]
       }
+      client_collaborator_assignments: {
+        Row: {
+          client_id: string
+          collaborator_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          client_id: string
+          collaborator_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          client_id?: string
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_collaborator_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_collaborator_assignments_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_comments: {
         Row: {
           archived_at: string | null

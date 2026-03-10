@@ -9,9 +9,9 @@ import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { useAuth } from "@/contexts/AuthContext";
+import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { CollaboratorName, Client } from "@/types/client";
 import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks } from "lucide-react";
-import { COLLABORATOR_COLORS } from "@/types/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PanelNavigationBar } from "@/components/panel-links/PanelNavigationBar";
@@ -21,7 +21,8 @@ import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 const Index = () => {
   const isMobile = useIsMobile();
-  const { currentUser } = useAuth();
+  const { currentUser, collaborators: allCollaborators } = useAuth();
+  const { getAssignedCollaboratorIds, toggleAssignment, getClientsWithAnyAssignment } = useClientAssignments();
   
   const { 
     activeClients, 
@@ -99,9 +100,10 @@ const Index = () => {
   const selectedCount = useMemo(() => activeClients.filter(c => c.isChecked).length, [activeClients]);
   
   // Count of clients with at least one collaborator assigned (responsáveis)
+  const clientsWithAssignments = getClientsWithAnyAssignment();
   const responsaveisCount = useMemo(() => 
-    activeClients.filter(c => Object.values(c.collaborators).some(v => v)).length,
-    [activeClients]
+    activeClients.filter(c => clientsWithAssignments.has(c.id)).length,
+    [activeClients, clientsWithAssignments]
   );
 
   // "De Boa" classification: client has no priority, highlight or active tasks
@@ -176,8 +178,10 @@ const Index = () => {
         const matchesInitials = c.initials.toLowerCase().includes(query);
         
         // Search by collaborator names
-        const matchesCollaborator = Object.entries(c.collaborators)
-          .some(([name, isActive]) => isActive && name.toLowerCase().includes(query));
+        const assignedIds = getAssignedCollaboratorIds(c.id);
+        const matchesCollaborator = allCollaborators
+          .filter(col => assignedIds.includes(col.id))
+          .some(col => col.name.toLowerCase().includes(query));
         
         return matchesName || matchesInitials || matchesCollaborator;
       });
@@ -221,13 +225,17 @@ const Index = () => {
         const matchesPriority = filterFlags.priority && c.isPriority;
         const matchesHighlighted = filterFlags.highlighted && highlightedClients.has(c.id);
         const matchesSelected = filterFlags.selected && c.isChecked;
-        const matchesHasCollaborators = filterFlags.hasCollaborators && Object.values(c.collaborators).some(v => v);
+        const matchesHasCollaborators = filterFlags.hasCollaborators && getAssignedCollaboratorIds(c.id).length > 0;
         const matchesWithJackbox = filterFlags.withJackbox && getActiveTaskCount(c.id) > 0;
         const matchesWithoutJackbox = filterFlags.withoutJackbox && getActiveTaskCount(c.id) === 0;
         const matchesWithComments = filterFlags.withComments && getCommentCount(c.id) > 0;
         const matchesWithoutComments = filterFlags.withoutComments && getCommentCount(c.id) === 0;
+        const assignedIds = getAssignedCollaboratorIds(c.id);
         const matchesCollaborator = collaboratorFilters.length > 0 && 
-          collaboratorFilters.some(collab => c.collaborators[collab]);
+          collaboratorFilters.some(collab => {
+            const collabObj = allCollaborators.find(co => co.name.toLowerCase() === collab);
+            return collabObj && assignedIds.includes(collabObj.id);
+          });
 
         return matchesPriority || matchesHighlighted || matchesSelected || matchesHasCollaborators ||
                matchesWithJackbox || matchesWithoutJackbox || 
@@ -270,19 +278,20 @@ const Index = () => {
 
   const totalClients = activeClients.length;
 
-  const collaboratorStats = useMemo(() => ({
-    celine: activeClients.filter(c => c.collaborators.celine).length,
-    gabi: activeClients.filter(c => c.collaborators.gabi).length,
-    darley: activeClients.filter(c => c.collaborators.darley).length,
-    vanessa: activeClients.filter(c => c.collaborators.vanessa).length,
-  }), [activeClients]);
+  const collaboratorStats = useMemo(() => {
+    const stats: Record<string, number> = {};
+    allCollaborators.forEach(c => {
+      stats[c.id] = activeClients.filter(client => getAssignedCollaboratorIds(client.id).includes(c.id)).length;
+    });
+    return stats;
+  }, [activeClients, allCollaborators, getAssignedCollaboratorIds]);
 
   const handleSelectClient = (id: string) => {
     setSelectedClientId(prev => prev === id ? null : id);
   };
 
-  const handleToggleCollaborator = (id: string, collaborator: CollaboratorName) => {
-    toggleCollaborator(id, collaborator);
+  const handleToggleCollaboratorAssignment = (clientId: string, collaboratorId: string) => {
+    toggleAssignment(clientId, collaboratorId);
   };
 
   const handleOpenChecklist = (id: string) => {
@@ -390,7 +399,7 @@ const Index = () => {
             onTogglePriority={togglePriority}
             onToggleHighlight={toggleHighlight}
             onToggleChecked={toggleChecked}
-            onToggleCollaborator={handleToggleCollaborator}
+            onToggleCollaborator={toggleCollaborator}
             onAddTask={addTask}
             onToggleComplete={toggleComplete}
             onUpdateTask={updateTask}
@@ -455,13 +464,13 @@ const Index = () => {
               tooltip="Clientes que demandam atenção — possuem prioridade, destaque ou tarefas ativas."
             />
             <div className="w-px h-6 bg-border mx-1" />
-            {(['celine', 'gabi', 'darley', 'vanessa'] as const).map((name) => (
-              <div key={name} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
-                <div className="px-2 py-0.5 text-center" style={{ backgroundColor: COLLABORATOR_COLORS[name] }}>
-                  <span className="text-[9px] font-semibold text-white uppercase">{name}</span>
+            {allCollaborators.map((collab) => (
+              <div key={collab.id} className="flex flex-col rounded-lg border border-border overflow-hidden bg-card min-w-[40px]">
+                <div className="px-2 py-0.5 text-center" style={{ backgroundColor: collab.color }}>
+                  <span className="text-[9px] font-semibold text-white uppercase">{collab.name}</span>
                 </div>
                 <div className="flex items-center justify-center px-2 py-1">
-                  <span className="text-sm font-bold leading-none">{collaboratorStats[name]}</span>
+                  <span className="text-sm font-bold leading-none">{collaboratorStats[collab.id] || 0}</span>
                 </div>
               </div>
             ))}
@@ -530,10 +539,12 @@ const Index = () => {
                 highlightedClients={highlightedClients}
                 getActiveTaskCount={getActiveTaskCount}
                 getCommentCount={getCommentCount}
+                allCollaborators={allCollaborators}
+                getAssignedCollaboratorIds={getAssignedCollaboratorIds}
                 onSelectClient={handleSelectClient}
                 onHighlightClient={toggleHighlight}
                 onTogglePriority={togglePriority}
-                onToggleCollaborator={handleToggleCollaborator}
+                onToggleCollaboratorAssignment={handleToggleCollaboratorAssignment}
                 onOpenChecklist={handleOpenChecklist}
                 viewMode={viewMode}
                 gridSize={gridSize}

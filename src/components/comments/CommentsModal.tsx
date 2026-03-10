@@ -748,19 +748,18 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
   const canMarkSelf = READ_STATUS_NAMES.includes(currentReadStatusName);
   const selfIsRead = canMarkSelf && comment.readStatus[currentReadStatusName];
 
-  // Patrick lock rule: Patrick can only mark as read when all others have read
+  // Patrick lock rule
   const isPatrick = currentReadStatusName === 'patrick';
   const patrickLocked = isPatrick && !selfIsRead && isPatrickBlocked(comment);
 
   const currentCollaborator = collaborators.find(c => c.name.toLowerCase() === currentReadStatusName);
-  const selfColor = currentCollaborator?.color || '#6B7280';
+  const selfColor = (currentCollaborator as any)?.color || '#6B7280';
 
-  const readCount = READ_STATUS_NAMES.filter(n => comment.readStatus[n]).length;
-  const allRead = readCount === READ_STATUS_NAMES.length;
-
-  // Separate read and pending lists
-  const readNames = READ_STATUS_NAMES.filter(n => comment.readStatus[n]);
-  const pendingNames = READ_STATUS_NAMES.filter(n => !comment.readStatus[n]);
+  // Use ALL collaborators for read/pending display
+  const readCollabs = collaborators.filter(c => comment.readTimestamps[c.name]);
+  const pendingCollabs = collaborators.filter(c => !comment.readTimestamps[c.name]);
+  const readCount = readCollabs.length;
+  const allRead = pendingCollabs.length === 0;
 
   return (
     <div className="flex items-center gap-1.5">
@@ -783,27 +782,23 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
         {allRead ? (
           <span className="text-green-600 dark:text-green-400">✓✓</span>
         ) : (
-          `${readCount}/${READ_STATUS_NAMES.length}`
+          `${readCount}/${collaborators.length}`
         )}
       </span>
       <Popover open={showInfo} onOpenChange={setShowInfo}>
         <PopoverTrigger asChild>
-          <button
-            className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted text-muted-foreground transition-colors"
-            title="Ver quem leu"
-          >
+          <button className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted text-muted-foreground transition-colors" title="Ver quem leu">
             <Info className="w-3.5 h-3.5" />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-60 p-0" align="end">
           <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-            <p className="text-xs font-semibold text-foreground">Leitura: {readCount}/{READ_STATUS_NAMES.length}</p>
+            <p className="text-xs font-semibold text-foreground">Leitura: {readCount}/{collaborators.length}</p>
             {isAdmin && (
               <div className="flex gap-1">
                 <button
                   onClick={() => READ_STATUS_NAMES.forEach(n => { if (!comment.readStatus[n]) onToggleRead(n); })}
                   className="text-[9px] font-medium text-primary hover:underline"
-                  title="Marcar todos como lido"
                 >
                   Todos
                 </button>
@@ -811,60 +806,49 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
                 <button
                   onClick={() => READ_STATUS_NAMES.forEach(n => { if (comment.readStatus[n]) onToggleRead(n); })}
                   className="text-[9px] font-medium text-destructive hover:underline"
-                  title="Desmarcar todos"
                 >
                   Nenhum
                 </button>
               </div>
             )}
           </div>
-          {/* Read list */}
-          {readNames.length > 0 && (
+          {readCollabs.length > 0 && (
             <div className="px-3 py-1.5">
               <p className="text-[9px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider mb-1">✅ Lido</p>
               <div className="space-y-1">
-                {readNames.map((name) => {
-                  const collab = collaborators.find(c => c.name.toLowerCase() === name);
-                  const color = collab?.color || '#6B7280';
-                  return (
-                    <div key={name} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                        <span className="text-xs capitalize">{name}</span>
-                      </div>
-                      {isAdmin && (
-                        <button onClick={() => onToggleRead(name)} className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={`Desmarcar ${name}`}>
-                          <EyeOff className="w-3 h-3" />
-                        </button>
-                      )}
+                {readCollabs.map((collab) => (
+                  <div key={collab.id} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: (collab as any).color || '#6B7280' }} />
+                      <span className="text-xs">{collab.name}</span>
                     </div>
-                  );
-                })}
+                    {isAdmin && READ_STATUS_NAMES.includes(collab.name.toLowerCase() as ReadStatusName) && (
+                      <button onClick={() => onToggleRead(collab.name.toLowerCase() as ReadStatusName)} className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                        <EyeOff className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
-          {/* Pending list */}
-          {pendingNames.length > 0 && (
+          {pendingCollabs.length > 0 && (
             <div className="px-3 py-1.5 border-t border-border">
               <p className="text-[9px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1">⏳ Pendente</p>
               <div className="space-y-1">
-                {pendingNames.map((name) => {
-                  const collab = collaborators.find(c => c.name.toLowerCase() === name);
-                  const color = collab?.color || '#6B7280';
-                  return (
-                    <div key={name} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                        <span className="text-xs capitalize">{name}</span>
-                      </div>
-                      {isAdmin && (
-                        <button onClick={() => onToggleRead(name)} className="p-0.5 rounded hover:bg-primary/10 text-primary transition-colors" title={`Marcar ${name} como lido`}>
-                          <Check className="w-3 h-3" />
-                        </button>
-                      )}
+                {pendingCollabs.map((collab) => (
+                  <div key={collab.id} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: (collab as any).color || '#6B7280' }} />
+                      <span className="text-xs">{collab.name}</span>
                     </div>
-                  );
-                })}
+                    {isAdmin && READ_STATUS_NAMES.includes(collab.name.toLowerCase() as ReadStatusName) && (
+                      <button onClick={() => onToggleRead(collab.name.toLowerCase() as ReadStatusName)} className="p-0.5 rounded hover:bg-primary/10 text-primary transition-colors">
+                        <Check className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
