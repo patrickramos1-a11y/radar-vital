@@ -121,7 +121,7 @@ export function FilterBar({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5 bg-card border-b border-border">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5 bg-card/60 backdrop-blur-sm border-b border-border/50">
         {/* Left side: Sort Options */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
