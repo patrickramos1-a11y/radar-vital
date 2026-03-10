@@ -21,7 +21,8 @@ import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 const Index = () => {
   const isMobile = useIsMobile();
-  const { currentUser } = useAuth();
+  const { currentUser, collaborators: allCollaborators } = useAuth();
+  const { getAssignedCollaboratorIds, toggleAssignment, getClientsWithAnyAssignment } = useClientAssignments();
   
   const { 
     activeClients, 
