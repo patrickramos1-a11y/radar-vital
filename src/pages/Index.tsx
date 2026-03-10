@@ -178,8 +178,10 @@ const Index = () => {
         const matchesInitials = c.initials.toLowerCase().includes(query);
         
         // Search by collaborator names
-        const matchesCollaborator = Object.entries(c.collaborators)
-          .some(([name, isActive]) => isActive && name.toLowerCase().includes(query));
+        const assignedIds = getAssignedCollaboratorIds(c.id);
+        const matchesCollaborator = allCollaborators
+          .filter(col => assignedIds.includes(col.id))
+          .some(col => col.name.toLowerCase().includes(query));
         
         return matchesName || matchesInitials || matchesCollaborator;
       });
