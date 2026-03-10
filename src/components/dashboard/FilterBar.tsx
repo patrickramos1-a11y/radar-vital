@@ -46,6 +46,7 @@ interface FilterBarProps {
   gridSize: GridSize;
   fitAllLocked: boolean;
   municipalities: Municipality[];
+  clientMunicipioNames: Set<string>;
   municipioFilters: string[];
   onMunicipioFilterToggle: (municipio: string) => void;
   onSearchChange: (query: string) => void;
