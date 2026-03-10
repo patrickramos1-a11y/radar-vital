@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ClientComment, CommentFormData, ReadStatusName, CommentType } from '@/types/comment';
+import { ClientComment, CommentFormData, ReadStatusName, CommentType, READ_STATUS_NAMES } from '@/types/comment';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
 
@@ -152,8 +152,26 @@ export function useClientComments(clientId: string) {
     try {
       const { error } = await supabase.from('client_comments').update({ [updateField]: newValue }).eq('id', id);
       if (error) throw error;
+      const newReadStatus = { ...comment.readStatus, [collaborator]: newValue };
+      
+      // Auto-archive if all users have read
+      const allRead = READ_STATUS_NAMES.every(name => newReadStatus[name]);
+      if (allRead && !comment.isArchived) {
+        const { error: archiveError } = await supabase
+          .from('client_comments')
+          .update({ is_archived: true, archived_by: 'Sistema', archived_at: new Date().toISOString() })
+          .eq('id', id);
+        if (!archiveError) {
+          setComments(prev => prev.map(c =>
+            c.id === id ? { ...c, readStatus: newReadStatus, isArchived: true, archivedBy: 'Sistema', archivedAt: new Date().toISOString() } : c
+          ));
+          triggerCommentCountRefresh();
+          return;
+        }
+      }
+      
       setComments(prev => prev.map(c =>
-        c.id === id ? { ...c, readStatus: { ...c.readStatus, [collaborator]: newValue } } : c
+        c.id === id ? { ...c, readStatus: newReadStatus } : c
       ));
       triggerCommentCountRefresh();
     } catch (error) {
