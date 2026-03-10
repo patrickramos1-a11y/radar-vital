@@ -1,6 +1,6 @@
 import { Search, X, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type VisualSortOption = 'order' | 'name' | 'priority' | 'tasks' | 'comments' | 'days_open';
 export type VisualSortDirection = 'asc' | 'desc';
@@ -23,20 +23,18 @@ interface VisualPanelFiltersProps {
   sortBy: VisualSortOption;
   sortDirection: VisualSortDirection;
   clientTypeFilter?: VisualClientTypeFilter;
-  collaboratorFilters: CollaboratorName[];
+  collaboratorFilters: string[];
   onSortChange: (sort: VisualSortOption) => void;
   onSortDirectionChange: (dir: VisualSortDirection) => void;
   onClientTypeFilterChange?: (type: VisualClientTypeFilter) => void;
-  onCollaboratorFilterToggle: (name: CollaboratorName) => void;
+  onCollaboratorFilterToggle: (name: string) => void;
   onClearFilters: () => void;
   
-  // Optional counts for badges
   highlightedCount?: number;
   jackboxCount?: number;
   checkedCount?: number;
   commentsCount?: number;
   
-  // Flags support
   filterFlags?: FilterFlags;
   onFilterFlagToggle?: (flag: keyof FilterFlags) => void;
   
@@ -64,6 +62,8 @@ export function VisualPanelFilters({
   ],
   showCollaborators = true,
 }: VisualPanelFiltersProps) {
+  const { collaborators } = useAuth();
+
   const handleSortClick = (sort: VisualSortOption) => {
     if (sortBy === sort) {
       onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -133,23 +133,23 @@ export function VisualPanelFilters({
         </div>
       )}
 
-      {/* Collaborator filters */}
+      {/* Collaborator filters - dynamic from database */}
       {showCollaborators && (
         <div className="flex items-center gap-1">
-          {COLLABORATOR_NAMES.map(name => (
+          {collaborators.map(collab => (
             <button
-              key={name}
-              onClick={() => onCollaboratorFilterToggle(name)}
+              key={collab.id}
+              onClick={() => onCollaboratorFilterToggle(collab.name)}
               className={`w-7 h-7 rounded-md text-[10px] font-bold flex items-center justify-center border-2 transition-all ${
-                collaboratorFilters.includes(name) ? 'text-white' : 'opacity-40 hover:opacity-70'
+                collaboratorFilters.includes(collab.name) ? 'text-white' : 'opacity-40 hover:opacity-70'
               }`}
               style={{
-                backgroundColor: collaboratorFilters.includes(name) ? COLLABORATOR_COLORS[name] : 'transparent',
-                borderColor: COLLABORATOR_COLORS[name],
-                color: collaboratorFilters.includes(name) ? '#fff' : COLLABORATOR_COLORS[name],
+                backgroundColor: collaboratorFilters.includes(collab.name) ? collab.color : 'transparent',
+                borderColor: collab.color,
+                color: collaboratorFilters.includes(collab.name) ? '#fff' : collab.color,
               }}
             >
-              {name.slice(0, 2).toUpperCase()}
+              {collab.initials}
             </button>
           ))}
         </div>
