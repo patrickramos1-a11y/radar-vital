@@ -100,9 +100,10 @@ const Index = () => {
   const selectedCount = useMemo(() => activeClients.filter(c => c.isChecked).length, [activeClients]);
   
   // Count of clients with at least one collaborator assigned (responsáveis)
+  const clientsWithAssignments = getClientsWithAnyAssignment();
   const responsaveisCount = useMemo(() => 
-    activeClients.filter(c => Object.values(c.collaborators).some(v => v)).length,
-    [activeClients]
+    activeClients.filter(c => clientsWithAssignments.has(c.id)).length,
+    [activeClients, clientsWithAssignments]
   );
 
   // "De Boa" classification: client has no priority, highlight or active tasks
