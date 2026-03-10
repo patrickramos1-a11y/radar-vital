@@ -263,6 +263,9 @@ const Config = () => {
       </header>
 
       <main className="max-w-7xl mx-auto p-6">
+        {/* Collaborator Manager */}
+        <CollaboratorManager />
+
         {/* Municipality Manager */}
         <MunicipalityManager />
 
