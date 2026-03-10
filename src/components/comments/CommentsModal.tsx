@@ -710,7 +710,7 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
             {format(new Date(comment.createdAt), "dd/MM HH:mm", { locale: ptBR })}
             {comment.isEdited && <span className="italic ml-1">(editada)</span>}
           </span>
-          <div className="flex items-center gap-1.5">
+           <div className="flex items-center gap-1.5">
             <button
               onClick={onReply}
               className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
@@ -719,6 +719,12 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
               <Reply className="w-3.5 h-3.5" />
               <span>Responder</span>
             </button>
+            <CreateTaskFromComment
+              commentText={comment.commentText}
+              clientId={comment.clientId}
+              clientName=""
+              collaborators={collaborators}
+            />
             <ReadStatusBar
               comment={comment}
               currentUserName={currentUserName}
