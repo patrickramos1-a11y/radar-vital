@@ -156,7 +156,7 @@ const Index = () => {
     );
   };
 
-  const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {
+  const handleCollaboratorFilterToggle = (collaborator: string) => {
     setCollaboratorFilters(prev => 
       prev.includes(collaborator)
         ? prev.filter(c => c !== collaborator)
