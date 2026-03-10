@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useMunicipalities } from "@/hooks/useMunicipalities";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter, ViewMode, GridSize } from "@/components/dashboard/FilterBar";
