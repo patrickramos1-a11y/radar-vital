@@ -578,14 +578,14 @@ function StatCardMini({ icon, value, label, variant = 'default' }: { icon?: Reac
     warning: '#F59E0B',
   }[variant];
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-card border-border">
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm hover:bg-card transition-colors">
       {icon && <span className="text-muted-foreground">{icon}</span>}
       {!icon && accentColor && (
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accentColor }} />
+        <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: accentColor }} />
       )}
       <div className="flex flex-col">
         <span className="text-sm font-bold text-foreground leading-none">{value}</span>
-        <span className="text-[8px] text-muted-foreground uppercase">{label}</span>
+        <span className="text-[8px] text-muted-foreground uppercase tracking-wider">{label}</span>
       </div>
     </div>
   );
