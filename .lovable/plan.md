@@ -1,38 +1,25 @@
 
 
-## Refatoramento Visual — Paleta SisRamos (Verde) + Fundo Branco + Visual Futurista
+## Inverter ordem dos comentarios e scroll automatico para os mais recentes
 
-### Objetivo
-Aplicar a identidade visual SisRamos (verde claro #6B9B37 + verde escuro #2D4A1C) com fundo branco, sem dark mode. Manter o visual moderno/futurista com glassmorphism e microinterações, apenas trocando a paleta de indigo/violet para verde.
+### Problema atual
+Os comentarios estao ordenados do mais novo (topo) para o mais antigo (fundo). O comportamento esperado e estilo WhatsApp: mais antigos no topo, mais novos embaixo, e ao abrir o modal ja estar posicionado nos comentarios mais recentes.
 
-### Paleta extraída do logo
-- Verde claro (primary): ~`95 55% 41%` (HSL de #6B9B37)
-- Verde escuro (accent): ~`105 45% 20%` (HSL de #2D4A1C)
-- Fundo: branco puro / cinza muito claro
-- Foreground: cinza escuro neutro
+### Mudancas no arquivo `src/components/comments/CommentsModal.tsx`
 
-### Arquivos a modificar
+**1. Inverter a ordenacao (linha 114)**
+Trocar a ordenacao de `b - a` (desc) para `a - b` (asc), mantendo pinados no topo:
+```
+return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+```
 
-**1. `src/index.css`** — Trocar todas as variáveis CSS:
-- `--primary`: verde claro SisRamos (`95 55% 41%`)
-- `--accent`: verde escuro SisRamos (`105 45% 20%`)
-- `--ring`, `--sidebar-primary`, `--sidebar-ring`, `--card-highlight`: seguir o verde
-- Manter `--background` branco/cinza claro, `--card` branco puro
-- Glassmorphism e utility classes: manter, apenas ajustar referências de cor
+**2. Auto-scroll para o final da lista**
+- Adicionar um `useRef` e `useEffect` no componente `CommentsModal` para fazer scroll automatico ate o final do container de comentarios sempre que os comentarios forem carregados ou atualizados.
+- Usar `ref.current.scrollTop = ref.current.scrollHeight` no container de overflow (linha 236).
+- Isso garante que ao abrir o modal, o usuario ja ve os comentarios mais recentes sem precisar rolar.
 
-**2. `src/components/layout/AppSidebar.tsx`**:
-- Trocar gradiente do logo de `from-primary to-accent` (já dinâmico via CSS vars, só precisa usar a logo real)
-- Copiar o logo `LOGO-FUNDO-BRA.png` para `src/assets/` e usar no header da sidebar em vez do "AC"
-- Atualizar o mobile logo no `AppLayout.tsx` também
-
-**3. `src/components/layout/AppLayout.tsx`**:
-- Substituir o ícone "AC" mobile pela logo SisRamos
-
-**4. `tailwind.config.ts`** — Sem alterações estruturais necessárias (cores vêm das CSS vars)
-
-### O que NÃO muda
-- Nenhuma lógica de backend, hooks, queries
-- Nenhuma funcionalidade, rotas, ou estrutura
-- Glassmorphism, animações, microinterações permanecem
-- Apenas paleta de cores e logo
+### Resultado esperado
+- Comentarios mais antigos ficam no topo, mais novos ficam embaixo
+- Ao abrir o modal, o scroll ja esta posicionado nos comentarios mais recentes
+- Para ver comentarios antigos, o usuario rola para cima
 

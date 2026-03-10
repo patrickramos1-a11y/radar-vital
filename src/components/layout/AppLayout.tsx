@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 import { UserSelector } from "./UserSelector";
 import { AppSidebar } from "./AppSidebar";
+import logoSisRamos from "@/assets/logo-sisramos.png";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -27,10 +28,8 @@ export function AppLayout({ children }: AppLayoutProps) {
               
               {/* Mobile Logo */}
               <div className="flex items-center gap-2 md:hidden">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
-                  <span className="text-primary-foreground font-bold text-xs">AC</span>
-                </div>
-                <span className="text-sm font-bold text-foreground">Painel AC</span>
+                <img src={logoSisRamos} alt="SisRamos" className="w-7 h-7 rounded-lg object-contain" />
+                <span className="text-sm font-bold text-foreground">SisRamos</span>
               </div>
             </div>
 
