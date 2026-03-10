@@ -1,44 +1,25 @@
 
 
-## Botão "+" para criar tarefa a partir de comentário
+## Inverter ordem dos comentarios e scroll automatico para os mais recentes
 
-### O que será feito
-Adicionar um botão "+" no footer de cada card de comentário (ao lado do "Responder" e do status de leitura) que abre um Popover para criar uma tarefa com o texto do comentário pré-preenchido e seletor de responsável.
+### Problema atual
+Os comentarios estao ordenados do mais novo (topo) para o mais antigo (fundo). O comportamento esperado e estilo WhatsApp: mais antigos no topo, mais novos embaixo, e ao abrir o modal ja estar posicionado nos comentarios mais recentes.
 
-### Onde será implementado
-1. **`src/components/comments/CommentsModal.tsx`** — CommentItem (modal de comentários do cliente)
-2. **`src/pages/CommentsPanel.tsx`** — PanelCommentCard (painel global de comentários)
+### Mudancas no arquivo `src/components/comments/CommentsModal.tsx`
 
-### Componente reutilizável
-Criar um componente `CreateTaskFromComment` (ou inline nos dois locais) que:
-- Recebe `commentText`, `clientId`, `clientName`, `collaborators`, e callback `onTaskCreated`
-- Renderiza um botão "+" (ícone `Plus`, mesmo tamanho dos outros botões do footer)
-- Ao clicar, abre um `Popover` com:
-  - Campo título pré-preenchido com o texto do comentário (editável, truncado se longo)
-  - Select de responsável (lista dinâmica dos colaboradores com cores)
-  - Botão "Criar Tarefa"
-- Usa o hook `useTasks` → `addTask(clientId, { title, assigned_to })` para salvar
+**1. Inverter a ordenacao (linha 114)**
+Trocar a ordenacao de `b - a` (desc) para `a - b` (asc), mantendo pinados no topo:
+```
+return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+```
 
-### Mudanças por arquivo
+**2. Auto-scroll para o final da lista**
+- Adicionar um `useRef` e `useEffect` no componente `CommentsModal` para fazer scroll automatico ate o final do container de comentarios sempre que os comentarios forem carregados ou atualizados.
+- Usar `ref.current.scrollTop = ref.current.scrollHeight` no container de overflow (linha 236).
+- Isso garante que ao abrir o modal, o usuario ja ve os comentarios mais recentes sem precisar rolar.
 
-**Novo: `src/components/comments/CreateTaskFromComment.tsx`**
-- Componente Popover com formulário compacto
-- Props: `commentText`, `clientId`, `clientName`, `collaborators[]`
-- Usa `useTasks()` internamente para chamar `addTask`
-
-**`src/components/comments/CommentsModal.tsx`**
-- Importar `CreateTaskFromComment`
-- Adicionar no footer do CommentItem, entre "Responder" e ReadStatusBar
-- Passar `comment.commentText`, `clientId` (do props do modal), `clientName`, `collaborators`
-
-**`src/pages/CommentsPanel.tsx`**
-- Importar `CreateTaskFromComment`
-- Adicionar no footer do PanelCommentCard, entre o botão Reply e PanelReadStatusBar
-- Passar `comment.commentText`, `comment.clientId`, `comment.clientName`, `collaborators`
-
-### UX
-- Botão discreto (mesmo estilo dos outros: `text-muted-foreground hover:text-primary`)
-- Popover compacto (~250px) com título pré-preenchido e select de usuário
-- Toast de sucesso ao criar tarefa
-- Popover fecha automaticamente após criação
+### Resultado esperado
+- Comentarios mais antigos ficam no topo, mais novos ficam embaixo
+- Ao abrir o modal, o scroll ja esta posicionado nos comentarios mais recentes
+- Para ver comentarios antigos, o usuario rola para cima
 

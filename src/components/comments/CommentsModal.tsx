@@ -13,6 +13,7 @@ import { ClientComment, ReadStatusName, READ_STATUS_NAMES, CommentType, COMMENT_
 import { useClientComments, triggerCommentCountRefresh } from '@/hooks/useClientComments';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pin, Trash2, Send, Loader2, Check, CheckCheck, EyeOff, Info, AlertTriangle, ShieldAlert, Lock, Unlock, UserPlus, CheckCircle2, Clock, ChevronDown, Search, Users, Pencil, X, Archive, Reply } from 'lucide-react';
+import { CreateTaskFromComment } from './CreateTaskFromComment';
 import { COLLABORATOR_COLORS, CollaboratorName } from '@/types/client';
 import { cn } from '@/lib/utils';
 
@@ -241,6 +242,8 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
           currentUserName={currentUserName}
           isAdmin={isAdmin}
           collaborators={collaborators}
+          clientId={clientId}
+          clientName={clientName}
           handleDelete={handleDelete}
           togglePinned={togglePinned}
           toggleReadStatus={toggleReadStatus}
@@ -261,6 +264,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
 // --- Auto-scroll comments list ---
 function CommentsListWithAutoScroll({
   isLoading, filteredComments, viewFilter, comments, currentUserName, isAdmin, collaborators,
+  clientId, clientName,
   handleDelete, togglePinned, toggleReadStatus, confirmReading, closeComment, reopenComment,
   updateRequiredReaders, editComment, archiveComment, unarchiveComment, setReplyingTo,
 }: {
@@ -271,6 +275,8 @@ function CommentsListWithAutoScroll({
   currentUserName: string;
   isAdmin: boolean;
   collaborators: { id: string; name: string }[];
+  clientId: string;
+  clientName: string;
   handleDelete: (id: string) => void;
   togglePinned: (id: string) => void;
   toggleReadStatus: (id: string, c: ReadStatusName) => void;
@@ -315,6 +321,8 @@ function CommentsListWithAutoScroll({
               isAdmin={isAdmin}
               collaborators={collaborators}
               allComments={comments}
+              clientId={clientId}
+              clientName={clientName}
               onDelete={() => handleDelete(comment.id)}
               onTogglePin={() => togglePinned(comment.id)}
               onToggleRead={(collaborator) => toggleReadStatus(comment.id, collaborator)}
@@ -447,6 +455,8 @@ interface CommentItemProps {
   isAdmin: boolean;
   collaborators: { id: string; name: string }[];
   allComments: ClientComment[];
+  clientId: string;
+  clientName: string;
   onDelete: () => void;
   onTogglePin: () => void;
   onToggleRead: (collaborator: ReadStatusName) => void;
@@ -460,7 +470,7 @@ interface CommentItemProps {
   onReply: () => void;
 }
 
-function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComments, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders, onEdit, onArchive, onUnarchive, onReply }: CommentItemProps) {
+function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComments, clientId, clientName, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders, onEdit, onArchive, onUnarchive, onReply }: CommentItemProps) {
   const [showEditReaders, setShowEditReaders] = useState(false);
   const [editReaders, setEditReaders] = useState<string[]>(comment.requiredReaders);
   const [isEditing, setIsEditing] = useState(false);
@@ -709,7 +719,7 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
             {format(new Date(comment.createdAt), "dd/MM HH:mm", { locale: ptBR })}
             {comment.isEdited && <span className="italic ml-1">(editada)</span>}
           </span>
-          <div className="flex items-center gap-1.5">
+           <div className="flex items-center gap-1.5">
             <button
               onClick={onReply}
               className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
@@ -718,6 +728,12 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
               <Reply className="w-3.5 h-3.5" />
               <span>Responder</span>
             </button>
+            <CreateTaskFromComment
+              commentText={comment.commentText}
+              clientId={clientId}
+              clientName={clientName}
+              collaborators={collaborators}
+            />
             <ReadStatusBar
               comment={comment}
               currentUserName={currentUserName}

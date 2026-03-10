@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { MessageSquare, User, Clock, Check, CheckCheck, Eye, EyeOff, Pin, Trash2, Filter, Info, AlertTriangle, ShieldAlert, Lock, Unlock, CheckCircle2, Send, Loader2, ChevronDown, Search, Users, Plus, Pencil, X, Archive, Reply } from "lucide-react";
+import { CreateTaskFromComment } from "@/components/comments/CreateTaskFromComment";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -895,6 +896,12 @@ function CommentCard({ comment, currentUserName, collaborators, collaboratorName
           >
             <Reply className="w-3.5 h-3.5" />
           </button>
+          <CreateTaskFromComment
+            commentText={comment.commentText}
+            clientId={comment.clientId}
+            clientName={comment.clientName}
+            collaborators={collaborators}
+          />
           <PanelReadStatusBar
             comment={comment}
             currentUserName={currentUserName}
