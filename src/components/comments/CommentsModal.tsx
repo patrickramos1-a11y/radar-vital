@@ -264,6 +264,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
 // --- Auto-scroll comments list ---
 function CommentsListWithAutoScroll({
   isLoading, filteredComments, viewFilter, comments, currentUserName, isAdmin, collaborators,
+  clientId, clientName,
   handleDelete, togglePinned, toggleReadStatus, confirmReading, closeComment, reopenComment,
   updateRequiredReaders, editComment, archiveComment, unarchiveComment, setReplyingTo,
 }: {
@@ -274,6 +275,8 @@ function CommentsListWithAutoScroll({
   currentUserName: string;
   isAdmin: boolean;
   collaborators: { id: string; name: string }[];
+  clientId: string;
+  clientName: string;
   handleDelete: (id: string) => void;
   togglePinned: (id: string) => void;
   toggleReadStatus: (id: string, c: ReadStatusName) => void;
