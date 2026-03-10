@@ -46,7 +46,8 @@ export function useCollaborators() {
     name: string,
     color: string,
     initials: string,
-    email?: string
+    email?: string,
+    role?: string
   ): Promise<Collaborator | null> => {
     try {
       const { data, error } = await supabase
@@ -56,7 +57,8 @@ export function useCollaborators() {
           email: email || null,
           color,
           initials,
-        })
+          role: role || 'colaborador',
+        } as any)
         .select()
         .single();
 
