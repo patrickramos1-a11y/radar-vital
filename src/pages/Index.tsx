@@ -225,13 +225,17 @@ const Index = () => {
         const matchesPriority = filterFlags.priority && c.isPriority;
         const matchesHighlighted = filterFlags.highlighted && highlightedClients.has(c.id);
         const matchesSelected = filterFlags.selected && c.isChecked;
-        const matchesHasCollaborators = filterFlags.hasCollaborators && Object.values(c.collaborators).some(v => v);
+        const matchesHasCollaborators = filterFlags.hasCollaborators && getAssignedCollaboratorIds(c.id).length > 0;
         const matchesWithJackbox = filterFlags.withJackbox && getActiveTaskCount(c.id) > 0;
         const matchesWithoutJackbox = filterFlags.withoutJackbox && getActiveTaskCount(c.id) === 0;
         const matchesWithComments = filterFlags.withComments && getCommentCount(c.id) > 0;
         const matchesWithoutComments = filterFlags.withoutComments && getCommentCount(c.id) === 0;
+        const assignedIds = getAssignedCollaboratorIds(c.id);
         const matchesCollaborator = collaboratorFilters.length > 0 && 
-          collaboratorFilters.some(collab => c.collaborators[collab]);
+          collaboratorFilters.some(collab => {
+            const collabObj = allCollaborators.find(co => co.name.toLowerCase() === collab);
+            return collabObj && assignedIds.includes(collabObj.id);
+          });
 
         return matchesPriority || matchesHighlighted || matchesSelected || matchesHasCollaborators ||
                matchesWithJackbox || matchesWithoutJackbox || 
