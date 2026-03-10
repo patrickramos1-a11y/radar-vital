@@ -499,6 +499,7 @@ const Index = () => {
             onGridSizeChange={setGridSize}
             onFitAllLockedChange={setFitAllLocked}
             municipalities={municipalities}
+            clientMunicipioNames={clientMunicipioNames}
             municipioFilters={municipioFilters}
             onMunicipioFilterToggle={handleMunicipioFilterToggle}
           />
