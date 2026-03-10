@@ -49,7 +49,7 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen, collaborators = [] 
   const topCompleted = rankings.completedByCollab[0];
   const oldest = rankings.oldest;
   const oldestDays = oldest ? getDaysOpen(oldest) : 0;
-  const oldestCollab = oldest ? collaborators.find(c => c.name === oldest.assigned_to) : null;
+  const oldestCollab = oldest ? collaborators.find(c => c.name.toLowerCase() === oldest.assigned_to?.toLowerCase()) : null;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 py-3">
