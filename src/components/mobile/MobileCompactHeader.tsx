@@ -1,11 +1,11 @@
 import { Users, Star, Sparkles, UserCheck, MessageCircle, ListChecks, CheckSquare, ShieldCheck, AlertTriangle } from "lucide-react";
-import { COLLABORATOR_COLORS, CollaboratorName } from "@/types/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileCompactHeaderProps {
   totalClients: number;
   acCount: number;
   avCount: number;
-  collaboratorSelectedStats: Record<CollaboratorName, number>;
+  collaboratorSelectedStats: Record<string, number>;
   priorityCount: number;
   highlightedCount: number;
   responsaveisCount: number;
@@ -22,10 +22,10 @@ interface MobileCompactHeaderProps {
     withJackbox: boolean;
     selected: boolean;
   };
-  collaboratorFilters: CollaboratorName[];
+  collaboratorFilters: string[];
   alertFilter: 'all' | 'deBoa' | 'comAlerta';
   onFilterFlagToggle: (flag: 'priority' | 'highlighted' | 'hasCollaborators' | 'withComments' | 'withJackbox' | 'selected') => void;
-  onCollaboratorFilterToggle: (collaborator: CollaboratorName) => void;
+  onCollaboratorFilterToggle: (collaborator: string) => void;
   onAlertFilterChange: (filter: 'all' | 'deBoa' | 'comAlerta') => void;
 }
 
