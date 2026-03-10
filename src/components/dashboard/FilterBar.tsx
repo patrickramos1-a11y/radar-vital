@@ -193,6 +193,7 @@ export function FilterBar({
         {/* Municipality Filter */}
         <MunicipalityDropdown
           municipalities={municipalities}
+          clientMunicipioNames={clientMunicipioNames}
           selectedMunicipios={municipioFilters}
           onToggle={onMunicipioFilterToggle}
         />
