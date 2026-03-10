@@ -113,6 +113,7 @@ export function FilterBar({
     filterFlags.withoutComments ||
     collaboratorFilters.length > 0 ||
     clientTypeFilter !== 'all' ||
+    municipioFilters.length > 0 ||
     searchQuery.trim().length > 0;
 
   return (
