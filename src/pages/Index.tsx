@@ -284,8 +284,8 @@ const Index = () => {
     setSelectedClientId(prev => prev === id ? null : id);
   };
 
-  const handleToggleCollaborator = (id: string, collaborator: CollaboratorName) => {
-    toggleCollaborator(id, collaborator);
+  const handleToggleCollaboratorAssignment = (clientId: string, collaboratorId: string) => {
+    toggleAssignment(clientId, collaboratorId);
   };
 
   const handleOpenChecklist = (id: string) => {
