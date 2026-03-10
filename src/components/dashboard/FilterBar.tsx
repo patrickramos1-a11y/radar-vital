@@ -45,6 +45,9 @@ interface FilterBarProps {
   viewMode: ViewMode;
   gridSize: GridSize;
   fitAllLocked: boolean;
+  municipalities: Municipality[];
+  municipioFilters: string[];
+  onMunicipioFilterToggle: (municipio: string) => void;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: SortOption) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
