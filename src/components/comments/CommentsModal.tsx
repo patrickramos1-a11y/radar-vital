@@ -455,6 +455,8 @@ interface CommentItemProps {
   isAdmin: boolean;
   collaborators: { id: string; name: string }[];
   allComments: ClientComment[];
+  clientId: string;
+  clientName: string;
   onDelete: () => void;
   onTogglePin: () => void;
   onToggleRead: (collaborator: ReadStatusName) => void;
@@ -468,7 +470,7 @@ interface CommentItemProps {
   onReply: () => void;
 }
 
-function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComments, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders, onEdit, onArchive, onUnarchive, onReply }: CommentItemProps) {
+function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComments, clientId, clientName, onDelete, onTogglePin, onToggleRead, onConfirmReading, onClose, onReopen, onUpdateReaders, onEdit, onArchive, onUnarchive, onReply }: CommentItemProps) {
   const [showEditReaders, setShowEditReaders] = useState(false);
   const [editReaders, setEditReaders] = useState<string[]>(comment.requiredReaders);
   const [isEditing, setIsEditing] = useState(false);
