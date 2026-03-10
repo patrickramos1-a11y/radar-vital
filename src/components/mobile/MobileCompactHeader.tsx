@@ -79,26 +79,26 @@ export function MobileCompactHeader({
 
       {/* Row 2: Collaborator cards - clickable as filters */}
       <div className="flex items-center gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-hide">
-        {collaborators.map(name => (
+        {allCollaborators.map(collab => (
           <button
-            key={name}
-            onClick={() => onCollaboratorFilterToggle(name)}
+            key={collab.id}
+            onClick={() => onCollaboratorFilterToggle(collab.name)}
             className={`flex flex-col rounded-lg border overflow-hidden transition-all shrink-0 ${
-              collaboratorFilters.includes(name)
+              collaboratorFilters.includes(collab.name)
                 ? 'ring-2 ring-offset-1 ring-primary shadow-lg'
                 : 'border-border'
             }`}
           >
             <div 
               className="px-2.5 py-0.5 text-center"
-              style={{ backgroundColor: COLLABORATOR_COLORS[name] }}
+              style={{ backgroundColor: collab.color }}
             >
               <span className="text-[9px] font-bold text-white uppercase tracking-wide">
-                {name}
+                {collab.name}
               </span>
             </div>
             <div className="flex items-center justify-center px-2 py-0.5 bg-card">
-              <span className="text-sm font-bold leading-none">{collaboratorSelectedStats[name]}</span>
+              <span className="text-sm font-bold leading-none">{collaboratorSelectedStats[collab.name] || 0}</span>
             </div>
           </button>
         ))}
