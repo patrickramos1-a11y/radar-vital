@@ -65,6 +65,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchCollaborators();
+
+    // Subscribe to realtime changes on collaborators table
+    const channel = supabase
+      .channel('collaborators-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'collaborators' },
+        () => {
+          fetchCollaborators();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchCollaborators]);
 
   const selectUser = useCallback((collaborator: Collaborator) => {
