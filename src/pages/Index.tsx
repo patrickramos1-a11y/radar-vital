@@ -132,9 +132,18 @@ const Index = () => {
       withoutComments: false,
     });
     setCollaboratorFilters([]);
+    setMunicipioFilters([]);
     setClientTypeFilter('all');
     setSearchQuery('');
     setAlertFilter('all');
+  };
+
+  const handleMunicipioFilterToggle = (municipio: string) => {
+    setMunicipioFilters(prev =>
+      prev.includes(municipio)
+        ? prev.filter(m => m !== municipio)
+        : [...prev, municipio]
+    );
   };
 
   const handleCollaboratorFilterToggle = (collaborator: CollaboratorName) => {
