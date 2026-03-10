@@ -10,7 +10,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClientAssignments } from "@/hooks/useClientAssignments";
-import { CollaboratorName, Client } from "@/types/client";
+import { Client } from "@/types/client";
 import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
