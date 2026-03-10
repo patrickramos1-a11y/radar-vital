@@ -298,6 +298,7 @@ const Index = () => {
     collaboratorFilters.length > 0 ||
     clientTypeFilter !== 'all' ||
     alertFilter !== 'all' ||
+    municipioFilters.length > 0 ||
     searchQuery.trim() !== '';
 
   // Mobile View
