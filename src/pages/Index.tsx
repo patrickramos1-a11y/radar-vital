@@ -72,7 +72,7 @@ const Index = () => {
     withComments: false,
     withoutComments: false,
   });
-  const [collaboratorFilters, setCollaboratorFilters] = useState<CollaboratorName[]>([]);
+  const [collaboratorFilters, setCollaboratorFilters] = useState<string[]>([]);
   const [municipioFilters, setMunicipioFilters] = useState<string[]>([]);
   const { municipalities } = useMunicipalities();
 
