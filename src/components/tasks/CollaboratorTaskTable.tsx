@@ -33,7 +33,7 @@ export function CollaboratorTaskTable({ collaborator, collaboratorColor, tasks, 
   }, [clients]);
 
   const collabTasks = useMemo(() => {
-    return tasks.filter(t => t.assigned_to === collaborator);
+    return tasks.filter(t => assigneeMatches(t.assigned_to, collaborator));
   }, [tasks, collaborator]);
 
   const sorted = useMemo(() => {

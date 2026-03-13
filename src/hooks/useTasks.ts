@@ -13,7 +13,7 @@ const dbRowToTask = (row: any): Task => ({
   client_id: row.client_id,
   title: row.title,
   completed: row.completed,
-  assigned_to: row.assigned_to as CollaboratorName | null,
+  assigned_to: row.assigned_to,
   created_at: row.created_at,
   completed_at: row.completed_at,
 });

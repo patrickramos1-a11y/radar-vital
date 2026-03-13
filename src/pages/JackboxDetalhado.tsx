@@ -181,7 +181,7 @@ interface TaskItemProps {
 }
 
 function TaskItem({ task, collaborators, onToggle }: TaskItemProps) {
-  const collab = collaborators.find(c => c.name === task.assigned_to);
+  const collab = collaborators.find(c => assigneeMatches(task.assigned_to, c.name));
   return (
     <div className="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-muted/50 transition-colors">
       <Checkbox checked={task.completed} onCheckedChange={onToggle} />

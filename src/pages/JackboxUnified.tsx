@@ -508,10 +508,10 @@ function JackboxCardEnhanced({
                   {days}d
                 </span>
               )}
-              {task.assigned_to && collaboratorColorMap[task.assigned_to] && (
+              {task.assigned_to && findCollaboratorColor(task.assigned_to, collaboratorColorMap) && (
                 <div
                   className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
-                  style={{ backgroundColor: collaboratorColorMap[task.assigned_to] }}
+                  style={{ backgroundColor: findCollaboratorColor(task.assigned_to, collaboratorColorMap) }}
                   title={task.assigned_to}
                 />
               )}
