@@ -348,7 +348,7 @@ function JackboxCardEnhanced({
 }: JackboxCardEnhancedProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskAssignee, setNewTaskAssignee] = useState('');
+  const [newTaskAssignee, setNewTaskAssignee] = useState('none');
 
   // Group tasks by collaborator for summary
   const tasksByCollaborator = useMemo(() => {
@@ -367,10 +367,10 @@ function JackboxCardEnhanced({
 
   const handleSubmit = async () => {
     if (!newTaskTitle.trim()) return;
-    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignee || null);
+    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignee === 'none' ? null : newTaskAssignee);
     if (success) {
       setNewTaskTitle('');
-      setNewTaskAssignee('');
+      setNewTaskAssignee('none');
       setIsAdding(false);
     }
   };
@@ -460,7 +460,7 @@ function JackboxCardEnhanced({
                 <SelectValue placeholder="Responsável" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {collaborators.map((collab) => (
                   <SelectItem key={collab.name} value={collab.name}>
                     <div className="flex items-center gap-2">
