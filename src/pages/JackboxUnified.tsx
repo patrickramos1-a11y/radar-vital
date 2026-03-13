@@ -354,8 +354,9 @@ function JackboxCardEnhanced({
     const summary: Record<string, number> = {};
     collaborators.forEach(c => { summary[c.name] = 0; });
     tasks.filter(t => !t.completed).forEach(t => {
-      if (t.assigned_to && summary[t.assigned_to] !== undefined) {
-        summary[t.assigned_to]++;
+      if (t.assigned_to) {
+        const match = collaborators.find(c => assigneeMatches(t.assigned_to, c.name));
+        if (match) summary[match.name]++;
       }
     });
     return summary;
