@@ -177,9 +177,7 @@ export default function JackboxUnified() {
     return collaboratorNames.filter(name => (kpis.byCollaborator[name]?.count || 0) > threshold);
   }, [kpis.byCollaborator, collaboratorNames]);
 
-  const handleCollaboratorClick = (name: string) => {
-    setSelectedCollaborator(prev => prev === name ? null : name);
-  };
+  
 
   return (
     <AppLayout>
