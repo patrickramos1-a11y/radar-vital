@@ -13,6 +13,7 @@ import { Client } from "@/types/client";
 import { Task } from "@/types/task";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { assigneeMatches } from "@/lib/taskAssignee";
 
 export default function JackboxDetalhado() {
   const { collaborators: allCollaborators } = useAuth();
