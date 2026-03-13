@@ -367,10 +367,10 @@ function JackboxCardEnhanced({
 
   const handleSubmit = async () => {
     if (!newTaskTitle.trim()) return;
-    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignee || null);
+    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignee === 'none' ? null : newTaskAssignee);
     if (success) {
       setNewTaskTitle('');
-      setNewTaskAssignee('');
+      setNewTaskAssignee('none');
       setIsAdding(false);
     }
   };
