@@ -101,7 +101,21 @@ export default function JackboxUnified() {
     getActiveTaskCount,
     defaultSort: 'tasks',
     customSorter,
+    skipCollaboratorFilter: true,
   });
+
+  // Task-based collaborator filtering (instead of client.collaborators)
+  const displayClients = useMemo(() => {
+    if (collaboratorFilters.length === 0) return filteredClients;
+    return filteredClients.filter(c => {
+      const clientTasks = statusFilter === "pendentes"
+        ? getActiveTasksForClient(c.id)
+        : statusFilter === "concluidas"
+        ? getTasksForClient(c.id).filter(t => t.completed)
+        : getTasksForClient(c.id);
+      return clientTasks.some(t => assigneeMatchesAny(t.assigned_to, collaboratorFilters));
+    });
+  }, [filteredClients, collaboratorFilters, tasks, statusFilter]);
 
   // KPIs
   const kpis = useMemo(() => {
