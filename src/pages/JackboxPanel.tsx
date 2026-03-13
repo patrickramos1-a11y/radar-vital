@@ -83,7 +83,7 @@ export default function JackboxPanel() {
     
     return filteredClients.filter(client => {
       const matchingTasks = getActiveTasksForClient(client.id).filter(t =>
-        t.assigned_to && collaboratorFilters.includes(t.assigned_to)
+        assigneeMatchesAny(t.assigned_to, collaboratorFilters)
       );
       return matchingTasks.length > 0;
     });
