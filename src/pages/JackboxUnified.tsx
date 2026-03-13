@@ -460,7 +460,7 @@ function JackboxCardEnhanced({
                 <SelectValue placeholder="Responsável" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {collaborators.map((collab) => (
                   <SelectItem key={collab.name} value={collab.name}>
                     <div className="flex items-center gap-2">
