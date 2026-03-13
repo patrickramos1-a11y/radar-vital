@@ -156,7 +156,7 @@ export function useTasks() {
   );
 
   // Get tasks by collaborator
-  const getTasksByCollaborator = useCallback((collaborator: CollaboratorName) => {
+  const getTasksByCollaborator = useCallback((collaborator: string) => {
     return tasks.filter(t => t.assigned_to === collaborator && !t.completed);
   }, [tasks]);
 
