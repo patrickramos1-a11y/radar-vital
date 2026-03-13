@@ -202,7 +202,7 @@ export default function JackboxUnified() {
             {collaboratorNames.map((name) => {
               const info = kpis.byCollaborator[name] || { count: 0, avgDays: 0, oldestDays: 0, color: '#6B7280' };
               const isOverloaded = overloadedCollaborators.includes(name);
-              const isSelected = selectedCollaborator === name;
+              
               const color = collaboratorColorMap[name] || '#6B7280';
               return (
                      <Tooltip key={name}>
