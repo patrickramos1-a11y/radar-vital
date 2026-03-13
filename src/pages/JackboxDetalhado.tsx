@@ -139,7 +139,7 @@ export default function JackboxDetalhado() {
                         </div>
                         <div className="flex items-center gap-1">
                           {allCollaborators.map((collab) => {
-                            const count = clientTasks.filter(t => t.assigned_to === collab.name).length;
+                            const count = clientTasks.filter(t => assigneeMatches(t.assigned_to, collab.name)).length;
                             if (count === 0) return null;
                             return (
                               <span key={collab.id} className="px-1.5 py-0.5 rounded text-xs font-bold text-white" style={{ backgroundColor: collab.color }}>
