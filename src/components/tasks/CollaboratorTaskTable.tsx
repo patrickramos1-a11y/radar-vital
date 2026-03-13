@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Task } from "@/types/task";
 import { Client } from "@/types/client";
 import { cn } from "@/lib/utils";
+import { assigneeMatches } from "@/lib/taskAssignee";
 
 interface CollaboratorTaskTableProps {
   collaborator: string;
