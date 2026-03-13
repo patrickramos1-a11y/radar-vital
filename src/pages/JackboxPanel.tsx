@@ -12,6 +12,7 @@ import { useVisualPanelFilters } from "@/hooks/useVisualPanelFilters";
 import { useAuth } from "@/contexts/AuthContext";
 import { Client } from "@/types/client";
 import { Task } from "@/types/task";
+import { assigneeMatches, assigneeMatchesAny, findCollaboratorColor } from "@/lib/taskAssignee";
 
 export default function JackboxPanel() {
   const { collaborators: allCollaborators } = useAuth();
