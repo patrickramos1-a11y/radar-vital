@@ -47,7 +47,7 @@ export function useVisualPanelFilters({
       result = result.filter(c => c.clientType === clientTypeFilter);
     }
 
-    if (collaboratorFilters.length > 0) {
+    if (collaboratorFilters.length > 0 && !skipCollaboratorFilter) {
       result = result.filter(c => collaboratorFilters.some(name => c.collaborators[name]));
     }
 
