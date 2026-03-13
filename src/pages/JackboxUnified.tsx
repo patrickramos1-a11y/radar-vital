@@ -40,7 +40,6 @@ export default function JackboxUnified() {
   } = useTasks();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pendentes");
-  const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
 
   const collaboratorNames = useMemo(() => allCollaborators.map(c => c.name), [allCollaborators]);
   const collaboratorColorMap = useMemo(() => {
@@ -102,7 +101,21 @@ export default function JackboxUnified() {
     getActiveTaskCount,
     defaultSort: 'tasks',
     customSorter,
+    skipCollaboratorFilter: true,
   });
+
+  // Task-based collaborator filtering (instead of client.collaborators)
+  const displayClients = useMemo(() => {
+    if (collaboratorFilters.length === 0) return filteredClients;
+    return filteredClients.filter(c => {
+      const clientTasks = statusFilter === "pendentes"
+        ? getActiveTasksForClient(c.id)
+        : statusFilter === "concluidas"
+        ? getTasksForClient(c.id).filter(t => t.completed)
+        : getTasksForClient(c.id);
+      return clientTasks.some(t => assigneeMatchesAny(t.assigned_to, collaboratorFilters));
+    });
+  }, [filteredClients, collaboratorFilters, tasks, statusFilter]);
 
   // KPIs
   const kpis = useMemo(() => {
@@ -164,9 +177,7 @@ export default function JackboxUnified() {
     return collaboratorNames.filter(name => (kpis.byCollaborator[name]?.count || 0) > threshold);
   }, [kpis.byCollaborator, collaboratorNames]);
 
-  const handleCollaboratorClick = (name: string) => {
-    setSelectedCollaborator(prev => prev === name ? null : name);
-  };
+  
 
   return (
     <AppLayout>
@@ -191,42 +202,39 @@ export default function JackboxUnified() {
             {collaboratorNames.map((name) => {
               const info = kpis.byCollaborator[name] || { count: 0, avgDays: 0, oldestDays: 0, color: '#6B7280' };
               const isOverloaded = overloadedCollaborators.includes(name);
-              const isSelected = selectedCollaborator === name;
+              
               const color = collaboratorColorMap[name] || '#6B7280';
               return (
-                <Tooltip key={name}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => handleCollaboratorClick(name)}
-                      className={cn(
-                        "flex items-center gap-1.5 px-2 py-1 rounded border transition-all cursor-pointer",
-                        isOverloaded && "ring-2 ring-red-500/50 animate-pulse",
-                        isSelected && "ring-2 ring-primary shadow-md",
-                      )}
-                      style={{ 
-                        borderColor: color,
-                        backgroundColor: `${color}${isSelected ? '25' : '15'}`,
-                      }}
-                    >
-                      <span className="text-sm font-bold" style={{ color }}>
-                        {info.count}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground uppercase">{name}</span>
-                      {isOverloaded && (
-                        <span className="text-[8px] text-destructive font-bold">!</span>
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-xs space-y-1">
-                      <p className="font-bold capitalize">{name}</p>
-                      <p>Pendentes: {info.count}</p>
-                      <p>Média: {info.avgDays}d em aberto</p>
-                      <p>Mais antiga: {info.oldestDays}d</p>
-                      <p className="text-muted-foreground italic">Clique para ver detalhes</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
+                     <Tooltip key={name}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={cn(
+                            "flex items-center gap-1.5 px-2 py-1 rounded border",
+                            isOverloaded && "ring-2 ring-red-500/50 animate-pulse",
+                          )}
+                          style={{ 
+                            borderColor: color,
+                            backgroundColor: `${color}15`,
+                          }}
+                        >
+                          <span className="text-sm font-bold" style={{ color }}>
+                            {info.count}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground uppercase">{name}</span>
+                          {isOverloaded && (
+                            <span className="text-[8px] text-destructive font-bold">!</span>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-xs space-y-1">
+                          <p className="font-bold capitalize">{name}</p>
+                          <p>Pendentes: {info.count}</p>
+                          <p>Média: {info.avgDays}d em aberto</p>
+                          <p>Mais antiga: {info.oldestDays}d</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
               );
             })}
           </TooltipProvider>
@@ -275,8 +283,8 @@ export default function JackboxUnified() {
         />
 
         {/* Visual Grid */}
-        <VisualGrid itemCount={filteredClients.length}>
-          {filteredClients.map((client) => (
+        <VisualGrid itemCount={displayClients.length}>
+          {displayClients.map((client) => (
             <JackboxCardEnhanced
               key={client.id}
               client={client}
@@ -293,20 +301,11 @@ export default function JackboxUnified() {
           ))}
         </VisualGrid>
 
-        {/* Collaborator Detail Table */}
-        {selectedCollaborator && (
-          <CollaboratorTaskTable
-            collaborator={selectedCollaborator}
-            collaboratorColor={collaboratorColorMap[selectedCollaborator] || '#6B7280'}
-            tasks={tasks}
-            clients={activeClients}
-            getDaysOpen={getDaysOpen}
-            onClose={() => setSelectedCollaborator(null)}
-          />
-        )}
+
+
 
         {/* Empty State */}
-        {filteredClients.length === 0 && (
+        {displayClients.length === 0 && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <Box className="w-12 h-12 mx-auto mb-4 opacity-50" />

@@ -8,6 +8,8 @@ interface UseVisualPanelFiltersOptions {
   getActiveTaskCount?: (id: string) => number;
   defaultSort?: VisualSortOption;
   customSorter?: (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => number | null;
+  /** When true, the hook won't filter by collaborator — caller handles it externally */
+  skipCollaboratorFilter?: boolean;
 }
 
 export function useVisualPanelFilters({ 
@@ -15,7 +17,8 @@ export function useVisualPanelFilters({
   highlightedClients, 
   getActiveTaskCount, 
   defaultSort = 'order',
-  customSorter 
+  customSorter,
+  skipCollaboratorFilter = false,
 }: UseVisualPanelFiltersOptions) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<VisualSortOption>(defaultSort);
@@ -44,7 +47,7 @@ export function useVisualPanelFilters({
       result = result.filter(c => c.clientType === clientTypeFilter);
     }
 
-    if (collaboratorFilters.length > 0) {
+    if (collaboratorFilters.length > 0 && !skipCollaboratorFilter) {
       result = result.filter(c => collaboratorFilters.some(name => c.collaborators[name]));
     }
 
