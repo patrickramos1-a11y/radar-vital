@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Task } from "@/types/task";
 import { Client } from "@/types/client";
 import { cn } from "@/lib/utils";
+import { assigneeMatches } from "@/lib/taskAssignee";
 
 interface CollaboratorTaskTableProps {
   collaborator: string;
@@ -32,7 +33,7 @@ export function CollaboratorTaskTable({ collaborator, collaboratorColor, tasks, 
   }, [clients]);
 
   const collabTasks = useMemo(() => {
-    return tasks.filter(t => t.assigned_to === collaborator);
+    return tasks.filter(t => assigneeMatches(t.assigned_to, collaborator));
   }, [tasks, collaborator]);
 
   const sorted = useMemo(() => {

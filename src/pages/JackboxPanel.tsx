@@ -12,6 +12,7 @@ import { useVisualPanelFilters } from "@/hooks/useVisualPanelFilters";
 import { useAuth } from "@/contexts/AuthContext";
 import { Client } from "@/types/client";
 import { Task } from "@/types/task";
+import { assigneeMatches, assigneeMatchesAny, findCollaboratorColor } from "@/lib/taskAssignee";
 
 export default function JackboxPanel() {
   const { collaborators: allCollaborators } = useAuth();
@@ -63,7 +64,7 @@ export default function JackboxPanel() {
       totalTasks: activeTasks.length,
       clientsWithTasks: new Set(activeTasks.map(t => t.client_id)).size,
       byCollaborator: allCollaborators.reduce((acc, collab) => {
-        acc[collab.name] = { count: activeTasks.filter(t => t.assigned_to === collab.name).length, color: collab.color };
+        acc[collab.name] = { count: activeTasks.filter(t => assigneeMatches(t.assigned_to, collab.name)).length, color: collab.color };
         return acc;
       }, {} as Record<string, { count: number; color: string }>),
     };
@@ -72,9 +73,7 @@ export default function JackboxPanel() {
   const getFilteredTasks = (clientId: string) => {
     let clientTasks = getActiveTasksForClient(clientId);
     if (collaboratorFilters.length > 0) {
-      clientTasks = clientTasks.filter(t => 
-        t.assigned_to && collaboratorFilters.includes(t.assigned_to)
-      );
+      clientTasks = clientTasks.filter(t => assigneeMatchesAny(t.assigned_to, collaboratorFilters));
     }
     return clientTasks;
   };
@@ -84,7 +83,7 @@ export default function JackboxPanel() {
     
     return filteredClients.filter(client => {
       const matchingTasks = getActiveTasksForClient(client.id).filter(t =>
-        t.assigned_to && collaboratorFilters.includes(t.assigned_to)
+        assigneeMatchesAny(t.assigned_to, collaboratorFilters)
       );
       return matchingTasks.length > 0;
     });
@@ -250,10 +249,10 @@ function JackboxCard({
                 {task.title}
               </span>
             </div>
-            {task.assigned_to && collaboratorColorMap[task.assigned_to] && (
+            {task.assigned_to && findCollaboratorColor(task.assigned_to, collaboratorColorMap) && (
               <div
                 className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
-                style={{ backgroundColor: collaboratorColorMap[task.assigned_to] }}
+                style={{ backgroundColor: findCollaboratorColor(task.assigned_to, collaboratorColorMap) }}
                 title={task.assigned_to}
               />
             )}

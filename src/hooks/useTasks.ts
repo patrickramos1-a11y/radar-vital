@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Task, TaskFormData } from '@/types/task';
-import { CollaboratorName } from '@/types/client';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
 
@@ -14,7 +13,7 @@ const dbRowToTask = (row: any): Task => ({
   client_id: row.client_id,
   title: row.title,
   completed: row.completed,
-  assigned_to: row.assigned_to as CollaboratorName | null,
+  assigned_to: row.assigned_to,
   created_at: row.created_at,
   completed_at: row.completed_at,
 });
@@ -157,7 +156,7 @@ export function useTasks() {
   );
 
   // Get tasks by collaborator
-  const getTasksByCollaborator = useCallback((collaborator: CollaboratorName) => {
+  const getTasksByCollaborator = useCallback((collaborator: string) => {
     return tasks.filter(t => t.assigned_to === collaborator && !t.completed);
   }, [tasks]);
 

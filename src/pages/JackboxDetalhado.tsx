@@ -13,6 +13,7 @@ import { Client } from "@/types/client";
 import { Task } from "@/types/task";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { assigneeMatches } from "@/lib/taskAssignee";
 
 export default function JackboxDetalhado() {
   const { collaborators: allCollaborators } = useAuth();
@@ -65,7 +66,7 @@ export default function JackboxDetalhado() {
 
     const byCollaborator: Record<string, number> = {};
     allCollaborators.forEach(c => {
-      byCollaborator[c.name] = activeTasks.filter(t => t.assigned_to === c.name).length;
+      byCollaborator[c.name] = activeTasks.filter(t => assigneeMatches(t.assigned_to, c.name)).length;
     });
 
     return { totalTasks: activeTasks.length, clientsWithTasks: new Set(activeTasks.map(t => t.client_id)).size, completedToday: completedToday.length, byCollaborator };
@@ -138,7 +139,7 @@ export default function JackboxDetalhado() {
                         </div>
                         <div className="flex items-center gap-1">
                           {allCollaborators.map((collab) => {
-                            const count = clientTasks.filter(t => t.assigned_to === collab.name).length;
+                            const count = clientTasks.filter(t => assigneeMatches(t.assigned_to, collab.name)).length;
                             if (count === 0) return null;
                             return (
                               <span key={collab.id} className="px-1.5 py-0.5 rounded text-xs font-bold text-white" style={{ backgroundColor: collab.color }}>
@@ -180,7 +181,7 @@ interface TaskItemProps {
 }
 
 function TaskItem({ task, collaborators, onToggle }: TaskItemProps) {
-  const collab = collaborators.find(c => c.name === task.assigned_to);
+  const collab = collaborators.find(c => assigneeMatches(task.assigned_to, c.name));
   return (
     <div className="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-muted/50 transition-colors">
       <Checkbox checked={task.completed} onCheckedChange={onToggle} />

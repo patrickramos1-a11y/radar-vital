@@ -19,6 +19,7 @@ import { Task } from "@/types/task";
 import { CollaboratorTaskTable } from "@/components/tasks/CollaboratorTaskTable";
 import { TaskAnalytics } from "@/components/tasks/TaskAnalytics";
 import { Collaborator } from "@/types/collaborator";
+import { assigneeMatches, assigneeMatchesAny, findCollaboratorColor } from "@/lib/taskAssignee";
 
 type StatusFilter = "pendentes" | "concluidas" | "todas";
 
@@ -117,7 +118,7 @@ export default function JackboxUnified() {
       oldestDays: oldestTask ? getDaysOpen(oldestTask) : 0,
       avgDays,
       byCollaborator: allCollaborators.reduce((acc, collab) => {
-        const collabTasks = activeTasks.filter(t => t.assigned_to === collab.name);
+        const collabTasks = activeTasks.filter(t => assigneeMatches(t.assigned_to, collab.name));
         const collabAvg = collabTasks.length > 0
           ? Math.round(collabTasks.reduce((s, t) => s + getDaysOpen(t), 0) / collabTasks.length)
           : 0;
@@ -142,9 +143,7 @@ export default function JackboxUnified() {
     else clientTasks = getTasksForClient(clientId);
     
     if (collaboratorFilters.length > 0) {
-      clientTasks = clientTasks.filter(t => 
-        t.assigned_to && collaboratorFilters.includes(t.assigned_to)
-      );
+      clientTasks = clientTasks.filter(t => assigneeMatchesAny(t.assigned_to, collaboratorFilters));
     }
     return clientTasks;
   };
@@ -355,8 +354,9 @@ function JackboxCardEnhanced({
     const summary: Record<string, number> = {};
     collaborators.forEach(c => { summary[c.name] = 0; });
     tasks.filter(t => !t.completed).forEach(t => {
-      if (t.assigned_to && summary[t.assigned_to] !== undefined) {
-        summary[t.assigned_to]++;
+      if (t.assigned_to) {
+        const match = collaborators.find(c => assigneeMatches(t.assigned_to, c.name));
+        if (match) summary[match.name]++;
       }
     });
     return summary;
@@ -508,10 +508,10 @@ function JackboxCardEnhanced({
                   {days}d
                 </span>
               )}
-              {task.assigned_to && collaboratorColorMap[task.assigned_to] && (
+              {task.assigned_to && findCollaboratorColor(task.assigned_to, collaboratorColorMap) && (
                 <div
                   className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
-                  style={{ backgroundColor: collaboratorColorMap[task.assigned_to] }}
+                  style={{ backgroundColor: findCollaboratorColor(task.assigned_to, collaboratorColorMap) }}
                   title={task.assigned_to}
                 />
               )}
