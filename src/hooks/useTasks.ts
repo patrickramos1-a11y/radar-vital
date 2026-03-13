@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Task, TaskFormData } from '@/types/task';
-import { CollaboratorName } from '@/types/client';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
 
