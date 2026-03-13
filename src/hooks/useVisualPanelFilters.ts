@@ -8,6 +8,8 @@ interface UseVisualPanelFiltersOptions {
   getActiveTaskCount?: (id: string) => number;
   defaultSort?: VisualSortOption;
   customSorter?: (a: Client, b: Client, sortBy: VisualSortOption, multiplier: number) => number | null;
+  /** When true, the hook won't filter by collaborator — caller handles it externally */
+  skipCollaboratorFilter?: boolean;
 }
 
 export function useVisualPanelFilters({ 
