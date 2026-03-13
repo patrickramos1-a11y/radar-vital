@@ -17,7 +17,8 @@ export function useVisualPanelFilters({
   highlightedClients, 
   getActiveTaskCount, 
   defaultSort = 'order',
-  customSorter 
+  customSorter,
+  skipCollaboratorFilter = false,
 }: UseVisualPanelFiltersOptions) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<VisualSortOption>(defaultSort);
