@@ -118,7 +118,7 @@ export default function JackboxUnified() {
       oldestDays: oldestTask ? getDaysOpen(oldestTask) : 0,
       avgDays,
       byCollaborator: allCollaborators.reduce((acc, collab) => {
-        const collabTasks = activeTasks.filter(t => t.assigned_to === collab.name);
+        const collabTasks = activeTasks.filter(t => assigneeMatches(t.assigned_to, collab.name));
         const collabAvg = collabTasks.length > 0
           ? Math.round(collabTasks.reduce((s, t) => s + getDaysOpen(t), 0) / collabTasks.length)
           : 0;
