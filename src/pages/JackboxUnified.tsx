@@ -40,7 +40,6 @@ export default function JackboxUnified() {
   } = useTasks();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pendentes");
-  const [selectedCollaborator, setSelectedCollaborator] = useState<string | null>(null);
 
   const collaboratorNames = useMemo(() => allCollaborators.map(c => c.name), [allCollaborators]);
   const collaboratorColorMap = useMemo(() => {
