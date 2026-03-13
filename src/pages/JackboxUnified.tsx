@@ -19,6 +19,7 @@ import { Task } from "@/types/task";
 import { CollaboratorTaskTable } from "@/components/tasks/CollaboratorTaskTable";
 import { TaskAnalytics } from "@/components/tasks/TaskAnalytics";
 import { Collaborator } from "@/types/collaborator";
+import { assigneeMatches, assigneeMatchesAny, findCollaboratorColor } from "@/lib/taskAssignee";
 
 type StatusFilter = "pendentes" | "concluidas" | "todas";
 
