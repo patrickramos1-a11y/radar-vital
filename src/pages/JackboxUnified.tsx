@@ -283,7 +283,7 @@ export default function JackboxUnified() {
         />
 
         {/* Visual Grid */}
-        <VisualGrid itemCount={filteredClients.length}>
+        <VisualGrid itemCount={displayClients.length}>
           {filteredClients.map((client) => (
             <JackboxCardEnhanced
               key={client.id}
