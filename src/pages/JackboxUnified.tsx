@@ -348,7 +348,7 @@ function JackboxCardEnhanced({
 }: JackboxCardEnhancedProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskAssignee, setNewTaskAssignee] = useState('');
+  const [newTaskAssignee, setNewTaskAssignee] = useState('none');
 
   // Group tasks by collaborator for summary
   const tasksByCollaborator = useMemo(() => {
