@@ -64,7 +64,7 @@ export default function JackboxPanel() {
       totalTasks: activeTasks.length,
       clientsWithTasks: new Set(activeTasks.map(t => t.client_id)).size,
       byCollaborator: allCollaborators.reduce((acc, collab) => {
-        acc[collab.name] = { count: activeTasks.filter(t => t.assigned_to === collab.name).length, color: collab.color };
+        acc[collab.name] = { count: activeTasks.filter(t => assigneeMatches(t.assigned_to, collab.name)).length, color: collab.color };
         return acc;
       }, {} as Record<string, { count: number; color: string }>),
     };
