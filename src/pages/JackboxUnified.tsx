@@ -305,7 +305,7 @@ export default function JackboxUnified() {
 
 
         {/* Empty State */}
-        {filteredClients.length === 0 && (
+        {displayClients.length === 0 && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <Box className="w-12 h-12 mx-auto mb-4 opacity-50" />
