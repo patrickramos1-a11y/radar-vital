@@ -66,7 +66,7 @@ export default function JackboxDetalhado() {
 
     const byCollaborator: Record<string, number> = {};
     allCollaborators.forEach(c => {
-      byCollaborator[c.name] = activeTasks.filter(t => t.assigned_to === c.name).length;
+      byCollaborator[c.name] = activeTasks.filter(t => assigneeMatches(t.assigned_to, c.name)).length;
     });
 
     return { totalTasks: activeTasks.length, clientsWithTasks: new Set(activeTasks.map(t => t.client_id)).size, completedToday: completedToday.length, byCollaborator };
