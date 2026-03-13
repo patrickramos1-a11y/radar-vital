@@ -301,17 +301,8 @@ export default function JackboxUnified() {
           ))}
         </VisualGrid>
 
-        {/* Collaborator Detail Table */}
-        {selectedCollaborator && (
-          <CollaboratorTaskTable
-            collaborator={selectedCollaborator}
-            collaboratorColor={collaboratorColorMap[selectedCollaborator] || '#6B7280'}
-            tasks={tasks}
-            clients={activeClients}
-            getDaysOpen={getDaysOpen}
-            onClose={() => setSelectedCollaborator(null)}
-          />
-        )}
+
+
 
         {/* Empty State */}
         {filteredClients.length === 0 && (
