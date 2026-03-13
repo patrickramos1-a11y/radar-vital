@@ -143,9 +143,7 @@ export default function JackboxUnified() {
     else clientTasks = getTasksForClient(clientId);
     
     if (collaboratorFilters.length > 0) {
-      clientTasks = clientTasks.filter(t => 
-        t.assigned_to && collaboratorFilters.includes(t.assigned_to)
-      );
+      clientTasks = clientTasks.filter(t => assigneeMatchesAny(t.assigned_to, collaboratorFilters));
     }
     return clientTasks;
   };
