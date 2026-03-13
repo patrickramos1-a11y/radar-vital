@@ -73,9 +73,7 @@ export default function JackboxPanel() {
   const getFilteredTasks = (clientId: string) => {
     let clientTasks = getActiveTasksForClient(clientId);
     if (collaboratorFilters.length > 0) {
-      clientTasks = clientTasks.filter(t => 
-        t.assigned_to && collaboratorFilters.includes(t.assigned_to)
-      );
+      clientTasks = clientTasks.filter(t => assigneeMatchesAny(t.assigned_to, collaboratorFilters));
     }
     return clientTasks;
   };
