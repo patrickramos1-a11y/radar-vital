@@ -205,39 +205,36 @@ export default function JackboxUnified() {
               const isSelected = selectedCollaborator === name;
               const color = collaboratorColorMap[name] || '#6B7280';
               return (
-                <Tooltip key={name}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => handleCollaboratorClick(name)}
-                      className={cn(
-                        "flex items-center gap-1.5 px-2 py-1 rounded border transition-all cursor-pointer",
-                        isOverloaded && "ring-2 ring-red-500/50 animate-pulse",
-                        isSelected && "ring-2 ring-primary shadow-md",
-                      )}
-                      style={{ 
-                        borderColor: color,
-                        backgroundColor: `${color}${isSelected ? '25' : '15'}`,
-                      }}
-                    >
-                      <span className="text-sm font-bold" style={{ color }}>
-                        {info.count}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground uppercase">{name}</span>
-                      {isOverloaded && (
-                        <span className="text-[8px] text-destructive font-bold">!</span>
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-xs space-y-1">
-                      <p className="font-bold capitalize">{name}</p>
-                      <p>Pendentes: {info.count}</p>
-                      <p>Média: {info.avgDays}d em aberto</p>
-                      <p>Mais antiga: {info.oldestDays}d</p>
-                      <p className="text-muted-foreground italic">Clique para ver detalhes</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
+                     <Tooltip key={name}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={cn(
+                            "flex items-center gap-1.5 px-2 py-1 rounded border",
+                            isOverloaded && "ring-2 ring-red-500/50 animate-pulse",
+                          )}
+                          style={{ 
+                            borderColor: color,
+                            backgroundColor: `${color}15`,
+                          }}
+                        >
+                          <span className="text-sm font-bold" style={{ color }}>
+                            {info.count}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground uppercase">{name}</span>
+                          {isOverloaded && (
+                            <span className="text-[8px] text-destructive font-bold">!</span>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-xs space-y-1">
+                          <p className="font-bold capitalize">{name}</p>
+                          <p>Pendentes: {info.count}</p>
+                          <p>Média: {info.avgDays}d em aberto</p>
+                          <p>Mais antiga: {info.oldestDays}d</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
               );
             })}
           </TooltipProvider>
