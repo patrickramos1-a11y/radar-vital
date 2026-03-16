@@ -220,7 +220,7 @@ interface TaskItemProps {
   onStartEdit: () => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
-  onAssigneeChange: (a: string | null) => void;
+  onAssigneeChange: (collaboratorName: string) => void;
   onDelete: () => void;
   collaborators: { id: string; name: string; color: string; initials: string }[];
   collaboratorColorMap: Record<string, string>;
