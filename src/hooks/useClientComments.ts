@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ClientComment, CommentFormData, ReadStatusName, CommentType, READ_STATUS_NAMES } from '@/types/comment';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
+import { autoArchiveIfFullyRead } from '@/lib/autoArchiveComment';
 
 const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
