@@ -198,6 +198,18 @@ export function useClientComments(clientId: string) {
         .update({ read_timestamps: newTimestamps as any })
         .eq('id', commentId);
       if (error) throw error;
+
+      // Auto-archive if all collaborators have read
+      const archived = await autoArchiveIfFullyRead(commentId, newTimestamps, comment.isArchived);
+      if (archived) {
+        setComments(prev => prev.map(c =>
+          c.id === commentId ? { ...c, readTimestamps: newTimestamps, isArchived: true, archivedBy: 'Sistema', archivedAt: new Date().toISOString() } : c
+        ));
+        triggerCommentCountRefresh();
+        toast.success('Ciência confirmada');
+        return;
+      }
+
       setComments(prev => prev.map(c =>
         c.id === commentId ? { ...c, readTimestamps: newTimestamps } : c
       ));
