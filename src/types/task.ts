@@ -3,9 +3,12 @@ export interface Task {
   client_id: string;
   title: string;
   completed: boolean;
-  assigned_to: string | null;
+  assigned_to: string[];
   created_at: string;
   completed_at: string | null;
 }
 
-export type TaskFormData = Pick<Task, 'title' | 'assigned_to'>;
+export type TaskFormData = {
+  title: string;
+  assigned_to: string[];
+};
