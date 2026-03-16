@@ -280,7 +280,7 @@ function TaskItem({
           {collaborators.map((collab) => (
             <button
               key={collab.id}
-              onClick={() => onAssigneeChange(assigneeMatches(task.assigned_to, collab.name) ? null : collab.name)}
+              onClick={() => onAssigneeChange(collab.name)}
               className="w-4 h-4 rounded-sm transition-all"
               style={{
                 backgroundColor: assigneeMatches(task.assigned_to, collab.name) ? collab.color : 'transparent',
@@ -293,17 +293,22 @@ function TaskItem({
         </div>
       )}
 
-      {task.assigned_to && !task.completed && (() => {
-        const color = findCollaboratorColor(task.assigned_to, collaboratorColorMap);
-        return color ? (
-          <span
-            className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
-            style={{ backgroundColor: color }}
-          >
-            {task.assigned_to![0].toUpperCase()}
-          </span>
-        ) : null;
-      })()}
+      {task.assigned_to.length > 0 && !task.completed && (
+        <div className="flex items-center gap-0.5">
+          {task.assigned_to.map((name) => {
+            const color = findCollaboratorColor([name], collaboratorColorMap);
+            return color ? (
+              <span
+                key={name}
+                className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
+                style={{ backgroundColor: color }}
+              >
+                {name[0].toUpperCase()}
+              </span>
+            ) : null;
+          })}
+        </div>
+      )}
 
       <button
         onClick={onDelete}
