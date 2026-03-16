@@ -7,8 +7,6 @@ import { VisualPanelFilters, VisualSortOption } from "@/components/visual-panels
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
@@ -248,7 +246,7 @@ export default function JackboxUnified() {
               isHighlighted={highlightedClients.has(client.id)}
               tasks={getFilteredTasks(client.id)}
               onToggleTask={(taskId) => toggleComplete(taskId, client.name)}
-              onAddTask={(title, assignedTo) => addTask(client.id, { title, assigned_to: assignedTo }, client.name)}
+              onAddTask={(title, assignees) => addTask(client.id, { title, assigned_to: assignees }, client.name)}
               onDeleteTask={(taskId) => deleteTask(taskId, client.name)}
               statusFilter={statusFilter}
               getDaysOpen={getDaysOpen}
@@ -281,7 +279,7 @@ interface JackboxCardEnhancedProps {
   isHighlighted: boolean;
   tasks: Task[];
   onToggleTask: (taskId: string) => void;
-  onAddTask: (title: string, assignedTo: string | null) => Promise<boolean>;
+  onAddTask: (title: string, assignees: string[]) => Promise<boolean>;
   onDeleteTask: (taskId: string) => void;
   statusFilter: StatusFilter;
   getDaysOpen: (task: Task) => number;
@@ -303,17 +301,18 @@ function JackboxCardEnhanced({
 }: JackboxCardEnhancedProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskAssignee, setNewTaskAssignee] = useState('none');
+  const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
 
   // Group tasks by collaborator for summary
   const tasksByCollaborator = useMemo(() => {
     const summary: Record<string, number> = {};
     collaborators.forEach(c => { summary[c.name] = 0; });
     tasks.filter(t => !t.completed).forEach(t => {
-      if (t.assigned_to) {
-        const match = collaborators.find(c => assigneeMatches(t.assigned_to, c.name));
-        if (match) summary[match.name]++;
-      }
+      collaborators.forEach(c => {
+        if (assigneeMatches(t.assigned_to, c.name)) {
+          summary[c.name]++;
+        }
+      });
     });
     return summary;
   }, [tasks, collaborators]);
@@ -323,10 +322,10 @@ function JackboxCardEnhanced({
 
   const handleSubmit = async () => {
     if (!newTaskTitle.trim()) return;
-    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignee === 'none' ? null : newTaskAssignee);
+    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignees);
     if (success) {
       setNewTaskTitle('');
-      setNewTaskAssignee('none');
+      setNewTaskAssignees([]);
       setIsAdding(false);
     }
   };
@@ -410,27 +409,32 @@ function JackboxCardEnhanced({
             className="h-7 text-xs"
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           />
-          <div className="flex gap-2">
-            <Select value={newTaskAssignee} onValueChange={(v) => setNewTaskAssignee(v)}>
-              <SelectTrigger className="h-7 text-xs flex-1">
-                <SelectValue placeholder="Responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhum</SelectItem>
-                {collaborators.map((collab) => (
-                  <SelectItem key={collab.name} value={collab.name}>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: collab.color }} />
-                      {collab.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button size="sm" className="h-7 text-xs" onClick={handleSubmit}>
-              Adicionar
-            </Button>
+          <div className="flex flex-wrap items-center gap-1 mb-1">
+            <span className="text-[10px] text-muted-foreground">Responsáveis:</span>
+            {collaborators.map((collab) => {
+              const isSelected = newTaskAssignees.includes(collab.name);
+              return (
+                <button
+                  key={collab.name}
+                  onClick={() => setNewTaskAssignees(prev =>
+                    isSelected ? prev.filter(n => n !== collab.name) : [...prev, collab.name]
+                  )}
+                  className="w-5 h-5 rounded text-[9px] font-bold transition-all"
+                  style={{
+                    backgroundColor: isSelected ? collab.color : 'transparent',
+                    border: `1.5px solid ${collab.color}`,
+                    color: isSelected ? 'white' : collab.color,
+                  }}
+                  title={collab.name}
+                >
+                  {collab.initials[0]}
+                </button>
+              );
+            })}
           </div>
+          <Button size="sm" className="h-7 text-xs w-full" onClick={handleSubmit}>
+            Adicionar
+          </Button>
         </div>
       )}
 
@@ -464,12 +468,20 @@ function JackboxCardEnhanced({
                   {days}d
                 </span>
               )}
-              {task.assigned_to && findCollaboratorColor(task.assigned_to, collaboratorColorMap) && (
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
-                  style={{ backgroundColor: findCollaboratorColor(task.assigned_to, collaboratorColorMap) }}
-                  title={task.assigned_to}
-                />
+              {task.assigned_to.length > 0 && (
+                <div className="flex gap-0.5">
+                  {task.assigned_to.map((name) => {
+                    const color = findCollaboratorColor([name], collaboratorColorMap);
+                    return color ? (
+                      <div
+                        key={name}
+                        className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
+                        style={{ backgroundColor: color }}
+                        title={name}
+                      />
+                    ) : null;
+                  })}
+                </div>
               )}
               <Button
                 variant="ghost"

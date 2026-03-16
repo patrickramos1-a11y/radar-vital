@@ -29,7 +29,7 @@ export function TaskModal({
 }: TaskModalProps) {
   const { collaborators } = useAuth();
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskAssignee, setNewTaskAssignee] = useState<string | null>(null);
+  const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
@@ -44,12 +44,12 @@ export function TaskModal({
     
     const success = await onAddTask(client.id, {
       title: newTaskTitle.trim(),
-      assigned_to: newTaskAssignee,
+      assigned_to: newTaskAssignees,
     });
 
     if (success) {
       setNewTaskTitle('');
-      setNewTaskAssignee(null);
+      setNewTaskAssignees([]);
     }
   };
 
@@ -65,8 +65,15 @@ export function TaskModal({
     setEditingTitle('');
   };
 
-  const handleAssigneeChange = async (taskId: string, assignee: string | null) => {
-    await onUpdateTask(taskId, { assigned_to: assignee });
+  const handleAssigneeChange = async (taskId: string, collaboratorName: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const current = task.assigned_to || [];
+    const isAssigned = current.some(a => a.toLowerCase() === collaboratorName.toLowerCase());
+    const newAssignees = isAssigned
+      ? current.filter(a => a.toLowerCase() !== collaboratorName.toLowerCase())
+      : [...current, collaboratorName];
+    await onUpdateTask(taskId, { assigned_to: newAssignees });
   };
 
   return (
@@ -107,23 +114,28 @@ export function TaskModal({
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Responsável:</span>
+              <span className="text-xs text-muted-foreground">Responsáveis:</span>
               <div className="flex gap-1">
-                {collaborators.map((collab) => (
-                  <button
-                    key={collab.id}
-                    onClick={() => setNewTaskAssignee(newTaskAssignee === collab.name ? null : collab.name)}
-                    className="w-6 h-6 rounded text-xs font-medium transition-all"
-                    style={{
-                      backgroundColor: newTaskAssignee === collab.name ? collab.color : 'transparent',
-                      border: `2px solid ${collab.color}`,
-                      color: newTaskAssignee === collab.name ? 'white' : collab.color,
-                    }}
-                    title={collab.name}
-                  >
-                    {collab.initials[0]}
-                  </button>
-                ))}
+                {collaborators.map((collab) => {
+                  const isSelected = newTaskAssignees.includes(collab.name);
+                  return (
+                    <button
+                      key={collab.id}
+                      onClick={() => setNewTaskAssignees(prev => 
+                        isSelected ? prev.filter(n => n !== collab.name) : [...prev, collab.name]
+                      )}
+                      className="w-6 h-6 rounded text-xs font-medium transition-all"
+                      style={{
+                        backgroundColor: isSelected ? collab.color : 'transparent',
+                        border: `2px solid ${collab.color}`,
+                        color: isSelected ? 'white' : collab.color,
+                      }}
+                      title={collab.name}
+                    >
+                      {collab.initials[0]}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             {activeTasks.length >= 11 && (
@@ -208,7 +220,7 @@ interface TaskItemProps {
   onStartEdit: () => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
-  onAssigneeChange: (a: string | null) => void;
+  onAssigneeChange: (collaboratorName: string) => void;
   onDelete: () => void;
   collaborators: { id: string; name: string; color: string; initials: string }[];
   collaboratorColorMap: Record<string, string>;
@@ -268,7 +280,7 @@ function TaskItem({
           {collaborators.map((collab) => (
             <button
               key={collab.id}
-              onClick={() => onAssigneeChange(assigneeMatches(task.assigned_to, collab.name) ? null : collab.name)}
+              onClick={() => onAssigneeChange(collab.name)}
               className="w-4 h-4 rounded-sm transition-all"
               style={{
                 backgroundColor: assigneeMatches(task.assigned_to, collab.name) ? collab.color : 'transparent',
@@ -281,17 +293,22 @@ function TaskItem({
         </div>
       )}
 
-      {task.assigned_to && !task.completed && (() => {
-        const color = findCollaboratorColor(task.assigned_to, collaboratorColorMap);
-        return color ? (
-          <span
-            className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
-            style={{ backgroundColor: color }}
-          >
-            {task.assigned_to![0].toUpperCase()}
-          </span>
-        ) : null;
-      })()}
+      {task.assigned_to.length > 0 && !task.completed && (
+        <div className="flex items-center gap-0.5">
+          {task.assigned_to.map((name) => {
+            const color = findCollaboratorColor([name], collaboratorColorMap);
+            return color ? (
+              <span
+                key={name}
+                className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
+                style={{ backgroundColor: color }}
+              >
+                {name[0].toUpperCase()}
+              </span>
+            ) : null;
+          })}
+        </div>
+      )}
 
       <button
         onClick={onDelete}

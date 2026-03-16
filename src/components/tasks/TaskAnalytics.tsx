@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Trophy, Clock, AlertTriangle, BarChart3 } from "lucide-react";
+import { assigneeMatches } from "@/lib/taskAssignee";
 import { Task } from "@/types/task";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
@@ -27,13 +28,13 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen, collaborators = [] 
     const pendingByCollab = collabNames.map(name => ({
       name,
       color: collaborators.find(c => c.name === name)?.color || '#6B7280',
-      count: pending.filter(t => t.assigned_to?.toLowerCase() === name.toLowerCase()).length,
+      count: pending.filter(t => assigneeMatches(t.assigned_to, name)).length,
     })).sort((a, b) => b.count - a.count);
 
     const completedByCollab = collabNames.map(name => ({
       name,
       color: collaborators.find(c => c.name === name)?.color || '#6B7280',
-      count: completed.filter(t => t.assigned_to?.toLowerCase() === name.toLowerCase()).length,
+      count: completed.filter(t => assigneeMatches(t.assigned_to, name)).length,
     })).sort((a, b) => b.count - a.count);
 
     const oldest = pending.length > 0
@@ -49,7 +50,7 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen, collaborators = [] 
   const topCompleted = rankings.completedByCollab[0];
   const oldest = rankings.oldest;
   const oldestDays = oldest ? getDaysOpen(oldest) : 0;
-  const oldestCollab = oldest ? collaborators.find(c => c.name.toLowerCase() === oldest.assigned_to?.toLowerCase()) : null;
+  const oldestCollab = oldest ? collaborators.find(c => assigneeMatches(oldest.assigned_to, c.name)) : null;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 py-3">
@@ -94,7 +95,7 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen, collaborators = [] 
         {oldest ? (
           <>
             <p className="text-lg font-bold capitalize truncate" style={{ color: oldestCollab?.color || undefined }}>
-              {oldest.assigned_to || "Sem resp."}
+              {oldest.assigned_to.length > 0 ? oldest.assigned_to.join(', ') : "Sem resp."}
             </p>
             <p className="text-2xl font-bold text-foreground">{oldestDays} <span className="text-sm font-normal text-muted-foreground">dias</span></p>
             <p className="text-xs text-muted-foreground truncate">{clientMap.get(oldest.client_id) || ""}</p>

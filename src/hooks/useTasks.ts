@@ -3,17 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Task, TaskFormData } from '@/types/task';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
+import { assigneeMatches } from '@/lib/taskAssignee';
 
-// Get current user from localStorage for logging
 const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
-// Convert DB row to Task type
 const dbRowToTask = (row: any): Task => ({
   id: row.id,
   client_id: row.client_id,
   title: row.title,
   completed: row.completed,
-  assigned_to: row.assigned_to,
+  assigned_to: Array.isArray(row.assigned_to) ? row.assigned_to : row.assigned_to ? [row.assigned_to] : [],
   created_at: row.created_at,
   completed_at: row.completed_at,
 });
@@ -44,7 +43,6 @@ export function useTasks() {
   }, [fetchTasks]);
 
   const addTask = useCallback(async (clientId: string, data: TaskFormData, clientName?: string) => {
-    // Check limit of 11 active tasks per client
     const clientActiveTasks = tasks.filter(t => t.client_id === clientId && !t.completed);
     if (clientActiveTasks.length >= 11) {
       toast.error('Limite de 11 tarefas ativas por cliente atingido');
@@ -61,10 +59,7 @@ export function useTasks() {
       if (error) throw error;
       await fetchTasks();
       toast.success('Tarefa criada!');
-      
-      // Log activity
       ActivityLogger.createTask(getCurrentUserName(), clientName || 'Cliente', clientId, data.title);
-      
       return true;
     } catch (error) {
       console.error('Error adding task:', error);
@@ -76,8 +71,6 @@ export function useTasks() {
   const updateTask = useCallback(async (taskId: string, data: Partial<Task>) => {
     try {
       const updateData: any = { ...data };
-      
-      // If completing task, set completed_at
       if (data.completed === true) {
         updateData.completed_at = new Date().toISOString();
       } else if (data.completed === false) {
@@ -106,12 +99,9 @@ export function useTasks() {
       if (error) throw error;
       await fetchTasks();
       toast.success('Tarefa excluída');
-      
-      // Log activity
       if (task) {
         ActivityLogger.deleteTask(getCurrentUserName(), clientName || 'Cliente', task.client_id, task.title);
       }
-      
       return true;
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -123,60 +113,48 @@ export function useTasks() {
   const toggleComplete = useCallback(async (taskId: string, clientName?: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return false;
-    
     const newCompleted = !task.completed;
     const result = await updateTask(taskId, { completed: newCompleted });
-    
-    // Log activity
     if (result) {
       ActivityLogger.completeTask(getCurrentUserName(), clientName || 'Cliente', task.client_id, task.title, newCompleted);
     }
-    
     return result;
   }, [tasks, updateTask]);
 
-  // Get active tasks per client
   const getActiveTasksForClient = useCallback((clientId: string) => {
     return tasks.filter(t => t.client_id === clientId && !t.completed);
   }, [tasks]);
 
-  // Get all tasks for a client
   const getTasksForClient = useCallback((clientId: string) => {
     return tasks.filter(t => t.client_id === clientId);
   }, [tasks]);
 
-  // Get count of active tasks per client
   const getActiveTaskCount = useCallback((clientId: string) => {
     return tasks.filter(t => t.client_id === clientId && !t.completed).length;
   }, [tasks]);
 
-  // Get clients with active tasks
   const clientsWithActiveTasks = new Set(
     tasks.filter(t => !t.completed).map(t => t.client_id)
   );
 
-  // Get tasks by collaborator
   const getTasksByCollaborator = useCallback((collaborator: string) => {
-    return tasks.filter(t => t.assigned_to === collaborator && !t.completed);
+    return tasks.filter(t => assigneeMatches(t.assigned_to, collaborator) && !t.completed);
   }, [tasks]);
 
-  // Calculate days open for a task
   const getDaysOpen = useCallback((task: Task) => {
     const start = new Date(task.created_at);
     const end = task.completed && task.completed_at ? new Date(task.completed_at) : new Date();
     return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   }, []);
 
-  // Get oldest pending task
   const getOldestTask = useCallback(() => {
     const pending = tasks.filter(t => !t.completed);
     if (pending.length === 0) return null;
-    return pending.reduce((oldest, t) => 
+    return pending.reduce((oldest, t) =>
       new Date(t.created_at) < new Date(oldest.created_at) ? t : oldest
     );
   }, [tasks]);
 
-  // Get average days open for pending tasks
   const getAverageDaysOpen = useCallback(() => {
     const pending = tasks.filter(t => !t.completed);
     if (pending.length === 0) return 0;
