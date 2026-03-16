@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Plus, Check, Trash2, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { assigneeMatches, findCollaboratorColor } from '@/lib/taskAssignee';
 import { Task, TaskFormData } from '@/types/task';
 import { Client } from '@/types/client';
 import { useAuth } from '@/contexts/AuthContext';
