@@ -281,14 +281,17 @@ function TaskItem({
             <button
               key={collab.id}
               onClick={() => onAssigneeChange(collab.name)}
-              className="w-4 h-4 rounded-sm transition-all"
+              className="w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center transition-all"
               style={{
                 backgroundColor: assigneeMatches(task.assigned_to, collab.name) ? collab.color : 'transparent',
-                border: `1px solid ${collab.color}`,
+                border: `1.5px solid ${collab.color}`,
+                color: assigneeMatches(task.assigned_to, collab.name) ? 'white' : collab.color,
                 opacity: assigneeMatches(task.assigned_to, collab.name) ? 1 : 0.4,
               }}
               title={collab.name}
-            />
+            >
+              {collab.name[0].toUpperCase()}
+            </button>
           ))}
         </div>
       )}
