@@ -356,7 +356,7 @@ export default function CommentsPanel() {
         c.authorName.toLowerCase().includes(query)
       );
     }
-    if (authorFilter !== 'all') result = result.filter(c => c.authorName === authorFilter);
+    if (authorFilters.length > 0) result = result.filter(c => authorFilters.includes(c.authorName));
     if (clientFilter !== 'all') result = result.filter(c => c.clientId === clientFilter);
     if (typeFilter !== 'all') result = result.filter(c => c.commentType === typeFilter);
     if (showPinnedOnly) result = result.filter(c => c.isPinned);
