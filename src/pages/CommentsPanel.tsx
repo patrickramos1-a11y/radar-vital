@@ -20,6 +20,7 @@ import { useClients } from "@/contexts/ClientContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CommentType, COMMENT_TYPE_LABELS } from "@/types/comment";
 import { toast } from "sonner";
+import { autoArchiveIfFullyRead } from "@/lib/autoArchiveComment";
 
 interface CommentWithClient {
   id: string;
