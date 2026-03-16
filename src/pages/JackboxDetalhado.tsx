@@ -143,7 +143,7 @@ export default function JackboxDetalhado() {
                             if (count === 0) return null;
                             return (
                               <span key={collab.id} className="px-1.5 py-0.5 rounded text-xs font-bold text-white" style={{ backgroundColor: collab.color }}>
-                                {count}
+                                {collab.name[0].toUpperCase()}{count}
                               </span>
                             );
                           })}
