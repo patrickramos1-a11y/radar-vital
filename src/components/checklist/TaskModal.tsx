@@ -44,12 +44,12 @@ export function TaskModal({
     
     const success = await onAddTask(client.id, {
       title: newTaskTitle.trim(),
-      assigned_to: newTaskAssignee,
+      assigned_to: newTaskAssignees,
     });
 
     if (success) {
       setNewTaskTitle('');
-      setNewTaskAssignee(null);
+      setNewTaskAssignees([]);
     }
   };
 
