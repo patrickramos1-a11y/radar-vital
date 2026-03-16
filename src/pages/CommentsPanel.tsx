@@ -359,7 +359,7 @@ export default function CommentsPanel() {
       );
     }
     if (authorFilters.length > 0) result = result.filter(c => authorFilters.includes(c.authorName));
-    if (clientFilter !== 'all') result = result.filter(c => c.clientId === clientFilter);
+    if (clientFilters.length > 0) result = result.filter(c => clientFilters.includes(c.clientId));
     if (typeFilter !== 'all') result = result.filter(c => c.commentType === typeFilter);
     if (showPinnedOnly) result = result.filter(c => c.isPinned);
     if (showMyCiencia) {
