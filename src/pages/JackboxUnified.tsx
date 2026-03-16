@@ -384,7 +384,24 @@ function JackboxCardEnhanced({
     >
       {/* Client Header */}
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-        
+        <div className="relative flex-shrink-0">
+          {client.logoUrl ? (
+            <img
+              src={client.logoUrl}
+              alt={client.name}
+              className="w-9 h-9 object-contain rounded-lg bg-white p-0.5"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <span className="text-xs font-bold text-primary">{client.initials}</span>
+            </div>
+          )}
+          {client.isPriority && (
+            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-500 rounded-full flex items-center justify-center">
+              <span className="text-[5px] text-white">★</span>
+            </div>
+          )}
+        </div>
         
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
