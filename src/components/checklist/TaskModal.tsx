@@ -281,14 +281,17 @@ function TaskItem({
         </div>
       )}
 
-      {task.assigned_to && !task.completed && collaboratorColorMap[task.assigned_to] && (
-        <span
-          className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
-          style={{ backgroundColor: collaboratorColorMap[task.assigned_to] }}
-        >
-          {task.assigned_to[0].toUpperCase()}
-        </span>
-      )}
+      {task.assigned_to && !task.completed && (() => {
+        const color = findCollaboratorColor(task.assigned_to, collaboratorColorMap);
+        return color ? (
+          <span
+            className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
+            style={{ backgroundColor: color }}
+          >
+            {task.assigned_to![0].toUpperCase()}
+          </span>
+        ) : null;
+      })()}
 
       <button
         onClick={onDelete}
