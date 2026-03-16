@@ -57,7 +57,9 @@ export default function CommentsPanel() {
   const [comments, setComments] = useState<CommentWithClient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [authorFilter, setAuthorFilter] = useState<string>('all');
+  const [authorFilters, setAuthorFilters] = useState<string[]>([]);
+  const [authorSearchQuery, setAuthorSearchQuery] = useState('');
+  const [authorDropdownOpen, setAuthorDropdownOpen] = useState(false);
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<CommentType | 'all'>('all');
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
@@ -354,7 +356,7 @@ export default function CommentsPanel() {
         c.authorName.toLowerCase().includes(query)
       );
     }
-    if (authorFilter !== 'all') result = result.filter(c => c.authorName === authorFilter);
+    if (authorFilters.length > 0) result = result.filter(c => authorFilters.includes(c.authorName));
     if (clientFilter !== 'all') result = result.filter(c => c.clientId === clientFilter);
     if (typeFilter !== 'all') result = result.filter(c => c.commentType === typeFilter);
     if (showPinnedOnly) result = result.filter(c => c.isPinned);
@@ -368,7 +370,7 @@ export default function CommentsPanel() {
     }
 
     return result;
-  }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilter, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
+  }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilters, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
 
   const kpis = useMemo(() => {
     const totalActive = activeComments.length;
@@ -483,13 +485,57 @@ export default function CommentsPanel() {
             </SelectContent>
           </Select>
 
-          <Select value={authorFilter} onValueChange={setAuthorFilter}>
-            <SelectTrigger className="w-40 h-9"><SelectValue placeholder="Autor" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os autores</SelectItem>
-              {uniqueAuthors.map((author) => (<SelectItem key={author} value={author}>{author}</SelectItem>))}
-            </SelectContent>
-          </Select>
+          <Popover open={authorDropdownOpen} onOpenChange={setAuthorDropdownOpen}>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "flex items-center gap-1 px-3 h-9 rounded-md text-sm font-medium border transition-colors",
+                authorFilters.length > 0 ? "bg-primary/10 border-primary text-primary" : "bg-background border-input text-foreground hover:bg-accent"
+              )}>
+                <Users className="w-3.5 h-3.5" />
+                {authorFilters.length === 0 ? 'Todos os autores' : authorFilters.length === 1 ? authorFilters[0] : `${authorFilters.length} autores`}
+                <ChevronDown className="w-3 h-3 ml-1" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="start">
+              <Input
+                placeholder="Pesquisar autor..."
+                value={authorSearchQuery}
+                onChange={e => setAuthorSearchQuery(e.target.value)}
+                className="h-7 text-xs mb-2"
+              />
+              <div className="max-h-48 overflow-y-auto space-y-0.5">
+                {uniqueAuthors
+                  .filter(a => a.toLowerCase().includes(authorSearchQuery.toLowerCase()))
+                  .map(author => {
+                    const collab = collaborators.find(c => c.name === author);
+                    const isSelected = authorFilters.includes(author);
+                    return (
+                      <button
+                        key={author}
+                        onClick={() => setAuthorFilters(prev => isSelected ? prev.filter(a => a !== author) : [...prev, author])}
+                        className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors"
+                      >
+                        {collab ? (
+                          <span className="w-5 h-5 rounded-md text-[9px] font-bold flex items-center justify-center border-2 shrink-0"
+                            style={{
+                              backgroundColor: isSelected ? collab.color : 'transparent',
+                              borderColor: collab.color,
+                              color: isSelected ? '#fff' : collab.color,
+                            }}
+                          >
+                            {collab.initials}
+                          </span>
+                        ) : (
+                          <User className="w-4 h-4 shrink-0 text-muted-foreground" />
+                        )}
+                        <span className="flex-1 text-left truncate">{author}</span>
+                        {isSelected && <Check className="w-3 h-3 text-primary shrink-0" />}
+                      </button>
+                    );
+                  })}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Select value={clientFilter} onValueChange={setClientFilter}>
             <SelectTrigger className="w-48 h-9"><SelectValue placeholder="Cliente" /></SelectTrigger>
@@ -505,8 +551,8 @@ export default function CommentsPanel() {
             <span>Apenas fixados</span>
           </label>
 
-          {(searchQuery || authorFilter !== 'all' || clientFilter !== 'all' || typeFilter !== 'all' || showPinnedOnly || showMyCiencia) && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setAuthorFilter('all'); setClientFilter('all'); setTypeFilter('all'); setShowPinnedOnly(false); setShowMyCiencia(false); }}>
+          {(searchQuery || authorFilters.length > 0 || clientFilter !== 'all' || typeFilter !== 'all' || showPinnedOnly || showMyCiencia) && (
+            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setAuthorFilters([]); setClientFilter('all'); setTypeFilter('all'); setShowPinnedOnly(false); setShowMyCiencia(false); }}>
               Limpar filtros
             </Button>
           )}
