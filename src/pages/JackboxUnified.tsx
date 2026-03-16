@@ -393,7 +393,7 @@ function JackboxCardEnhanced({
               style={{ backgroundColor: collab.color }}
               title={`${collab.name}: ${count} tarefas`}
             >
-              {count}
+              {collab.name[0].toUpperCase()}{count}
             </div>
           );
         })}
