@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ClientComment, CommentFormData, ReadStatusName, CommentType, READ_STATUS_NAMES } from '@/types/comment';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
+import { autoArchiveIfFullyRead } from '@/lib/autoArchiveComment';
 
 const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
@@ -166,20 +167,14 @@ export function useClientComments(clientId: string) {
       if (error) throw error;
       const newReadStatus = { ...comment.readStatus, [collaborator]: newValue };
       
-      // Auto-archive if all users have read
-      const allRead = READ_STATUS_NAMES.every(name => newReadStatus[name]);
-      if (allRead && !comment.isArchived) {
-        const { error: archiveError } = await supabase
-          .from('client_comments')
-          .update({ is_archived: true, archived_by: 'Sistema', archived_at: new Date().toISOString() })
-          .eq('id', id);
-        if (!archiveError) {
-          setComments(prev => prev.map(c =>
-            c.id === id ? { ...c, readStatus: newReadStatus, readTimestamps: newTimestamps, isArchived: true, archivedBy: 'Sistema', archivedAt: new Date().toISOString() } : c
-          ));
-          triggerCommentCountRefresh();
-          return;
-        }
+      // Auto-archive if all collaborators have read (using dynamic check)
+      const archived = await autoArchiveIfFullyRead(id, newTimestamps, comment.isArchived);
+      if (archived) {
+        setComments(prev => prev.map(c =>
+          c.id === id ? { ...c, readStatus: newReadStatus, readTimestamps: newTimestamps, isArchived: true, archivedBy: 'Sistema', archivedAt: new Date().toISOString() } : c
+        ));
+        triggerCommentCountRefresh();
+        return;
       }
       
       setComments(prev => prev.map(c =>
@@ -203,6 +198,18 @@ export function useClientComments(clientId: string) {
         .update({ read_timestamps: newTimestamps as any })
         .eq('id', commentId);
       if (error) throw error;
+
+      // Auto-archive if all collaborators have read
+      const archived = await autoArchiveIfFullyRead(commentId, newTimestamps, comment.isArchived);
+      if (archived) {
+        setComments(prev => prev.map(c =>
+          c.id === commentId ? { ...c, readTimestamps: newTimestamps, isArchived: true, archivedBy: 'Sistema', archivedAt: new Date().toISOString() } : c
+        ));
+        triggerCommentCountRefresh();
+        toast.success('Ciência confirmada');
+        return;
+      }
+
       setComments(prev => prev.map(c =>
         c.id === commentId ? { ...c, readTimestamps: newTimestamps } : c
       ));
