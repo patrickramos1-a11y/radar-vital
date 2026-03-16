@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Trophy, Clock, AlertTriangle, BarChart3 } from "lucide-react";
+import { assigneeMatches } from "@/lib/taskAssignee";
 import { Task } from "@/types/task";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
