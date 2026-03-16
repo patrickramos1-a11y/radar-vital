@@ -60,7 +60,9 @@ export default function CommentsPanel() {
   const [authorFilters, setAuthorFilters] = useState<string[]>([]);
   const [authorSearchQuery, setAuthorSearchQuery] = useState('');
   const [authorDropdownOpen, setAuthorDropdownOpen] = useState(false);
-  const [clientFilter, setClientFilter] = useState<string>('all');
+  const [clientFilters, setClientFilters] = useState<string[]>([]);
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [typeFilter, setTypeFilter] = useState<CommentType | 'all'>('all');
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
   const [showMyCiencia, setShowMyCiencia] = useState(false);
