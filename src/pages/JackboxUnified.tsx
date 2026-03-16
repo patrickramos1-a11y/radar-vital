@@ -195,49 +195,6 @@ export default function JackboxUnified() {
           <KPICard icon={<Clock className="w-4 h-4" />} value={`${kpis.oldestDays}d`} label="Mais antiga" variant="danger" />
           <KPICard icon={<Calendar className="w-4 h-4" />} value={`${kpis.avgDays}d`} label="Média aberto" variant="default" />
           
-          <div className="w-px h-8 bg-border" />
-          
-          {/* Collaborator KPIs with tooltip and click */}
-          <TooltipProvider>
-            {collaboratorNames.map((name) => {
-              const info = kpis.byCollaborator[name] || { count: 0, avgDays: 0, oldestDays: 0, color: '#6B7280' };
-              const isOverloaded = overloadedCollaborators.includes(name);
-              
-              const color = collaboratorColorMap[name] || '#6B7280';
-              return (
-                     <Tooltip key={name}>
-                      <TooltipTrigger asChild>
-                        <div
-                          className={cn(
-                            "flex items-center gap-1.5 px-2 py-1 rounded border",
-                            isOverloaded && "ring-2 ring-red-500/50 animate-pulse",
-                          )}
-                          style={{ 
-                            borderColor: color,
-                            backgroundColor: `${color}15`,
-                          }}
-                        >
-                          <span className="text-sm font-bold" style={{ color }}>
-                            {info.count}
-                          </span>
-                          <span className="text-[9px] text-muted-foreground uppercase">{name}</span>
-                          {isOverloaded && (
-                            <span className="text-[8px] text-destructive font-bold">!</span>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <div className="text-xs space-y-1">
-                          <p className="font-bold capitalize">{name}</p>
-                          <p>Pendentes: {info.count}</p>
-                          <p>Média: {info.avgDays}d em aberto</p>
-                          <p>Mais antiga: {info.oldestDays}d</p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-              );
-            })}
-          </TooltipProvider>
         </VisualPanelHeader>
 
         {/* Analytics Ranking Bar */}
