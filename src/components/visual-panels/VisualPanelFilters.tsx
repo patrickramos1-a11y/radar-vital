@@ -135,26 +135,13 @@ export function VisualPanelFilters({
         </div>
       )}
 
-      {/* Collaborator filters - dynamic from database */}
+      {/* Collaborator filters - searchable multi-select dropdown */}
       {showCollaborators && (
-        <div className="flex items-center gap-1">
-          {collaborators.map(collab => (
-            <button
-              key={collab.id}
-              onClick={() => onCollaboratorFilterToggle(collab.name)}
-              className={`w-7 h-7 rounded-md text-[10px] font-bold flex items-center justify-center border-2 transition-all ${
-                collaboratorFilters.includes(collab.name) ? 'text-white' : 'opacity-40 hover:opacity-70'
-              }`}
-              style={{
-                backgroundColor: collaboratorFilters.includes(collab.name) ? collab.color : 'transparent',
-                borderColor: collab.color,
-                color: collaboratorFilters.includes(collab.name) ? '#fff' : collab.color,
-              }}
-            >
-              {collab.initials}
-            </button>
-          ))}
-        </div>
+        <CollaboratorDropdown
+          collaborators={collaborators}
+          selected={collaboratorFilters}
+          onToggle={onCollaboratorFilterToggle}
+        />
       )}
 
       {/* Clear */}
