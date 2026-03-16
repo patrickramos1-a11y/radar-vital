@@ -370,7 +370,7 @@ export default function CommentsPanel() {
     }
 
     return result;
-  }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilter, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
+  }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilters, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
 
   const kpis = useMemo(() => {
     const totalActive = activeComments.length;
