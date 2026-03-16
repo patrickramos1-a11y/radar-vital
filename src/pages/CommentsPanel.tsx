@@ -575,13 +575,15 @@ export default function CommentsPanel() {
               </div>
             </PopoverContent>
           </Popover>
+
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox checked={showPinnedOnly} onCheckedChange={(checked) => setShowPinnedOnly(!!checked)} />
             <Pin className="w-3.5 h-3.5" />
             <span>Apenas fixados</span>
           </label>
 
-          {(searchQuery || authorFilters.length > 0 || clientFilter !== 'all' || typeFilter !== 'all' || showPinnedOnly || showMyCiencia) && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setAuthorFilters([]); setClientFilter('all'); setTypeFilter('all'); setShowPinnedOnly(false); setShowMyCiencia(false); }}>
+          {(searchQuery || authorFilters.length > 0 || clientFilters.length > 0 || typeFilter !== 'all' || showPinnedOnly || showMyCiencia) && (
+            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setAuthorFilters([]); setClientFilters([]); setTypeFilter('all'); setShowPinnedOnly(false); setShowMyCiencia(false); }}>
               Limpar filtros
             </Button>
           )}
