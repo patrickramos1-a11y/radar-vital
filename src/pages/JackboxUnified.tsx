@@ -413,27 +413,32 @@ function JackboxCardEnhanced({
             className="h-7 text-xs"
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           />
-          <div className="flex gap-2">
-            <Select value={newTaskAssignee} onValueChange={(v) => setNewTaskAssignee(v)}>
-              <SelectTrigger className="h-7 text-xs flex-1">
-                <SelectValue placeholder="Responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhum</SelectItem>
-                {collaborators.map((collab) => (
-                  <SelectItem key={collab.name} value={collab.name}>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: collab.color }} />
-                      {collab.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button size="sm" className="h-7 text-xs" onClick={handleSubmit}>
-              Adicionar
-            </Button>
+          <div className="flex flex-wrap items-center gap-1 mb-1">
+            <span className="text-[10px] text-muted-foreground">Responsáveis:</span>
+            {collaborators.map((collab) => {
+              const isSelected = newTaskAssignees.includes(collab.name);
+              return (
+                <button
+                  key={collab.name}
+                  onClick={() => setNewTaskAssignees(prev =>
+                    isSelected ? prev.filter(n => n !== collab.name) : [...prev, collab.name]
+                  )}
+                  className="w-5 h-5 rounded text-[9px] font-bold transition-all"
+                  style={{
+                    backgroundColor: isSelected ? collab.color : 'transparent',
+                    border: `1.5px solid ${collab.color}`,
+                    color: isSelected ? 'white' : collab.color,
+                  }}
+                  title={collab.name}
+                >
+                  {collab.initials[0]}
+                </button>
+              );
+            })}
           </div>
+          <Button size="sm" className="h-7 text-xs w-full" onClick={handleSubmit}>
+            Adicionar
+          </Button>
         </div>
       )}
 
