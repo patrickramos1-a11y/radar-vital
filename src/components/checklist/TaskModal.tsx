@@ -114,23 +114,28 @@ export function TaskModal({
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Responsável:</span>
+              <span className="text-xs text-muted-foreground">Responsáveis:</span>
               <div className="flex gap-1">
-                {collaborators.map((collab) => (
-                  <button
-                    key={collab.id}
-                    onClick={() => setNewTaskAssignee(newTaskAssignee === collab.name ? null : collab.name)}
-                    className="w-6 h-6 rounded text-xs font-medium transition-all"
-                    style={{
-                      backgroundColor: newTaskAssignee === collab.name ? collab.color : 'transparent',
-                      border: `2px solid ${collab.color}`,
-                      color: newTaskAssignee === collab.name ? 'white' : collab.color,
-                    }}
-                    title={collab.name}
-                  >
-                    {collab.initials[0]}
-                  </button>
-                ))}
+                {collaborators.map((collab) => {
+                  const isSelected = newTaskAssignees.includes(collab.name);
+                  return (
+                    <button
+                      key={collab.id}
+                      onClick={() => setNewTaskAssignees(prev => 
+                        isSelected ? prev.filter(n => n !== collab.name) : [...prev, collab.name]
+                      )}
+                      className="w-6 h-6 rounded text-xs font-medium transition-all"
+                      style={{
+                        backgroundColor: isSelected ? collab.color : 'transparent',
+                        border: `2px solid ${collab.color}`,
+                        color: isSelected ? 'white' : collab.color,
+                      }}
+                      title={collab.name}
+                    >
+                      {collab.initials[0]}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             {activeTasks.length >= 11 && (
