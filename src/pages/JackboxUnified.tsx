@@ -324,10 +324,12 @@ function JackboxCardEnhanced({
 
   const handleSubmit = async () => {
     if (!newTaskTitle.trim()) return;
-    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignee === 'none' ? null : newTaskAssignee);
+    const success = await onAddTask(newTaskTitle.trim(), null);
+    // The onAddTask in the parent already handles assigned_to as array
+    // We need to update the card's inline form to pass assignees
     if (success) {
       setNewTaskTitle('');
-      setNewTaskAssignee('none');
+      setNewTaskAssignees([]);
       setIsAdding(false);
     }
   };
