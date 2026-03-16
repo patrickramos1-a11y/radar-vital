@@ -268,12 +268,12 @@ function TaskItem({
           {collaborators.map((collab) => (
             <button
               key={collab.id}
-              onClick={() => onAssigneeChange(task.assigned_to === collab.name ? null : collab.name)}
+              onClick={() => onAssigneeChange(assigneeMatches(task.assigned_to, collab.name) ? null : collab.name)}
               className="w-4 h-4 rounded-sm transition-all"
               style={{
-                backgroundColor: task.assigned_to === collab.name ? collab.color : 'transparent',
+                backgroundColor: assigneeMatches(task.assigned_to, collab.name) ? collab.color : 'transparent',
                 border: `1px solid ${collab.color}`,
-                opacity: task.assigned_to === collab.name ? 1 : 0.4,
+                opacity: assigneeMatches(task.assigned_to, collab.name) ? 1 : 0.4,
               }}
               title={collab.name}
             />
