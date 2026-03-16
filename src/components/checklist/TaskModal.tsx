@@ -65,8 +65,15 @@ export function TaskModal({
     setEditingTitle('');
   };
 
-  const handleAssigneeChange = async (taskId: string, assignee: string | null) => {
-    await onUpdateTask(taskId, { assigned_to: assignee });
+  const handleAssigneeChange = async (taskId: string, collaboratorName: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const current = task.assigned_to || [];
+    const isAssigned = current.some(a => a.toLowerCase() === collaboratorName.toLowerCase());
+    const newAssignees = isAssigned
+      ? current.filter(a => a.toLowerCase() !== collaboratorName.toLowerCase())
+      : [...current, collaboratorName];
+    await onUpdateTask(taskId, { assigned_to: newAssignees });
   };
 
   return (
