@@ -398,7 +398,12 @@ function LogEntry({ log, getUserColor }: LogEntryProps) {
           <div className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground">
             <Clock className="w-3 h-3" />
             <span title={format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}>
-              {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}
+              {(() => {
+                const days = differenceInDays(new Date(), new Date(log.created_at));
+                if (days === 0) return 'hoje';
+                if (days === 1) return 'há 1 dia';
+                return `há ${days} dias`;
+              })()}
             </span>
             <span className="opacity-50">•</span>
             <span>{format(new Date(log.created_at), "dd/MM HH:mm", { locale: ptBR })}</span>
