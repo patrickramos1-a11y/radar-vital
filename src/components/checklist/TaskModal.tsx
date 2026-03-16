@@ -29,7 +29,7 @@ export function TaskModal({
 }: TaskModalProps) {
   const { collaborators } = useAuth();
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskAssignee, setNewTaskAssignee] = useState<string | null>(null);
+  const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
