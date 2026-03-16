@@ -60,7 +60,9 @@ export default function CommentsPanel() {
   const [authorFilters, setAuthorFilters] = useState<string[]>([]);
   const [authorSearchQuery, setAuthorSearchQuery] = useState('');
   const [authorDropdownOpen, setAuthorDropdownOpen] = useState(false);
-  const [clientFilter, setClientFilter] = useState<string>('all');
+  const [clientFilters, setClientFilters] = useState<string[]>([]);
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [typeFilter, setTypeFilter] = useState<CommentType | 'all'>('all');
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
   const [showMyCiencia, setShowMyCiencia] = useState(false);
@@ -357,7 +359,7 @@ export default function CommentsPanel() {
       );
     }
     if (authorFilters.length > 0) result = result.filter(c => authorFilters.includes(c.authorName));
-    if (clientFilter !== 'all') result = result.filter(c => c.clientId === clientFilter);
+    if (clientFilters.length > 0) result = result.filter(c => clientFilters.includes(c.clientId));
     if (typeFilter !== 'all') result = result.filter(c => c.commentType === typeFilter);
     if (showPinnedOnly) result = result.filter(c => c.isPinned);
     if (showMyCiencia) {
@@ -370,7 +372,7 @@ export default function CommentsPanel() {
     }
 
     return result;
-  }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilters, clientFilter, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
+  }, [comments, pendingComments, readComments, archivedComments, viewFilter, searchQuery, authorFilters, clientFilters, typeFilter, showPinnedOnly, showMyCiencia, currentUserName]);
 
   const kpis = useMemo(() => {
     const totalActive = activeComments.length;
@@ -537,13 +539,42 @@ export default function CommentsPanel() {
             </PopoverContent>
           </Popover>
 
-          <Select value={clientFilter} onValueChange={setClientFilter}>
-            <SelectTrigger className="w-48 h-9"><SelectValue placeholder="Cliente" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os clientes</SelectItem>
-              {uniqueClients.map(([id, name]) => (<SelectItem key={id} value={id}>{name}</SelectItem>))}
-            </SelectContent>
-          </Select>
+          <Popover open={clientDropdownOpen} onOpenChange={setClientDropdownOpen}>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "flex items-center gap-1 px-3 h-9 rounded-md text-sm font-medium border transition-colors",
+                clientFilters.length > 0 ? "bg-primary/10 border-primary text-primary" : "bg-background border-input text-foreground hover:bg-accent"
+              )}>
+                {clientFilters.length === 0 ? 'Todos os clientes' : clientFilters.length === 1 ? (uniqueClients.find(([id]) => id === clientFilters[0])?.[1] || clientFilters[0]) : `${clientFilters.length} clientes`}
+                <ChevronDown className="w-3 h-3 ml-1" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="start">
+              <Input
+                placeholder="Pesquisar cliente..."
+                value={clientSearchQuery}
+                onChange={e => setClientSearchQuery(e.target.value)}
+                className="h-7 text-xs mb-2"
+              />
+              <div className="max-h-48 overflow-y-auto space-y-0.5">
+                {uniqueClients
+                  .filter(([, name]) => name.toLowerCase().includes(clientSearchQuery.toLowerCase()))
+                  .map(([id, name]) => {
+                    const isSelected = clientFilters.includes(id);
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setClientFilters(prev => isSelected ? prev.filter(c => c !== id) : [...prev, id])}
+                        className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors"
+                      >
+                        <span className="flex-1 text-left truncate">{name}</span>
+                        {isSelected && <Check className="w-3 h-3 text-primary shrink-0" />}
+                      </button>
+                    );
+                  })}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox checked={showPinnedOnly} onCheckedChange={(checked) => setShowPinnedOnly(!!checked)} />
@@ -551,8 +582,8 @@ export default function CommentsPanel() {
             <span>Apenas fixados</span>
           </label>
 
-          {(searchQuery || authorFilters.length > 0 || clientFilter !== 'all' || typeFilter !== 'all' || showPinnedOnly || showMyCiencia) && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setAuthorFilters([]); setClientFilter('all'); setTypeFilter('all'); setShowPinnedOnly(false); setShowMyCiencia(false); }}>
+          {(searchQuery || authorFilters.length > 0 || clientFilters.length > 0 || typeFilter !== 'all' || showPinnedOnly || showMyCiencia) && (
+            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setAuthorFilters([]); setClientFilters([]); setTypeFilter('all'); setShowPinnedOnly(false); setShowMyCiencia(false); }}>
               Limpar filtros
             </Button>
           )}
