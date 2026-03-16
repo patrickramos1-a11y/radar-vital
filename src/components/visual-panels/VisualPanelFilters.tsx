@@ -1,5 +1,7 @@
-import { Search, X, RotateCcw } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, X, RotateCcw, ChevronDown, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type VisualSortOption = 'order' | 'name' | 'priority' | 'tasks' | 'comments' | 'days_open';
