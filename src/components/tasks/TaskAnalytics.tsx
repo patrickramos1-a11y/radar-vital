@@ -95,7 +95,7 @@ export function TaskAnalytics({ tasks, clients, getDaysOpen, collaborators = [] 
         {oldest ? (
           <>
             <p className="text-lg font-bold capitalize truncate" style={{ color: oldestCollab?.color || undefined }}>
-              {oldest.assigned_to || "Sem resp."}
+              {oldest.assigned_to.length > 0 ? oldest.assigned_to.join(', ') : "Sem resp."}
             </p>
             <p className="text-2xl font-bold text-foreground">{oldestDays} <span className="text-sm font-normal text-muted-foreground">dias</span></p>
             <p className="text-xs text-muted-foreground truncate">{clientMap.get(oldest.client_id) || ""}</p>

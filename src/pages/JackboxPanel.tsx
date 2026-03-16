@@ -249,13 +249,21 @@ function JackboxCard({
                 {task.title}
               </span>
             </div>
-            {task.assigned_to && findCollaboratorColor(task.assigned_to, collaboratorColorMap) && (
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
-                style={{ backgroundColor: findCollaboratorColor(task.assigned_to, collaboratorColorMap) }}
-                title={task.assigned_to}
-              />
-            )}
+            {task.assigned_to.length > 0 && (() => {
+              const colors = task.assigned_to.map(name => findCollaboratorColor([name], collaboratorColorMap)).filter(Boolean);
+              return colors.length > 0 ? (
+                <div className="flex gap-0.5">
+                  {colors.map((color, i) => (
+                    <div
+                      key={i}
+                      className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
+                      style={{ backgroundColor: color }}
+                      title={task.assigned_to[i]}
+                    />
+                  ))}
+                </div>
+              ) : null;
+            })()}
           </div>
         ))}
       </div>

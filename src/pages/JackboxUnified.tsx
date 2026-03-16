@@ -464,12 +464,20 @@ function JackboxCardEnhanced({
                   {days}d
                 </span>
               )}
-              {task.assigned_to && findCollaboratorColor(task.assigned_to, collaboratorColorMap) && (
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
-                  style={{ backgroundColor: findCollaboratorColor(task.assigned_to, collaboratorColorMap) }}
-                  title={task.assigned_to}
-                />
+              {task.assigned_to.length > 0 && (
+                <div className="flex gap-0.5">
+                  {task.assigned_to.map((name) => {
+                    const color = findCollaboratorColor([name], collaboratorColorMap);
+                    return color ? (
+                      <div
+                        key={name}
+                        className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
+                        style={{ backgroundColor: color }}
+                        title={name}
+                      />
+                    ) : null;
+                  })}
+                </div>
               )}
               <Button
                 variant="ghost"

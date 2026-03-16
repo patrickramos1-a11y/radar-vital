@@ -186,10 +186,17 @@ function TaskItem({ task, collaborators, onToggle }: TaskItemProps) {
     <div className="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-muted/50 transition-colors">
       <Checkbox checked={task.completed} onCheckedChange={onToggle} />
       <span className={cn("flex-1 text-sm", task.completed && "line-through text-muted-foreground")}>{task.title}</span>
-      {task.assigned_to && (
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold text-white" style={{ backgroundColor: collab?.color || '#6B7280' }}>
-          {collab?.initials || task.assigned_to.slice(0, 2).toUpperCase()}
-        </span>
+      {task.assigned_to.length > 0 && (
+        <div className="flex items-center gap-0.5">
+          {task.assigned_to.map((name) => {
+            const collab = collaborators.find(c => assigneeMatches([name], c.name));
+            return (
+              <span key={name} className="px-1.5 py-0.5 rounded text-[10px] font-bold text-white" style={{ backgroundColor: collab?.color || '#6B7280' }}>
+                {collab?.initials || name.slice(0, 2).toUpperCase()}
+              </span>
+            );
+          })}
+        </div>
       )}
     </div>
   );
