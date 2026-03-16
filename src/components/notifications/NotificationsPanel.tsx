@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivityLogs, ActionType, QUICK_FILTER_CATEGORIES, CollaboratorFilterName } from '@/hooks/useActivityLogs';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow, format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCollaborators } from '@/hooks/useCollaborators';
 
@@ -398,7 +398,12 @@ function LogEntry({ log, getUserColor }: LogEntryProps) {
           <div className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground">
             <Clock className="w-3 h-3" />
             <span title={format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}>
-              {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}
+              {(() => {
+                const days = differenceInDays(new Date(), new Date(log.created_at));
+                if (days === 0) return 'hoje';
+                if (days === 1) return 'há 1 dia';
+                return `há ${days} dias`;
+              })()}
             </span>
             <span className="opacity-50">•</span>
             <span>{format(new Date(log.created_at), "dd/MM HH:mm", { locale: ptBR })}</span>
