@@ -19,7 +19,7 @@ export function CommentPreview({ comments, isLoading, onViewAll }: CommentPrevie
 
   if (comments.length === 0) {
     return (
-      <div className="p-3 text-sm text-muted-foreground">
+      <div className="p-3 text-sm text-muted-foreground w-56">
         Nenhum comentário ainda.
         <button onClick={onViewAll} className="block mt-2 text-primary hover:underline text-xs">Adicionar comentário</button>
       </div>
