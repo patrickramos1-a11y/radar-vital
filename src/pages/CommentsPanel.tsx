@@ -150,6 +150,13 @@ export default function CommentsPanel() {
     try {
       const { error } = await supabase.from('client_comments').update({ read_timestamps: newTimestamps as any }).eq('id', commentId);
       if (error) throw error;
+
+      const archived = await autoArchiveIfFullyRead(commentId, newTimestamps, comment.isArchived);
+      if (archived) {
+        setComments(prev => prev.map(c => c.id === commentId ? { ...c, readTimestamps: newTimestamps, isArchived: true, archivedBy: 'Sistema', archivedAt: new Date().toISOString() } : c));
+        return;
+      }
+
       setComments(prev => prev.map(c => c.id === commentId ? { ...c, readTimestamps: newTimestamps } : c));
     } catch (error) {
       console.error('Error updating read status:', error);
