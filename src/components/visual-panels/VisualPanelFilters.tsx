@@ -66,7 +66,66 @@ export function VisualPanelFilters({
 }: VisualPanelFiltersProps) {
   const { collaborators } = useAuth();
 
-  const handleSortClick = (sort: VisualSortOption) => {
+  // Collaborator dropdown component
+  function CollaboratorDropdown({ collaborators: collabs, selected, onToggle }: {
+    collaborators: typeof collaborators;
+    selected: string[];
+    onToggle: (name: string) => void;
+  }) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const filtered = useMemo(() =>
+      collabs.filter(c => c.name.toLowerCase().includes(search.toLowerCase())),
+      [collabs, search]
+    );
+    const label = selected.length === 0 ? 'Colaboradores' : selected.length === 1
+      ? collabs.find(c => c.name === selected[0])?.name || selected[0]
+      : `${selected.length} colaboradores`;
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border transition-colors ${
+            selected.length > 0 ? 'bg-primary/10 border-primary text-primary' : 'bg-secondary/50 border-border text-secondary-foreground hover:bg-secondary'
+          }`}>
+            {label}
+            <ChevronDown className="w-3 h-3" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-2" align="start">
+          <Input
+            placeholder="Pesquisar..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="h-7 text-xs mb-2"
+          />
+          <div className="max-h-48 overflow-y-auto space-y-0.5">
+            {filtered.map(c => (
+              <button
+                key={c.id}
+                onClick={() => onToggle(c.name)}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors"
+              >
+                <span className="w-5 h-5 rounded-md text-[9px] font-bold flex items-center justify-center border-2 shrink-0"
+                  style={{
+                    backgroundColor: selected.includes(c.name) ? c.color : 'transparent',
+                    borderColor: c.color,
+                    color: selected.includes(c.name) ? '#fff' : c.color,
+                  }}
+                >
+                  {c.initials}
+                </span>
+                <span className="flex-1 text-left truncate">{c.name}</span>
+                {selected.includes(c.name) && <Check className="w-3 h-3 text-primary shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+
     if (sortBy === sort) {
       onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
