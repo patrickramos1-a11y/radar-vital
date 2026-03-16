@@ -539,15 +539,42 @@ export default function CommentsPanel() {
             </PopoverContent>
           </Popover>
 
-          <Select value={clientFilter} onValueChange={setClientFilter}>
-            <SelectTrigger className="w-48 h-9"><SelectValue placeholder="Cliente" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os clientes</SelectItem>
-              {uniqueClients.map(([id, name]) => (<SelectItem key={id} value={id}>{name}</SelectItem>))}
-            </SelectContent>
-          </Select>
-
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <Popover open={clientDropdownOpen} onOpenChange={setClientDropdownOpen}>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "flex items-center gap-1 px-3 h-9 rounded-md text-sm font-medium border transition-colors",
+                clientFilters.length > 0 ? "bg-primary/10 border-primary text-primary" : "bg-background border-input text-foreground hover:bg-accent"
+              )}>
+                {clientFilters.length === 0 ? 'Todos os clientes' : clientFilters.length === 1 ? (uniqueClients.find(([id]) => id === clientFilters[0])?.[1] || clientFilters[0]) : `${clientFilters.length} clientes`}
+                <ChevronDown className="w-3 h-3 ml-1" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="start">
+              <Input
+                placeholder="Pesquisar cliente..."
+                value={clientSearchQuery}
+                onChange={e => setClientSearchQuery(e.target.value)}
+                className="h-7 text-xs mb-2"
+              />
+              <div className="max-h-48 overflow-y-auto space-y-0.5">
+                {uniqueClients
+                  .filter(([, name]) => name.toLowerCase().includes(clientSearchQuery.toLowerCase()))
+                  .map(([id, name]) => {
+                    const isSelected = clientFilters.includes(id);
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setClientFilters(prev => isSelected ? prev.filter(c => c !== id) : [...prev, id])}
+                        className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors"
+                      >
+                        <span className="flex-1 text-left truncate">{name}</span>
+                        {isSelected && <Check className="w-3 h-3 text-primary shrink-0" />}
+                      </button>
+                    );
+                  })}
+              </div>
+            </PopoverContent>
+          </Popover>
             <Checkbox checked={showPinnedOnly} onCheckedChange={(checked) => setShowPinnedOnly(!!checked)} />
             <Pin className="w-3.5 h-3.5" />
             <span>Apenas fixados</span>
