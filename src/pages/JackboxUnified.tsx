@@ -310,10 +310,11 @@ function JackboxCardEnhanced({
     const summary: Record<string, number> = {};
     collaborators.forEach(c => { summary[c.name] = 0; });
     tasks.filter(t => !t.completed).forEach(t => {
-      if (t.assigned_to) {
-        const match = collaborators.find(c => assigneeMatches(t.assigned_to, c.name));
-        if (match) summary[match.name]++;
-      }
+      collaborators.forEach(c => {
+        if (assigneeMatches(t.assigned_to, c.name)) {
+          summary[c.name]++;
+        }
+      });
     });
     return summary;
   }, [tasks, collaborators]);
