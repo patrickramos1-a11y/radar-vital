@@ -233,7 +233,7 @@ const Index = () => {
         const assignedIds = getAssignedCollaboratorIds(c.id);
         const matchesCollaborator = collaboratorFilters.length > 0 && 
           collaboratorFilters.some(collab => {
-            const collabObj = allCollaborators.find(co => co.name.toLowerCase() === collab);
+            const collabObj = allCollaborators.find(co => co.name === collab);
             return collabObj && assignedIds.includes(collabObj.id);
           });
 

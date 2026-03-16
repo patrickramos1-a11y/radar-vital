@@ -270,19 +270,12 @@ export function FilterBar({
           {/* Separator */}
           <div className="w-px h-5 bg-border mx-0.5" />
 
-          {/* Collaborator filters - larger colored squares */}
-          <div className="flex items-center gap-1">
-            {allCollaborators.map((collab) => (
-              <CollaboratorColorSquare
-                key={collab.id}
-                name={collab.name}
-                color={collab.color}
-                initials={collab.initials}
-                active={collaboratorFilters.includes(collab.name)}
-                onClick={() => onCollaboratorFilterToggle(collab.name)}
-              />
-            ))}
-          </div>
+          {/* Collaborator filters - searchable dropdown */}
+          <CollaboratorDropdown
+            collaborators={allCollaborators}
+            selectedNames={collaboratorFilters}
+            onToggle={onCollaboratorFilterToggle}
+          />
 
           {/* Clear filters button */}
           {hasActiveFilters && (
