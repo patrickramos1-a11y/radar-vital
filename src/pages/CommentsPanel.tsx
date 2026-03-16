@@ -551,8 +551,8 @@ export default function CommentsPanel() {
             <span>Apenas fixados</span>
           </label>
 
-          {(searchQuery || authorFilter !== 'all' || clientFilter !== 'all' || typeFilter !== 'all' || showPinnedOnly || showMyCiencia) && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setAuthorFilter('all'); setClientFilter('all'); setTypeFilter('all'); setShowPinnedOnly(false); setShowMyCiencia(false); }}>
+          {(searchQuery || authorFilters.length > 0 || clientFilter !== 'all' || typeFilter !== 'all' || showPinnedOnly || showMyCiencia) && (
+            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setAuthorFilters([]); setClientFilter('all'); setTypeFilter('all'); setShowPinnedOnly(false); setShowMyCiencia(false); }}>
               Limpar filtros
             </Button>
           )}
