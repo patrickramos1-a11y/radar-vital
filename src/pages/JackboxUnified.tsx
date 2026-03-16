@@ -473,12 +473,14 @@ function JackboxCardEnhanced({
                   {task.assigned_to.map((name) => {
                     const color = findCollaboratorColor([name], collaboratorColorMap);
                     return color ? (
-                      <div
+                      <span
                         key={name}
-                        className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
+                        className="w-4 h-4 rounded-full flex-shrink-0 text-[8px] font-bold text-white flex items-center justify-center"
                         style={{ backgroundColor: color }}
                         title={name}
-                      />
+                      >
+                        {name[0].toUpperCase()}
+                      </span>
                     ) : null;
                   })}
                 </div>
