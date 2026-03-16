@@ -7,10 +7,8 @@ interface VisualGridProps {
 
 function getGridColumns(count: number): number {
   if (count <= 4) return 2;
-  if (count <= 6) return 3;
-  if (count <= 12) return 4;
-  if (count <= 20) return 5;
-  return 6;
+  if (count <= 8) return 3;
+  return 4;
 }
 
 export function VisualGrid({ children, itemCount }: VisualGridProps) {
