@@ -270,19 +270,12 @@ export function FilterBar({
           {/* Separator */}
           <div className="w-px h-5 bg-border mx-0.5" />
 
-          {/* Collaborator filters - larger colored squares */}
-          <div className="flex items-center gap-1">
-            {allCollaborators.map((collab) => (
-              <CollaboratorColorSquare
-                key={collab.id}
-                name={collab.name}
-                color={collab.color}
-                initials={collab.initials}
-                active={collaboratorFilters.includes(collab.name)}
-                onClick={() => onCollaboratorFilterToggle(collab.name)}
-              />
-            ))}
-          </div>
+          {/* Collaborator filters - searchable dropdown */}
+          <CollaboratorDropdown
+            collaborators={allCollaborators}
+            selectedNames={collaboratorFilters}
+            onToggle={onCollaboratorFilterToggle}
+          />
 
           {/* Clear filters button */}
           {hasActiveFilters && (
@@ -423,39 +416,102 @@ function ClientTypeButton({ type, active, onClick, count }: ClientTypeButtonProp
   );
 }
 
-interface CollaboratorColorSquareProps {
-  name: string;
-  color: string;
-  initials: string;
-  active: boolean;
-  onClick: () => void;
+// Collaborator multi-select dropdown
+interface CollaboratorDropdownProps {
+  collaborators: { id: string; name: string; color: string; initials: string }[];
+  selectedNames: string[];
+  onToggle: (name: string) => void;
 }
 
-function CollaboratorColorSquare({ name, color, initials, active, onClick }: CollaboratorColorSquareProps) {
+function CollaboratorDropdown({ collaborators, selectedNames, onToggle }: CollaboratorDropdownProps) {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const filtered = search.trim()
+    ? collaborators.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+    : collaborators;
+
+  const selectedCount = selectedNames.length;
+
+  const displayLabel = selectedCount === 0
+    ? 'Colaboradores'
+    : selectedCount === 1
+      ? collaborators.find(c => selectedNames.includes(c.name))?.name || 'Colaboradores'
+      : `${selectedCount} selecionados`;
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <button
-          onClick={onClick}
-          className={`w-8 h-8 rounded-lg text-[11px] font-bold transition-all border-2 flex items-center justify-center hover:scale-105 ${
-            active 
-              ? 'text-white ring-2 ring-offset-1 ring-offset-background' 
-              : 'opacity-40 hover:opacity-70'
+          className={`h-7 px-2.5 rounded-md transition-all flex items-center gap-1.5 border text-xs font-medium ${
+            selectedCount > 0
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
           }`}
-          style={{
-            backgroundColor: active ? color : 'transparent',
-            borderColor: color,
-            color: active ? '#fff' : color,
-            boxShadow: active ? `0 2px 8px ${color}50` : 'none',
-          }}
         >
-          {initials}
+          <Users className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate max-w-[120px]">{displayLabel}</span>
+          <svg className="w-3 h-3 shrink-0 opacity-60" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="text-xs">
-        {name}
-      </TooltipContent>
-    </Tooltip>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-0" align="start">
+        <div className="p-2 border-b border-border">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar colaborador..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-7 pl-7 text-xs"
+              autoFocus
+            />
+          </div>
+        </div>
+        <div className="max-h-52 overflow-y-auto p-1">
+          {filtered.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-3">Nenhum colaborador encontrado</p>
+          ) : (
+            filtered.map(collab => {
+              const isSelected = selectedNames.includes(collab.name);
+              return (
+                <button
+                  key={collab.id}
+                  onClick={() => onToggle(collab.name)}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors text-left ${
+                    isSelected
+                      ? 'bg-primary/10 text-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                    isSelected ? 'bg-primary border-primary' : 'border-border'
+                  }`}>
+                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                  </div>
+                  <span
+                    className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: collab.color }}
+                  >
+                    {collab.initials}
+                  </span>
+                  {collab.name}
+                </button>
+              );
+            })
+          )}
+        </div>
+        {selectedCount > 0 && (
+          <div className="p-2 border-t border-border">
+            <button
+              onClick={() => selectedNames.forEach(n => onToggle(n))}
+              className="text-[10px] text-muted-foreground hover:text-foreground"
+            >
+              Limpar seleção ({selectedCount})
+            </button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 
