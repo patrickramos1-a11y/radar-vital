@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, ListChecks } from "lucide-react";
+import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3 } from "lucide-react";
 import logoSisRamos from "@/assets/logo-sisramos.png";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 
@@ -20,7 +20,6 @@ const navigationItems: NavItem[] = [
 ];
 
 const configItems: NavItem[] = [
-  { title: "Backlog", icon: ListChecks, href: "/backlog" },
   { title: "Configurar", icon: Settings, href: "/config" },
 ];
 

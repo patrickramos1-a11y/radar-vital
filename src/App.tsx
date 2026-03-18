@@ -13,8 +13,6 @@ import JackboxUnified from "./pages/JackboxUnified";
 import JackboxDetalhado from "./pages/JackboxDetalhado";
 import CommentsPanel from "./pages/CommentsPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
-import Backlog from "./pages/Backlog";
-import BacklogDetail from "./pages/BacklogDetail";
 import TVMode from "./pages/TVMode";
 import NotFound from "./pages/NotFound";
 
@@ -37,8 +35,6 @@ const App = () => (
               <Route path="/jackbox-unificado" element={<JackboxUnified />} />
               <Route path="/jackbox-detalhado" element={<JackboxDetalhado />} />
               <Route path="/config" element={<Config />} />
-              <Route path="/backlog" element={<Backlog />} />
-              <Route path="/backlog/:id" element={<BacklogDetail />} />
               <Route path="/tv" element={<TVMode />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
