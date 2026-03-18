@@ -176,9 +176,16 @@ export default function CommentsPanel() {
     if (!comment) return;
     const newTimestamps = { ...comment.readTimestamps, [currentUserName]: new Date().toISOString() };
     try {
+      // Build update with read_timestamps + legacy read_* column
+      const legacyField = `read_${currentUserName.toLowerCase()}`;
+      const legacyColumns = ['read_celine', 'read_gabi', 'read_darley', 'read_vanessa', 'read_patrick'];
+      const updateData: any = { read_timestamps: newTimestamps as any };
+      if (legacyColumns.includes(legacyField)) {
+        updateData[legacyField] = true;
+      }
       const { error } = await supabase
         .from('client_comments')
-        .update({ read_timestamps: newTimestamps as any })
+        .update(updateData)
         .eq('id', commentId);
       if (error) throw error;
 
