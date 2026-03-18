@@ -20,7 +20,6 @@ const navigationItems: NavItem[] = [
 ];
 
 const configItems: NavItem[] = [
-  { title: "Backlog", icon: ListChecks, href: "/backlog" },
   { title: "Configurar", icon: Settings, href: "/config" },
 ];
 

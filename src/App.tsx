@@ -35,8 +35,6 @@ const App = () => (
               <Route path="/jackbox-unificado" element={<JackboxUnified />} />
               <Route path="/jackbox-detalhado" element={<JackboxDetalhado />} />
               <Route path="/config" element={<Config />} />
-              <Route path="/backlog" element={<Backlog />} />
-              <Route path="/backlog/:id" element={<BacklogDetail />} />
               <Route path="/tv" element={<TVMode />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
