@@ -77,60 +77,6 @@ export type Database = {
         }
         Relationships: []
       }
-      apt_demands: {
-        Row: {
-          ano: number
-          aprovado_gestor: string
-          created_at: string
-          descricao: string
-          feito_responsavel: string
-          id: string
-          is_active: boolean
-          is_highlighted: boolean
-          mes: number
-          numero: number
-          repeticoes: number
-          responsavel: string
-          semana_limite: number
-          setor: string
-          updated_at: string
-        }
-        Insert: {
-          ano: number
-          aprovado_gestor?: string
-          created_at?: string
-          descricao: string
-          feito_responsavel?: string
-          id?: string
-          is_active?: boolean
-          is_highlighted?: boolean
-          mes: number
-          numero: number
-          repeticoes?: number
-          responsavel: string
-          semana_limite?: number
-          setor: string
-          updated_at?: string
-        }
-        Update: {
-          ano?: number
-          aprovado_gestor?: string
-          created_at?: string
-          descricao?: string
-          feito_responsavel?: string
-          id?: string
-          is_active?: boolean
-          is_highlighted?: boolean
-          mes?: number
-          numero?: number
-          repeticoes?: number
-          responsavel?: string
-          semana_limite?: number
-          setor?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       client_collaborator_assignments: {
         Row: {
           client_id: string
@@ -452,121 +398,6 @@ export type Database = {
         }
         Relationships: []
       }
-      demands: {
-        Row: {
-          client_id: string | null
-          codigo: string | null
-          comentario: string | null
-          created_at: string
-          data: string | null
-          descricao: string
-          empresa_excel: string
-          id: string
-          imported_at: string
-          origem: string | null
-          plano: string | null
-          responsavel: string | null
-          status: Database["public"]["Enums"]["demand_status"]
-          subtopico: string | null
-          topico: string | null
-          updated_at: string
-        }
-        Insert: {
-          client_id?: string | null
-          codigo?: string | null
-          comentario?: string | null
-          created_at?: string
-          data?: string | null
-          descricao: string
-          empresa_excel: string
-          id?: string
-          imported_at?: string
-          origem?: string | null
-          plano?: string | null
-          responsavel?: string | null
-          status?: Database["public"]["Enums"]["demand_status"]
-          subtopico?: string | null
-          topico?: string | null
-          updated_at?: string
-        }
-        Update: {
-          client_id?: string | null
-          codigo?: string | null
-          comentario?: string | null
-          created_at?: string
-          data?: string | null
-          descricao?: string
-          empresa_excel?: string
-          id?: string
-          imported_at?: string
-          origem?: string | null
-          plano?: string | null
-          responsavel?: string | null
-          status?: Database["public"]["Enums"]["demand_status"]
-          subtopico?: string | null
-          topico?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "demands_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      licenses: {
-        Row: {
-          client_id: string | null
-          created_at: string
-          data_emissao: string | null
-          empresa_excel: string
-          id: string
-          licenca: string | null
-          num_processo: string | null
-          status_calculado: string
-          tipo_licenca: string | null
-          updated_at: string
-          vencimento: string | null
-        }
-        Insert: {
-          client_id?: string | null
-          created_at?: string
-          data_emissao?: string | null
-          empresa_excel: string
-          id?: string
-          licenca?: string | null
-          num_processo?: string | null
-          status_calculado?: string
-          tipo_licenca?: string | null
-          updated_at?: string
-          vencimento?: string | null
-        }
-        Update: {
-          client_id?: string | null
-          created_at?: string
-          data_emissao?: string | null
-          empresa_excel?: string
-          id?: string
-          licenca?: string | null
-          num_processo?: string | null
-          status_calculado?: string
-          tipo_licenca?: string | null
-          updated_at?: string
-          vencimento?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "licenses_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       municipalities: {
         Row: {
           created_at: string
@@ -587,53 +418,6 @@ export type Database = {
           state?: string
         }
         Relationships: []
-      }
-      notifications: {
-        Row: {
-          client_id: string | null
-          created_at: string
-          data_recebimento: string | null
-          descricao: string | null
-          empresa_excel: string
-          id: string
-          numero_notificacao: string
-          numero_processo: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          client_id?: string | null
-          created_at?: string
-          data_recebimento?: string | null
-          descricao?: string | null
-          empresa_excel: string
-          id?: string
-          numero_notificacao: string
-          numero_processo?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          client_id?: string | null
-          created_at?: string
-          data_recebimento?: string | null
-          descricao?: string | null
-          empresa_excel?: string
-          id?: string
-          numero_notificacao?: string
-          numero_processo?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       panel_links: {
         Row: {
@@ -881,50 +665,6 @@ export type Database = {
           },
         ]
       }
-      processes: {
-        Row: {
-          client_id: string | null
-          created_at: string
-          data_protocolo: string | null
-          empresa_excel: string
-          id: string
-          numero_processo: string | null
-          status: string
-          tipo_processo: string | null
-          updated_at: string
-        }
-        Insert: {
-          client_id?: string | null
-          created_at?: string
-          data_protocolo?: string | null
-          empresa_excel: string
-          id?: string
-          numero_processo?: string | null
-          status?: string
-          tipo_processo?: string | null
-          updated_at?: string
-        }
-        Update: {
-          client_id?: string | null
-          created_at?: string
-          data_protocolo?: string | null
-          empresa_excel?: string
-          id?: string
-          numero_processo?: string | null
-          status?: string
-          tipo_processo?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "processes_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1034,18 +774,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      recalculate_client_condicionantes: {
-        Args: { p_client_id: string }
-        Returns: undefined
-      }
-      recalculate_client_demands: {
-        Args: { p_client_id: string }
-        Returns: undefined
-      }
-      recalculate_client_notifications: {
-        Args: { p_client_id: string }
-        Returns: undefined
       }
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
