@@ -13,8 +13,6 @@ import JackboxUnified from "./pages/JackboxUnified";
 import JackboxDetalhado from "./pages/JackboxDetalhado";
 import CommentsPanel from "./pages/CommentsPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
-import Backlog from "./pages/Backlog";
-import BacklogDetail from "./pages/BacklogDetail";
 import TVMode from "./pages/TVMode";
 import NotFound from "./pages/NotFound";
 
