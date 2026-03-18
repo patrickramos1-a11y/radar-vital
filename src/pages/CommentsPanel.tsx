@@ -148,7 +148,14 @@ export default function CommentsPanel() {
       newTimestamps[collaboratorName] = new Date().toISOString();
     }
     try {
-      const { error } = await supabase.from('client_comments').update({ read_timestamps: newTimestamps as any }).eq('id', commentId);
+      // Build update with read_timestamps + legacy read_* column if applicable
+      const legacyField = `read_${collaboratorName.toLowerCase()}`;
+      const legacyColumns = ['read_celine', 'read_gabi', 'read_darley', 'read_vanessa', 'read_patrick'];
+      const updateData: any = { read_timestamps: newTimestamps as any };
+      if (legacyColumns.includes(legacyField)) {
+        updateData[legacyField] = !isRead;
+      }
+      const { error } = await supabase.from('client_comments').update(updateData).eq('id', commentId);
       if (error) throw error;
 
       const archived = await autoArchiveIfFullyRead(commentId, newTimestamps, comment.isArchived);
