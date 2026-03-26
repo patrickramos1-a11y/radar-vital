@@ -311,6 +311,7 @@ function JackboxCardEnhanced({
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [editingDueDate, setEditingDueDate] = useState('');
 
   const tasksByCollaborator = useMemo(() => {
     const summary: Record<string, number> = {};
