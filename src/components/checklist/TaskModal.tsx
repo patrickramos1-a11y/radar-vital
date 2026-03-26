@@ -98,61 +98,43 @@ export function TaskModal({
 
         <div className="flex-1 overflow-auto space-y-4">
           {/* Add new task */}
-          <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+          <div className="p-4 bg-muted/50 rounded-lg space-y-3">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 placeholder="Nova tarefa..."
-                className="flex-1 px-3 py-2 text-sm border rounded-md bg-background"
+                className="flex-1 px-3 py-2.5 text-sm md:text-base border rounded-md bg-background"
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                 maxLength={100}
               />
               <button
                 onClick={handleAddTask}
                 disabled={!newTaskTitle.trim() || activeTasks.length >= 11}
-                className="px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Responsáveis:</span>
-              <div className="flex gap-1">
-                {collaborators.map((collab) => {
-                  const isSelected = newTaskAssignees.includes(collab.name);
-                  return (
-                    <button
-                      key={collab.id}
-                      onClick={() => setNewTaskAssignees(prev => 
-                        isSelected ? prev.filter(n => n !== collab.name) : [...prev, collab.name]
-                      )}
-                      className="w-6 h-6 rounded text-xs font-medium transition-all"
-                      style={{
-                        backgroundColor: isSelected ? collab.color : 'transparent',
-                        border: `2px solid ${collab.color}`,
-                        color: isSelected ? 'white' : collab.color,
-                      }}
-                      title={collab.name}
-                    >
-                      {collab.initials[0]}
-                    </button>
-                  );
-                })}
+            <div className="flex items-center gap-3">
+              <NewTaskAssigneeDropdown
+                collaborators={collaborators}
+                selected={newTaskAssignees}
+                onChange={setNewTaskAssignees}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Prazo:</span>
+                <input
+                  type="date"
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                  className="px-3 py-1.5 text-sm border rounded-md bg-background"
+                />
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Prazo:</span>
-              <input
-                type="date"
-                value={newTaskDueDate}
-                onChange={(e) => setNewTaskDueDate(e.target.value)}
-                className="px-2 py-1 text-xs border rounded-md bg-background"
-              />
-            </div>
             {activeTasks.length >= 11 && (
-              <p className="text-xs text-amber-600">Limite de 11 tarefas ativas atingido</p>
+              <p className="text-sm text-amber-600">Limite de 11 tarefas ativas atingido</p>
             )}
           </div>
 
