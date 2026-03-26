@@ -197,7 +197,7 @@ export default function JackboxUnified() {
         </VisualPanelHeader>
 
         {/* Analytics Ranking Bar */}
-        <TaskAnalytics tasks={tasks} clients={activeClients} getDaysOpen={getDaysOpen} collaborators={allCollaborators} />
+        <TaskAnalytics tasks={tasks} clients={activeClients} getDaysOpen={getDaysOpen} collaborators={allCollaborators} overdueTasks={getOverdueTasks()} />
 
         {/* Status Filter */}
         <div className="flex items-center gap-2 px-6 py-2 bg-muted/30 border-b">
