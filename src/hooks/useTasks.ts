@@ -55,6 +55,7 @@ export function useTasks() {
         client_id: clientId,
         title: data.title,
         assigned_to: data.assigned_to,
+        due_date: data.due_date || null,
       });
 
       if (error) throw error;
