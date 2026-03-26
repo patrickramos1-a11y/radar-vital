@@ -28,6 +28,7 @@ export default function JackboxUnified() {
     tasks, 
     toggleComplete, 
     addTask,
+    updateTask,
     deleteTask,
     getActiveTasksForClient,
     getActiveTaskCount,
