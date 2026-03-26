@@ -470,6 +470,14 @@ function JackboxCardEnhanced({
                 )}>
                   {task.title}
                 </span>
+                {task.due_date && !task.completed && (
+                  <span className={cn(
+                    "text-[9px]",
+                    new Date(task.due_date) < new Date(new Date().toDateString()) ? "text-destructive font-bold" : "text-muted-foreground"
+                  )}>
+                    📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </span>
+                )}
               </div>
               {!task.completed && (
                 <span className={cn(

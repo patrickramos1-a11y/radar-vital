@@ -78,6 +78,13 @@ export function CreateTaskFromComment({ commentText, clientId, clientName, colla
             ))}
           </SelectContent>
         </Select>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="h-8 text-xs px-2 border rounded-md bg-background w-full"
+          placeholder="Prazo"
+        />
         <Button
           size="sm"
           className="w-full h-8 text-xs"
