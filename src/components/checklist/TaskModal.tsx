@@ -46,11 +46,13 @@ export function TaskModal({
     const success = await onAddTask(client.id, {
       title: newTaskTitle.trim(),
       assigned_to: newTaskAssignees,
+      due_date: newTaskDueDate || undefined,
     });
 
     if (success) {
       setNewTaskTitle('');
       setNewTaskAssignees([]);
+      setNewTaskDueDate('');
     }
   };
 
