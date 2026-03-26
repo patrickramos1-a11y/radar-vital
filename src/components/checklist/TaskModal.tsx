@@ -30,6 +30,7 @@ export function TaskModal({
   const { collaborators } = useAuth();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
+  const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
