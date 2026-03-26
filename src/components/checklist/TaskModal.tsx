@@ -296,41 +296,12 @@ function TaskItem({
       )}
 
       {!task.completed && (
-        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          {collaborators.map((collab) => (
-            <button
-              key={collab.id}
-              onClick={() => onAssigneeChange(collab.name)}
-              className="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center transition-all"
-              style={{
-                backgroundColor: assigneeMatches(task.assigned_to, collab.name) ? collab.color : 'transparent',
-                border: `2px solid ${collab.color}`,
-                color: assigneeMatches(task.assigned_to, collab.name) ? 'white' : collab.color,
-                opacity: assigneeMatches(task.assigned_to, collab.name) ? 1 : 0.4,
-              }}
-              title={collab.name}
-            >
-              {collab.name[0].toUpperCase()}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {task.assigned_to.length > 0 && !task.completed && (
-        <div className="flex items-center gap-1">
-          {task.assigned_to.map((name) => {
-            const color = findCollaboratorColor([name], collaboratorColorMap);
-            return color ? (
-              <span
-                key={name}
-                className="w-7 h-7 rounded-full text-xs font-bold text-white flex items-center justify-center"
-                style={{ backgroundColor: color }}
-              >
-                {name[0].toUpperCase()}
-              </span>
-            ) : null;
-          })}
-        </div>
+        <AssigneeDropdown
+          task={task}
+          collaborators={collaborators}
+          collaboratorColorMap={collaboratorColorMap}
+          onAssigneeChange={onAssigneeChange}
+        />
       )}
 
       <button
