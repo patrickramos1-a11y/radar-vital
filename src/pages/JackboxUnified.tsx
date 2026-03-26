@@ -311,6 +311,7 @@ function JackboxCardEnhanced({
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [editingDueDate, setEditingDueDate] = useState('');
 
   const tasksByCollaborator = useMemo(() => {
     const summary: Record<string, number> = {};
@@ -341,7 +342,7 @@ function JackboxCardEnhanced({
 
   const handleSaveEdit = async (taskId: string) => {
     if (!editingTitle.trim()) return;
-    await onUpdateTask(taskId, { title: editingTitle.trim() });
+    await onUpdateTask(taskId, { title: editingTitle.trim(), due_date: editingDueDate || null } as any);
     setEditingId(null);
   };
 
@@ -436,18 +437,24 @@ function JackboxCardEnhanced({
               <Checkbox checked={task.completed} onCheckedChange={() => onToggleTask(task.id)} className="mt-0.5 h-3.5 w-3.5" />
               <div className="flex-1 min-w-0">
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editingTitle}
-                    onChange={(e) => setEditingTitle(e.target.value)}
-                    className="w-full px-1 py-0.5 text-xs border rounded bg-background"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveEdit(task.id);
-                      if (e.key === 'Escape') setEditingId(null);
-                    }}
-                    onBlur={() => handleSaveEdit(task.id)}
-                  />
+                  <div className="space-y-1">
+                    <textarea
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      className="w-full px-1.5 py-1 text-xs border rounded bg-background resize-none min-h-[28px]"
+                      autoFocus
+                      rows={2}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(task.id); }
+                        if (e.key === 'Escape') setEditingId(null);
+                      }}
+                    />
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-muted-foreground">Prazo:</span>
+                      <input type="date" value={editingDueDate} onChange={(e) => setEditingDueDate(e.target.value)} className="px-1 py-0.5 text-[9px] border rounded bg-background h-5" />
+                      <button onClick={() => handleSaveEdit(task.id)} className="ml-auto px-2 py-0.5 text-[9px] bg-primary text-primary-foreground rounded hover:bg-primary/90">Salvar</button>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <span className={cn("text-xs block leading-tight", task.completed && "line-through text-muted-foreground")}>
@@ -476,7 +483,7 @@ function JackboxCardEnhanced({
                   variant="ghost"
                   size="icon"
                   className="h-4 w-4 opacity-0 group-hover/task:opacity-100"
-                  onClick={() => { setEditingId(task.id); setEditingTitle(task.title); }}
+                  onClick={() => { setEditingId(task.id); setEditingTitle(task.title); setEditingDueDate(task.due_date || ''); }}
                 >
                   <Pencil className="h-2.5 w-2.5" />
                 </Button>
