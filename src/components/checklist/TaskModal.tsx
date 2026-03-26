@@ -313,3 +313,88 @@ function TaskItem({
     </div>
   );
 }
+
+// Compact assignee dropdown with search
+function AssigneeDropdown({
+  task,
+  collaborators,
+  collaboratorColorMap,
+  onAssigneeChange,
+}: {
+  task: Task;
+  collaborators: { id: string; name: string; color: string; initials: string }[];
+  collaboratorColorMap: Record<string, string>;
+  onAssigneeChange: (name: string) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const filtered = collaborators.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="flex items-center gap-1 px-1.5 py-1 rounded-md hover:bg-muted transition-colors flex-shrink-0">
+          {task.assigned_to.length > 0 ? (
+            <div className="flex items-center -space-x-1">
+              {task.assigned_to.slice(0, 3).map((name) => {
+                const color = findCollaboratorColor([name], collaboratorColorMap);
+                return (
+                  <span
+                    key={name}
+                    className="w-6 h-6 rounded-full text-[10px] font-bold text-white flex items-center justify-center border-2 border-card"
+                    style={{ backgroundColor: color || '#6B7280' }}
+                    title={name}
+                  >
+                    {name[0].toUpperCase()}
+                  </span>
+                );
+              })}
+              {task.assigned_to.length > 3 && (
+                <span className="w-6 h-6 rounded-full text-[9px] font-bold bg-muted text-muted-foreground flex items-center justify-center border-2 border-card">
+                  +{task.assigned_to.length - 3}
+                </span>
+              )}
+            </div>
+          ) : (
+            <User className="w-4 h-4 text-muted-foreground" />
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-2" align="end">
+        <div className="relative mb-2">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar..."
+            className="w-full pl-7 pr-2 py-1.5 text-sm border rounded-md bg-background"
+            autoFocus
+          />
+        </div>
+        <div className="space-y-0.5 max-h-[180px] overflow-y-auto">
+          {filtered.map((collab) => {
+            const isAssigned = assigneeMatches(task.assigned_to, collab.name);
+            return (
+              <button
+                key={collab.id}
+                onClick={() => onAssigneeChange(collab.name)}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors"
+              >
+                <span
+                  className="w-5 h-5 rounded-full text-[9px] font-bold text-white flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: collab.color }}
+                >
+                  {collab.name[0].toUpperCase()}
+                </span>
+                <span className="flex-1 text-left truncate capitalize">{collab.name}</span>
+                {isAssigned && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
