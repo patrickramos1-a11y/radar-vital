@@ -18,6 +18,7 @@ export function CreateTaskFromComment({ commentText, clientId, clientName, colla
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>('');
+  const [dueDate, setDueDate] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const { addTask } = useTasks();
 
