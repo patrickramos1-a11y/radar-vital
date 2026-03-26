@@ -441,18 +441,18 @@ function JackboxCardEnhanced({
                     <textarea
                       value={editingTitle}
                       onChange={(e) => setEditingTitle(e.target.value)}
-                      className="w-full px-1.5 py-1 text-xs border rounded bg-background resize-none min-h-[28px]"
+                      className="w-full px-2 py-1.5 text-sm border rounded bg-background resize-none min-h-[48px]"
                       autoFocus
-                      rows={2}
+                      rows={3}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(task.id); }
                         if (e.key === 'Escape') setEditingId(null);
                       }}
                     />
-                    <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-muted-foreground">Prazo:</span>
-                      <input type="date" value={editingDueDate} onChange={(e) => setEditingDueDate(e.target.value)} className="px-1 py-0.5 text-[9px] border rounded bg-background h-5" />
-                      <button onClick={() => handleSaveEdit(task.id)} className="ml-auto px-2 py-0.5 text-[9px] bg-primary text-primary-foreground rounded hover:bg-primary/90">Salvar</button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Prazo:</span>
+                      <input type="date" value={editingDueDate} onChange={(e) => setEditingDueDate(e.target.value)} className="px-2 py-1 text-xs border rounded bg-background" />
+                      <button onClick={() => handleSaveEdit(task.id)} className="ml-auto px-3 py-1 text-xs font-medium bg-primary text-primary-foreground rounded hover:bg-primary/90">Salvar</button>
                     </div>
                   </div>
                 ) : (
