@@ -15,6 +15,7 @@ const dbRowToTask = (row: any): Task => ({
   assigned_to: Array.isArray(row.assigned_to) ? row.assigned_to : row.assigned_to ? [row.assigned_to] : [],
   created_at: row.created_at,
   completed_at: row.completed_at,
+  due_date: row.due_date || null,
 });
 
 export function useTasks() {
