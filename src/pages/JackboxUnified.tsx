@@ -284,6 +284,7 @@ interface JackboxCardEnhancedProps {
   tasks: Task[];
   onToggleTask: (taskId: string) => void;
   onAddTask: (title: string, assignees: string[], dueDate?: string) => Promise<boolean>;
+  onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
   onDeleteTask: (taskId: string) => void;
   statusFilter: StatusFilter;
   getDaysOpen: (task: Task) => number;
@@ -297,6 +298,7 @@ function JackboxCardEnhanced({
   tasks, 
   onToggleTask,
   onAddTask,
+  onUpdateTask,
   onDeleteTask,
   statusFilter,
   getDaysOpen,
@@ -307,8 +309,9 @@ function JackboxCardEnhanced({
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
-  // Group tasks by collaborator for summary
   const tasksByCollaborator = useMemo(() => {
     const summary: Record<string, number> = {};
     collaborators.forEach(c => { summary[c.name] = 0; });
@@ -336,6 +339,23 @@ function JackboxCardEnhanced({
     }
   };
 
+  const handleSaveEdit = async (taskId: string) => {
+    if (!editingTitle.trim()) return;
+    await onUpdateTask(taskId, { title: editingTitle.trim() });
+    setEditingId(null);
+  };
+
+  const handleAssigneeChange = async (taskId: string, collabName: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const current = task.assigned_to || [];
+    const isAssigned = current.some(a => a.toLowerCase() === collabName.toLowerCase());
+    const newAssignees = isAssigned
+      ? current.filter(a => a.toLowerCase() !== collabName.toLowerCase())
+      : [...current, collabName];
+    await onUpdateTask(taskId, { assigned_to: newAssignees });
+  };
+
   return (
     <div
       className={cn(
@@ -348,11 +368,7 @@ function JackboxCardEnhanced({
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
         <div className="relative flex-shrink-0">
           {client.logoUrl ? (
-            <img
-              src={client.logoUrl}
-              alt={client.name}
-              className="w-9 h-9 object-contain rounded-lg bg-white p-0.5"
-            />
+            <img src={client.logoUrl} alt={client.name} className="w-9 h-9 object-contain rounded-lg bg-white p-0.5" />
           ) : (
             <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
               <span className="text-xs font-bold text-primary">{client.initials}</span>
@@ -364,92 +380,49 @@ function JackboxCardEnhanced({
             </div>
           )}
         </div>
-        
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
-            {client.name}
-          </h3>
+          <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">{client.name}</h3>
           <div className="flex items-center gap-2 text-[10px]">
             <span className="text-amber-600 font-medium">{pendingCount} pend.</span>
-            {completedCount > 0 && (
-              <span className="text-emerald-600 font-medium">{completedCount} conc.</span>
-            )}
+            {completedCount > 0 && <span className="text-emerald-600 font-medium">{completedCount} conc.</span>}
           </div>
         </div>
-
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={() => setIsAdding(!isAdding)}
-        >
+        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setIsAdding(!isAdding)}>
           <Plus className="h-3.5 w-3.5" />
         </Button>
       </div>
 
-      {/* Collaborator Summary Dots */}
+      {/* Collaborator Summary */}
       <div className="flex items-center gap-1 mb-2">
         {collaborators.map((collab) => {
           const count = tasksByCollaborator[collab.name] || 0;
           if (count === 0) return null;
           return (
-            <div
-              key={collab.name}
-              className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold text-white"
-              style={{ backgroundColor: collab.color }}
-              title={`${collab.name}: ${count} tarefas`}
-            >
+            <div key={collab.name} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold text-white" style={{ backgroundColor: collab.color }} title={`${collab.name}: ${count} tarefas`}>
               {collab.name[0].toUpperCase()}{count}
             </div>
           );
         })}
       </div>
 
-      {/* Add Task Form */}
+      {/* Add Task Form - with dropdown */}
       {isAdding && (
         <div className="mb-2 p-2 bg-muted/50 rounded-lg space-y-2">
           <Input
             placeholder="Título da tarefa..."
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
-            className="h-7 text-xs"
+            className="h-8 text-xs"
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           />
-          <div className="flex flex-wrap items-center gap-1 mb-1">
-            <span className="text-[10px] text-muted-foreground">Responsáveis:</span>
-            {collaborators.map((collab) => {
-              const isSelected = newTaskAssignees.includes(collab.name);
-              return (
-                <button
-                  key={collab.name}
-                  onClick={() => setNewTaskAssignees(prev =>
-                    isSelected ? prev.filter(n => n !== collab.name) : [...prev, collab.name]
-                  )}
-                  className="w-5 h-5 rounded text-[9px] font-bold transition-all"
-                  style={{
-                    backgroundColor: isSelected ? collab.color : 'transparent',
-                    border: `1.5px solid ${collab.color}`,
-                    color: isSelected ? 'white' : collab.color,
-                  }}
-                  title={collab.name}
-                >
-                  {collab.initials[0]}
-                </button>
-              );
-            })}
+          <div className="flex items-center gap-2">
+            <CardAssigneeDropdown collaborators={collaborators} selected={newTaskAssignees} onChange={setNewTaskAssignees} />
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-muted-foreground">Prazo:</span>
+              <input type="date" value={newTaskDueDate} onChange={(e) => setNewTaskDueDate(e.target.value)} className="px-1 py-0.5 text-[10px] border rounded bg-background h-6" />
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[10px] text-muted-foreground">Prazo:</span>
-            <input
-              type="date"
-              value={newTaskDueDate}
-              onChange={(e) => setNewTaskDueDate(e.target.value)}
-              className="px-1 py-0.5 text-[10px] border rounded bg-background h-5"
-            />
-          </div>
-          <Button size="sm" className="h-7 text-xs w-full" onClick={handleSubmit}>
-            Adicionar
-          </Button>
+          <Button size="sm" className="h-7 text-xs w-full" onClick={handleSubmit}>Adicionar</Button>
         </div>
       )}
 
@@ -457,56 +430,56 @@ function JackboxCardEnhanced({
       <div className="space-y-1 max-h-[200px] overflow-y-auto pr-1">
         {tasks.slice(0, 11).map((task) => {
           const days = getDaysOpen(task);
+          const isEditing = editingId === task.id;
           return (
-            <div
-              key={task.id}
-              className="flex items-start gap-1.5 group/task p-1 rounded hover:bg-muted/50"
-            >
-              <Checkbox
-                checked={task.completed}
-                onCheckedChange={() => onToggleTask(task.id)}
-                className="mt-0.5 h-3.5 w-3.5"
-              />
+            <div key={task.id} className="flex items-start gap-1.5 group/task p-1 rounded hover:bg-muted/50">
+              <Checkbox checked={task.completed} onCheckedChange={() => onToggleTask(task.id)} className="mt-0.5 h-3.5 w-3.5" />
               <div className="flex-1 min-w-0">
-                <span className={cn(
-                  "text-xs block leading-tight",
-                  task.completed && "line-through text-muted-foreground"
-                )}>
-                  {task.title}
-                </span>
-                {task.due_date && !task.completed && (
-                  <span className={cn(
-                    "text-[9px]",
-                    new Date(task.due_date) < new Date(new Date().toDateString()) ? "text-destructive font-bold" : "text-muted-foreground"
-                  )}>
-                    📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
-                  </span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    className="w-full px-1 py-0.5 text-xs border rounded bg-background"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveEdit(task.id);
+                      if (e.key === 'Escape') setEditingId(null);
+                    }}
+                    onBlur={() => handleSaveEdit(task.id)}
+                  />
+                ) : (
+                  <>
+                    <span className={cn("text-xs block leading-tight", task.completed && "line-through text-muted-foreground")}>
+                      {task.title}
+                    </span>
+                    {task.due_date && !task.completed && (
+                      <span className={cn("text-[9px]", new Date(task.due_date) < new Date(new Date().toDateString()) ? "text-destructive font-bold" : "text-muted-foreground")}>
+                        📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
               {!task.completed && (
-                <span className={cn(
-                  "text-[9px] flex-shrink-0 mt-0.5",
-                  days > 30 ? "text-destructive font-bold" : days > 14 ? "text-amber-600" : "text-muted-foreground"
-                )}>
+                <span className={cn("text-[9px] flex-shrink-0 mt-0.5", days > 30 ? "text-destructive font-bold" : days > 14 ? "text-amber-600" : "text-muted-foreground")}>
                   {days}d
                 </span>
               )}
-              {task.assigned_to.length > 0 && (
-                <div className="flex gap-0.5">
-                  {task.assigned_to.map((name) => {
-                    const color = findCollaboratorColor([name], collaboratorColorMap);
-                    return color ? (
-                      <span
-                        key={name}
-                        className="w-4 h-4 rounded-full flex-shrink-0 text-[8px] font-bold text-white flex items-center justify-center"
-                        style={{ backgroundColor: color }}
-                        title={name}
-                      >
-                        {name[0].toUpperCase()}
-                      </span>
-                    ) : null;
-                  })}
-                </div>
+              {/* Assignee dropdown per task */}
+              {!task.completed && (
+                <TaskAssigneeDropdown task={task} collaborators={collaborators} collaboratorColorMap={collaboratorColorMap} onAssigneeChange={(name) => handleAssigneeChange(task.id, name)} />
+              )}
+              {/* Edit button */}
+              {!task.completed && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 opacity-0 group-hover/task:opacity-100"
+                  onClick={() => { setEditingId(task.id); setEditingTitle(task.title); }}
+                >
+                  <Pencil className="h-2.5 w-2.5" />
+                </Button>
               )}
               <Button
                 variant="ghost"
@@ -522,10 +495,109 @@ function JackboxCardEnhanced({
       </div>
 
       {tasks.length > 11 && (
-        <p className="text-[10px] text-muted-foreground text-center mt-1">
-          +{tasks.length - 11} tarefas
-        </p>
+        <p className="text-[10px] text-muted-foreground text-center mt-1">+{tasks.length - 11} tarefas</p>
       )}
     </div>
+  );
+}
+
+// Compact assignee dropdown for task items in JackboxCard
+function TaskAssigneeDropdown({ task, collaborators, collaboratorColorMap, onAssigneeChange }: {
+  task: Task;
+  collaborators: Collaborator[];
+  collaboratorColorMap: Record<string, string>;
+  onAssigneeChange: (name: string) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const filtered = collaborators.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="flex items-center -space-x-0.5 flex-shrink-0 hover:opacity-80 transition-opacity">
+          {task.assigned_to.length > 0 ? (
+            task.assigned_to.slice(0, 2).map((name) => {
+              const color = findCollaboratorColor([name], collaboratorColorMap);
+              return (
+                <span key={name} className="w-4 h-4 rounded-full text-[8px] font-bold text-white flex items-center justify-center border border-card" style={{ backgroundColor: color || '#6B7280' }} title={name}>
+                  {name[0].toUpperCase()}
+                </span>
+              );
+            })
+          ) : (
+            <User className="w-3.5 h-3.5 text-muted-foreground" />
+          )}
+          {task.assigned_to.length > 2 && <span className="text-[8px] text-muted-foreground ml-0.5">+{task.assigned_to.length - 2}</span>}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[180px] p-2" align="end">
+        <div className="relative mb-2">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..." className="w-full pl-6 pr-2 py-1 text-xs border rounded-md bg-background" autoFocus />
+        </div>
+        <div className="space-y-0.5 max-h-[150px] overflow-y-auto">
+          {filtered.map((collab) => {
+            const isAssigned = assigneeMatches(task.assigned_to, collab.name);
+            return (
+              <button key={collab.id} onClick={() => onAssigneeChange(collab.name)} className="flex items-center gap-2 w-full px-2 py-1 rounded text-xs hover:bg-muted transition-colors">
+                <span className="w-4 h-4 rounded-full text-[8px] font-bold text-white flex items-center justify-center flex-shrink-0" style={{ backgroundColor: collab.color }}>{collab.name[0].toUpperCase()}</span>
+                <span className="flex-1 text-left truncate capitalize">{collab.name}</span>
+                {isAssigned && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Compact assignee dropdown for new task form in JackboxCard
+function CardAssigneeDropdown({ collaborators, selected, onChange }: {
+  collaborators: Collaborator[];
+  selected: string[];
+  onChange: (val: string[]) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const filtered = collaborators.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+  const toggle = (name: string) => onChange(selected.includes(name) ? selected.filter(n => n !== name) : [...selected, name]);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="flex items-center gap-1 px-2 py-1 rounded border bg-background hover:bg-muted transition-colors text-[10px]">
+          <User className="w-3 h-3 text-muted-foreground" />
+          {selected.length > 0 ? (
+            <div className="flex -space-x-0.5">
+              {selected.slice(0, 2).map(name => {
+                const c = collaborators.find(c => c.name === name);
+                return <span key={name} className="w-4 h-4 rounded-full text-[7px] font-bold text-white flex items-center justify-center border border-background" style={{ backgroundColor: c?.color || '#6B7280' }}>{name[0].toUpperCase()}</span>;
+              })}
+              {selected.length > 2 && <span className="text-muted-foreground ml-0.5">+{selected.length - 2}</span>}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">Resp.</span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[180px] p-2" align="start">
+        <div className="relative mb-2">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..." className="w-full pl-6 pr-2 py-1 text-xs border rounded-md bg-background" autoFocus />
+        </div>
+        <div className="space-y-0.5 max-h-[150px] overflow-y-auto">
+          {filtered.map((collab) => {
+            const isSelected = selected.includes(collab.name);
+            return (
+              <button key={collab.id} onClick={() => toggle(collab.name)} className="flex items-center gap-2 w-full px-2 py-1 rounded text-xs hover:bg-muted transition-colors">
+                <span className="w-4 h-4 rounded-full text-[8px] font-bold text-white flex items-center justify-center flex-shrink-0" style={{ backgroundColor: collab.color }}>{collab.name[0].toUpperCase()}</span>
+                <span className="flex-1 text-left truncate capitalize">{collab.name}</span>
+                {isSelected && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
