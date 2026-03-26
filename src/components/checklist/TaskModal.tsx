@@ -98,61 +98,43 @@ export function TaskModal({
 
         <div className="flex-1 overflow-auto space-y-4">
           {/* Add new task */}
-          <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+          <div className="p-4 bg-muted/50 rounded-lg space-y-3">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 placeholder="Nova tarefa..."
-                className="flex-1 px-3 py-2 text-sm border rounded-md bg-background"
+                className="flex-1 px-3 py-2.5 text-sm md:text-base border rounded-md bg-background"
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                 maxLength={100}
               />
               <button
                 onClick={handleAddTask}
                 disabled={!newTaskTitle.trim() || activeTasks.length >= 11}
-                className="px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Responsáveis:</span>
-              <div className="flex gap-1">
-                {collaborators.map((collab) => {
-                  const isSelected = newTaskAssignees.includes(collab.name);
-                  return (
-                    <button
-                      key={collab.id}
-                      onClick={() => setNewTaskAssignees(prev => 
-                        isSelected ? prev.filter(n => n !== collab.name) : [...prev, collab.name]
-                      )}
-                      className="w-6 h-6 rounded text-xs font-medium transition-all"
-                      style={{
-                        backgroundColor: isSelected ? collab.color : 'transparent',
-                        border: `2px solid ${collab.color}`,
-                        color: isSelected ? 'white' : collab.color,
-                      }}
-                      title={collab.name}
-                    >
-                      {collab.initials[0]}
-                    </button>
-                  );
-                })}
+            <div className="flex items-center gap-3">
+              <NewTaskAssigneeDropdown
+                collaborators={collaborators}
+                selected={newTaskAssignees}
+                onChange={setNewTaskAssignees}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Prazo:</span>
+                <input
+                  type="date"
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                  className="px-3 py-1.5 text-sm border rounded-md bg-background"
+                />
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Prazo:</span>
-              <input
-                type="date"
-                value={newTaskDueDate}
-                onChange={(e) => setNewTaskDueDate(e.target.value)}
-                className="px-2 py-1 text-xs border rounded-md bg-background"
-              />
-            </div>
             {activeTasks.length >= 11 && (
-              <p className="text-xs text-amber-600">Limite de 11 tarefas ativas atingido</p>
+              <p className="text-sm text-amber-600">Limite de 11 tarefas ativas atingido</p>
             )}
           </div>
 
@@ -390,6 +372,95 @@ function AssigneeDropdown({
                 </span>
                 <span className="flex-1 text-left truncate capitalize">{collab.name}</span>
                 {isAssigned && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Dropdown for assigning collaborators when creating a new task
+function NewTaskAssigneeDropdown({
+  collaborators,
+  selected,
+  onChange,
+}: {
+  collaborators: { id: string; name: string; color: string; initials: string }[];
+  selected: string[];
+  onChange: (val: string[]) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const filtered = collaborators.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggle = (name: string) => {
+    onChange(
+      selected.includes(name)
+        ? selected.filter(n => n !== name)
+        : [...selected, name]
+    );
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md border bg-background hover:bg-muted transition-colors text-sm">
+          <User className="w-4 h-4 text-muted-foreground" />
+          {selected.length > 0 ? (
+            <div className="flex items-center -space-x-1">
+              {selected.slice(0, 3).map((name) => {
+                const collab = collaborators.find(c => c.name === name);
+                return (
+                  <span
+                    key={name}
+                    className="w-5 h-5 rounded-full text-[9px] font-bold text-white flex items-center justify-center border border-background"
+                    style={{ backgroundColor: collab?.color || '#6B7280' }}
+                  >
+                    {name[0].toUpperCase()}
+                  </span>
+                );
+              })}
+              {selected.length > 3 && (
+                <span className="text-xs text-muted-foreground ml-1">+{selected.length - 3}</span>
+              )}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">Responsáveis</span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-2" align="start">
+        <div className="relative mb-2">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar..."
+            className="w-full pl-7 pr-2 py-1.5 text-sm border rounded-md bg-background"
+            autoFocus
+          />
+        </div>
+        <div className="space-y-0.5 max-h-[180px] overflow-y-auto">
+          {filtered.map((collab) => {
+            const isSelected = selected.includes(collab.name);
+            return (
+              <button
+                key={collab.id}
+                onClick={() => toggle(collab.name)}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors"
+              >
+                <span
+                  className="w-5 h-5 rounded-full text-[9px] font-bold text-white flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: collab.color }}
+                >
+                  {collab.name[0].toUpperCase()}
+                </span>
+                <span className="flex-1 text-left truncate capitalize">{collab.name}</span>
+                {isSelected && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
               </button>
             );
           })}
