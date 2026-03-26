@@ -10,7 +10,7 @@ import Config from "./pages/Config";
 import Dashboard from "./pages/Dashboard";
 import JackboxPanel from "./pages/JackboxPanel";
 import JackboxUnified from "./pages/JackboxUnified";
-import JackboxDetalhado from "./pages/JackboxDetalhado";
+
 import CommentsPanel from "./pages/CommentsPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
 import TVMode from "./pages/TVMode";
