@@ -185,7 +185,7 @@ export default function JackboxUnified() {
           title="Painel de Tarefas" 
           subtitle="Visão gerencial de tarefas por colaborador"
           icon={<Box className="w-5 h-5" />}
-          detailRoute="/jackbox-detalhado"
+          
         >
           <KPICard icon={<CheckSquare className="w-4 h-4" />} value={kpis.totalActive} label="Pendentes" variant="warning" />
           <KPICard icon={<CheckSquare className="w-4 h-4" />} value={kpis.totalCompleted} label="Concluídas" variant="success" />

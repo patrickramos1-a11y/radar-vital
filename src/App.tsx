@@ -33,7 +33,7 @@ const App = () => (
               <Route path="/relatorios-pdf" element={<RelatoriosPdf />} />
               <Route path="/jackbox" element={<JackboxPanel />} />
               <Route path="/jackbox-unificado" element={<JackboxUnified />} />
-              <Route path="/jackbox-detalhado" element={<JackboxDetalhado />} />
+              
               <Route path="/config" element={<Config />} />
               <Route path="/tv" element={<TVMode />} />
               <Route path="*" element={<NotFound />} />
