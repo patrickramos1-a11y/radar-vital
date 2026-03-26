@@ -6,9 +6,11 @@ export interface Task {
   assigned_to: string[];
   created_at: string;
   completed_at: string | null;
+  due_date: string | null;
 }
 
 export type TaskFormData = {
   title: string;
   assigned_to: string[];
+  due_date?: string;
 };

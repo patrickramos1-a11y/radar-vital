@@ -15,6 +15,7 @@ const dbRowToTask = (row: any): Task => ({
   assigned_to: Array.isArray(row.assigned_to) ? row.assigned_to : row.assigned_to ? [row.assigned_to] : [],
   created_at: row.created_at,
   completed_at: row.completed_at,
+  due_date: row.due_date || null,
 });
 
 export function useTasks() {
@@ -54,6 +55,7 @@ export function useTasks() {
         client_id: clientId,
         title: data.title,
         assigned_to: data.assigned_to,
+        due_date: data.due_date || null,
       });
 
       if (error) throw error;
@@ -162,6 +164,19 @@ export function useTasks() {
     return Math.round(totalDays / pending.length);
   }, [tasks, getDaysOpen]);
 
+  const getOverdueTasks = useCallback(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return tasks
+      .filter(t => !t.completed && t.due_date && new Date(t.due_date) < today)
+      .map(t => {
+        const dueDate = new Date(t.due_date!);
+        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        return { ...t, daysOverdue };
+      })
+      .sort((a, b) => b.daysOverdue - a.daysOverdue);
+  }, [tasks]);
+
   return {
     tasks,
     isLoading,
@@ -177,6 +192,7 @@ export function useTasks() {
     getDaysOpen,
     getOldestTask,
     getAverageDaysOpen,
+    getOverdueTasks,
     refetch: fetchTasks,
   };
 }

@@ -30,6 +30,7 @@ export function TaskModal({
   const { collaborators } = useAuth();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
+  const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
@@ -45,11 +46,13 @@ export function TaskModal({
     const success = await onAddTask(client.id, {
       title: newTaskTitle.trim(),
       assigned_to: newTaskAssignees,
+      due_date: newTaskDueDate || undefined,
     });
 
     if (success) {
       setNewTaskTitle('');
       setNewTaskAssignees([]);
+      setNewTaskDueDate('');
     }
   };
 
@@ -137,6 +140,15 @@ export function TaskModal({
                   );
                 })}
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Prazo:</span>
+              <input
+                type="date"
+                value={newTaskDueDate}
+                onChange={(e) => setNewTaskDueDate(e.target.value)}
+                className="px-2 py-1 text-xs border rounded-md bg-background"
+              />
             </div>
             {activeTasks.length >= 11 && (
               <p className="text-xs text-amber-600">Limite de 11 tarefas ativas atingido</p>
@@ -267,12 +279,19 @@ function TaskItem({
           onBlur={onSaveEdit}
         />
       ) : (
-        <span
-          className={`flex-1 text-sm cursor-pointer ${task.completed ? 'line-through text-muted-foreground' : ''}`}
-          onClick={!task.completed ? onStartEdit : undefined}
-        >
-          {task.title}
-        </span>
+        <div className="flex-1 min-w-0">
+          <span
+            className={`text-sm cursor-pointer ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+            onClick={!task.completed ? onStartEdit : undefined}
+          >
+            {task.title}
+          </span>
+          {task.due_date && !task.completed && (
+            <span className={`text-[10px] ml-1 ${new Date(task.due_date) < new Date(new Date().toDateString()) ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+              📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+            </span>
+          )}
+        </div>
       )}
 
       {!task.completed && (

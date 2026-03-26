@@ -18,6 +18,7 @@ export function CreateTaskFromComment({ commentText, clientId, clientName, colla
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>('');
+  const [dueDate, setDueDate] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const { addTask } = useTasks();
 
@@ -36,6 +37,7 @@ export function CreateTaskFromComment({ commentText, clientId, clientName, colla
       const success = await addTask(clientId, {
         title: title.trim(),
         assigned_to: assignedTo ? [assignedTo] : [],
+        due_date: dueDate || undefined,
       }, clientName);
       if (success) setIsOpen(false);
     } finally {
@@ -76,6 +78,13 @@ export function CreateTaskFromComment({ commentText, clientId, clientName, colla
             ))}
           </SelectContent>
         </Select>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="h-8 text-xs px-2 border rounded-md bg-background w-full"
+          placeholder="Prazo"
+        />
         <Button
           size="sm"
           className="w-full h-8 text-xs"

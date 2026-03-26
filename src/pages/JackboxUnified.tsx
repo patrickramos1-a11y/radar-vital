@@ -35,6 +35,7 @@ export default function JackboxUnified() {
     getDaysOpen,
     getOldestTask,
     getAverageDaysOpen,
+    getOverdueTasks,
   } = useTasks();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pendentes");
@@ -196,7 +197,7 @@ export default function JackboxUnified() {
         </VisualPanelHeader>
 
         {/* Analytics Ranking Bar */}
-        <TaskAnalytics tasks={tasks} clients={activeClients} getDaysOpen={getDaysOpen} collaborators={allCollaborators} />
+        <TaskAnalytics tasks={tasks} clients={activeClients} getDaysOpen={getDaysOpen} collaborators={allCollaborators} overdueTasks={getOverdueTasks()} />
 
         {/* Status Filter */}
         <div className="flex items-center gap-2 px-6 py-2 bg-muted/30 border-b">
@@ -246,7 +247,7 @@ export default function JackboxUnified() {
               isHighlighted={highlightedClients.has(client.id)}
               tasks={getFilteredTasks(client.id)}
               onToggleTask={(taskId) => toggleComplete(taskId, client.name)}
-              onAddTask={(title, assignees) => addTask(client.id, { title, assigned_to: assignees }, client.name)}
+              onAddTask={(title, assignees, dueDate) => addTask(client.id, { title, assigned_to: assignees, due_date: dueDate || undefined }, client.name)}
               onDeleteTask={(taskId) => deleteTask(taskId, client.name)}
               statusFilter={statusFilter}
               getDaysOpen={getDaysOpen}
@@ -279,7 +280,7 @@ interface JackboxCardEnhancedProps {
   isHighlighted: boolean;
   tasks: Task[];
   onToggleTask: (taskId: string) => void;
-  onAddTask: (title: string, assignees: string[]) => Promise<boolean>;
+  onAddTask: (title: string, assignees: string[], dueDate?: string) => Promise<boolean>;
   onDeleteTask: (taskId: string) => void;
   statusFilter: StatusFilter;
   getDaysOpen: (task: Task) => number;
@@ -302,6 +303,7 @@ function JackboxCardEnhanced({
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
+  const [newTaskDueDate, setNewTaskDueDate] = useState('');
 
   // Group tasks by collaborator for summary
   const tasksByCollaborator = useMemo(() => {
@@ -322,10 +324,11 @@ function JackboxCardEnhanced({
 
   const handleSubmit = async () => {
     if (!newTaskTitle.trim()) return;
-    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignees);
+    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignees, newTaskDueDate || undefined);
     if (success) {
       setNewTaskTitle('');
       setNewTaskAssignees([]);
+      setNewTaskDueDate('');
       setIsAdding(false);
     }
   };
@@ -432,6 +435,15 @@ function JackboxCardEnhanced({
               );
             })}
           </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-muted-foreground">Prazo:</span>
+            <input
+              type="date"
+              value={newTaskDueDate}
+              onChange={(e) => setNewTaskDueDate(e.target.value)}
+              className="px-1 py-0.5 text-[10px] border rounded bg-background h-5"
+            />
+          </div>
           <Button size="sm" className="h-7 text-xs w-full" onClick={handleSubmit}>
             Adicionar
           </Button>
@@ -459,6 +471,14 @@ function JackboxCardEnhanced({
                 )}>
                   {task.title}
                 </span>
+                {task.due_date && !task.completed && (
+                  <span className={cn(
+                    "text-[9px]",
+                    new Date(task.due_date) < new Date(new Date().toDateString()) ? "text-destructive font-bold" : "text-muted-foreground"
+                  )}>
+                    📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </span>
+                )}
               </div>
               {!task.completed && (
                 <span className={cn(
