@@ -323,10 +323,11 @@ function JackboxCardEnhanced({
 
   const handleSubmit = async () => {
     if (!newTaskTitle.trim()) return;
-    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignees);
+    const success = await onAddTask(newTaskTitle.trim(), newTaskAssignees, newTaskDueDate || undefined);
     if (success) {
       setNewTaskTitle('');
       setNewTaskAssignees([]);
+      setNewTaskDueDate('');
       setIsAdding(false);
     }
   };
