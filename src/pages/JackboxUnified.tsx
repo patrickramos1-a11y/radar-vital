@@ -434,6 +434,15 @@ function JackboxCardEnhanced({
               );
             })}
           </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-muted-foreground">Prazo:</span>
+            <input
+              type="date"
+              value={newTaskDueDate}
+              onChange={(e) => setNewTaskDueDate(e.target.value)}
+              className="px-1 py-0.5 text-[10px] border rounded bg-background h-5"
+            />
+          </div>
           <Button size="sm" className="h-7 text-xs w-full" onClick={handleSubmit}>
             Adicionar
           </Button>
