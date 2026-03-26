@@ -483,7 +483,7 @@ function JackboxCardEnhanced({
                   variant="ghost"
                   size="icon"
                   className="h-4 w-4 opacity-0 group-hover/task:opacity-100"
-                  onClick={() => { setEditingId(task.id); setEditingTitle(task.title); }}
+                  onClick={() => { setEditingId(task.id); setEditingTitle(task.title); setEditingDueDate(task.due_date || ''); }}
                 >
                   <Pencil className="h-2.5 w-2.5" />
                 </Button>
