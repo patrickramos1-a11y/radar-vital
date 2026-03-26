@@ -35,6 +35,7 @@ export default function JackboxUnified() {
     getDaysOpen,
     getOldestTask,
     getAverageDaysOpen,
+    getOverdueTasks,
   } = useTasks();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pendentes");
