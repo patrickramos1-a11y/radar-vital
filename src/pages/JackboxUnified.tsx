@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Box, User, CheckSquare, Plus, Trash2, Clock, Calendar, Search, Check, Pencil } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";
 import { VisualPanelFilters, VisualSortOption } from "@/components/visual-panels/VisualPanelFilters";
