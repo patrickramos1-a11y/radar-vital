@@ -141,6 +141,15 @@ export function TaskModal({
                 })}
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Prazo:</span>
+              <input
+                type="date"
+                value={newTaskDueDate}
+                onChange={(e) => setNewTaskDueDate(e.target.value)}
+                className="px-2 py-1 text-xs border rounded-md bg-background"
+              />
+            </div>
             {activeTasks.length >= 11 && (
               <p className="text-xs text-amber-600">Limite de 11 tarefas ativas atingido</p>
             )}
