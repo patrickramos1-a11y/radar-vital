@@ -279,7 +279,7 @@ interface JackboxCardEnhancedProps {
   isHighlighted: boolean;
   tasks: Task[];
   onToggleTask: (taskId: string) => void;
-  onAddTask: (title: string, assignees: string[]) => Promise<boolean>;
+  onAddTask: (title: string, assignees: string[], dueDate?: string) => Promise<boolean>;
   onDeleteTask: (taskId: string) => void;
   statusFilter: StatusFilter;
   getDaysOpen: (task: Task) => number;
