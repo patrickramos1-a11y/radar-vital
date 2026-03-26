@@ -10,7 +10,7 @@ import Config from "./pages/Config";
 import Dashboard from "./pages/Dashboard";
 import JackboxPanel from "./pages/JackboxPanel";
 import JackboxUnified from "./pages/JackboxUnified";
-import JackboxDetalhado from "./pages/JackboxDetalhado";
+
 import CommentsPanel from "./pages/CommentsPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
 import TVMode from "./pages/TVMode";
@@ -33,7 +33,7 @@ const App = () => (
               <Route path="/relatorios-pdf" element={<RelatoriosPdf />} />
               <Route path="/jackbox" element={<JackboxPanel />} />
               <Route path="/jackbox-unificado" element={<JackboxUnified />} />
-              <Route path="/jackbox-detalhado" element={<JackboxDetalhado />} />
+              
               <Route path="/config" element={<Config />} />
               <Route path="/tv" element={<TVMode />} />
               <Route path="*" element={<NotFound />} />

@@ -108,7 +108,7 @@ export default function JackboxPanel() {
           title="Micro-Demandas (Tarefas)" 
           subtitle="Tarefas rápidas por empresa"
           icon={<Box className="w-5 h-5" />}
-          detailRoute="/jackbox-detalhado"
+          
         >
           <KPICard icon={<CheckSquare className="w-4 h-4" />} value={kpis.totalTasks} label="Tarefas" />
           <KPICard icon={<User className="w-4 h-4" />} value={kpis.clientsWithTasks} label="Empresas" variant="info" />
