@@ -253,16 +253,16 @@ function TaskItem({
   collaboratorColorMap,
 }: TaskItemProps) {
   return (
-    <div className="flex items-center gap-2 p-2 bg-card rounded border group">
+    <div className="flex items-center gap-3 p-3 bg-card rounded-lg border group">
       <button
         onClick={onToggle}
-        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
           task.completed
             ? 'bg-green-500 border-green-500 text-white'
             : 'border-muted-foreground/30 hover:border-primary'
         }`}
       >
-        {task.completed && <Check className="w-3 h-3" />}
+        {task.completed && <Check className="w-4 h-4" />}
       </button>
 
       {isEditing ? (
@@ -270,7 +270,7 @@ function TaskItem({
           type="text"
           value={editingTitle}
           onChange={(e) => setEditingTitle(e.target.value)}
-          className="flex-1 px-2 py-1 text-sm border rounded bg-background"
+          className="flex-1 px-3 py-1.5 text-sm border rounded bg-background"
           autoFocus
           onKeyDown={(e) => {
             if (e.key === 'Enter') onSaveEdit();
@@ -281,13 +281,13 @@ function TaskItem({
       ) : (
         <div className="flex-1 min-w-0">
           <span
-            className={`text-sm cursor-pointer ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+            className={`text-sm md:text-base cursor-pointer leading-snug ${task.completed ? 'line-through text-muted-foreground' : ''}`}
             onClick={!task.completed ? onStartEdit : undefined}
           >
             {task.title}
           </span>
           {task.due_date && !task.completed && (
-            <span className={`text-[10px] ml-1 ${new Date(task.due_date) < new Date(new Date().toDateString()) ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+            <span className={`text-xs ml-2 ${new Date(task.due_date) < new Date(new Date().toDateString()) ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
               📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
             </span>
           )}
@@ -295,15 +295,15 @@ function TaskItem({
       )}
 
       {!task.completed && (
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
           {collaborators.map((collab) => (
             <button
               key={collab.id}
               onClick={() => onAssigneeChange(collab.name)}
-              className="w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center transition-all"
+              className="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center transition-all"
               style={{
                 backgroundColor: assigneeMatches(task.assigned_to, collab.name) ? collab.color : 'transparent',
-                border: `1.5px solid ${collab.color}`,
+                border: `2px solid ${collab.color}`,
                 color: assigneeMatches(task.assigned_to, collab.name) ? 'white' : collab.color,
                 opacity: assigneeMatches(task.assigned_to, collab.name) ? 1 : 0.4,
               }}
@@ -316,13 +316,13 @@ function TaskItem({
       )}
 
       {task.assigned_to.length > 0 && !task.completed && (
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
           {task.assigned_to.map((name) => {
             const color = findCollaboratorColor([name], collaboratorColorMap);
             return color ? (
               <span
                 key={name}
-                className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
+                className="w-7 h-7 rounded-full text-xs font-bold text-white flex items-center justify-center"
                 style={{ backgroundColor: color }}
               >
                 {name[0].toUpperCase()}
