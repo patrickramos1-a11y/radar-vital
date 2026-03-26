@@ -249,6 +249,7 @@ export default function JackboxUnified() {
               tasks={getFilteredTasks(client.id)}
               onToggleTask={(taskId) => toggleComplete(taskId, client.name)}
               onAddTask={(title, assignees, dueDate) => addTask(client.id, { title, assigned_to: assignees, due_date: dueDate || undefined }, client.name)}
+              onUpdateTask={updateTask}
               onDeleteTask={(taskId) => deleteTask(taskId, client.name)}
               statusFilter={statusFilter}
               getDaysOpen={getDaysOpen}
