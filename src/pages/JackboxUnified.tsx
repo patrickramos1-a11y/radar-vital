@@ -342,7 +342,7 @@ function JackboxCardEnhanced({
 
   const handleSaveEdit = async (taskId: string) => {
     if (!editingTitle.trim()) return;
-    await onUpdateTask(taskId, { title: editingTitle.trim() });
+    await onUpdateTask(taskId, { title: editingTitle.trim(), due_date: editingDueDate || null } as any);
     setEditingId(null);
   };
 
