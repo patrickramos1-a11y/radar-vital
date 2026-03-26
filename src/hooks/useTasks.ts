@@ -164,6 +164,19 @@ export function useTasks() {
     return Math.round(totalDays / pending.length);
   }, [tasks, getDaysOpen]);
 
+  const getOverdueTasks = useCallback(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return tasks
+      .filter(t => !t.completed && t.due_date && new Date(t.due_date) < today)
+      .map(t => {
+        const dueDate = new Date(t.due_date!);
+        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        return { ...t, daysOverdue };
+      })
+      .sort((a, b) => b.daysOverdue - a.daysOverdue);
+  }, [tasks]);
+
   return {
     tasks,
     isLoading,
@@ -179,6 +192,7 @@ export function useTasks() {
     getDaysOpen,
     getOldestTask,
     getAverageDaysOpen,
+    getOverdueTasks,
     refetch: fetchTasks,
   };
 }
