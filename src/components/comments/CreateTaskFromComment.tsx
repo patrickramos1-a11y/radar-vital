@@ -37,6 +37,7 @@ export function CreateTaskFromComment({ commentText, clientId, clientName, colla
       const success = await addTask(clientId, {
         title: title.trim(),
         assigned_to: assignedTo ? [assignedTo] : [],
+        due_date: dueDate || undefined,
       }, clientName);
       if (success) setIsOpen(false);
     } finally {
