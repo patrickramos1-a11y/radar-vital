@@ -279,12 +279,19 @@ function TaskItem({
           onBlur={onSaveEdit}
         />
       ) : (
-        <span
-          className={`flex-1 text-sm cursor-pointer ${task.completed ? 'line-through text-muted-foreground' : ''}`}
-          onClick={!task.completed ? onStartEdit : undefined}
-        >
-          {task.title}
-        </span>
+        <div className="flex-1 min-w-0">
+          <span
+            className={`text-sm cursor-pointer ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+            onClick={!task.completed ? onStartEdit : undefined}
+          >
+            {task.title}
+          </span>
+          {task.due_date && !task.completed && (
+            <span className={`text-[10px] ml-1 ${new Date(task.due_date) < new Date(new Date().toDateString()) ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+              📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+            </span>
+          )}
+        </div>
       )}
 
       {!task.completed && (
