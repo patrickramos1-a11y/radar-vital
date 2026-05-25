@@ -557,6 +557,9 @@ const Index = () => {
                 viewMode={viewMode}
                 gridSize={gridSize}
                 fitAllLocked={fitAllLocked}
+                cardContentMode={sortBy === 'jackbox' ? 'tasks' : sortBy === 'comments' ? 'comments' : 'logo'}
+                getActiveTasksForClient={getActiveTasksForClient}
+                getCommentSnippetsForClient={getCommentSnippetsForClient}
               />
             )}
           </div>
