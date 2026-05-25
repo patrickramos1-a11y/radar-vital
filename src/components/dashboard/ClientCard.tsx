@@ -29,6 +29,9 @@ interface ClientCardProps {
   onOpenChecklist: (id: string) => void;
   clientCount?: number;
   fitAll?: boolean;
+  cardContentMode?: CardContentMode;
+  activeTasks?: Task[];
+  commentSnippets?: CommentSnippet[];
 }
 
 function getCollaboratorGradient(assignedCollaborators: Collaborator[]): string {
