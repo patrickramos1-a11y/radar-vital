@@ -43,6 +43,9 @@ export function ClientGrid({
   viewMode,
   gridSize,
   fitAllLocked,
+  cardContentMode = 'logo',
+  getActiveTasksForClient,
+  getCommentSnippetsForClient,
 }: ClientGridProps) {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
