@@ -161,6 +161,9 @@ export function ClientGrid({
           onOpenChecklist={onOpenChecklist}
           clientCount={clients.length}
           fitAll={useFitAll}
+          cardContentMode={cardContentMode}
+          activeTasks={getActiveTasksForClient ? getActiveTasksForClient(client.id) : []}
+          commentSnippets={getCommentSnippetsForClient ? getCommentSnippetsForClient(client.id) : []}
         />
       ))}
     </div>
