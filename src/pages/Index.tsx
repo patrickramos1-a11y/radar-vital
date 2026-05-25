@@ -40,12 +40,19 @@ const Index = () => {
   const {
     tasks,
     getActiveTaskCount,
+    getActiveTasksForClient,
     getTasksForClient,
     addTask,
     updateTask,
     deleteTask,
     toggleComplete,
   } = useTasks();
+
+  const commentSnippetsMap = useAllClientsCommentSnippets();
+  const getCommentSnippetsForClient = useCallback(
+    (clientId: string) => commentSnippetsMap.get(clientId) || [],
+    [commentSnippetsMap]
+  );
 
   const [commentCounts, refreshCommentCounts] = useAllClientsCommentCountsWithRefresh(currentUser?.name);
   const getCommentCount = useCallback((clientId: string) => commentCounts.get(clientId) || 0, [commentCounts]);
