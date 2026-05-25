@@ -8,6 +8,7 @@ import { CommentsModal } from "@/components/comments/CommentsModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
+import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippets";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { Client } from "@/types/client";
@@ -39,12 +40,19 @@ const Index = () => {
   const {
     tasks,
     getActiveTaskCount,
+    getActiveTasksForClient,
     getTasksForClient,
     addTask,
     updateTask,
     deleteTask,
     toggleComplete,
   } = useTasks();
+
+  const commentSnippetsMap = useAllClientsCommentSnippets();
+  const getCommentSnippetsForClient = useCallback(
+    (clientId: string) => commentSnippetsMap.get(clientId) || [],
+    [commentSnippetsMap]
+  );
 
   const [commentCounts, refreshCommentCounts] = useAllClientsCommentCountsWithRefresh(currentUser?.name);
   const getCommentCount = useCallback((clientId: string) => commentCounts.get(clientId) || 0, [commentCounts]);
@@ -549,6 +557,9 @@ const Index = () => {
                 viewMode={viewMode}
                 gridSize={gridSize}
                 fitAllLocked={fitAllLocked}
+                cardContentMode={sortBy === 'jackbox' ? 'tasks' : sortBy === 'comments' ? 'comments' : 'logo'}
+                getActiveTasksForClient={getActiveTasksForClient}
+                getCommentSnippetsForClient={getCommentSnippetsForClient}
               />
             )}
           </div>

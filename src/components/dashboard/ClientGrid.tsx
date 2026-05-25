@@ -1,7 +1,9 @@
 import React, { useMemo, useEffect, useState } from "react";
-import { ClientCard } from "./ClientCard";
+import { ClientCard, CardContentMode } from "./ClientCard";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
+import { Task } from "@/types/task";
+import { CommentSnippet } from "@/hooks/useAllClientsCommentSnippets";
 import { ViewMode, GridSize } from "./FilterBar";
 
 interface ClientGridProps {
@@ -20,6 +22,9 @@ interface ClientGridProps {
   viewMode: ViewMode;
   gridSize: GridSize;
   fitAllLocked: boolean;
+  cardContentMode?: CardContentMode;
+  getActiveTasksForClient?: (clientId: string) => Task[];
+  getCommentSnippetsForClient?: (clientId: string) => CommentSnippet[];
 }
 
 export function ClientGrid({ 
@@ -38,6 +43,9 @@ export function ClientGrid({
   viewMode,
   gridSize,
   fitAllLocked,
+  cardContentMode = 'logo',
+  getActiveTasksForClient,
+  getCommentSnippetsForClient,
 }: ClientGridProps) {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
@@ -153,6 +161,9 @@ export function ClientGrid({
           onOpenChecklist={onOpenChecklist}
           clientCount={clients.length}
           fitAll={useFitAll}
+          cardContentMode={cardContentMode}
+          activeTasks={getActiveTasksForClient ? getActiveTasksForClient(client.id) : []}
+          commentSnippets={getCommentSnippetsForClient ? getCommentSnippetsForClient(client.id) : []}
         />
       ))}
     </div>

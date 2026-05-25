@@ -1,13 +1,17 @@
-import { Star, Sparkles, Building2, Plus } from "lucide-react";
+import { Star, Sparkles, Building2, Plus, MessageCircle, ListChecks } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
+import { Task } from "@/types/task";
 import { ChecklistButton } from "@/components/checklist/ChecklistButton";
 import { CommentButton } from "@/components/comments/CommentButton";
+import { CommentSnippet } from "@/hooks/useAllClientsCommentSnippets";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
+export type CardContentMode = 'logo' | 'tasks' | 'comments';
 
 interface ClientCardProps {
   client: Client;
@@ -25,6 +29,9 @@ interface ClientCardProps {
   onOpenChecklist: (id: string) => void;
   clientCount?: number;
   fitAll?: boolean;
+  cardContentMode?: CardContentMode;
+  activeTasks?: Task[];
+  commentSnippets?: CommentSnippet[];
 }
 
 function getCollaboratorGradient(assignedCollaborators: Collaborator[]): string {
@@ -111,6 +118,9 @@ export function ClientCard({
   onOpenChecklist,
   clientCount = 40,
   fitAll = false,
+  cardContentMode = 'logo',
+  activeTasks = [],
+  commentSnippets = [],
 }: ClientCardProps) {
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
   const hasCollaborators = assignedCollaborators.length > 0;
@@ -162,6 +172,13 @@ export function ClientCard({
         <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded-md bg-primary/90 text-primary-foreground font-bold shrink-0`}>
           {displayNumber.toString().padStart(2, '0')}
         </div>
+        {cardContentMode !== 'logo' && client.logoUrl && (
+          <img
+            src={client.logoUrl}
+            alt={`Logo ${client.name}`}
+            className="h-5 w-5 object-contain rounded shrink-0"
+          />
+        )}
         <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1 pr-12`}>
           {client.name}
         </span>
@@ -185,16 +202,22 @@ export function ClientCard({
         />
       </div>
 
-      {/* Logo/Name Area */}
+      {/* Content Area: logo, tasks list, or comments list */}
       <div
-        className={`flex flex-col items-center justify-center transition-all overflow-hidden ${fitAll ? 'p-2' : 'p-3'}`}
+        className={`flex flex-col transition-all overflow-hidden ${fitAll ? 'p-1.5' : 'p-2'} ${cardContentMode === 'logo' ? 'items-center justify-center' : ''}`}
         style={{
-          background: hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(230 75% 62% / 0.15)' : 'hsl(var(--muted) / 0.2)'),
+          background: cardContentMode === 'logo'
+            ? (hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(230 75% 62% / 0.15)' : 'hsl(var(--muted) / 0.2)'))
+            : 'hsl(var(--card))',
           ...(fitAll ? {} : { minHeight: logoAreaStyle.minHeight }),
           flex: logoAreaStyle.flex,
         }}
       >
-        {client.logoUrl ? (
+        {cardContentMode === 'tasks' ? (
+          <TasksContent tasks={activeTasks} onOpen={handleChecklistClick} />
+        ) : cardContentMode === 'comments' ? (
+          <CommentsContent snippets={commentSnippets} clientId={client.id} clientName={client.name} />
+        ) : client.logoUrl ? (
           <div className="flex items-center justify-center w-full h-full">
             <img src={client.logoUrl} alt={`Logo ${client.name}`} className={`${logoMaxHeight} max-w-[85%] object-contain rounded`} style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
           </div>
@@ -216,6 +239,62 @@ export function ClientCard({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function TasksContent({ tasks, onOpen }: { tasks: Task[]; onOpen: (e: React.MouseEvent) => void }) {
+  if (tasks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground/60 gap-1">
+        <ListChecks className="w-4 h-4" />
+        <span className="text-[10px]">Sem tarefas</span>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="flex flex-col gap-1 w-full h-full overflow-y-auto custom-scrollbar pr-0.5"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {tasks.map((t) => (
+        <button
+          key={t.id}
+          onClick={onOpen}
+          className="text-left text-[10px] leading-snug bg-muted/40 hover:bg-muted/70 rounded px-1.5 py-1 text-foreground break-words whitespace-normal transition-colors"
+          title={t.title}
+        >
+          <span className="block break-words">• {t.title}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CommentsContent({ snippets, clientId, clientName }: { snippets: CommentSnippet[]; clientId: string; clientName: string }) {
+  if (snippets.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground/60 gap-1">
+        <MessageCircle className="w-4 h-4" />
+        <span className="text-[10px]">Sem comentários</span>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="flex flex-col gap-1 w-full h-full overflow-y-auto custom-scrollbar pr-0.5"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {snippets.map((c) => (
+        <div
+          key={c.id}
+          className="text-[10px] leading-snug bg-muted/40 rounded px-1.5 py-1 text-foreground break-words whitespace-normal"
+          title={`${c.authorName}: ${c.text}`}
+        >
+          <span className="font-semibold text-primary/80">{c.authorName}: </span>
+          <span className="break-words">{c.text}</span>
+        </div>
+      ))}
     </div>
   );
 }
