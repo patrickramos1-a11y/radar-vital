@@ -1,13 +1,17 @@
-import { Star, Sparkles, Building2, Plus } from "lucide-react";
+import { Star, Sparkles, Building2, Plus, MessageCircle, ListChecks } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
+import { Task } from "@/types/task";
 import { ChecklistButton } from "@/components/checklist/ChecklistButton";
 import { CommentButton } from "@/components/comments/CommentButton";
+import { CommentSnippet } from "@/hooks/useAllClientsCommentSnippets";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
+export type CardContentMode = 'logo' | 'tasks' | 'comments';
 
 interface ClientCardProps {
   client: Client;
