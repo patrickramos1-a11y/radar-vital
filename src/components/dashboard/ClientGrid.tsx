@@ -1,7 +1,9 @@
 import React, { useMemo, useEffect, useState } from "react";
-import { ClientCard } from "./ClientCard";
+import { ClientCard, CardContentMode } from "./ClientCard";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
+import { Task } from "@/types/task";
+import { CommentSnippet } from "@/hooks/useAllClientsCommentSnippets";
 import { ViewMode, GridSize } from "./FilterBar";
 
 interface ClientGridProps {
@@ -20,6 +22,9 @@ interface ClientGridProps {
   viewMode: ViewMode;
   gridSize: GridSize;
   fitAllLocked: boolean;
+  cardContentMode?: CardContentMode;
+  getActiveTasksForClient?: (clientId: string) => Task[];
+  getCommentSnippetsForClient?: (clientId: string) => CommentSnippet[];
 }
 
 export function ClientGrid({ 
