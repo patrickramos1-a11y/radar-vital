@@ -8,6 +8,7 @@ import { CommentsModal } from "@/components/comments/CommentsModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
+import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippets";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { Client } from "@/types/client";
