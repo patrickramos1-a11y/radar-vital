@@ -172,6 +172,13 @@ export function ClientCard({
         <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded-md bg-primary/90 text-primary-foreground font-bold shrink-0`}>
           {displayNumber.toString().padStart(2, '0')}
         </div>
+        {cardContentMode !== 'logo' && client.logoUrl && (
+          <img
+            src={client.logoUrl}
+            alt={`Logo ${client.name}`}
+            className="h-5 w-5 object-contain rounded shrink-0"
+          />
+        )}
         <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1 pr-12`}>
           {client.name}
         </span>
@@ -195,16 +202,22 @@ export function ClientCard({
         />
       </div>
 
-      {/* Logo/Name Area */}
+      {/* Content Area: logo, tasks list, or comments list */}
       <div
-        className={`flex flex-col items-center justify-center transition-all overflow-hidden ${fitAll ? 'p-2' : 'p-3'}`}
+        className={`flex flex-col transition-all overflow-hidden ${fitAll ? 'p-1.5' : 'p-2'} ${cardContentMode === 'logo' ? 'items-center justify-center' : ''}`}
         style={{
-          background: hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(230 75% 62% / 0.15)' : 'hsl(var(--muted) / 0.2)'),
+          background: cardContentMode === 'logo'
+            ? (hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(230 75% 62% / 0.15)' : 'hsl(var(--muted) / 0.2)'))
+            : 'hsl(var(--card))',
           ...(fitAll ? {} : { minHeight: logoAreaStyle.minHeight }),
           flex: logoAreaStyle.flex,
         }}
       >
-        {client.logoUrl ? (
+        {cardContentMode === 'tasks' ? (
+          <TasksContent tasks={activeTasks} onOpen={handleChecklistClick} />
+        ) : cardContentMode === 'comments' ? (
+          <CommentsContent snippets={commentSnippets} clientId={client.id} clientName={client.name} />
+        ) : client.logoUrl ? (
           <div className="flex items-center justify-center w-full h-full">
             <img src={client.logoUrl} alt={`Logo ${client.name}`} className={`${logoMaxHeight} max-w-[85%] object-contain rounded`} style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
           </div>
