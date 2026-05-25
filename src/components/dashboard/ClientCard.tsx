@@ -118,6 +118,9 @@ export function ClientCard({
   onOpenChecklist,
   clientCount = 40,
   fitAll = false,
+  cardContentMode = 'logo',
+  activeTasks = [],
+  commentSnippets = [],
 }: ClientCardProps) {
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
   const hasCollaborators = assignedCollaborators.length > 0;
