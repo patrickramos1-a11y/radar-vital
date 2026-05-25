@@ -243,6 +243,62 @@ export function ClientCard({
   );
 }
 
+function TasksContent({ tasks, onOpen }: { tasks: Task[]; onOpen: (e: React.MouseEvent) => void }) {
+  if (tasks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground/60 gap-1">
+        <ListChecks className="w-4 h-4" />
+        <span className="text-[10px]">Sem tarefas</span>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="flex flex-col gap-1 w-full h-full overflow-y-auto custom-scrollbar pr-0.5"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {tasks.map((t) => (
+        <button
+          key={t.id}
+          onClick={onOpen}
+          className="text-left text-[10px] leading-snug bg-muted/40 hover:bg-muted/70 rounded px-1.5 py-1 text-foreground break-words whitespace-normal transition-colors"
+          title={t.title}
+        >
+          <span className="block break-words">• {t.title}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CommentsContent({ snippets, clientId, clientName }: { snippets: CommentSnippet[]; clientId: string; clientName: string }) {
+  if (snippets.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground/60 gap-1">
+        <MessageCircle className="w-4 h-4" />
+        <span className="text-[10px]">Sem comentários</span>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="flex flex-col gap-1 w-full h-full overflow-y-auto custom-scrollbar pr-0.5"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {snippets.map((c) => (
+        <div
+          key={c.id}
+          className="text-[10px] leading-snug bg-muted/40 rounded px-1.5 py-1 text-foreground break-words whitespace-normal"
+          title={`${c.authorName}: ${c.text}`}
+        >
+          <span className="font-semibold text-primary/80">{c.authorName}: </span>
+          <span className="break-words">{c.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface CollaboratorBadgeProps {
   collaborator: Collaborator;
   onClick: (e: React.MouseEvent) => void;
