@@ -1,0 +1,31 @@
+{
+  "name": "Painel de Indicadores AC | Ramos Engenharia",
+  "short_name": "Painel AC",
+  "description": "Plataforma de acompanhamento ambiental inteligente de clientes, demandas, licencas e processos.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#00bf72",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/ramos-ac-app-icon-192-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/ramos-ac-app-icon-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/ramos-ac-maskable-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
