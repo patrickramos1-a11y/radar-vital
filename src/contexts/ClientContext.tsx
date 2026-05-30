@@ -187,6 +187,42 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [highlightedClients, setHighlightedClients] = useState<Set<string>>(new Set());
 
+  const fetchClientLogos = useCallback(async (clientIds: string[]) => {
+    const ids = [...new Set(clientIds)].filter(Boolean);
+    const batchSize = 6;
+
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const batch = ids.slice(i, i + batchSize);
+      const results = await Promise.allSettled(
+        batch.map(async (id) => {
+          const { data, error } = await supabase
+            .from('clients')
+            .select('id, logo_url')
+            .eq('id', id)
+            .maybeSingle();
+
+          if (error) throw error;
+          return data;
+        })
+      );
+
+      const logoUpdates = results
+        .filter((result): result is PromiseFulfilledResult<{ id: string; logo_url: string | null } | null> => result.status === 'fulfilled')
+        .map(result => result.value)
+        .filter((row): row is { id: string; logo_url: string | null } => !!row?.id && !!row.logo_url);
+
+      if (logoUpdates.length > 0) {
+        setClients(prev => {
+          const logoByClientId = new Map(logoUpdates.map(row => [row.id, row.logo_url]));
+          return prev.map(client => {
+            const logoUrl = logoByClientId.get(client.id);
+            return logoUrl ? { ...client, logoUrl } : client;
+          });
+        });
+      }
+    }
+  }, []);
+
   // Fetch clients from database
   const fetchClients = useCallback(async () => {
     try {
@@ -203,13 +239,14 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       // Sync highlightedClients Set from database
       const highlighted = new Set(mappedClients.filter(c => c.isHighlighted).map(c => c.id));
       setHighlightedClients(highlighted);
+      void fetchClientLogos(mappedClients.map(client => client.id));
     } catch (error) {
       console.error('Error fetching clients:', error);
       toast.error('Erro ao carregar clientes');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchClientLogos]);
 
   // Initial fetch
   useEffect(() => {

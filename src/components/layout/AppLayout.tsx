@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 import { UserSelector } from "./UserSelector";
 import { AppSidebar } from "./AppSidebar";
 import logoSisRamos from "@/assets/logo-sisramos.png";
+import { RefreshCw } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -12,6 +13,26 @@ import {
 
 interface AppLayoutProps {
   children: ReactNode;
+}
+
+async function clearTemporaryAppData() {
+  try {
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+    }
+
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(registration => registration.unregister()));
+    }
+
+    sessionStorage.clear();
+  } catch (error) {
+    console.warn('Erro ao limpar arquivos temporários do app:', error);
+  } finally {
+    window.location.href = `${window.location.pathname}?atualizar=${Date.now()}`;
+  }
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
@@ -34,6 +55,21 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
 
             <div className="flex items-center gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={clearTemporaryAppData}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-secondary/40 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    aria-label="Atualizar aplicativo e limpar arquivos temporários"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[240px] text-xs">
+                  Atualizar app, limpar arquivos temporários e baixar a versão mais recente.
+                </TooltipContent>
+              </Tooltip>
               <NotificationsPanel />
               <div className="w-px h-5 bg-border/50" />
               <UserSelector />
