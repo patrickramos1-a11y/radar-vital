@@ -36,6 +36,43 @@ interface ClientContextType {
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
+const CLIENT_LIST_COLUMNS = [
+  'id',
+  'name',
+  'initials',
+  'is_priority',
+  'is_active',
+  'is_checked',
+  'is_highlighted',
+  'client_type',
+  'display_order',
+  'proc_total_count',
+  'proc_deferido_count',
+  'proc_em_analise_orgao_count',
+  'proc_em_analise_ramos_count',
+  'proc_notificado_count',
+  'proc_reprovado_count',
+  'lic_validas_count',
+  'lic_proximo_venc_count',
+  'lic_fora_validade_count',
+  'lic_proxima_data_vencimento',
+  'demands_completed',
+  'demands_in_progress',
+  'demands_not_started',
+  'demands_cancelled',
+  'demands_celine',
+  'demands_gabi',
+  'demands_darley',
+  'demands_vanessa',
+  'collaborator_celine',
+  'collaborator_gabi',
+  'collaborator_darley',
+  'collaborator_vanessa',
+  'municipios',
+  'created_at',
+  'updated_at',
+].join(',');
+
 // Convert database row to Client type
 const dbRowToClient = (row: any): Client => {
   // Calculate "em andamento" = análise órgão + análise ramos + notificado
@@ -155,7 +192,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select(CLIENT_LIST_COLUMNS)
         .order('display_order', { ascending: true });
       
       if (error) throw error;
