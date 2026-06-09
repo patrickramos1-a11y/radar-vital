@@ -99,7 +99,7 @@ export default function Dashboard() {
             </div>
 
             {(clientsData?.byMunicipio?.length || 0) > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <BarChartCard
                   title="Distribuição Geográfica por Município"
                   data={(clientsData?.byMunicipio || []).slice(0, 10).map((m, i) => {
@@ -117,7 +117,7 @@ export default function Dashboard() {
                     <MapPin className="w-4 h-4 text-primary" />
                     Municípios com Clientes
                   </h3>
-                  <div className="flex flex-wrap gap-2 max-h-[180px] overflow-y-auto">
+                  <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto">
                     {(clientsData?.byMunicipio || []).map((m, i) => (
                       <span 
                         key={i}
