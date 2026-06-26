@@ -45,18 +45,13 @@ export function useTasks() {
   }, [fetchTasks]);
 
   const addTask = useCallback(async (clientId: string, data: TaskFormData, clientName?: string) => {
-    const clientActiveTasks = tasks.filter(t => t.client_id === clientId && !t.completed);
-    if (clientActiveTasks.length >= 11) {
-      toast.error('Limite de 11 tarefas ativas por cliente atingido');
-      return false;
-    }
-
     try {
       const { error } = await supabase.from('tasks').insert({
         client_id: clientId,
         title: data.title,
         assigned_to: data.assigned_to,
         due_date: data.due_date || null,
+        priority: data.priority || 'normal',
       });
 
       if (error) throw error;
