@@ -16,6 +16,7 @@ const dbRowToTask = (row: any): Task => ({
   created_at: row.created_at,
   completed_at: row.completed_at,
   due_date: row.due_date || null,
+  priority: (row.priority as Task['priority']) || 'normal',
 });
 
 export function useTasks() {
