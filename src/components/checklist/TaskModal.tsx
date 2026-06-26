@@ -225,6 +225,7 @@ interface TaskItemProps {
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onAssigneeChange: (collaboratorName: string) => void;
+  onPriorityChange: (priority: TaskPriority) => void;
   onDelete: () => void;
   collaborators: { id: string; name: string; color: string; initials: string }[];
   collaboratorColorMap: Record<string, string>;
@@ -240,12 +241,19 @@ function TaskItem({
   onSaveEdit,
   onCancelEdit,
   onAssigneeChange,
+  onPriorityChange,
   onDelete,
   collaborators,
   collaboratorColorMap,
 }: TaskItemProps) {
+  const priority = (task.priority || 'normal') as TaskPriority;
+  const pConf = PRIORITY_CONFIG[priority];
+  const containerClass = task.completed
+    ? 'bg-card border'
+    : `${pConf.bgClass} ${pConf.borderClass} border-y border-r`;
+
   return (
-    <div className="flex items-center gap-3 p-3 bg-card rounded-lg border group">
+    <div className={`flex items-center gap-3 p-3 rounded-lg group ${containerClass}`}>
       <button
         onClick={onToggle}
         className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
@@ -272,14 +280,21 @@ function TaskItem({
         />
       ) : (
         <div className="flex-1 min-w-0">
-          <span
-            className={`text-sm md:text-base cursor-pointer leading-snug ${task.completed ? 'line-through text-muted-foreground' : ''}`}
-            onClick={!task.completed ? onStartEdit : undefined}
-          >
-            {task.title}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {!task.completed && priority !== 'normal' && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${pConf.textClass} ${pConf.bgClass} border border-current/20`}>
+                <span>{pConf.icon}</span>{pConf.label}
+              </span>
+            )}
+            <span
+              className={`text-sm md:text-base cursor-pointer leading-snug break-words ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+              onClick={!task.completed ? onStartEdit : undefined}
+            >
+              {task.title}
+            </span>
+          </div>
           {task.due_date && !task.completed && (
-            <span className={`text-xs ml-2 ${new Date(task.due_date) < new Date(new Date().toDateString()) ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+            <span className={`text-xs ${new Date(task.due_date) < new Date(new Date().toDateString()) ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
               📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
             </span>
           )}
@@ -287,12 +302,15 @@ function TaskItem({
       )}
 
       {!task.completed && (
-        <AssigneeDropdown
-          task={task}
-          collaborators={collaborators}
-          collaboratorColorMap={collaboratorColorMap}
-          onAssigneeChange={onAssigneeChange}
-        />
+        <>
+          <PriorityMenu value={priority} onChange={onPriorityChange} />
+          <AssigneeDropdown
+            task={task}
+            collaborators={collaborators}
+            collaboratorColorMap={collaboratorColorMap}
+            onAssigneeChange={onAssigneeChange}
+          />
+        </>
       )}
 
       <button
