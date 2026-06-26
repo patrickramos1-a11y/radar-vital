@@ -496,3 +496,74 @@ function NewTaskAssigneeDropdown({
     </Popover>
   );
 }
+
+// Priority selector for new-task form
+function PrioritySelector({ value, onChange }: { value: TaskPriority; onChange: (p: TaskPriority) => void }) {
+  const conf = PRIORITY_CONFIG[value];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border ${conf.textClass} ${conf.bgClass} hover:opacity-80 transition-opacity`}
+        >
+          <Flag className="w-3.5 h-3.5" />
+          {conf.label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-1" align="start">
+        {(Object.keys(PRIORITY_CONFIG) as TaskPriority[]).map((p) => {
+          const c = PRIORITY_CONFIG[p];
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onChange(p)}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted text-left ${value === p ? 'bg-muted' : ''}`}
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${c.dotClass}`} />
+              <span className="flex-1">{c.label}</span>
+              {value === p && <Check className="w-3.5 h-3.5 text-primary" />}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Priority change menu for existing tasks (compact icon)
+function PriorityMenu({ value, onChange }: { value: TaskPriority; onChange: (p: TaskPriority) => void }) {
+  const conf = PRIORITY_CONFIG[value];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title={`Prioridade: ${conf.label}`}
+          className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${conf.dotClass}`}
+        >
+          {conf.label.charAt(0)}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-1" align="end">
+        {(Object.keys(PRIORITY_CONFIG) as TaskPriority[]).map((p) => {
+          const c = PRIORITY_CONFIG[p];
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onChange(p)}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted text-left ${value === p ? 'bg-muted' : ''}`}
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${c.dotClass}`} />
+              <span className="flex-1">{c.label}</span>
+              {value === p && <Check className="w-3.5 h-3.5 text-primary" />}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
