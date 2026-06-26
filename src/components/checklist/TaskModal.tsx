@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { X, Plus, Check, Trash2, User, Search } from 'lucide-react';
+import { Plus, Check, Trash2, User, Search, Flag } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { assigneeMatches, findCollaboratorColor } from '@/lib/taskAssignee';
-import { Task, TaskFormData } from '@/types/task';
+import { Task, TaskFormData, TaskPriority, PRIORITY_CONFIG } from '@/types/task';
 import { Client } from '@/types/client';
 import { useAuth } from '@/contexts/AuthContext';
 
