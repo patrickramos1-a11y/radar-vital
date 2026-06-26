@@ -195,6 +195,7 @@ export function TaskModal({
                     onSaveEdit={() => {}}
                     onCancelEdit={() => {}}
                     onAssigneeChange={() => {}}
+                    onPriorityChange={() => {}}
                     onDelete={() => onDeleteTask(task.id)}
                     collaborators={collaborators}
                     collaboratorColorMap={collaboratorColorMap}
