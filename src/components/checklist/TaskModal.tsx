@@ -32,28 +32,33 @@ export function TaskModal({
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('normal');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
   const collaboratorColorMap: Record<string, string> = {};
   collaborators.forEach(c => { collaboratorColorMap[c.name] = c.color; });
 
-  const activeTasks = tasks.filter(t => !t.completed);
+  const activeTasks = tasks
+    .filter(t => !t.completed)
+    .sort((a, b) => (PRIORITY_CONFIG[a.priority]?.order ?? 9) - (PRIORITY_CONFIG[b.priority]?.order ?? 9));
   const completedTasks = tasks.filter(t => t.completed);
 
   const handleAddTask = async () => {
     if (!newTaskTitle.trim()) return;
-    
+
     const success = await onAddTask(client.id, {
       title: newTaskTitle.trim(),
       assigned_to: newTaskAssignees,
       due_date: newTaskDueDate || undefined,
+      priority: newTaskPriority,
     });
 
     if (success) {
       setNewTaskTitle('');
       setNewTaskAssignees([]);
       setNewTaskDueDate('');
+      setNewTaskPriority('normal');
     }
   };
 
