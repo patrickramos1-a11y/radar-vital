@@ -712,6 +712,7 @@ export type Database = {
           created_at: string
           due_date: string | null
           id: string
+          priority: string
           title: string
         }
         Insert: {
@@ -722,6 +723,7 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          priority?: string
           title: string
         }
         Update: {
@@ -732,6 +734,7 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          priority?: string
           title?: string
         }
         Relationships: [

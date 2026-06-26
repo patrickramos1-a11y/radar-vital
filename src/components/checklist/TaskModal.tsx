@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { X, Plus, Check, Trash2, User, Search } from 'lucide-react';
+import { Plus, Check, Trash2, User, Search, Flag } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { assigneeMatches, findCollaboratorColor } from '@/lib/taskAssignee';
-import { Task, TaskFormData } from '@/types/task';
+import { Task, TaskFormData, TaskPriority, PRIORITY_CONFIG } from '@/types/task';
 import { Client } from '@/types/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -32,28 +32,33 @@ export function TaskModal({
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('normal');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
   const collaboratorColorMap: Record<string, string> = {};
   collaborators.forEach(c => { collaboratorColorMap[c.name] = c.color; });
 
-  const activeTasks = tasks.filter(t => !t.completed);
+  const activeTasks = tasks
+    .filter(t => !t.completed)
+    .sort((a, b) => (PRIORITY_CONFIG[a.priority]?.order ?? 9) - (PRIORITY_CONFIG[b.priority]?.order ?? 9));
   const completedTasks = tasks.filter(t => t.completed);
 
   const handleAddTask = async () => {
     if (!newTaskTitle.trim()) return;
-    
+
     const success = await onAddTask(client.id, {
       title: newTaskTitle.trim(),
       assigned_to: newTaskAssignees,
       due_date: newTaskDueDate || undefined,
+      priority: newTaskPriority,
     });
 
     if (success) {
       setNewTaskTitle('');
       setNewTaskAssignees([]);
       setNewTaskDueDate('');
+      setNewTaskPriority('normal');
     }
   };
 
@@ -78,6 +83,10 @@ export function TaskModal({
       ? current.filter(a => a.toLowerCase() !== collaboratorName.toLowerCase())
       : [...current, collaboratorName];
     await onUpdateTask(taskId, { assigned_to: newAssignees });
+  };
+
+  const handlePriorityChange = async (taskId: string, priority: TaskPriority) => {
+    await onUpdateTask(taskId, { priority });
   };
 
   return (
@@ -111,18 +120,19 @@ export function TaskModal({
               />
               <button
                 onClick={handleAddTask}
-                disabled={!newTaskTitle.trim() || activeTasks.length >= 11}
+                disabled={!newTaskTitle.trim()}
                 className="px-4 py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <NewTaskAssigneeDropdown
                 collaborators={collaborators}
                 selected={newTaskAssignees}
                 onChange={setNewTaskAssignees}
               />
+              <PrioritySelector value={newTaskPriority} onChange={setNewTaskPriority} />
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Prazo:</span>
                 <input
@@ -133,15 +143,12 @@ export function TaskModal({
                 />
               </div>
             </div>
-            {activeTasks.length >= 11 && (
-              <p className="text-sm text-amber-600">Limite de 11 tarefas ativas atingido</p>
-            )}
           </div>
 
           {/* Active tasks */}
           <div className="space-y-1">
             <h4 className="text-sm font-medium text-muted-foreground">
-              Tarefas Ativas ({activeTasks.length}/11)
+              Tarefas Ativas ({activeTasks.length})
             </h4>
             {activeTasks.length === 0 ? (
               <p className="text-sm text-muted-foreground/50 py-2">Nenhuma tarefa ativa</p>
@@ -159,6 +166,7 @@ export function TaskModal({
                     onSaveEdit={() => handleSaveEdit(task.id)}
                     onCancelEdit={() => setEditingTaskId(null)}
                     onAssigneeChange={(a) => handleAssigneeChange(task.id, a)}
+                    onPriorityChange={(p) => handlePriorityChange(task.id, p)}
                     onDelete={() => onDeleteTask(task.id)}
                     collaborators={collaborators}
                     collaboratorColorMap={collaboratorColorMap}
@@ -187,6 +195,7 @@ export function TaskModal({
                     onSaveEdit={() => {}}
                     onCancelEdit={() => {}}
                     onAssigneeChange={() => {}}
+                    onPriorityChange={() => {}}
                     onDelete={() => onDeleteTask(task.id)}
                     collaborators={collaborators}
                     collaboratorColorMap={collaboratorColorMap}
@@ -216,6 +225,7 @@ interface TaskItemProps {
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onAssigneeChange: (collaboratorName: string) => void;
+  onPriorityChange: (priority: TaskPriority) => void;
   onDelete: () => void;
   collaborators: { id: string; name: string; color: string; initials: string }[];
   collaboratorColorMap: Record<string, string>;
@@ -231,12 +241,19 @@ function TaskItem({
   onSaveEdit,
   onCancelEdit,
   onAssigneeChange,
+  onPriorityChange,
   onDelete,
   collaborators,
   collaboratorColorMap,
 }: TaskItemProps) {
+  const priority = (task.priority || 'normal') as TaskPriority;
+  const pConf = PRIORITY_CONFIG[priority];
+  const containerClass = task.completed
+    ? 'bg-card border'
+    : `${pConf.bgClass} ${pConf.borderClass} border-y border-r`;
+
   return (
-    <div className="flex items-center gap-3 p-3 bg-card rounded-lg border group">
+    <div className={`flex items-center gap-3 p-3 rounded-lg group ${containerClass}`}>
       <button
         onClick={onToggle}
         className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
@@ -263,14 +280,21 @@ function TaskItem({
         />
       ) : (
         <div className="flex-1 min-w-0">
-          <span
-            className={`text-sm md:text-base cursor-pointer leading-snug ${task.completed ? 'line-through text-muted-foreground' : ''}`}
-            onClick={!task.completed ? onStartEdit : undefined}
-          >
-            {task.title}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {!task.completed && priority !== 'normal' && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${pConf.textClass} ${pConf.bgClass} border border-current/20`}>
+                <span>{pConf.icon}</span>{pConf.label}
+              </span>
+            )}
+            <span
+              className={`text-sm md:text-base cursor-pointer leading-snug break-words ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+              onClick={!task.completed ? onStartEdit : undefined}
+            >
+              {task.title}
+            </span>
+          </div>
           {task.due_date && !task.completed && (
-            <span className={`text-xs ml-2 ${new Date(task.due_date) < new Date(new Date().toDateString()) ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+            <span className={`text-xs ${new Date(task.due_date) < new Date(new Date().toDateString()) ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
               📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
             </span>
           )}
@@ -278,12 +302,15 @@ function TaskItem({
       )}
 
       {!task.completed && (
-        <AssigneeDropdown
-          task={task}
-          collaborators={collaborators}
-          collaboratorColorMap={collaboratorColorMap}
-          onAssigneeChange={onAssigneeChange}
-        />
+        <>
+          <PriorityMenu value={priority} onChange={onPriorityChange} />
+          <AssigneeDropdown
+            task={task}
+            collaborators={collaborators}
+            collaboratorColorMap={collaboratorColorMap}
+            onAssigneeChange={onAssigneeChange}
+          />
+        </>
       )}
 
       <button
@@ -469,3 +496,74 @@ function NewTaskAssigneeDropdown({
     </Popover>
   );
 }
+
+// Priority selector for new-task form
+function PrioritySelector({ value, onChange }: { value: TaskPriority; onChange: (p: TaskPriority) => void }) {
+  const conf = PRIORITY_CONFIG[value];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border ${conf.textClass} ${conf.bgClass} hover:opacity-80 transition-opacity`}
+        >
+          <Flag className="w-3.5 h-3.5" />
+          {conf.label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-1" align="start">
+        {(Object.keys(PRIORITY_CONFIG) as TaskPriority[]).map((p) => {
+          const c = PRIORITY_CONFIG[p];
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onChange(p)}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted text-left ${value === p ? 'bg-muted' : ''}`}
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${c.dotClass}`} />
+              <span className="flex-1">{c.label}</span>
+              {value === p && <Check className="w-3.5 h-3.5 text-primary" />}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Priority change menu for existing tasks (compact icon)
+function PriorityMenu({ value, onChange }: { value: TaskPriority; onChange: (p: TaskPriority) => void }) {
+  const conf = PRIORITY_CONFIG[value];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title={`Prioridade: ${conf.label}`}
+          className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${conf.dotClass}`}
+        >
+          {conf.label.charAt(0)}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-1" align="end">
+        {(Object.keys(PRIORITY_CONFIG) as TaskPriority[]).map((p) => {
+          const c = PRIORITY_CONFIG[p];
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onChange(p)}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted text-left ${value === p ? 'bg-muted' : ''}`}
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${c.dotClass}`} />
+              <span className="flex-1">{c.label}</span>
+              {value === p && <Check className="w-3.5 h-3.5 text-primary" />}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
