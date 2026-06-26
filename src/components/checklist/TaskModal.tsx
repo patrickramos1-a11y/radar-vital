@@ -116,18 +116,19 @@ export function TaskModal({
               />
               <button
                 onClick={handleAddTask}
-                disabled={!newTaskTitle.trim() || activeTasks.length >= 11}
+                disabled={!newTaskTitle.trim()}
                 className="px-4 py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <NewTaskAssigneeDropdown
                 collaborators={collaborators}
                 selected={newTaskAssignees}
                 onChange={setNewTaskAssignees}
               />
+              <PrioritySelector value={newTaskPriority} onChange={setNewTaskPriority} />
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Prazo:</span>
                 <input
@@ -138,15 +139,12 @@ export function TaskModal({
                 />
               </div>
             </div>
-            {activeTasks.length >= 11 && (
-              <p className="text-sm text-amber-600">Limite de 11 tarefas ativas atingido</p>
-            )}
           </div>
 
           {/* Active tasks */}
           <div className="space-y-1">
             <h4 className="text-sm font-medium text-muted-foreground">
-              Tarefas Ativas ({activeTasks.length}/11)
+              Tarefas Ativas ({activeTasks.length})
             </h4>
             {activeTasks.length === 0 ? (
               <p className="text-sm text-muted-foreground/50 py-2">Nenhuma tarefa ativa</p>
