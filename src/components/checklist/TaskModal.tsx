@@ -85,6 +85,10 @@ export function TaskModal({
     await onUpdateTask(taskId, { assigned_to: newAssignees });
   };
 
+  const handlePriorityChange = async (taskId: string, priority: TaskPriority) => {
+    await onUpdateTask(taskId, { priority });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
