@@ -110,13 +110,6 @@ export function MobileClientDetail({
                 onClick={() => onToggleHighlight(client.id)}
               />
               <ActionButton
-                icon={<CheckSquare className="w-5 h-5" />}
-                label="Selecionado"
-                active={client.isChecked}
-                color="rgb(16, 185, 129)"
-                onClick={() => onToggleChecked(client.id)}
-              />
-              <ActionButton
                 icon={<ListChecks className="w-5 h-5" />}
                 label={`Jackbox (${activeTaskCount})`}
                 active={activeTaskCount > 0}
