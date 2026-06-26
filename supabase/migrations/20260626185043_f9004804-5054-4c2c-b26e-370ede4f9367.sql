@@ -1,0 +1,2 @@
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'normal';
+ALTER TABLE public.tasks ADD CONSTRAINT tasks_priority_check CHECK (priority IN ('baixa','normal','alta','urgente'));
