@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3 } from "lucide-react";
+import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, ShoppingCart } from "lucide-react";
 import logoSisRamos from "@/assets/logo-sisramos.png";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 
@@ -17,6 +17,7 @@ const navigationItems: NavItem[] = [
   { title: "Tarefas", icon: Box, href: "/jackbox-unificado" },
   { title: "Comentários", icon: MessageSquare, href: "/comentarios" },
   { title: "Relatórios PDF", icon: FileUp, href: "/relatorios-pdf" },
+  { title: "Lista de Compras", icon: ShoppingCart, href: "/lista-compras" },
 ];
 
 const configItems: NavItem[] = [

@@ -14,6 +14,7 @@ import JackboxUnified from "./pages/JackboxUnified";
 import CommentsPanel from "./pages/CommentsPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
 import TVMode from "./pages/TVMode";
+import ShoppingList from "./pages/ShoppingList";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               
               <Route path="/config" element={<Config />} />
               <Route path="/tv" element={<TVMode />} />
+              <Route path="/lista-compras" element={<ShoppingList />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ClientProvider>
