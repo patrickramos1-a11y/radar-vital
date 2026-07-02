@@ -398,6 +398,77 @@ export type Database = {
         }
         Relationships: []
       }
+      deliverable_items: {
+        Row: {
+          created_at: string
+          deliverable_id: string
+          id: string
+          item_id: string
+          item_type: string
+        }
+        Insert: {
+          created_at?: string
+          deliverable_id: string
+          id?: string
+          item_id: string
+          item_type: string
+        }
+        Update: {
+          created_at?: string
+          deliverable_id?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverable_items_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deliverables: {
+        Row: {
+          assigned_to: string[]
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string[]
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string[]
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       municipalities: {
         Row: {
           created_at: string
@@ -665,6 +736,62 @@ export type Database = {
           },
         ]
       }
+      priorities: {
+        Row: {
+          assigned_to: string[]
+          category: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          assigned_to?: string[]
+          category?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          assigned_to?: string[]
+          category?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "priorities_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -713,6 +840,7 @@ export type Database = {
           due_date: string | null
           id: string
           priority: string
+          priority_id: string | null
           title: string
         }
         Insert: {
@@ -724,6 +852,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           priority?: string
+          priority_id?: string | null
           title: string
         }
         Update: {
@@ -735,6 +864,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           priority?: string
+          priority_id?: string | null
           title?: string
         }
         Relationships: [
@@ -743,6 +873,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_priority_id_fkey"
+            columns: ["priority_id"]
+            isOneToOne: false
+            referencedRelation: "priorities"
             referencedColumns: ["id"]
           },
         ]
