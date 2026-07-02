@@ -257,4 +257,67 @@ export const ActivityLogger = {
       newValue: newPosition.toString(),
     });
   },
+
+  // Priorities
+  createPriorityEntity: (userName: string, title: string, clientName?: string) => {
+    const description = clientName
+      ? `${userName} criou a prioridade "${title}" em ${clientName}`
+      : `${userName} criou a prioridade "${title}"`;
+    logActivity({
+      userName,
+      actionType: 'CREATE_TASK',
+      entityType: 'priority',
+      entityName: title,
+      clientName: clientName || null,
+      description,
+    });
+  },
+
+  updatePriorityEntity: (userName: string, title: string, changes: Record<string, any>) => {
+    const description = `${userName} atualizou a prioridade "${title}"`;
+    logActivity({
+      userName,
+      actionType: 'UPDATE_TASK',
+      entityType: 'priority',
+      entityName: title,
+      description,
+      newValue: JSON.stringify(changes).slice(0, 200),
+    });
+  },
+
+  promoteTaskToPriority: (userName: string, taskTitle: string, priorityTitle: string, clientName?: string) => {
+    const description = `${userName} promoveu a tarefa "${taskTitle}" para prioridade "${priorityTitle}"${clientName ? ` em ${clientName}` : ''}`;
+    logActivity({
+      userName,
+      actionType: 'UPDATE_TASK',
+      entityType: 'priority',
+      entityName: priorityTitle,
+      clientName: clientName || null,
+      description,
+      oldValue: taskTitle,
+      newValue: priorityTitle,
+    });
+  },
+
+  createDeliverable: (userName: string, name: string) => {
+    const description = `${userName} criou o entregável "${name}"`;
+    logActivity({
+      userName,
+      actionType: 'CREATE_TASK',
+      entityType: 'deliverable',
+      entityName: name,
+      description,
+    });
+  },
+
+  completeDeliverable: (userName: string, name: string) => {
+    const description = `${userName} concluiu o entregável "${name}"`;
+    logActivity({
+      userName,
+      actionType: 'COMPLETE_TASK',
+      entityType: 'deliverable',
+      entityName: name,
+      description,
+    });
+  },
 };

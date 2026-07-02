@@ -1,37 +1,129 @@
+# Central de Entregas — Plano de Implementação
 
+Nova página focada no **colaborador/responsável**, complementando o Painel AC (que é por cliente). Hierarquia: Cliente → Prioridade → Tarefa → Comentário.
 
-## Plan: Add Due Date to Tasks + Overdue Indicator
+---
 
-### What will change
+## 1. Banco de dados (novas tabelas)
 
-**1. Database: Add `due_date` column to `tasks` table**
-- New nullable `date` column `due_date` on the `tasks` table via migration.
+### `priorities`
 
-**2. Type update: `src/types/task.ts`**
-- Add `due_date: string | null` to the `Task` interface.
-- Add `due_date?: string` to `TaskFormData`.
+Prioridades são um nível acima das tarefas. Uma prioridade pertence a um cliente, tem um responsável, prazo, peso e status.
 
-**3. Hook update: `src/hooks/useTasks.ts`**
-- Map `due_date` in `dbRowToTask`.
-- Pass `due_date` when inserting tasks.
-- Add helper `getOverdueTasks()` that returns pending tasks where `due_date < today`, sorted by most overdue first.
+Campos: `title`, `description`, `client_id`, `assigned_to`, `due_date`, `status` (aberta/em_andamento/concluida/cancelada), `weight` (1–5), `category`, `created_at`, `completed_at`, `created_by`.
 
-**4. Task creation forms — add date picker**
-- **`src/components/checklist/TaskModal.tsx`**: Add a date input field below the assignees row for setting a due date when creating a new task.
-- **`src/pages/JackboxUnified.tsx`** (JackboxCardEnhanced add form): Add the same date input field.
-- **`src/components/comments/CreateTaskFromComment.tsx`**: Add optional date input.
+### `deliverables` (entregáveis)
 
-**5. Display due date alongside task title**
-- In **TaskModal** and **JackboxCardEnhanced** task items: show the due date next to the days-open indicator. If overdue, show in red with a warning style.
+Agrupam prioridades e tarefas para uma reunião/PT.
 
-**6. Overdue indicator in the Tasks tab (`JackboxUnified.tsx`)**
-- Add a new section/card in the `TaskAnalytics` or directly below the KPIs showing a ranked list of the most overdue tasks (title, client, assignee, days overdue), styled with red/warning colors.
-- This will be a collapsible panel listing tasks sorted by how many days past their due date, showing task title, client name, assignee badge, and days overdue.
+Campos: `name`, `description`, `assigned_to`, `due_date`, `status`, `created_at`, `completed_at`.
 
-### Technical details
+### `deliverable_items`
 
-- Migration SQL: `ALTER TABLE public.tasks ADD COLUMN due_date date;`
-- Overdue calculation: `Math.floor((today - due_date) / 86400000)` days
-- Date input will use a simple `<input type="date">` for simplicity, matching the existing minimal UI style
-- The overdue panel will reuse existing task data from `useTasks` — no extra queries needed
+Tabela de vínculo N:N entre um entregável e suas prioridades/tarefas.
+Campos: `deliverable_id`, `item_type` (`priority` | `task`), `item_id`.
 
+### Alteração em `tasks`
+
+Adicionar coluna `priority_id UUID` (nullable) — vincula uma tarefa a uma prioridade quando promovida.
+
+Todas as tabelas terão GRANTs, RLS e políticas públicas (padrão do projeto, sem `auth.uid`).
+
+Logs em `activity_logs` para: criação/edição/conclusão de prioridade, promoção de tarefa, criação/conclusão de entregável, mudança de responsável.
+
+---
+
+## 2. Nova rota e menu
+
+- Rota: `/central-entregas` em `App.tsx`.
+- Item no `AppSidebar.tsx`: **"Central de Entregas"** (ícone `Target` ou `Users`), posicionado logo abaixo de "Tarefas".
+
+---
+
+## 3. Estrutura da página
+
+```text
+┌─────────────────────────────────────────────────────┐
+│  [Patrick] [Celine] [Gabi] [Darley] [Vanessa]       │  ← Seletor de responsável (chips coloridos)
+├─────────────────────────────────────────────────────┤
+│  KPIs resumo (clientes, tarefas, prioridades, ...)  │
+├─────────────────────────────────────────────────────┤
+│  Abas: Visão Geral | Prioridades | Tarefas |        │
+│        Comentários | Entregáveis | Performance      │
+├─────────────────────────────────────────────────────┤
+│  Conteúdo da aba selecionada                        │
+└─────────────────────────────────────────────────────┘
+```
+
+Cor por colaborador reutilizando o mapa já existente em `CollaboratorTaskTable`.
+
+### Aba 1 — Visão Geral
+
+Cards de KPI: Clientes vinculados, Tarefas abertas, Tarefas concluídas, Prioridades abertas, Comentários pendentes, Tempo médio (dias), Itens atrasados. Abaixo, um resumo dos itens mais críticos (top 5 atrasados).
+
+### Aba 2 — Prioridades
+
+Tabela/cards com filtros por status. Botão "+ Nova prioridade". Ao clicar em uma prioridade, drawer com edição inline e lista de tarefas vinculadas.
+
+### Aba 3 — Tarefas / Jackbox
+
+Reaproveita `CollaboratorTaskTable` com colunas adicionais: **Prioridade vinculada** e botão **"Promover para prioridade"**. Filtros: cliente, status, prioridade, ordenação.
+
+### Aba 4 — Comentários
+
+Lista de comentários onde o colaborador está em `required_readers`. Filtros: não lidos/lidos, por cliente, por data. Ação de marcar como lido inline.
+
+### Aba 5 — Entregáveis
+
+Cards de entregáveis (ex.: "Até a próxima PT"). Cada card mostra progresso (% concluído baseado em itens vinculados), prazo e lista expandível de prioridades/tarefas. Botão "+ Novo entregável" com seletor múltiplo de prioridades e tarefas.
+
+### Aba 6 — Performance
+
+KPIs históricos + gráfico de evolução mensal (recharts, já usado no projeto): tarefas concluídas por mês, tempo médio, comentários lidos no prazo.
+
+---
+
+## 4. Modal "Promover para prioridade"
+
+Aberto a partir da aba Tarefas. Pré-preenche título/cliente/responsável a partir da tarefa. Campos: título, descrição, prazo, peso (slider 1–5), categoria. Ao confirmar: cria linha em `priorities`, faz `UPDATE tasks SET priority_id = ...`, grava log.
+
+---
+
+## 5. Detalhes técnicos
+
+**Hooks novos:**
+
+- `usePriorities()` — CRUD + filtros por responsável/cliente/status.
+- `useDeliverables()` — CRUD + cálculo de % concluído agregando itens vinculados.
+- `useCollaboratorMetrics(name)` — deriva KPIs a partir de `tasks`, `priorities`, `client_comments`, `client_collaborator_assignments`.
+
+**Componentes novos (em `src/components/central-entregas/`):**
+
+- `ResponsibleSelector.tsx`
+- `OverviewTab.tsx`, `PrioritiesTab.tsx`, `TasksTab.tsx`, `CommentsTab.tsx`, `DeliverablesTab.tsx`, `PerformanceTab.tsx`
+- `PriorityModal.tsx` (criar/editar/promover)
+- `DeliverableModal.tsx`
+- `PriorityCard.tsx`, `DeliverableCard.tsx`
+- `KpiCard.tsx` (ou reaproveitar `dashboard-stats/KPICard`)
+
+**Página:** `src/pages/CentralEntregas.tsx` orquestra seletor + abas (`Tabs` shadcn).
+
+**Logs:** estender `ActivityLogger` com métodos `createPriority`, `updatePriority`, `completePriority`, `promoteTaskToPriority`, `createDeliverable`, `completeDeliverable`.
+
+**Visual:** glassmorphism e paleta já existentes; chips de status (aberta=azul, em_andamento=amarelo, concluída=verde, cancelada=cinza, atrasado=vermelho destacado).
+
+---
+
+## 6. Ordem de execução
+
+1. Migration (priorities, deliverables, deliverable_items, tasks.priority_id, RLS/GRANTs).
+2. Rota, item de menu, esqueleto da página com seletor e abas vazias.
+3. Hooks (`usePriorities`, `useDeliverables`, `useCollaboratorMetrics`).
+4. Aba Visão Geral + Aba Tarefas (reusa componentes existentes — entrega valor rápido).
+5. Aba Prioridades + modal "Promover para prioridade".
+6. Aba Comentários (filtra dados já disponíveis).
+7. Aba Entregáveis.
+8. Aba Performance (gráficos).
+9. Logs de auditoria em todas as ações.
+
+Escopo grande — MAS IREI FAZER TODO ELE DE UMA VEZ E ULTILIZANDO O MAXIMO DO MEU POTENCIAL. Confirma?
