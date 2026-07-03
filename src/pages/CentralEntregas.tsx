@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClients } from "@/contexts/ClientContext";
@@ -6,10 +6,21 @@ import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippets";
 import { assigneeMatches } from "@/lib/taskAssignee";
+import { supabase } from "@/integrations/supabase/client";
 import { PRIORITY_CONFIG, Task } from "@/types/task";
-import { AlertTriangle, BarChart3, Box, CheckCircle2, Clock3, Grid2X2, ListChecks, MessageSquare, PackageOpen, Star, Users } from "lucide-react";
+import { AlertTriangle, BarChart3, Box, CheckCircle2, Clock3, ExternalLink, FileText, Grid2X2, ListChecks, MessageSquare, PackageOpen, Star, Users } from "lucide-react";
 
 type Tab = "overview" | "priorities" | "tasks" | "comments" | "deliverables" | "performance";
+
+type Deliverable = {
+  id: string;
+  title: string;
+  clientId: string | null;
+  clientName: string;
+  date: string;
+  type: "task" | "pdf";
+  url?: string | null;
+};
 
 const tabs = [
   ["overview", "Visão Geral", Grid2X2],
@@ -28,7 +39,21 @@ export default function CentralEntregas() {
   const comments = useAllClientsCommentSnippets();
   const [selectedId, setSelectedId] = useState<string | null>(currentUser?.id || null);
   const [tab, setTab] = useState<Tab>("overview");
+  const [pdfDeliverables, setPdfDeliverables] = useState<Deliverable[]>([]);
   const selected = collaborators.find(c => c.id === selectedId) || collaborators[0];
+
+  const clientMap = useMemo(() => new Map(activeClients.map(client => [client.id, client])), [activeClients]);
+
+  const selectedTasks = useMemo(
+    () => selected ? tasks.filter(task => assigneeMatches(task.assigned_to, selected.name)) : [],
+    [selected, tasks],
+  );
+
+  const open = selectedTasks.filter(task => !task.completed);
+  const completed = selectedTasks.filter(task => task.completed);
+  const priorities = open.filter(task => task.priority === "alta" || task.priority === "urgente");
+  const overdue = open.filter(task => task.due_date && new Date(task.due_date + "T23:59:59") < new Date());
+  const averageDays = open.length ? Math.round(open.reduce((sum, task) => sum + daysSince(task.created_at), 0) / open.length) : 0;
 
   const linkedIds = useMemo(() => {
     if (!selected) return new Set<string>();
@@ -39,17 +64,81 @@ export default function CentralEntregas() {
     return new Set(ids);
   }, [assignments, selected, tasks]);
 
-  const selectedTasks = useMemo(
-    () => selected ? tasks.filter(task => assigneeMatches(task.assigned_to, selected.name)) : [],
-    [selected, tasks],
-  );
-  const open = selectedTasks.filter(task => !task.completed);
-  const completed = selectedTasks.filter(task => task.completed);
-  const priorities = open.filter(task => task.priority === "alta" || task.priority === "urgente");
-  const overdue = open.filter(task => task.due_date && new Date(task.due_date + "T23:59:59") < new Date());
   const pendingComments = [...linkedIds].reduce((sum, id) => sum + (comments.get(id)?.length || 0), 0);
-  const averageDays = open.length ? Math.round(open.reduce((sum, task) => sum + daysSince(task.created_at), 0) / open.length) : 0;
-  const clientMap = useMemo(() => new Map(activeClients.map(client => [client.id, client])), [activeClients]);
+
+  const taskDeliverables = useMemo<Deliverable[]>(() => completed.map(task => ({
+    id: task.id,
+    title: task.title,
+    clientId: task.client_id,
+    clientName: clientMap.get(task.client_id)?.name || "Cliente",
+    date: task.completed_at || task.created_at,
+    type: "task",
+  })), [completed, clientMap]);
+
+  const deliverables = useMemo(() => [...taskDeliverables, ...pdfDeliverables]
+    .filter(item => !item.clientId || linkedIds.has(item.clientId))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [linkedIds, pdfDeliverables, taskDeliverables]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPdfDeliverables() {
+      const { data, error } = await supabase
+        .from("pdf_detected_clients")
+        .select(`
+          id,
+          matched_client_id,
+          client_name_raw,
+          created_at,
+          pdf_imports (
+            id,
+            file_name,
+            file_url,
+            status,
+            created_at,
+            report_period_month,
+            report_period_year
+          )
+        `)
+        .not("matched_client_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(250);
+
+      if (cancelled) return;
+      if (error) {
+        console.error("Error fetching deliverables:", error);
+        setPdfDeliverables([]);
+        return;
+      }
+
+      setPdfDeliverables((data || []).map((row: any) => {
+        const pdf = Array.isArray(row.pdf_imports) ? row.pdf_imports[0] : row.pdf_imports;
+        const period = pdf?.report_period_month && pdf?.report_period_year
+          ? ` - ${String(pdf.report_period_month).padStart(2, "0")}/${pdf.report_period_year}`
+          : "";
+        return {
+          id: row.id,
+          title: `${pdf?.file_name || "Relatório importado"}${period}`,
+          clientId: row.matched_client_id,
+          clientName: clientMap.get(row.matched_client_id)?.name || row.client_name_raw || "Cliente",
+          date: pdf?.created_at || row.created_at,
+          type: "pdf",
+          url: pdf?.file_url,
+        };
+      }));
+    }
+
+    fetchPdfDeliverables();
+    const channel = supabase
+      .channel("central_entregas_deliverables")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pdf_detected_clients" }, () => fetchPdfDeliverables())
+      .on("postgres_changes", { event: "*", schema: "public", table: "pdf_imports" }, () => fetchPdfDeliverables())
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [clientMap]);
 
   return (
     <AppLayout>
@@ -90,7 +179,7 @@ export default function CentralEntregas() {
               <Metric label="Comentários pendentes" value={pendingComments} icon={MessageSquare} color="text-amber-600" />
               <Metric label="Tempo médio (dias)" value={averageDays + "d"} icon={Clock3} />
               <Metric label="Itens atrasados" value={overdue.length} icon={AlertTriangle} color="text-red-600" />
-              <Metric label="Entregáveis abertos" value={0} icon={PackageOpen} color="text-indigo-500" />
+              <Metric label="Entregáveis" value={deliverables.length} icon={PackageOpen} color="text-indigo-500" />
             </div>
           )}
           {tab === "priorities" && <TaskList tasks={priorities} clients={clientMap} empty="Nenhuma prioridade aberta." />}
@@ -106,7 +195,7 @@ export default function CentralEntregas() {
               {pendingComments === 0 && <Empty text="Nenhum comentário pendente." />}
             </Panel>
           )}
-          {tab === "deliverables" && <Panel title="Entregáveis"><Empty text="Nenhum entregável aberto para este responsável." /></Panel>}
+          {tab === "deliverables" && <DeliverablesList deliverables={deliverables} />}
           {tab === "performance" && (
             <Panel title="Performance"><div className="grid gap-4 sm:grid-cols-3">
               <Performance label="Taxa de conclusão" value={selectedTasks.length ? Math.round(completed.length / selectedTasks.length * 100) : 0} suffix="%" />
@@ -121,6 +210,23 @@ export default function CentralEntregas() {
   );
 }
 
+function DeliverablesList({ deliverables }: { deliverables: Deliverable[] }) {
+  return <Panel title="Entregáveis">
+    {deliverables.map(item => (
+      <div key={`${item.type}-${item.id}`} className="flex flex-col gap-2 border-b py-3 last:border-0 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            {item.type === "pdf" ? <FileText className="h-4 w-4 text-blue-600" /> : <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+            <p className="truncate text-sm font-medium">{item.title}</p>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">{item.clientName} - {new Date(item.date).toLocaleDateString("pt-BR")}</p>
+        </div>
+        {item.url ? <a href={item.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">Abrir <ExternalLink className="h-3 w-3" /></a> : <span className="rounded bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">Concluído</span>}
+      </div>
+    ))}
+    {deliverables.length === 0 && <Empty text="Nenhum entregável encontrado para este responsável." />}
+  </Panel>;
+}
 function Metric({ label, value, icon: Icon, color = "text-muted-foreground" }: { label: string; value: string | number; icon: typeof Users; color?: string }) {
   return <div className="min-h-[88px] rounded-lg border bg-card p-3"><div className="flex justify-between gap-2"><span className="text-[11px] font-semibold uppercase text-muted-foreground">{label}</span><Icon className={`h-4 w-4 ${color}`} /></div><div className={`mt-3 text-2xl font-bold ${color === "text-muted-foreground" ? "text-foreground" : color}`}>{value}</div></div>;
 }
