@@ -15,6 +15,7 @@ import CommentsPanel from "./pages/CommentsPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
 import TVMode from "./pages/TVMode";
 import NotFound from "./pages/NotFound";
+import CentralEntregas from "./pages/CentralEntregas";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/relatorios-pdf" element={<RelatoriosPdf />} />
               <Route path="/jackbox" element={<JackboxPanel />} />
               <Route path="/jackbox-unificado" element={<JackboxUnified />} />
+              <Route path="/central-entregas" element={<CentralEntregas />} />
               
               <Route path="/config" element={<Config />} />
               <Route path="/tv" element={<TVMode />} />
