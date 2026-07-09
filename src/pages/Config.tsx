@@ -776,11 +776,12 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
 
         {/* Municípios */}
         <div className="lg:col-span-3">
-          <label className="admin-label">Municípios</label>
+          <label className="admin-label">Municípios *</label>
           <MunicipiosInput
             value={formData.municipios}
             onChange={(municipios) => setFormData(prev => ({ ...prev, municipios }))}
           />
+          {errors.municipios && <p className="text-xs text-destructive mt-1">{errors.municipios}</p>}
         </div>
 
         {/* Toggles */}
