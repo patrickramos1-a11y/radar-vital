@@ -21,6 +21,7 @@ import { MobileCompactHeader } from "@/components/mobile/MobileCompactHeader";
 import { MobileCompactFilters } from "@/components/mobile/MobileCompactFilters";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
+import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
 const Index = () => {
   const isMobile = useIsMobile();
   const { currentUser, collaborators: allCollaborators } = useAuth();
