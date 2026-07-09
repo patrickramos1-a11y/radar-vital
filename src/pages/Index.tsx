@@ -71,6 +71,8 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('fit-all');
   const [gridSize, setGridSize] = useState<GridSize>(null);
   const [fitAllLocked, setFitAllLocked] = useState(false);
+  const [newClientOpen, setNewClientOpen] = useState(false);
+
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
