@@ -577,6 +577,24 @@ function MunicipalityDropdown({ municipalities, clientMunicipioNames, selectedMu
           </div>
         </div>
         <div className="max-h-52 overflow-y-auto p-1">
+          {(() => {
+            const noneSelected = selectedMunicipios.includes('__none__');
+            return (
+              <button
+                onClick={() => onToggle('__none__')}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors text-left border-b border-border/50 mb-1 ${
+                  noneSelected ? 'bg-amber-500/15 text-amber-700' : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                  noneSelected ? 'bg-amber-500 border-amber-500' : 'border-border'
+                }`}>
+                  {noneSelected && <Check className="w-3 h-3 text-white" />}
+                </div>
+                <span className="font-semibold">Sem município</span>
+              </button>
+            );
+          })()}
           {filtered.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-3">Nenhum município encontrado</p>
           ) : (
