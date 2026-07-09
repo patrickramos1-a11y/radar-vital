@@ -511,13 +511,13 @@ const Index = () => {
             <div className="w-px h-6 bg-border/40 mx-1" />
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link
-                  to="/config"
+                <button
+                  onClick={() => setNewClientOpen(true)}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span className="text-[10px] font-semibold uppercase tracking-wider">Novo Cliente</span>
-                </Link>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">Cadastrar novo cliente</TooltipContent>
             </Tooltip>
