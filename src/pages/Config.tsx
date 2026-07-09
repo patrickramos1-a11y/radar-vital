@@ -614,7 +614,11 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     if (!formData.name.trim()) {
       newErrors.name = 'Nome é obrigatório';
     }
-    
+
+    if (!formData.municipios || formData.municipios.length === 0) {
+      newErrors.municipios = 'Selecione ao menos um município';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -772,11 +776,12 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
 
         {/* Municípios */}
         <div className="lg:col-span-3">
-          <label className="admin-label">Municípios</label>
+          <label className="admin-label">Municípios *</label>
           <MunicipiosInput
             value={formData.municipios}
             onChange={(municipios) => setFormData(prev => ({ ...prev, municipios }))}
           />
+          {errors.municipios && <p className="text-xs text-destructive mt-1">{errors.municipios}</p>}
         </div>
 
         {/* Toggles */}
