@@ -74,6 +74,7 @@ export function useCollaborators() {
         userId: data.user_id,
         isActive: data.is_active,
         role: (data as any).role || 'colaborador',
+        isCentralOnly: (data as any).is_central_only || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
