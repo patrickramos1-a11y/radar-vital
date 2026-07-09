@@ -386,7 +386,13 @@ const Index = () => {
             onSortDirectionChange={setSortDirection}
             onClientTypeFilterChange={setClientTypeFilter}
             onClearAllFilters={handleClearAllFilters}
+            municipalities={municipalities}
+            clientMunicipioNames={clientMunicipioNames}
+            municipioFilters={municipioFilters}
+            onMunicipioFilterToggle={handleMunicipioFilterToggle}
+            clientsWithoutMunicipioCount={clientsWithoutMunicipioCount}
           />
+
 
           {/* Compact grid of clients */}
           <div className="flex-1 overflow-hidden">
