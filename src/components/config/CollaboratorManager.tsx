@@ -318,7 +318,7 @@ export function CollaboratorManager() {
                     ))}
                     {filtered.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">
+                        <td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">
                           Nenhum usuário encontrado.
                         </td>
                       </tr>
