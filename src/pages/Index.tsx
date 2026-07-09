@@ -12,7 +12,8 @@ import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippe
 import { useAuth } from "@/contexts/AuthContext";
 import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { Client } from "@/types/client";
-import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks } from "lucide-react";
+import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PanelNavigationBar } from "@/components/panel-links/PanelNavigationBar";
