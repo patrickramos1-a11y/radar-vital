@@ -100,7 +100,7 @@ export function useCollaborators() {
 
   const updateCollaborator = useCallback(async (
     id: string,
-    updates: Partial<Pick<Collaborator, 'name' | 'email' | 'color' | 'initials' | 'isActive' | 'role'>>
+    updates: Partial<Pick<Collaborator, 'name' | 'email' | 'color' | 'initials' | 'isActive' | 'role' | 'isCentralOnly'>>
   ): Promise<boolean> => {
     try {
       const dbUpdates: any = {};
@@ -110,6 +110,7 @@ export function useCollaborators() {
       if (updates.initials !== undefined) dbUpdates.initials = updates.initials;
       if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
       if (updates.role !== undefined) dbUpdates.role = updates.role;
+      if (updates.isCentralOnly !== undefined) dbUpdates.is_central_only = updates.isCentralOnly;
 
       const { error } = await supabase
         .from('collaborators')
