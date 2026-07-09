@@ -91,69 +91,66 @@ export function TaskModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
+      <DialogContent className="flex max-h-[86vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-3 overflow-hidden p-0 sm:rounded-xl">
+        <DialogHeader className="border-b px-5 py-4">
+          <DialogTitle className="flex min-w-0 items-center gap-3 pr-8">
             {client.logoUrl ? (
-              <img src={client.logoUrl} alt="" className="w-8 h-8 object-contain rounded" />
+              <img src={client.logoUrl} alt="" className="h-8 w-8 flex-shrink-0 rounded object-contain" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                 {client.initials}
               </div>
             )}
-            <span>Checklist - {client.name}</span>
+            <span className="truncate">Checklist - {client.name}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-auto space-y-4">
+        <div className="flex-1 space-y-4 overflow-auto px-5 pb-5">
           {/* Add new task */}
-          <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-            <div className="flex gap-2">
+          <div className="sticky top-0 z-10 rounded-b-lg border bg-background/95 py-3 backdrop-blur">
+            <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
               <input
                 type="text"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 placeholder="Nova tarefa..."
-                className="flex-1 px-3 py-2.5 text-sm md:text-base border rounded-md bg-background"
+                className="h-10 min-w-0 rounded-md border bg-background px-3 text-sm"
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                 maxLength={100}
               />
-              <button
-                onClick={handleAddTask}
-                disabled={!newTaskTitle.trim()}
-                className="px-4 py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
               <NewTaskAssigneeDropdown
                 collaborators={collaborators}
                 selected={newTaskAssignees}
                 onChange={setNewTaskAssignees}
               />
               <PrioritySelector value={newTaskPriority} onChange={setNewTaskPriority} />
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Prazo:</span>
+              <div className="flex h-10 items-center gap-2 rounded-md border bg-background px-3">
+                <span className="text-xs font-medium text-muted-foreground">Prazo</span>
                 <input
                   type="date"
                   value={newTaskDueDate}
                   onChange={(e) => setNewTaskDueDate(e.target.value)}
-                  className="px-3 py-1.5 text-sm border rounded-md bg-background"
+                  className="h-8 bg-transparent text-sm outline-none"
                 />
               </div>
+              <button
+                onClick={handleAddTask}
+                disabled={!newTaskTitle.trim()}
+                className="flex h-10 items-center justify-center rounded-md bg-primary px-4 text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 md:w-12"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
             </div>
           </div>
-
           {/* Active tasks */}
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <h4 className="text-sm font-medium text-muted-foreground">
               Tarefas Ativas ({activeTasks.length})
             </h4>
             {activeTasks.length === 0 ? (
               <p className="text-sm text-muted-foreground/50 py-2">Nenhuma tarefa ativa</p>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {activeTasks.map((task) => (
                   <TaskItem
                     key={task.id}
@@ -178,12 +175,12 @@ export function TaskModal({
 
           {/* Completed tasks */}
           {completedTasks.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <h4 className="text-sm font-medium text-muted-foreground">
                 Concluídas ({completedTasks.length})
               </h4>
-              <div className="space-y-1 opacity-60">
-                {completedTasks.slice(0, 5).map((task) => (
+              <div className="space-y-1 opacity-70">
+                {completedTasks.map((task) => (
                   <TaskItem
                     key={task.id}
                     task={task}
@@ -201,11 +198,6 @@ export function TaskModal({
                     collaboratorColorMap={collaboratorColorMap}
                   />
                 ))}
-                {completedTasks.length > 5 && (
-                  <p className="text-xs text-muted-foreground">
-                    +{completedTasks.length - 5} mais
-                  </p>
-                )}
               </div>
             </div>
           )}
@@ -253,16 +245,16 @@ function TaskItem({
     : `${pConf.bgClass} ${pConf.borderClass} border-y border-r`;
 
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-lg group ${containerClass}`}>
+    <div className={`group flex items-center gap-2 rounded-md px-3 py-2 ${containerClass}`}>
       <button
         onClick={onToggle}
-        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+        className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border transition-colors ${
           task.completed
             ? 'bg-green-500 border-green-500 text-white'
             : 'border-muted-foreground/30 hover:border-primary'
         }`}
       >
-        {task.completed && <Check className="w-4 h-4" />}
+        {task.completed && <Check className="h-3.5 w-3.5" />}
       </button>
 
       {isEditing ? (
@@ -270,7 +262,7 @@ function TaskItem({
           type="text"
           value={editingTitle}
           onChange={(e) => setEditingTitle(e.target.value)}
-          className="flex-1 px-3 py-1.5 text-sm border rounded bg-background"
+          className="h-8 flex-1 rounded border bg-background px-3 text-sm"
           autoFocus
           onKeyDown={(e) => {
             if (e.key === 'Enter') onSaveEdit();
@@ -279,15 +271,15 @@ function TaskItem({
           onBlur={onSaveEdit}
         />
       ) : (
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
             {!task.completed && priority !== 'normal' && (
-              <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${pConf.textClass} ${pConf.bgClass} border border-current/20`}>
+              <span className={`inline-flex flex-shrink-0 items-center gap-1 rounded border border-current/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${pConf.textClass} ${pConf.bgClass}`}>
                 <span>{pConf.icon}</span>{pConf.label}
               </span>
             )}
             <span
-              className={`text-sm md:text-base cursor-pointer leading-snug break-words ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+              className={`min-w-0 cursor-pointer truncate text-sm leading-snug ${task.completed ? 'text-muted-foreground line-through' : ''}`}
               onClick={!task.completed ? onStartEdit : undefined}
             >
               {task.title}
@@ -315,7 +307,7 @@ function TaskItem({
 
       <button
         onClick={onDelete}
-        className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+        className="p-1 text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover:opacity-100"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -434,7 +426,7 @@ function NewTaskAssigneeDropdown({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md border bg-background hover:bg-muted transition-colors text-sm">
+        <button className="flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-sm transition-colors hover:bg-muted">
           <User className="w-4 h-4 text-muted-foreground" />
           {selected.length > 0 ? (
             <div className="flex items-center -space-x-1">
@@ -505,7 +497,7 @@ function PrioritySelector({ value, onChange }: { value: TaskPriority; onChange: 
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border ${conf.textClass} ${conf.bgClass} hover:opacity-80 transition-opacity`}
+          className={`flex h-10 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-opacity hover:opacity-80 ${conf.textClass} ${conf.bgClass}`}
         >
           <Flag className="w-3.5 h-3.5" />
           {conf.label}
@@ -566,4 +558,7 @@ function PriorityMenu({ value, onChange }: { value: TaskPriority; onChange: (p: 
     </Popover>
   );
 }
+
+
+
 
