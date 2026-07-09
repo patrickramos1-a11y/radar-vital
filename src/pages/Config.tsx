@@ -614,7 +614,11 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
     if (!formData.name.trim()) {
       newErrors.name = 'Nome é obrigatório';
     }
-    
+
+    if (!formData.municipios || formData.municipios.length === 0) {
+      newErrors.municipios = 'Selecione ao menos um município';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
