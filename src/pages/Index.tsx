@@ -394,6 +394,7 @@ const Index = () => {
             municipioFilters={municipioFilters}
             onMunicipioFilterToggle={handleMunicipioFilterToggle}
             clientsWithoutMunicipioCount={clientsWithoutMunicipioCount}
+            onNewClient={() => setNewClientOpen(true)}
           />
 
 
