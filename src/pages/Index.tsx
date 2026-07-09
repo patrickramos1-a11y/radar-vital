@@ -92,6 +92,11 @@ const Index = () => {
     return names;
   }, [activeClients]);
 
+  const clientsWithoutMunicipioCount = useMemo(
+    () => activeClients.filter(c => !c.municipios || c.municipios.length === 0).length,
+    [activeClients]
+  );
+
 
   const jackboxCount = useMemo(() => 
     activeClients.filter(c => getActiveTaskCount(c.id) > 0).length,
