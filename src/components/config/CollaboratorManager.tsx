@@ -222,7 +222,20 @@ export function CollaboratorManager() {
                                 ))}
                               </select>
                             </td>
-                            <td />
+                            <td className="px-3 py-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => updateCollaborator(c.id, { isCentralOnly: !c.isCentralOnly })}
+                                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                                  c.isCentralOnly
+                                    ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/70'
+                                }`}
+                                title={c.isCentralOnly ? 'Aparece só na Central de Entregas' : 'Aparece no Painel e Central'}
+                              >
+                                {c.isCentralOnly ? 'Só Central' : 'Painel + Central'}
+                              </button>
+                            </td>
                             <td className="px-3 py-2 text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <button onClick={saveEdit} className="p-1 text-green-500 hover:text-green-600" title="Salvar">
