@@ -21,6 +21,7 @@ import { MobileCompactHeader } from "@/components/mobile/MobileCompactHeader";
 import { MobileCompactFilters } from "@/components/mobile/MobileCompactFilters";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
+import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
 const Index = () => {
   const isMobile = useIsMobile();
   const { currentUser, collaborators: allCollaborators } = useAuth();
@@ -70,6 +71,8 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('fit-all');
   const [gridSize, setGridSize] = useState<GridSize>(null);
   const [fitAllLocked, setFitAllLocked] = useState(false);
+  const [newClientOpen, setNewClientOpen] = useState(false);
+
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
@@ -391,6 +394,7 @@ const Index = () => {
             municipioFilters={municipioFilters}
             onMunicipioFilterToggle={handleMunicipioFilterToggle}
             clientsWithoutMunicipioCount={clientsWithoutMunicipioCount}
+            onNewClient={() => setNewClientOpen(true)}
           />
 
 
@@ -453,6 +457,8 @@ const Index = () => {
               onDeleteTask={deleteTask}
             />
           )}
+
+          <NewClientDialog open={newClientOpen} onOpenChange={setNewClientOpen} />
         </div>
       </AppLayout>
     );
@@ -507,13 +513,13 @@ const Index = () => {
             <div className="w-px h-6 bg-border/40 mx-1" />
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link
-                  to="/config"
+                <button
+                  onClick={() => setNewClientOpen(true)}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span className="text-[10px] font-semibold uppercase tracking-wider">Novo Cliente</span>
-                </Link>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">Cadastrar novo cliente</TooltipContent>
             </Tooltip>
@@ -605,6 +611,8 @@ const Index = () => {
               onDeleteTask={deleteTask}
             />
           )}
+
+          <NewClientDialog open={newClientOpen} onOpenChange={setNewClientOpen} />
         </div>
       </TooltipProvider>
     </AppLayout>

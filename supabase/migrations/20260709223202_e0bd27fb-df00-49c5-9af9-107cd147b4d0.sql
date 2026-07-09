@@ -1,0 +1,1 @@
+ALTER TABLE public.collaborators ADD COLUMN IF NOT EXISTS is_central_only boolean NOT NULL DEFAULT false;

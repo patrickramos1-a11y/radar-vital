@@ -26,6 +26,7 @@ interface MobileCompactFiltersProps {
   municipioFilters: string[];
   onMunicipioFilterToggle: (municipio: string) => void;
   clientsWithoutMunicipioCount: number;
+  onNewClient: () => void;
 }
 
 export function MobileCompactFilters({
@@ -48,6 +49,7 @@ export function MobileCompactFilters({
   municipioFilters,
   onMunicipioFilterToggle,
   clientsWithoutMunicipioCount,
+  onNewClient,
 }: MobileCompactFiltersProps) {
 
   const handleSortClick = (sort: SortOption) => {
@@ -69,25 +71,7 @@ export function MobileCompactFilters({
 
   return (
     <div className="flex flex-col bg-card border-b border-border">
-      {/* Row 0: Quick action links */}
-      <div className="flex items-center gap-1.5 px-3 pt-2">
-        <Link
-          to="/config"
-          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-primary text-xs font-semibold"
-        >
-          <UserPlus className="w-3.5 h-3.5" />
-          Novo Cliente
-        </Link>
-        <Link
-          to="/central-entregas"
-          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs font-semibold"
-        >
-          <Target className="w-3.5 h-3.5" />
-          Central de Entregas
-        </Link>
-      </div>
-
-      {/* Row 1: Search + count + clear */}
+      {/* Row 1: Search + quick actions + count + clear */}
       <div className="flex items-center gap-2 px-3 py-2">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -107,7 +91,24 @@ export function MobileCompactFilters({
             </button>
           )}
         </div>
-        
+
+        <button
+          onClick={onNewClient}
+          title="Novo Cliente"
+          aria-label="Novo Cliente"
+          className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg bg-primary/10 border border-primary/30 text-primary"
+        >
+          <UserPlus className="w-4 h-4" />
+        </button>
+        <Link
+          to="/central-entregas"
+          title="Central de Entregas"
+          aria-label="Central de Entregas"
+          className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600"
+        >
+          <Target className="w-4 h-4" />
+        </Link>
+
         <div className="flex items-center gap-1.5">
           <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 text-primary">
             <span className="text-sm font-bold">{visibleCount}</span>
@@ -126,6 +127,7 @@ export function MobileCompactFilters({
           )}
         </div>
       </div>
+
 
       {/* Row 2: Type filters + Municipality + Sort pills */}
       <div className="flex items-center gap-1.5 px-3 pb-2 overflow-x-auto scrollbar-hide">

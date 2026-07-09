@@ -178,6 +178,7 @@ export function CollaboratorManager() {
                     <tr className="bg-muted/50 border-b border-border">
                       <th className="px-3 py-2 text-left font-medium text-muted-foreground">Usuário</th>
                       <th className="px-3 py-2 text-left font-medium text-muted-foreground">Perfil</th>
+                      <th className="px-3 py-2 text-center font-medium text-muted-foreground">Escopo</th>
                       <th className="px-3 py-2 text-center font-medium text-muted-foreground">Status</th>
                       <th className="px-3 py-2 text-right font-medium text-muted-foreground">Ações</th>
                     </tr>
@@ -221,7 +222,20 @@ export function CollaboratorManager() {
                                 ))}
                               </select>
                             </td>
-                            <td />
+                            <td className="px-3 py-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => updateCollaborator(c.id, { isCentralOnly: !c.isCentralOnly })}
+                                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                                  c.isCentralOnly
+                                    ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/70'
+                                }`}
+                                title={c.isCentralOnly ? 'Aparece só na Central de Entregas' : 'Aparece no Painel e Central'}
+                              >
+                                {c.isCentralOnly ? 'Só Central' : 'Painel + Central'}
+                              </button>
+                            </td>
                             <td className="px-3 py-2 text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <button onClick={saveEdit} className="p-1 text-green-500 hover:text-green-600" title="Salvar">
@@ -254,6 +268,19 @@ export function CollaboratorManager() {
                               }`}>
                                 {c.role === 'admin' ? 'Admin' : 'Colaborador'}
                               </span>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <button
+                                onClick={() => updateCollaborator(c.id, { isCentralOnly: !c.isCentralOnly })}
+                                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                                  c.isCentralOnly
+                                    ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/70'
+                                }`}
+                                title={c.isCentralOnly ? 'Aparece só na Central de Entregas' : 'Aparece no Painel e Central'}
+                              >
+                                {c.isCentralOnly ? 'Só Central' : 'Painel + Central'}
+                              </button>
                             </td>
                             <td className="px-3 py-2 text-center">
                               <button
@@ -291,7 +318,7 @@ export function CollaboratorManager() {
                     ))}
                     {filtered.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">
+                        <td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">
                           Nenhum usuário encontrado.
                         </td>
                       </tr>

@@ -367,6 +367,7 @@ export type Database = {
           id: string
           initials: string
           is_active: boolean
+          is_central_only: boolean
           name: string
           role: string
           updated_at: string
@@ -379,6 +380,7 @@ export type Database = {
           id?: string
           initials: string
           is_active?: boolean
+          is_central_only?: boolean
           name: string
           role?: string
           updated_at?: string
@@ -391,6 +393,7 @@ export type Database = {
           id?: string
           initials?: string
           is_active?: boolean
+          is_central_only?: boolean
           name?: string
           role?: string
           updated_at?: string
