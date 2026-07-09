@@ -206,9 +206,13 @@ const Index = () => {
 
     // Municipality filter
     if (municipioFilters.length > 0) {
+      const includeNone = municipioFilters.includes('__none__');
+      const nameFilters = municipioFilters.filter(m => m !== '__none__');
       result = result.filter(c => {
-        if (!c.municipios || c.municipios.length === 0) return false;
-        return municipioFilters.some(mf => {
+        const hasNoMunicipios = !c.municipios || c.municipios.length === 0;
+        if (includeNone && hasNoMunicipios) return true;
+        if (hasNoMunicipios) return false;
+        return nameFilters.some(mf => {
           const [name] = mf.split('|');
           return c.municipios.some(cm => cm === name);
         });
