@@ -611,6 +611,8 @@ const Index = () => {
               onDeleteTask={deleteTask}
             />
           )}
+
+          <NewClientDialog open={newClientOpen} onOpenChange={setNewClientOpen} />
         </div>
       </TooltipProvider>
     </AppLayout>
