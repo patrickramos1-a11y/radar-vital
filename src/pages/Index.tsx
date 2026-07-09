@@ -498,6 +498,19 @@ const Index = () => {
             <StatBadge icon={<UserCheck className="w-3.5 h-3.5" />} value={responsaveisCount} label="Responsáveis" color="rgb(16, 185, 129)" active={filterFlags.hasCollaborators} onClick={() => handleFilterFlagToggle('hasCollaborators')} />
             <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(129, 140, 248)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
             <StatBadge icon={<ListChecks className="w-3.5 h-3.5" />} value={jackboxCount} label="Tarefas" color="rgb(250, 204, 21)" active={filterFlags.withJackbox} onClick={() => handleFilterFlagToggle('withJackbox')} />
+            <div className="w-px h-6 bg-border/40 mx-1" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/config"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Novo Cliente</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Cadastrar novo cliente</TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Panel Navigation Bar */}
