@@ -178,6 +178,7 @@ export function CollaboratorManager() {
                     <tr className="bg-muted/50 border-b border-border">
                       <th className="px-3 py-2 text-left font-medium text-muted-foreground">Usuário</th>
                       <th className="px-3 py-2 text-left font-medium text-muted-foreground">Perfil</th>
+                      <th className="px-3 py-2 text-center font-medium text-muted-foreground">Escopo</th>
                       <th className="px-3 py-2 text-center font-medium text-muted-foreground">Status</th>
                       <th className="px-3 py-2 text-right font-medium text-muted-foreground">Ações</th>
                     </tr>
