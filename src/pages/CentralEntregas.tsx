@@ -159,6 +159,9 @@ export default function CentralEntregas() {
                 color={selectedInfo.color}
                 tasks={tasksHook.tasks}
                 priorities={prioritiesHook.priorities}
+                deliverables={deliverablesHook.deliverables}
+                clients={clients}
+                responsibleList={responsibleList}
                 comments={comments}
                 getDaysOpen={tasksHook.getDaysOpen}
               />
