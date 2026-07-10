@@ -16,11 +16,25 @@ export interface DeliverableRating {
 
 const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
-/** Score weight: thumbs = 1, star = value (1-5), superstar = 10. */
+/**
+ * OFFICIAL SCORE: thumbs = 0 (just a like), star = value (1-5), superstar = 10.
+ * Thumbs is a like/recognition indicator only and does NOT count in the ranking.
+ */
 export function ratingScore(r: Pick<DeliverableRating, 'rating_type' | 'value'>) {
-  if (r.rating_type === 'thumbs') return 1;
+  if (r.rating_type === 'thumbs') return 0;
   if (r.rating_type === 'superstar') return 10;
   return Math.max(1, Math.min(5, r.value || 1));
+}
+
+/** Split ratings by type — thumbs counted separately (not part of score). */
+export function summarizeRatings(list: Pick<DeliverableRating, 'rating_type' | 'value'>[]) {
+  let thumbs = 0, stars = 0, superstars = 0, score = 0;
+  list.forEach(r => {
+    if (r.rating_type === 'thumbs') thumbs += 1;
+    else if (r.rating_type === 'superstar') { superstars += 1; score += 10; }
+    else { stars += Math.max(1, Math.min(5, r.value || 1)); score += Math.max(1, Math.min(5, r.value || 1)); }
+  });
+  return { thumbs, stars, superstars, score };
 }
 
 export function useDeliverableRatings() {
