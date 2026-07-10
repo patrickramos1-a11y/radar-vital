@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isActive: row.is_active,
         role: (row as any).role || 'colaborador',
         isCentralOnly: (row as any).is_central_only || false,
+        photoUrl: (row as any).photo_url || null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));
