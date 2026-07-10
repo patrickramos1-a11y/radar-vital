@@ -299,13 +299,35 @@ export function CollaboratorManager() {
                           <>
                             <td className="px-3 py-2">
                               <div className="flex items-center gap-2">
-                                <div
-                                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                                  style={{ backgroundColor: c.color }}
-                                >
-                                  {c.initials}
+                                <div className="relative group shrink-0">
+                                  {c.photoUrl ? (
+                                    <img src={c.photoUrl} alt={c.name} className="w-9 h-9 rounded-full object-cover" />
+                                  ) : (
+                                    <div
+                                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                                      style={{ backgroundColor: c.color }}
+                                    >
+                                      {c.initials}
+                                    </div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => triggerUpload(c.id)}
+                                    disabled={uploadingId === c.id}
+                                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow ring-2 ring-background hover:scale-110 transition"
+                                    title="Enviar foto"
+                                  >
+                                    {uploadingId === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+                                  </button>
                                 </div>
-                                <span className="font-medium text-foreground">{c.name}</span>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-foreground">{c.name}</span>
+                                  {c.photoUrl && (
+                                    <button onClick={() => removePhoto(c.id)} className="text-[10px] text-muted-foreground hover:text-destructive text-left">
+                                      remover foto
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td className="px-3 py-2">
