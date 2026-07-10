@@ -401,6 +401,14 @@ export function CollaboratorManager() {
         )}
       </div>
 
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handlePhotoChange}
+        className="hidden"
+      />
+
       <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
