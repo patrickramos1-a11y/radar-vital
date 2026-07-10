@@ -369,6 +369,7 @@ export type Database = {
           is_active: boolean
           is_central_only: boolean
           name: string
+          photo_url: string | null
           role: string
           updated_at: string
           user_id: string | null
@@ -382,6 +383,7 @@ export type Database = {
           is_active?: boolean
           is_central_only?: boolean
           name: string
+          photo_url?: string | null
           role?: string
           updated_at?: string
           user_id?: string | null
@@ -395,6 +397,7 @@ export type Database = {
           is_active?: boolean
           is_central_only?: boolean
           name?: string
+          photo_url?: string | null
           role?: string
           updated_at?: string
           user_id?: string | null
