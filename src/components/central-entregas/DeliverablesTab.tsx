@@ -85,12 +85,44 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-xs text-muted-foreground">Entregáveis agrupam prioridades e tarefas que precisam ser finalizadas até uma data ou reunião.</p>
         <Button onClick={() => { setEditing(null); setModalOpen(true); }} size="sm" style={{ backgroundColor: color }}>
           <Plus className="w-4 h-4 mr-1" /> Novo entregável
         </Button>
       </div>
+
+      {leaderboard.length > 0 && (
+        <div className="rounded-xl border bg-gradient-to-r from-amber-50 via-white to-amber-50/40 p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="w-4 h-4 text-amber-500" />
+            <h3 className="text-sm font-semibold text-foreground">Ranking de Estrelas</h3>
+            <span className="text-[10px] text-muted-foreground">joinha = 1 · estrela = 1-5 · super estrela = 10</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {leaderboard.map((row, idx) => (
+              <div
+                key={row.name}
+                className={cn(
+                  'flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs',
+                  idx === 0 ? 'bg-amber-100 border-amber-300 text-amber-900 font-semibold' :
+                  idx === 1 ? 'bg-slate-100 border-slate-300 text-slate-800' :
+                  idx === 2 ? 'bg-orange-100 border-orange-300 text-orange-900' :
+                  'bg-white border-border text-muted-foreground'
+                )}
+              >
+                <span className="font-bold">{idx + 1}º</span>
+                <span>{row.name}</span>
+                <span className="flex items-center gap-0.5 font-semibold text-amber-700">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  {row.score}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border bg-card/60 p-8 text-center text-sm text-muted-foreground">
