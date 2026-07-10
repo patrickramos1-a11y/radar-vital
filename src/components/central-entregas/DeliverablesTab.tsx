@@ -1,17 +1,19 @@
 import { useState, useMemo } from 'react';
-import { Deliverable, DeliverableFormData, DELIVERABLE_STATUS_CONFIG, DeliverableStatus } from '@/types/deliverable';
+import { Deliverable, DeliverableFormData, DELIVERABLE_STATUS_CONFIG } from '@/types/deliverable';
 import { Priority } from '@/types/priority';
 import { Task } from '@/types/task';
 import { Client } from '@/types/client';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Calendar as CalendarIcon, Star, CheckSquare, Trophy } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar as CalendarIcon, Star, CheckSquare, Trophy, Package, CheckCircle2, Clock, ThumbsUp, Sparkles, Percent } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DeliverableModal } from './DeliverableModal';
-import { useDeliverableRatings, ratingScore } from '@/hooks/useDeliverableRatings';
+import { useDeliverableRatings, ratingScore, summarizeRatings } from '@/hooks/useDeliverableRatings';
 import { DeliverableRatingControl } from './DeliverableRating';
+import { CollaboratorAvatar } from './CollaboratorAvatar';
+import { KpiCard } from './KpiCard';
 
 interface RespOption { name: string; color: string; initials: string; }
 
@@ -43,20 +45,32 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
     return map;
   }, [ratings]);
 
-  // Leaderboard: aggregate rating scores by assignee (from all deliverables)
+  // Team leaderboard — official points only (stars + super*10)
   const leaderboard = useMemo(() => {
-    const totals = new Map<string, number>();
+    const totals = new Map<string, { score: number; thumbs: number; stars: number; supers: number }>();
     deliverables.forEach(d => {
       const rs = ratingsByDeliv.get(d.id) || [];
-      const score = rs.reduce((s, r) => s + ratingScore(r), 0);
-      if (score === 0) return;
-      const assignees = (d.assigned_to && d.assigned_to.length > 0) ? d.assigned_to : [];
-      // Split score across assignees so a shared deliverable rewards everyone equally
-      const per = assignees.length > 0 ? score / assignees.length : 0;
-      assignees.forEach(a => totals.set(a, (totals.get(a) || 0) + per));
+      if (rs.length === 0) return;
+      const { score, thumbs, stars, superstars } = summarizeRatings(rs);
+      const assignees = d.assigned_to && d.assigned_to.length > 0 ? d.assigned_to : [];
+      if (assignees.length === 0) return;
+      assignees.forEach(a => {
+        const cur = totals.get(a) || { score: 0, thumbs: 0, stars: 0, supers: 0 };
+        cur.score += score / assignees.length;
+        cur.thumbs += thumbs / assignees.length;
+        cur.stars += stars / assignees.length;
+        cur.supers += superstars / assignees.length;
+        totals.set(a, cur);
+      });
     });
     return Array.from(totals.entries())
-      .map(([name, score]) => ({ name, score: Math.round(score * 10) / 10 }))
+      .map(([name, v]) => ({
+        name,
+        score: Math.round(v.score * 10) / 10,
+        thumbs: Math.round(v.thumbs),
+        stars: Math.round(v.stars),
+        supers: Math.round(v.supers),
+      }))
       .sort((a, b) => b.score - a.score);
   }, [deliverables, ratingsByDeliv]);
 
@@ -67,6 +81,17 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
   const filtered = useMemo(() => {
     return deliverables.filter(d => assigneeMatches(d.assigned_to, collaborator));
   }, [deliverables, collaborator]);
+
+  // KPIs for the selected collaborator
+  const kpis = useMemo(() => {
+    const total = filtered.length;
+    const done = filtered.filter(d => d.status === 'concluido').length;
+    const pending = filtered.filter(d => d.status !== 'concluido' && d.status !== 'cancelado').length;
+    const myRatings = filtered.flatMap(d => ratingsByDeliv.get(d.id) || []);
+    const summary = summarizeRatings(myRatings);
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { total, done, pending, pct, ...summary };
+  }, [filtered, ratingsByDeliv]);
 
   const computeProgress = (d: Deliverable) => {
     if (d.items.length === 0) return { done: 0, total: 0, pct: 0 };
@@ -86,23 +111,34 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <p className="text-xs text-muted-foreground">Entregáveis agrupam prioridades e tarefas que precisam ser finalizadas até uma data ou reunião.</p>
+        <p className="text-xs text-muted-foreground">Entregáveis agrupam prioridades e tarefas até uma data ou reunião. Avaliação libera após conclusão.</p>
         <Button onClick={() => { setEditing(null); setModalOpen(true); }} size="sm" style={{ backgroundColor: color }}>
           <Plus className="w-4 h-4 mr-1" /> Novo entregável
         </Button>
+      </div>
+
+      {/* Individual KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+        <KpiCard label="Total" value={kpis.total} icon={Package} color={color} />
+        <KpiCard label="Concluídos" value={kpis.done} icon={CheckCircle2} variant="success" />
+        <KpiCard label="Pendentes" value={kpis.pending} icon={Clock} />
+        <KpiCard label="% Conclusão" value={`${kpis.pct}%`} icon={Percent} color={color} />
+        <KpiCard label="Joinhas" value={kpis.thumbs} icon={ThumbsUp} />
+        <KpiCard label="Estrelas" value={kpis.stars} icon={Star} />
+        <KpiCard label="Super Estrelas" value={kpis.superstars} icon={Sparkles} />
+        <KpiCard label="Pontuação Oficial" value={kpis.score} icon={Trophy} variant="success" />
       </div>
 
       {leaderboard.length > 0 && (
         <div className="rounded-xl border bg-gradient-to-r from-amber-50 via-white to-amber-50/40 p-3">
           <div className="flex items-center gap-2 mb-2">
             <Trophy className="w-4 h-4 text-amber-500" />
-            <h3 className="text-sm font-semibold text-foreground">Ranking de Estrelas</h3>
-            <span className="text-[10px] text-muted-foreground">joinha = 1 · estrela = 1-5 · super estrela = 10</span>
+            <h3 className="text-sm font-semibold text-foreground">Ranking Oficial de Pontos</h3>
+            <span className="text-[10px] text-muted-foreground">estrela = 1-5 pts · super estrela = 10 pts · joinha = reconhecimento</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {leaderboard.map((row, idx) => (
-              <div
-                key={row.name}
+              <div key={row.name}
                 className={cn(
                   'flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs',
                   idx === 0 ? 'bg-amber-100 border-amber-300 text-amber-900 font-semibold' :
@@ -112,17 +148,27 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
                 )}
               >
                 <span className="font-bold">{idx + 1}º</span>
+                <CollaboratorAvatar name={row.name} size={20} />
                 <span>{row.name}</span>
                 <span className="flex items-center gap-0.5 font-semibold text-amber-700">
                   <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                   {row.score}
                 </span>
+                {row.supers > 0 && (
+                  <span className="flex items-center gap-0.5 text-orange-700">
+                    <Sparkles className="w-3 h-3" />{row.supers}
+                  </span>
+                )}
+                {row.thumbs > 0 && (
+                  <span className="flex items-center gap-0.5 text-emerald-700">
+                    <ThumbsUp className="w-3 h-3" />{row.thumbs}
+                  </span>
+                )}
               </div>
             ))}
           </div>
         </div>
       )}
-
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border bg-card/60 p-8 text-center text-sm text-muted-foreground">
@@ -133,6 +179,7 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
           {filtered.map(d => {
             const cfg = DELIVERABLE_STATUS_CONFIG[d.status];
             const prog = computeProgress(d);
+            const ratingDisabled = d.status !== 'concluido';
             return (
               <div key={d.id} className="rounded-xl border bg-card p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -150,13 +197,20 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5 mb-2">
+                <div className="flex flex-wrap gap-1.5 mb-2 items-center">
                   <span className={cn('text-[10px] px-2 py-0.5 rounded font-medium', cfg.bgClass, cfg.textClass)}>{cfg.label}</span>
                   {d.due_date && (
                     <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-muted text-muted-foreground flex items-center gap-1">
                       <CalendarIcon className="w-3 h-3" />
                       {format(new Date(d.due_date), 'dd/MM/yyyy', { locale: ptBR })}
                     </span>
+                  )}
+                  {d.assigned_to && d.assigned_to.length > 0 && (
+                    <div className="flex -space-x-1.5 ml-auto">
+                      {d.assigned_to.slice(0, 4).map(a => (
+                        <CollaboratorAvatar key={a} name={a} size={20} ring />
+                      ))}
+                    </div>
                   )}
                 </div>
 
@@ -207,6 +261,7 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
                   deliverableId={d.id}
                   ratings={ratingsByDeliv.get(d.id) || []}
                   currentUser={currentUser}
+                  disabled={ratingDisabled}
                   onRate={rate}
                   onRemove={removeRating}
                 />
@@ -215,7 +270,6 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
           })}
         </div>
       )}
-
 
       <DeliverableModal
         open={modalOpen}
