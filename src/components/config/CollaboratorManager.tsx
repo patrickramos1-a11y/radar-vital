@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react';
-import { Users, Plus, Pencil, Trash2, Search, ChevronDown, X, Check } from 'lucide-react';
+import { useState, useMemo, useRef } from 'react';
+import { Users, Plus, Pencil, Trash2, Search, ChevronDown, X, Check, Camera, Loader2 } from 'lucide-react';
 import { useCollaborators } from '@/hooks/useCollaborators';
 import { generateCollaboratorInitials, generateCollaboratorColor } from '@/types/collaborator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,6 +87,52 @@ export function CollaboratorManager() {
 
   const toggleActive = async (c: typeof collaborators[0]) => {
     await updateCollaborator(c.id, { isActive: !c.isActive });
+  };
+
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [pendingUploadId, setPendingUploadId] = useState<string | null>(null);
+
+  const triggerUpload = (id: string) => {
+    setPendingUploadId(id);
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const id = pendingUploadId;
+    e.target.value = '';
+    if (!file || !id) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Formato inválido. Use JPG, PNG ou WEBP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Arquivo muito grande (máx 5MB).');
+      return;
+    }
+    setUploadingId(id);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('collaborator-photos').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data } = await supabase.storage.from('collaborator-photos').createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      const url = data?.signedUrl;
+      if (!url) throw new Error('Não foi possível gerar a URL da foto.');
+      await updateCollaborator(id, { photoUrl: url });
+      toast.success('Foto atualizada');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Erro ao enviar foto');
+    } finally {
+      setUploadingId(null);
+      setPendingUploadId(null);
+    }
+  };
+
+  const removePhoto = async (id: string) => {
+    await updateCollaborator(id, { photoUrl: null });
   };
 
   return (
@@ -251,13 +299,35 @@ export function CollaboratorManager() {
                           <>
                             <td className="px-3 py-2">
                               <div className="flex items-center gap-2">
-                                <div
-                                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                                  style={{ backgroundColor: c.color }}
-                                >
-                                  {c.initials}
+                                <div className="relative group shrink-0">
+                                  {c.photoUrl ? (
+                                    <img src={c.photoUrl} alt={c.name} className="w-9 h-9 rounded-full object-cover" />
+                                  ) : (
+                                    <div
+                                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                                      style={{ backgroundColor: c.color }}
+                                    >
+                                      {c.initials}
+                                    </div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => triggerUpload(c.id)}
+                                    disabled={uploadingId === c.id}
+                                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow ring-2 ring-background hover:scale-110 transition"
+                                    title="Enviar foto"
+                                  >
+                                    {uploadingId === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+                                  </button>
                                 </div>
-                                <span className="font-medium text-foreground">{c.name}</span>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-foreground">{c.name}</span>
+                                  {c.photoUrl && (
+                                    <button onClick={() => removePhoto(c.id)} className="text-[10px] text-muted-foreground hover:text-destructive text-left">
+                                      remover foto
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td className="px-3 py-2">
@@ -330,6 +400,14 @@ export function CollaboratorManager() {
           </div>
         )}
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handlePhotoChange}
+        className="hidden"
+      />
 
       <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <AlertDialogContent>
