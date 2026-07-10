@@ -89,6 +89,52 @@ export function CollaboratorManager() {
     await updateCollaborator(c.id, { isActive: !c.isActive });
   };
 
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [pendingUploadId, setPendingUploadId] = useState<string | null>(null);
+
+  const triggerUpload = (id: string) => {
+    setPendingUploadId(id);
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const id = pendingUploadId;
+    e.target.value = '';
+    if (!file || !id) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Formato inválido. Use JPG, PNG ou WEBP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Arquivo muito grande (máx 5MB).');
+      return;
+    }
+    setUploadingId(id);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('collaborator-photos').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data } = await supabase.storage.from('collaborator-photos').createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      const url = data?.signedUrl;
+      if (!url) throw new Error('Não foi possível gerar a URL da foto.');
+      await updateCollaborator(id, { photoUrl: url });
+      toast.success('Foto atualizada');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Erro ao enviar foto');
+    } finally {
+      setUploadingId(null);
+      setPendingUploadId(null);
+    }
+  };
+
+  const removePhoto = async (id: string) => {
+    await updateCollaborator(id, { photoUrl: null });
+  };
+
   return (
     <>
       <div className="admin-card mb-6">
