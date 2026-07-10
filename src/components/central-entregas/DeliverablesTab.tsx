@@ -31,6 +31,34 @@ interface Props {
 export function DeliverablesTab({ collaborator, color, deliverables, priorities, tasks, clients, responsibleList, onCreate, onUpdate, onDelete }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Deliverable | null>(null);
+  const { ratings, rate, removeRating, currentUser } = useDeliverableRatings();
+
+  const ratingsByDeliv = useMemo(() => {
+    const map = new Map<string, typeof ratings>();
+    ratings.forEach(r => {
+      const arr = map.get(r.deliverable_id) || [];
+      arr.push(r);
+      map.set(r.deliverable_id, arr);
+    });
+    return map;
+  }, [ratings]);
+
+  // Leaderboard: aggregate rating scores by assignee (from all deliverables)
+  const leaderboard = useMemo(() => {
+    const totals = new Map<string, number>();
+    deliverables.forEach(d => {
+      const rs = ratingsByDeliv.get(d.id) || [];
+      const score = rs.reduce((s, r) => s + ratingScore(r), 0);
+      if (score === 0) return;
+      const assignees = (d.assigned_to && d.assigned_to.length > 0) ? d.assigned_to : [];
+      // Split score across assignees so a shared deliverable rewards everyone equally
+      const per = assignees.length > 0 ? score / assignees.length : 0;
+      assignees.forEach(a => totals.set(a, (totals.get(a) || 0) + per));
+    });
+    return Array.from(totals.entries())
+      .map(([name, score]) => ({ name, score: Math.round(score * 10) / 10 }))
+      .sort((a, b) => b.score - a.score);
+  }, [deliverables, ratingsByDeliv]);
 
   const priorityMap = useMemo(() => new Map(priorities.map(p => [p.id, p])), [priorities]);
   const taskMap = useMemo(() => new Map(tasks.map(t => [t.id, t])), [tasks]);
