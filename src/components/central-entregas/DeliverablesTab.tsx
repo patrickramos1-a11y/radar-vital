@@ -5,11 +5,13 @@ import { Task } from '@/types/task';
 import { Client } from '@/types/client';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Calendar as CalendarIcon, Star, CheckSquare } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar as CalendarIcon, Star, CheckSquare, Trophy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DeliverableModal } from './DeliverableModal';
+import { useDeliverableRatings, ratingScore } from '@/hooks/useDeliverableRatings';
+import { DeliverableRatingControl } from './DeliverableRating';
 
 interface RespOption { name: string; color: string; initials: string; }
 
@@ -29,6 +31,34 @@ interface Props {
 export function DeliverablesTab({ collaborator, color, deliverables, priorities, tasks, clients, responsibleList, onCreate, onUpdate, onDelete }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Deliverable | null>(null);
+  const { ratings, rate, removeRating, currentUser } = useDeliverableRatings();
+
+  const ratingsByDeliv = useMemo(() => {
+    const map = new Map<string, typeof ratings>();
+    ratings.forEach(r => {
+      const arr = map.get(r.deliverable_id) || [];
+      arr.push(r);
+      map.set(r.deliverable_id, arr);
+    });
+    return map;
+  }, [ratings]);
+
+  // Leaderboard: aggregate rating scores by assignee (from all deliverables)
+  const leaderboard = useMemo(() => {
+    const totals = new Map<string, number>();
+    deliverables.forEach(d => {
+      const rs = ratingsByDeliv.get(d.id) || [];
+      const score = rs.reduce((s, r) => s + ratingScore(r), 0);
+      if (score === 0) return;
+      const assignees = (d.assigned_to && d.assigned_to.length > 0) ? d.assigned_to : [];
+      // Split score across assignees so a shared deliverable rewards everyone equally
+      const per = assignees.length > 0 ? score / assignees.length : 0;
+      assignees.forEach(a => totals.set(a, (totals.get(a) || 0) + per));
+    });
+    return Array.from(totals.entries())
+      .map(([name, score]) => ({ name, score: Math.round(score * 10) / 10 }))
+      .sort((a, b) => b.score - a.score);
+  }, [deliverables, ratingsByDeliv]);
 
   const priorityMap = useMemo(() => new Map(priorities.map(p => [p.id, p])), [priorities]);
   const taskMap = useMemo(() => new Map(tasks.map(t => [t.id, t])), [tasks]);
@@ -55,12 +85,44 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-xs text-muted-foreground">Entregáveis agrupam prioridades e tarefas que precisam ser finalizadas até uma data ou reunião.</p>
         <Button onClick={() => { setEditing(null); setModalOpen(true); }} size="sm" style={{ backgroundColor: color }}>
           <Plus className="w-4 h-4 mr-1" /> Novo entregável
         </Button>
       </div>
+
+      {leaderboard.length > 0 && (
+        <div className="rounded-xl border bg-gradient-to-r from-amber-50 via-white to-amber-50/40 p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="w-4 h-4 text-amber-500" />
+            <h3 className="text-sm font-semibold text-foreground">Ranking de Estrelas</h3>
+            <span className="text-[10px] text-muted-foreground">joinha = 1 · estrela = 1-5 · super estrela = 10</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {leaderboard.map((row, idx) => (
+              <div
+                key={row.name}
+                className={cn(
+                  'flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs',
+                  idx === 0 ? 'bg-amber-100 border-amber-300 text-amber-900 font-semibold' :
+                  idx === 1 ? 'bg-slate-100 border-slate-300 text-slate-800' :
+                  idx === 2 ? 'bg-orange-100 border-orange-300 text-orange-900' :
+                  'bg-white border-border text-muted-foreground'
+                )}
+              >
+                <span className="font-bold">{idx + 1}º</span>
+                <span>{row.name}</span>
+                <span className="flex items-center gap-0.5 font-semibold text-amber-700">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  {row.score}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border bg-card/60 p-8 text-center text-sm text-muted-foreground">
@@ -140,11 +202,20 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
                     </div>
                   </details>
                 )}
+
+                <DeliverableRatingControl
+                  deliverableId={d.id}
+                  ratings={ratingsByDeliv.get(d.id) || []}
+                  currentUser={currentUser}
+                  onRate={rate}
+                  onRemove={removeRating}
+                />
               </div>
             );
           })}
         </div>
       )}
+
 
       <DeliverableModal
         open={modalOpen}

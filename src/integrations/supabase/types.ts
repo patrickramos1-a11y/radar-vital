@@ -433,6 +433,44 @@ export type Database = {
           },
         ]
       }
+      deliverable_ratings: {
+        Row: {
+          created_at: string
+          deliverable_id: string
+          id: string
+          rater_name: string
+          rating_type: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          deliverable_id: string
+          id?: string
+          rater_name: string
+          rating_type: string
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          created_at?: string
+          deliverable_id?: string
+          id?: string
+          rater_name?: string
+          rating_type?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverable_ratings_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deliverables: {
         Row: {
           assigned_to: string[]
