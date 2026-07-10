@@ -5,11 +5,13 @@ import { Task } from '@/types/task';
 import { Client } from '@/types/client';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Calendar as CalendarIcon, Star, CheckSquare } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar as CalendarIcon, Star, CheckSquare, Trophy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DeliverableModal } from './DeliverableModal';
+import { useDeliverableRatings, ratingScore } from '@/hooks/useDeliverableRatings';
+import { DeliverableRatingControl } from './DeliverableRating';
 
 interface RespOption { name: string; color: string; initials: string; }
 
