@@ -202,11 +202,20 @@ export function DeliverablesTab({ collaborator, color, deliverables, priorities,
                     </div>
                   </details>
                 )}
+
+                <DeliverableRatingControl
+                  deliverableId={d.id}
+                  ratings={ratingsByDeliv.get(d.id) || []}
+                  currentUser={currentUser}
+                  onRate={rate}
+                  onRemove={removeRating}
+                />
               </div>
             );
           })}
         </div>
       )}
+
 
       <DeliverableModal
         open={modalOpen}
