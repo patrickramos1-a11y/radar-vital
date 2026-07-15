@@ -160,8 +160,34 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
                   </button>
                 );
               })}
+          </div>
+
+          <div>
+            <Label>Solicitante <span className="text-xs text-muted-foreground font-normal">(opcional — apenas visual)</span></Label>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              <button type="button" onClick={() => setRequester(null)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium border ${!requester ? 'bg-muted text-foreground border-foreground/30' : 'bg-background hover:bg-muted text-muted-foreground'}`}>
+                Nenhum
+              </button>
+              {responsibleList.map(r => {
+                const selected = requester && normalizeAssignee(requester) === normalizeAssignee(r.name);
+                return (
+                  <button key={r.name} type="button" onClick={() => setRequester(r.name)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium border ${selected ? 'text-white' : 'bg-background hover:bg-muted'}`}
+                    style={selected ? { backgroundColor: r.color, borderColor: r.color } : {}}>
+                    {r.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
+
+          {durationInfo && (
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+              ⏱ {durationInfo}
+            </div>
+          )}
+
 
           <div>
             <div className="flex items-center justify-between mb-1">
