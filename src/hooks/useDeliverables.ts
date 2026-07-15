@@ -62,10 +62,11 @@ export function useDeliverables() {
         name: data.name,
         description: data.description || null,
         assigned_to: data.assigned_to || [],
+        requester: data.requester || null,
         due_date: data.due_date || null,
         status: data.status || 'aberto',
         created_by: getCurrentUserName(),
-      }).select().single();
+      } as any).select().single();
       if (error) throw error;
       if (data.items && data.items.length > 0) {
         await supabase.from('deliverable_items').insert(
