@@ -1,91 +1,63 @@
+# Evolução dos Entregáveis — Filtros, Solicitante e Duração
 
-# Redesign da Central de Entregas
+## 1. Banco de dados (migração)
 
-Objetivo: transformar a página numa **central operacional executiva** — leitura rápida, hierarquia clara entre "ação agora" e "histórico", com logos de clientes em todos os itens e gamificação forte na aba Performance.
+Adicionar coluna `requester` (texto simples) na tabela `deliverables`:
 
-Sobre o comentário final: não consigo executar `git pull` — o ambiente de trabalho é gerido pela plataforma, não por git manual. Farei o redesign sobre o código atual desta workspace. Se houver alterações feitas via Codex que ainda não estão aqui, elas precisam vir pela sincronização da plataforma antes. Sobre publicar: ao final apresento o botão de publish.
+- `requester TEXT NULL` — nome do colaborador solicitante. Opcional. Não afeta permissões nem status.
+- Não altera lógica de responsáveis (`assigned_to`) nem de avaliação.
+- Duração real é calculada em runtime a partir de `created_at` e `completed_at` — não precisa de coluna nova.
 
----
+## 2. Cadastro / edição (DeliverableModal)
 
-## 1. Estrutura nova de `CentralEntregas.tsx`
+- Novo campo **Solicitante** (opcional, seleção única) logo abaixo de Responsáveis. Fonte: mesma lista de colaboradores já usada em Responsáveis (inclui os que não participam do painel). Botão "Nenhum" para limpar.
+- Preview de duração ao editar: se em aberto, mostra "X dias em aberto"; se concluído, mostra "concluído em Y dias".
+- Sem input manual de duração — cálculo é automático.
+
+## 3. Card do entregável (DeliverablesTab)
+
+Adicionar duas informações ao card, em linha discreta abaixo do nome/descrição:
+
+- **Solicitante** (quando existir): chip pequeno com avatar/inicial + nome, prefixado por "Solicitado por".
+- **Dias**: 
+  - Em aberto/andamento → `Ícone relógio + "X dias em aberto"`.
+  - Concluído → `"concluído em Y dias"` (usa `completed_at - created_at`).
+  - Cancelado → oculto.
+
+## 4. Barra de filtros (nova, acima da lista de entregáveis)
+
+Barra compacta com múltiplos grupos, todos multi-seleção (chips clicáveis):
+
+- **Status**: Aberto · Em andamento · Concluído · Cancelado. (Substitui o toggle atual "incluir concluídos".)
+- **Avaliação**: Joinha · Estrela · Super Estrela — filtra entregáveis que receberam pelo menos uma daquele tipo.
+- **Sem avaliação** (dois toggles independentes):
+  - `Sem nenhuma avaliação` — entregáveis concluídos com 0 avaliações totais.
+  - `Não avaliei ainda` — entregáveis concluídos onde o usuário logado ainda não deu sua avaliação.
+- **Solicitante**: dropdown multi-select com lista de colaboradores que aparecem como solicitantes.
+
+Regras:
+
+- Filtros combinam com **AND** entre grupos e **OR** dentro do mesmo grupo.
+- Botão "Limpar filtros" quando algum estiver ativo.
+- Contador "N de M entregáveis" ao lado.
+
+## 5. KPIs da aba (mini-cards existentes)
+
+Continuam refletindo o colaborador selecionado, mas passam a respeitar os filtros ativos (Total, Concluídos, Pendentes, % Conclusão, Joinhas, Estrelas, Super, Pontos).
+
+## Arquivos afetados
 
 ```text
-┌────────────────────────────────────────────────────────────────┐
-│  HEADER + RESUMO GLOBAL (KPIs da equipe + destaques do mês)   │
-├────────────────────────────────────────────────────────────────┤
-│  SELETOR RICO DE COLABORADORES (chips com stats + botão EQUIPE)│
-├────────────────────────────────────────────────────────────────┤
-│  PAINEL DO SELECIONADO (visão geral rápida — "ação agora")     │
-├────────────────────────────────────────────────────────────────┤
-│  ABAS: Prioridades | Tarefas | Comentários | Entregáveis |     │
-│        Histórico | Performance                                 │
-└────────────────────────────────────────────────────────────────┘
+supabase/migrations/…_add_requester_to_deliverables.sql   (novo)
+src/types/deliverable.ts                                  (+ requester)
+src/hooks/useDeliverables.ts                              (map/insert/update requester)
+src/components/central-entregas/DeliverableModal.tsx      (campo Solicitante + preview duração)
+src/components/central-entregas/DeliverablesTab.tsx       (barra de filtros + KPIs filtrados)
+src/components/central-entregas/DeliverableCard*          (solicitante + dias no card — inline em DeliverablesTab)
 ```
 
-O modo **EQUIPE** (novo) substitui a lógica atual de "colaborador default = Patrick" e mostra visão consolidada.
+## Fora de escopo
 
----
-
-## 2. Componentes a criar
-
-- `central-entregas/GlobalSummary.tsx` — 6 KPIs no topo:
-  - Tarefas abertas (total equipe)
-  - Prioridades abertas
-  - Entregáveis concluídos (mês)
-  - Comentários pendentes
-  - 🏆 Melhor performance do mês (nome + score)
-  - ⭐ Mais estrelas (nome + total)
-- `central-entregas/CollaboratorChip.tsx` — chip rico com avatar/foto, nome, badges (tarefas, prioridades, score). Estado ativo destacado.
-- `central-entregas/TeamSelector.tsx` — substitui `ResponsibleSelector`. Grid de chips + botão "Equipe" (visão geral).
-- `central-entregas/CollaboratorPanel.tsx` — painel-síntese acima das abas com 8 mini-KPIs: clientes, tarefas abertas, prioridades, tarefas concluídas, entregáveis, comentários pendentes, atrasados, pontuação.
-- `central-entregas/ClientCell.tsx` — célula reutilizável com logo + nome (usada em todas as tabelas).
-- `central-entregas/HistoryTab.tsx` — nova aba (concluídos, prioridades fechadas, comentários resolvidos, entregáveis; colapsada por padrão, filtro por período).
-- `central-entregas/TeamOverview.tsx` — quando "Equipe" está selecionada, mostra ranking + comparativos.
-
-## 3. Componentes existentes a refatorar
-
-- **`PrioritiesTab.tsx`** — vira tabela executiva compacta: coluna Prioridade | Cliente (logo+nome) | Prazo | Dias | Nível | Ações. Ordenação por criticidade (nível desc, prazo asc, dias desc). Concluídas ficam no `HistoryTab`.
-- **`TasksTab.tsx`** — adicionar coluna cliente com logo (`ClientCell`); botão "Nova tarefa" abrindo modal reutilizando `TaskModal` existente; toggle concluir inline (`useTasks.toggleComplete`). Concluídas movem-se para Histórico (filtro atual "Concluídas" removido daqui).
-- **`CommentsTab.tsx`** — visual tipo caixa de entrada: linha com logo cliente + autor + preview + data + chip de status. Ações se já existirem no sistema.
-- **`DeliverablesTab.tsx`** — separar em dois blocos: "Ranking oficial da equipe" (mantido) + lista de entregáveis do colaborador com logo do cliente. Concluídos ficam aqui; leaderboard fica também na aba Performance.
-- **`PerformanceTab.tsx`** — reformular com dois modos:
-  - **Individual**: cards de gamificação (⭐ estrelas, 👍 joinhas, ✨ super), tempo médio, taxa de conclusão, atrasados, evolução mês (gráfico existente), evolução ano (novo, agrupar por mês).
-  - **Equipe**: 6 rankings lado a lado — estrelas, joinhas, entregáveis, prioridades concluídas, menor atraso médio, ranking geral (score composto).
-- **`OverviewTab.tsx`** — enxugar; virar o `CollaboratorPanel` acima das abas (deixa de ser aba própria).
-
-## 4. Modo Equipe
-
-Quando `selected === 'EQUIPE'`:
-- `CollaboratorPanel` esconde-se; aparece `TeamOverview`.
-- Abas Prioridades/Tarefas/Comentários/Entregáveis mostram dados **de todos**, com coluna "Responsável" adicional.
-- Performance vai direto para a visão de equipe.
-
-## 5. Design tokens & visual
-
-- Sem cards enormes: mais tabelas densas com bom espaçamento, chips e badges.
-- Status: chips em `bg-*/10 text-*` (âmbar=pendente, verde=concluído, vermelho=atrasado/crítico, azul=prioridade).
-- Itens concluídos: opacidade reduzida (`opacity-60`), sem line-through agressivo.
-- Atrasados: borda-l vermelha + badge "Atrasado Xd".
-- Logo cliente: componente já disponível via `Client.logo` — fallback com iniciais.
-- Toda cor vem de tokens (`primary`, `muted`, etc.) — sem hex hardcoded.
-- Responsivo: seletor vira scroll horizontal em mobile; tabelas ganham scroll-x.
-
-## 6. Sem mudanças de banco
-
-Todos os dados necessários já existem: `tasks`, `priorities`, `deliverables`, `deliverable_ratings`, `client_comments`, `clients` (com `logo`), `collaborators` (com `photo_url`). Nenhuma migration nesta rodada.
-
-## 7. Compatibilidade
-
-- Rotas: `/central-entregas` mantida.
-- Hooks: `useTasks`, `usePriorities`, `useDeliverables`, `useDeliverableRatings`, `useCollaborators`, `useClients` — reaproveitados sem alterar assinatura.
-- Nada removido; apenas reorganizado.
-
-## Detalhes técnicos
-
-- Novo estado em `CentralEntregas.tsx`: `selected: string | 'EQUIPE'`.
-- Novo hook utilitário `useCentralStats(collaborator | 'EQUIPE')` (local no arquivo da página, sem file novo) que agrega KPIs a partir dos hooks existentes.
-- `HistoryTab` usa `Collapsible` do shadcn, default `closed`, com filtros: últimos 7/30/90 dias.
-- Ranking geral (Performance/Equipe) = `estrelas*1 + super*10 + entregáveis*2 + prioridadesConcluídas*3 - atrasados*1`. Fórmula documentada dentro do componente.
-- Publish sugerido ao final via `presentation-open-publish`.
-
-Confirma que posso implementar exatamente isso?
+- Nenhuma alteração em Prioridades, Tarefas, Comentários, Performance ou Histórico.
+- Sem mudança em permissões/RLS.
+- Sem alteração no cálculo de pontuação/ranking.
