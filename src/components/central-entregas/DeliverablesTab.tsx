@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Deliverable, DeliverableFormData, DELIVERABLE_STATUS_CONFIG } from '@/types/deliverable';
+import { Deliverable, DeliverableFormData, DeliverableStatus, DELIVERABLE_STATUS_CONFIG } from '@/types/deliverable';
 import { Priority } from '@/types/priority';
 import { Task } from '@/types/task';
 import { Client } from '@/types/client';
-import { assigneeMatches } from '@/lib/taskAssignee';
+import { assigneeMatches, normalizeAssignee } from '@/lib/taskAssignee';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Calendar as CalendarIcon, Star, CheckSquare, Package, CheckCircle2, Clock, ThumbsUp, Sparkles, Percent, Trophy } from 'lucide-react';
+import { Plus, Pencil, Trash2, Calendar as CalendarIcon, Star, CheckSquare, Package, CheckCircle2, Clock, ThumbsUp, Sparkles, Percent, Trophy, X, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -32,10 +32,16 @@ interface Props {
   onDelete: (id: string) => Promise<boolean>;
 }
 
+type RatingFilter = 'thumbs' | 'star' | 'superstar';
+
 export function DeliverablesTab({ collaborator, color, isTeamView, deliverables, priorities, tasks, clients, responsibleList, onCreate, onUpdate, onDelete }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Deliverable | null>(null);
-  const [showDone, setShowDone] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<Set<DeliverableStatus>>(new Set(['aberto', 'em_andamento', 'concluido']));
+  const [ratingFilter, setRatingFilter] = useState<Set<RatingFilter>>(new Set());
+  const [noRatingAtAll, setNoRatingAtAll] = useState(false);
+  const [notRatedByMe, setNotRatedByMe] = useState(false);
+  const [requesterFilter, setRequesterFilter] = useState<Set<string>>(new Set());
   const { ratings, rate, removeRating, currentUser } = useDeliverableRatings();
 
   const ratingsByDeliv = useMemo(() => {
@@ -52,7 +58,6 @@ export function DeliverablesTab({ collaborator, color, isTeamView, deliverables,
   const taskMap = useMemo(() => new Map(tasks.map(t => [t.id, t])), [tasks]);
   const clientById = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
 
-  // Infer a "primary client" for a deliverable via its linked items
   const clientForDeliverable = (d: Deliverable): Client | undefined => {
     for (const it of d.items) {
       if (it.item_type === 'task') {
@@ -66,11 +71,52 @@ export function DeliverablesTab({ collaborator, color, isTeamView, deliverables,
     return undefined;
   };
 
+  // Requesters that actually appear (for the filter dropdown)
+  const availableRequesters = useMemo(() => {
+    const set = new Set<string>();
+    deliverables.forEach(d => { if (d.requester) set.add(d.requester); });
+    return Array.from(set).sort();
+  }, [deliverables]);
+
   const filtered = useMemo(() => {
     let list = deliverables.filter(d => isTeamView ? true : assigneeMatches(d.assigned_to, collaborator));
-    if (!showDone) list = list.filter(d => d.status !== 'concluido' && d.status !== 'cancelado');
+
+    // status filter (multi)
+    if (statusFilter.size > 0) list = list.filter(d => statusFilter.has(d.status));
+
+    // requester filter (multi)
+    if (requesterFilter.size > 0) {
+      list = list.filter(d => d.requester && requesterFilter.has(d.requester));
+    }
+
+    // rating type filter (multi) — has at least one of the selected types
+    if (ratingFilter.size > 0) {
+      list = list.filter(d => {
+        const rs = ratingsByDeliv.get(d.id) || [];
+        return rs.some(r => ratingFilter.has(r.rating_type as RatingFilter));
+      });
+    }
+
+    // no rating at all (concluded only)
+    if (noRatingAtAll) {
+      list = list.filter(d => d.status === 'concluido' && (ratingsByDeliv.get(d.id) || []).length === 0);
+    }
+    // not rated by me (concluded only)
+    if (notRatedByMe) {
+      list = list.filter(d => {
+        if (d.status !== 'concluido') return false;
+        const rs = ratingsByDeliv.get(d.id) || [];
+        return !rs.some(r => r.rater_name.toLowerCase() === currentUser.toLowerCase());
+      });
+    }
+
     return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [deliverables, collaborator, isTeamView, showDone]);
+  }, [deliverables, collaborator, isTeamView, statusFilter, ratingFilter, noRatingAtAll, notRatedByMe, requesterFilter, ratingsByDeliv, currentUser]);
+
+  const totalForCollab = useMemo(
+    () => deliverables.filter(d => isTeamView ? true : assigneeMatches(d.assigned_to, collaborator)).length,
+    [deliverables, collaborator, isTeamView]
+  );
 
   const kpis = useMemo(() => {
     const total = filtered.length;
@@ -92,18 +138,99 @@ export function DeliverablesTab({ collaborator, color, isTeamView, deliverables,
     return { done, total: d.items.length, pct: Math.round((done / d.items.length) * 100) };
   };
 
+  const daysInfo = (d: Deliverable): string | null => {
+    if (d.status === 'cancelado') return null;
+    const start = new Date(d.created_at).getTime();
+    if (d.status === 'concluido' && d.completed_at) {
+      const days = Math.max(0, Math.round((new Date(d.completed_at).getTime() - start) / 86400000));
+      return `concluído em ${days}d`;
+    }
+    const days = Math.max(0, Math.round((Date.now() - start) / 86400000));
+    return `${days}d em aberto`;
+  };
+
+  const requesterColor = (name: string) => responsibleList.find(r => normalizeAssignee(r.name) === normalizeAssignee(name))?.color;
+
+  const toggle = <T,>(set: Set<T>, setSet: (s: Set<T>) => void, v: T) => {
+    const next = new Set(set);
+    if (next.has(v)) next.delete(v); else next.add(v);
+    setSet(next);
+  };
+
+  const anyFilterActive =
+    statusFilter.size !== 3 ||
+    ratingFilter.size > 0 ||
+    noRatingAtAll ||
+    notRatedByMe ||
+    requesterFilter.size > 0;
+
+  const clearFilters = () => {
+    setStatusFilter(new Set(['aberto', 'em_andamento', 'concluido']));
+    setRatingFilter(new Set());
+    setNoRatingAtAll(false);
+    setNotRatedByMe(false);
+    setRequesterFilter(new Set());
+  };
+
+  const chip = (active: boolean, onClick: () => void, label: React.ReactNode, tone?: string) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'px-2.5 py-1 rounded-full text-[11px] font-medium border transition',
+        active ? 'text-white shadow-sm' : 'bg-background hover:bg-muted text-muted-foreground border-border'
+      )}
+      style={active && tone ? { backgroundColor: tone, borderColor: tone } : {}}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-xs text-muted-foreground">Entregáveis agrupam prioridades e tarefas. Avaliação libera após conclusão.</p>
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1 text-xs text-muted-foreground">
-            <input type="checkbox" checked={showDone} onChange={e => setShowDone(e.target.checked)} />
-            incluir concluídos
-          </label>
-          <Button onClick={() => { setEditing(null); setModalOpen(true); }} size="sm" style={{ backgroundColor: color }}>
-            <Plus className="w-4 h-4 mr-1" /> Novo entregável
-          </Button>
+        <Button onClick={() => { setEditing(null); setModalOpen(true); }} size="sm" style={{ backgroundColor: color }}>
+          <Plus className="w-4 h-4 mr-1" /> Novo entregável
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="rounded-xl border bg-card/60 p-3 space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold w-20">Status</span>
+          {(Object.keys(DELIVERABLE_STATUS_CONFIG) as DeliverableStatus[]).map(s => {
+            const cfg = DELIVERABLE_STATUS_CONFIG[s];
+            return chip(statusFilter.has(s), () => toggle(statusFilter, setStatusFilter, s), cfg.label, cfg.color);
+          })}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold w-20">Avaliação</span>
+          {chip(ratingFilter.has('thumbs'), () => toggle(ratingFilter, setRatingFilter, 'thumbs'), <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />Joinha</span>, '#10B981')}
+          {chip(ratingFilter.has('star'), () => toggle(ratingFilter, setRatingFilter, 'star'), <span className="flex items-center gap-1"><Star className="w-3 h-3" />Estrela</span>, '#F59E0B')}
+          {chip(ratingFilter.has('superstar'), () => toggle(ratingFilter, setRatingFilter, 'superstar'), <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" />Super</span>, '#F97316')}
+          <span className="w-px h-4 bg-border mx-1" />
+          {chip(noRatingAtAll, () => setNoRatingAtAll(v => !v), 'Sem nenhuma avaliação', '#64748B')}
+          {chip(notRatedByMe, () => setNotRatedByMe(v => !v), 'Não avaliei ainda', '#0EA5E9')}
+        </div>
+        {availableRequesters.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold w-20">Solicitante</span>
+            {availableRequesters.map(name => chip(
+              requesterFilter.has(name),
+              () => toggle(requesterFilter, setRequesterFilter, name),
+              name,
+              requesterColor(name),
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-between pt-1 border-t border-dashed">
+          <span className="text-[11px] text-muted-foreground">{filtered.length} de {totalForCollab} entregáveis</span>
+          {anyFilterActive && (
+            <button onClick={clearFilters} className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1">
+              <X className="w-3 h-3" /> Limpar filtros
+            </button>
+          )}
         </div>
       </div>
 
@@ -130,6 +257,7 @@ export function DeliverablesTab({ collaborator, color, isTeamView, deliverables,
             const client = clientForDeliverable(d);
             const ratingDisabled = d.status !== 'concluido';
             const done = d.status === 'concluido' || d.status === 'cancelado';
+            const dayText = daysInfo(d);
             return (
               <div key={d.id} className={cn('rounded-xl border bg-card p-4 hover:shadow-md transition-shadow', done && 'opacity-80')}>
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -158,12 +286,26 @@ export function DeliverablesTab({ collaborator, color, isTeamView, deliverables,
                       <CalendarIcon className="w-3 h-3" />{format(new Date(d.due_date), 'dd/MM/yyyy', { locale: ptBR })}
                     </span>
                   )}
+                  {dayText && (
+                    <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-muted/60 text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" />{dayText}
+                    </span>
+                  )}
                   {d.assigned_to?.length > 0 && (
                     <div className="flex -space-x-1.5 ml-auto">
                       {d.assigned_to.slice(0, 4).map(a => <CollaboratorAvatar key={a} name={a} size={20} ring />)}
                     </div>
                   )}
                 </div>
+
+                {d.requester && (
+                  <div className="flex items-center gap-1.5 mb-2 text-[11px] text-muted-foreground">
+                    <UserPlus className="w-3 h-3" />
+                    <span>Solicitado por</span>
+                    <CollaboratorAvatar name={d.requester} size={16} />
+                    <span className="font-medium text-foreground/80">{d.requester}</span>
+                  </div>
+                )}
 
                 <div className="mb-2">
                   <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
