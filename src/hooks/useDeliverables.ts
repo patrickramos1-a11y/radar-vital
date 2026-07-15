@@ -29,6 +29,7 @@ export function useDeliverables() {
         name: d.name,
         description: d.description,
         assigned_to: Array.isArray(d.assigned_to) ? d.assigned_to : [],
+        requester: d.requester ?? null,
         due_date: d.due_date,
         status: d.status as DeliverableStatus,
         created_by: d.created_by,
