@@ -30,6 +30,7 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState<string[]>([]);
+  const [requester, setRequester] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<DeliverableStatus>('aberto');
   const [selectedItems, setSelectedItems] = useState<{ type: 'priority' | 'task'; id: string }[]>([]);
@@ -41,6 +42,7 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
         setName(editing.name);
         setDescription(editing.description || '');
         setAssignedTo(editing.assigned_to);
+        setRequester(editing.requester ?? null);
         setDueDate(editing.due_date || '');
         setStatus(editing.status);
         setSelectedItems(editing.items.map(i => ({ type: i.item_type, id: i.item_id })));
@@ -48,12 +50,25 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
         setName('');
         setDescription('');
         setAssignedTo(defaultAssignee ? [defaultAssignee] : []);
+        setRequester(null);
         setDueDate('');
         setStatus('aberto');
         setSelectedItems([]);
       }
     }
   }, [open, editing, defaultAssignee]);
+
+  const durationInfo = useMemo(() => {
+    if (!editing) return null;
+    const start = new Date(editing.created_at).getTime();
+    if (editing.status === 'concluido' && editing.completed_at) {
+      const days = Math.max(0, Math.round((new Date(editing.completed_at).getTime() - start) / 86400000));
+      return `Concluído em ${days} dia${days === 1 ? '' : 's'}`;
+    }
+    if (editing.status === 'cancelado') return null;
+    const days = Math.max(0, Math.round((Date.now() - start) / 86400000));
+    return `${days} dia${days === 1 ? '' : 's'} em aberto`;
+  }, [editing]);
 
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
 
@@ -93,6 +108,7 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
       name: name.trim(),
       description: description.trim() || undefined,
       assigned_to: assignedTo,
+      requester: requester || null,
       due_date: dueDate || null,
       status,
       items: selectedItems.map(x => ({ item_type: x.type, item_id: x.id })),
@@ -146,6 +162,34 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
               })}
             </div>
           </div>
+
+
+          <div>
+            <Label>Solicitante <span className="text-xs text-muted-foreground font-normal">(opcional — apenas visual)</span></Label>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              <button type="button" onClick={() => setRequester(null)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium border ${!requester ? 'bg-muted text-foreground border-foreground/30' : 'bg-background hover:bg-muted text-muted-foreground'}`}>
+                Nenhum
+              </button>
+              {responsibleList.map(r => {
+                const selected = requester && normalizeAssignee(requester) === normalizeAssignee(r.name);
+                return (
+                  <button key={r.name} type="button" onClick={() => setRequester(r.name)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium border ${selected ? 'text-white' : 'bg-background hover:bg-muted'}`}
+                    style={selected ? { backgroundColor: r.color, borderColor: r.color } : {}}>
+                    {r.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {durationInfo && (
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+              ⏱ {durationInfo}
+            </div>
+          )}
+
 
           <div>
             <div className="flex items-center justify-between mb-1">
