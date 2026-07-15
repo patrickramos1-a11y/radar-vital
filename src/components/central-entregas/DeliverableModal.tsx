@@ -30,6 +30,7 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState<string[]>([]);
+  const [requester, setRequester] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<DeliverableStatus>('aberto');
   const [selectedItems, setSelectedItems] = useState<{ type: 'priority' | 'task'; id: string }[]>([]);
@@ -41,6 +42,7 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
         setName(editing.name);
         setDescription(editing.description || '');
         setAssignedTo(editing.assigned_to);
+        setRequester(editing.requester ?? null);
         setDueDate(editing.due_date || '');
         setStatus(editing.status);
         setSelectedItems(editing.items.map(i => ({ type: i.item_type, id: i.item_id })));
@@ -48,12 +50,25 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
         setName('');
         setDescription('');
         setAssignedTo(defaultAssignee ? [defaultAssignee] : []);
+        setRequester(null);
         setDueDate('');
         setStatus('aberto');
         setSelectedItems([]);
       }
     }
   }, [open, editing, defaultAssignee]);
+
+  const durationInfo = useMemo(() => {
+    if (!editing) return null;
+    const start = new Date(editing.created_at).getTime();
+    if (editing.status === 'concluido' && editing.completed_at) {
+      const days = Math.max(0, Math.round((new Date(editing.completed_at).getTime() - start) / 86400000));
+      return `Concluído em ${days} dia${days === 1 ? '' : 's'}`;
+    }
+    if (editing.status === 'cancelado') return null;
+    const days = Math.max(0, Math.round((Date.now() - start) / 86400000));
+    return `${days} dia${days === 1 ? '' : 's'} em aberto`;
+  }, [editing]);
 
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
 
