@@ -160,7 +160,9 @@ export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee,
                   </button>
                 );
               })}
+            </div>
           </div>
+
 
           <div>
             <Label>Solicitante <span className="text-xs text-muted-foreground font-normal">(opcional — apenas visual)</span></Label>
