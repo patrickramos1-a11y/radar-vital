@@ -14,6 +14,7 @@ export interface Deliverable {
   name: string;
   description: string | null;
   assigned_to: string[];
+  requester: string | null;
   due_date: string | null;
   status: DeliverableStatus;
   created_by: string | null;
@@ -27,6 +28,7 @@ export interface DeliverableFormData {
   name: string;
   description?: string;
   assigned_to: string[];
+  requester?: string | null;
   due_date?: string | null;
   status?: DeliverableStatus;
   items?: { item_type: DeliverableItemType; item_id: string }[];
