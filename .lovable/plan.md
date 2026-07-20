@@ -1,37 +1,63 @@
+# Evolução dos Entregáveis — Filtros, Solicitante e Duração
 
+## 1. Banco de dados (migração)
 
-## Plan: Add Due Date to Tasks + Overdue Indicator
+Adicionar coluna `requester` (texto simples) na tabela `deliverables`:
 
-### What will change
+- `requester TEXT NULL` — nome do colaborador solicitante. Opcional. Não afeta permissões nem status.
+- Não altera lógica de responsáveis (`assigned_to`) nem de avaliação.
+- Duração real é calculada em runtime a partir de `created_at` e `completed_at` — não precisa de coluna nova.
 
-**1. Database: Add `due_date` column to `tasks` table**
-- New nullable `date` column `due_date` on the `tasks` table via migration.
+## 2. Cadastro / edição (DeliverableModal)
 
-**2. Type update: `src/types/task.ts`**
-- Add `due_date: string | null` to the `Task` interface.
-- Add `due_date?: string` to `TaskFormData`.
+- Novo campo **Solicitante** (opcional, seleção única) logo abaixo de Responsáveis. Fonte: mesma lista de colaboradores já usada em Responsáveis (inclui os que não participam do painel). Botão "Nenhum" para limpar.
+- Preview de duração ao editar: se em aberto, mostra "X dias em aberto"; se concluído, mostra "concluído em Y dias".
+- Sem input manual de duração — cálculo é automático.
 
-**3. Hook update: `src/hooks/useTasks.ts`**
-- Map `due_date` in `dbRowToTask`.
-- Pass `due_date` when inserting tasks.
-- Add helper `getOverdueTasks()` that returns pending tasks where `due_date < today`, sorted by most overdue first.
+## 3. Card do entregável (DeliverablesTab)
 
-**4. Task creation forms — add date picker**
-- **`src/components/checklist/TaskModal.tsx`**: Add a date input field below the assignees row for setting a due date when creating a new task.
-- **`src/pages/JackboxUnified.tsx`** (JackboxCardEnhanced add form): Add the same date input field.
-- **`src/components/comments/CreateTaskFromComment.tsx`**: Add optional date input.
+Adicionar duas informações ao card, em linha discreta abaixo do nome/descrição:
 
-**5. Display due date alongside task title**
-- In **TaskModal** and **JackboxCardEnhanced** task items: show the due date next to the days-open indicator. If overdue, show in red with a warning style.
+- **Solicitante** (quando existir): chip pequeno com avatar/inicial + nome, prefixado por "Solicitado por".
+- **Dias**:
+  - Em aberto/andamento → `Ícone relógio + "X dias em aberto"`.
+  - Concluído → `"concluído em Y dias"` (usa `completed_at - created_at`).
+  - Cancelado → oculto.
 
-**6. Overdue indicator in the Tasks tab (`JackboxUnified.tsx`)**
-- Add a new section/card in the `TaskAnalytics` or directly below the KPIs showing a ranked list of the most overdue tasks (title, client, assignee, days overdue), styled with red/warning colors.
-- This will be a collapsible panel listing tasks sorted by how many days past their due date, showing task title, client name, assignee badge, and days overdue.
+## 4. Barra de filtros (nova, acima da lista de entregáveis)
 
-### Technical details
+Barra compacta com múltiplos grupos, todos multi-seleção (chips clicáveis):
 
-- Migration SQL: `ALTER TABLE public.tasks ADD COLUMN due_date date;`
-- Overdue calculation: `Math.floor((today - due_date) / 86400000)` days
-- Date input will use a simple `<input type="date">` for simplicity, matching the existing minimal UI style
-- The overdue panel will reuse existing task data from `useTasks` — no extra queries needed
+- **Status**: Aberto · Em andamento · Concluído · Cancelado. (Substitui o toggle atual "incluir concluídos".)
+- **Avaliação**: Joinha · Estrela · Super Estrela — filtra entregáveis que receberam pelo menos uma daquele tipo.
+- **Sem avaliação** (dois toggles independentes):
+  - `Sem nenhuma avaliação` — entregáveis concluídos com 0 avaliações totais.
+  - `Não avaliei ainda` — entregáveis concluídos onde o usuário logado ainda não deu sua avaliação.
+- **Solicitante**: dropdown multi-select com lista de colaboradores que aparecem como solicitantes.
 
+Regras:
+
+- Filtros combinam com **AND** entre grupos e **OR** dentro do mesmo grupo.
+- Botão "Limpar filtros" quando algum estiver ativo.
+- Contador "N de M entregáveis" ao lado.
+
+## 5. KPIs da aba (mini-cards existentes)
+
+Continuam refletindo o colaborador selecionado, mas passam a respeitar os filtros ativos (Total, Concluídos, Pendentes, % Conclusão, Joinhas, Estrelas, Super, Pontos).
+
+## Arquivos afetados
+
+```text
+supabase/migrations/…_add_requester_to_deliverables.sql   (novo)
+src/types/deliverable.ts                                  (+ requester)
+src/hooks/useDeliverables.ts                              (map/insert/update requester)
+src/components/central-entregas/DeliverableModal.tsx      (campo Solicitante + preview duração)
+src/components/central-entregas/DeliverablesTab.tsx       (barra de filtros + KPIs filtrados)
+src/components/central-entregas/DeliverableCard*          (solicitante + dias no card — inline em DeliverablesTab)
+```
+
+## Fora de escopo
+
+- Nenhuma alteração em Prioridades, Tarefas, Comentários, Performance ou Histórico.
+- Sem mudança em permissões/RLS.
+- Sem alteração no cálculo de pontuação/ranking.

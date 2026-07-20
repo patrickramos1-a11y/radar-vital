@@ -42,11 +42,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userId: row.user_id,
         isActive: row.is_active,
         role: (row as any).role || 'colaborador',
+        isCentralOnly: (row as any).is_central_only || false,
+        photoUrl: (row as any).photo_url || null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));
 
-      setCollaborators(mapped);
+      // AuthContext exposes only collaborators visible in the main Painel
+      // (central-only collaborators appear in the Central de Entregas via useCollaborators)
+      const painelCollabs = mapped.filter(c => !c.isCentralOnly);
+      setCollaborators(painelCollabs);
 
       // Check if there's a saved user in localStorage
       const savedUserName = localStorage.getItem(STORAGE_KEY);

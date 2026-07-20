@@ -12,7 +12,8 @@ import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippe
 import { useAuth } from "@/contexts/AuthContext";
 import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { Client } from "@/types/client";
-import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks } from "lucide-react";
+import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PanelNavigationBar } from "@/components/panel-links/PanelNavigationBar";
@@ -20,6 +21,7 @@ import { MobileCompactHeader } from "@/components/mobile/MobileCompactHeader";
 import { MobileCompactFilters } from "@/components/mobile/MobileCompactFilters";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
+import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
 const Index = () => {
   const isMobile = useIsMobile();
   const { currentUser, collaborators: allCollaborators } = useAuth();
@@ -69,6 +71,8 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('fit-all');
   const [gridSize, setGridSize] = useState<GridSize>(null);
   const [fitAllLocked, setFitAllLocked] = useState(false);
+  const [newClientOpen, setNewClientOpen] = useState(false);
+
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
@@ -91,6 +95,11 @@ const Index = () => {
     });
     return names;
   }, [activeClients]);
+
+  const clientsWithoutMunicipioCount = useMemo(
+    () => activeClients.filter(c => !c.municipios || c.municipios.length === 0).length,
+    [activeClients]
+  );
 
 
   const jackboxCount = useMemo(() => 
@@ -201,9 +210,13 @@ const Index = () => {
 
     // Municipality filter
     if (municipioFilters.length > 0) {
+      const includeNone = municipioFilters.includes('__none__');
+      const nameFilters = municipioFilters.filter(m => m !== '__none__');
       result = result.filter(c => {
-        if (!c.municipios || c.municipios.length === 0) return false;
-        return municipioFilters.some(mf => {
+        const hasNoMunicipios = !c.municipios || c.municipios.length === 0;
+        if (includeNone && hasNoMunicipios) return true;
+        if (hasNoMunicipios) return false;
+        return nameFilters.some(mf => {
           const [name] = mf.split('|');
           return c.municipios.some(cm => cm === name);
         });
@@ -376,7 +389,14 @@ const Index = () => {
             onSortDirectionChange={setSortDirection}
             onClientTypeFilterChange={setClientTypeFilter}
             onClearAllFilters={handleClearAllFilters}
+            municipalities={municipalities}
+            clientMunicipioNames={clientMunicipioNames}
+            municipioFilters={municipioFilters}
+            onMunicipioFilterToggle={handleMunicipioFilterToggle}
+            clientsWithoutMunicipioCount={clientsWithoutMunicipioCount}
+            onNewClient={() => setNewClientOpen(true)}
           />
+
 
           {/* Compact grid of clients */}
           <div className="flex-1 overflow-hidden">
@@ -437,6 +457,8 @@ const Index = () => {
               onDeleteTask={deleteTask}
             />
           )}
+
+          <NewClientDialog open={newClientOpen} onOpenChange={setNewClientOpen} />
         </div>
       </AppLayout>
     );
@@ -488,6 +510,19 @@ const Index = () => {
             <StatBadge icon={<UserCheck className="w-3.5 h-3.5" />} value={responsaveisCount} label="Responsáveis" color="rgb(16, 185, 129)" active={filterFlags.hasCollaborators} onClick={() => handleFilterFlagToggle('hasCollaborators')} />
             <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(129, 140, 248)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
             <StatBadge icon={<ListChecks className="w-3.5 h-3.5" />} value={jackboxCount} label="Tarefas" color="rgb(250, 204, 21)" active={filterFlags.withJackbox} onClick={() => handleFilterFlagToggle('withJackbox')} />
+            <div className="w-px h-6 bg-border/40 mx-1" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setNewClientOpen(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Novo Cliente</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Cadastrar novo cliente</TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Panel Navigation Bar */}
@@ -576,6 +611,8 @@ const Index = () => {
               onDeleteTask={deleteTask}
             />
           )}
+
+          <NewClientDialog open={newClientOpen} onOpenChange={setNewClientOpen} />
         </div>
       </TooltipProvider>
     </AppLayout>

@@ -1,0 +1,1 @@
+ALTER TABLE public.deliverables ADD COLUMN IF NOT EXISTS requester TEXT NULL;

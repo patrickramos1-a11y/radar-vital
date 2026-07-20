@@ -26,6 +26,8 @@ export function useCollaborators() {
         userId: row.user_id,
         isActive: row.is_active,
         role: (row as any).role || 'colaborador',
+        isCentralOnly: (row as any).is_central_only || false,
+        photoUrl: (row as any).photo_url || null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));
@@ -73,6 +75,8 @@ export function useCollaborators() {
         userId: data.user_id,
         isActive: data.is_active,
         role: (data as any).role || 'colaborador',
+        isCentralOnly: (data as any).is_central_only || false,
+        photoUrl: (data as any).photo_url || null,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
@@ -98,7 +102,7 @@ export function useCollaborators() {
 
   const updateCollaborator = useCallback(async (
     id: string,
-    updates: Partial<Pick<Collaborator, 'name' | 'email' | 'color' | 'initials' | 'isActive' | 'role'>>
+    updates: Partial<Pick<Collaborator, 'name' | 'email' | 'color' | 'initials' | 'isActive' | 'role' | 'isCentralOnly' | 'photoUrl'>>
   ): Promise<boolean> => {
     try {
       const dbUpdates: any = {};
@@ -108,6 +112,8 @@ export function useCollaborators() {
       if (updates.initials !== undefined) dbUpdates.initials = updates.initials;
       if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
       if (updates.role !== undefined) dbUpdates.role = updates.role;
+      if (updates.isCentralOnly !== undefined) dbUpdates.is_central_only = updates.isCentralOnly;
+      if (updates.photoUrl !== undefined) dbUpdates.photo_url = updates.photoUrl;
 
       const { error } = await supabase
         .from('collaborators')

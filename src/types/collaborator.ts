@@ -7,6 +7,8 @@ export interface Collaborator {
   userId: string | null;
   isActive: boolean;
   role: string;
+  isCentralOnly: boolean;
+  photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

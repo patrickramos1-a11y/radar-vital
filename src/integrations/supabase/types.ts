@@ -359,6 +359,54 @@ export type Database = {
         }
         Relationships: []
       }
+      collaborator_comments: {
+        Row: {
+          archived_at: string | null
+          archived_by: string | null
+          author_name: string
+          collaborator_name: string
+          comment_text: string
+          context: string
+          created_at: string
+          id: string
+          is_archived: boolean
+          is_read: boolean
+          read_at: string | null
+          read_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
+          author_name: string
+          collaborator_name: string
+          comment_text: string
+          context?: string
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          is_read?: boolean
+          read_at?: string | null
+          read_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          archived_by?: string | null
+          author_name?: string
+          collaborator_name?: string
+          comment_text?: string
+          context?: string
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          is_read?: boolean
+          read_at?: string | null
+          read_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       collaborators: {
         Row: {
           color: string
@@ -367,7 +415,9 @@ export type Database = {
           id: string
           initials: string
           is_active: boolean
+          is_central_only: boolean
           name: string
+          photo_url: string | null
           role: string
           updated_at: string
           user_id: string | null
@@ -379,7 +429,9 @@ export type Database = {
           id?: string
           initials: string
           is_active?: boolean
+          is_central_only?: boolean
           name: string
+          photo_url?: string | null
           role?: string
           updated_at?: string
           user_id?: string | null
@@ -391,10 +443,124 @@ export type Database = {
           id?: string
           initials?: string
           is_active?: boolean
+          is_central_only?: boolean
           name?: string
+          photo_url?: string | null
           role?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      deliverable_items: {
+        Row: {
+          created_at: string
+          deliverable_id: string
+          id: string
+          item_id: string
+          item_type: string
+        }
+        Insert: {
+          created_at?: string
+          deliverable_id: string
+          id?: string
+          item_id: string
+          item_type: string
+        }
+        Update: {
+          created_at?: string
+          deliverable_id?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverable_items_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deliverable_ratings: {
+        Row: {
+          created_at: string
+          deliverable_id: string
+          id: string
+          rater_name: string
+          rating_type: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          deliverable_id: string
+          id?: string
+          rater_name: string
+          rating_type: string
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          created_at?: string
+          deliverable_id?: string
+          id?: string
+          rater_name?: string
+          rating_type?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverable_ratings_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deliverables: {
+        Row: {
+          assigned_to: string[]
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          name: string
+          requester: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string[]
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name: string
+          requester?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string[]
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name?: string
+          requester?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -665,6 +831,62 @@ export type Database = {
           },
         ]
       }
+      priorities: {
+        Row: {
+          assigned_to: string[]
+          category: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          assigned_to?: string[]
+          category?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          assigned_to?: string[]
+          category?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "priorities_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -713,6 +935,7 @@ export type Database = {
           due_date: string | null
           id: string
           priority: string
+          priority_id: string | null
           title: string
         }
         Insert: {
@@ -724,6 +947,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           priority?: string
+          priority_id?: string | null
           title: string
         }
         Update: {
@@ -735,6 +959,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           priority?: string
+          priority_id?: string | null
           title?: string
         }
         Relationships: [
@@ -743,6 +968,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_priority_id_fkey"
+            columns: ["priority_id"]
+            isOneToOne: false
+            referencedRelation: "priorities"
             referencedColumns: ["id"]
           },
         ]
