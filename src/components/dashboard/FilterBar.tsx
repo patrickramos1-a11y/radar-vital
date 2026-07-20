@@ -433,10 +433,11 @@ function CollaboratorDropdown({ collaborators, selectedNames, onToggle }: Collab
 
   const selectedCount = selectedNames.length;
 
+  const noneSelected = selectedNames.includes('__none__');
   const displayLabel = selectedCount === 0
     ? 'Colaboradores'
     : selectedCount === 1
-      ? collaborators.find(c => selectedNames.includes(c.name))?.name || 'Colaboradores'
+      ? (noneSelected ? 'Sem responsável' : collaborators.find(c => selectedNames.includes(c.name))?.name || 'Colaboradores')
       : `${selectedCount} selecionados`;
 
   return (
