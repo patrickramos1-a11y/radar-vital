@@ -21,6 +21,9 @@ import { PerformanceTab } from '@/components/central-entregas/PerformanceTab';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { Star, CheckSquare, MessageSquare, Package, TrendingUp, Archive } from 'lucide-react';
 import { startOfMonth } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { QuickCreatePanel } from '@/components/central-entregas/QuickCreatePanel';
+
 
 const DEFAULT_NAMES = ['Patrick', 'Celine', 'Gabi', 'Darley', 'Vanessa'];
 
