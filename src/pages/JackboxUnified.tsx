@@ -162,7 +162,12 @@ export default function JackboxUnified() {
     else clientTasks = getTasksForClient(clientId);
     
     if (collaboratorFilters.length > 0) {
-      clientTasks = clientTasks.filter(t => assigneeMatchesAny(t.assigned_to, collaboratorFilters));
+      const wantNone = collaboratorFilters.includes('__none__');
+      const names = collaboratorFilters.filter(n => n !== '__none__');
+      clientTasks = clientTasks.filter(t => {
+        const noResp = !t.assigned_to || t.assigned_to.length === 0;
+        return (wantNone && noResp) || (names.length > 0 && assigneeMatchesAny(t.assigned_to, names));
+      });
     }
     return clientTasks;
   };
