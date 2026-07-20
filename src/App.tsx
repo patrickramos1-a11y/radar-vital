@@ -16,7 +16,8 @@ import CommentsPanel from "./pages/CommentsPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
 import TVMode from "./pages/TVMode";
 import NotFound from "./pages/NotFound";
-import CentralEntregas from "./pages/CentralEntregas";
+
+
 
 const queryClient = new QueryClient();
 
