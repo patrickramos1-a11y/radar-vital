@@ -154,18 +154,23 @@ export default function CentralEntregas() {
     };
   }, [isTeamView, selectedInfo, tasksHook.tasks, prioritiesHook.priorities, deliverablesHook.deliverables, comments, statsByName]);
 
+  const isMobile = useIsMobile();
+
   return (
     <AppLayout>
       <div className="h-full overflow-auto bg-gradient-to-br from-background via-background to-primary/[0.02]">
-        <div className="max-w-[1600px] mx-auto p-4 md:p-6 space-y-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Central de Entregas</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Responsabilidades, prioridades, entregas e performance da equipe
-            </p>
+        <div className={isMobile ? "p-3 pb-24 space-y-3" : "max-w-[1600px] mx-auto p-4 md:p-6 space-y-4"}>
+          <div className={isMobile ? "sticky top-0 z-30 -mx-3 px-3 pt-1 pb-2 bg-background/95 backdrop-blur border-b" : ""}>
+            <h1 className={isMobile ? "text-lg font-bold text-foreground" : "text-2xl md:text-3xl font-bold text-foreground"}>Central de Entregas</h1>
+            {!isMobile && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Responsabilidades, prioridades, entregas e performance da equipe
+              </p>
+            )}
           </div>
 
-          <GlobalSummary {...global} />
+          {!isMobile && <GlobalSummary {...global} />}
+
 
           <TeamSelector
             options={responsibleList}
