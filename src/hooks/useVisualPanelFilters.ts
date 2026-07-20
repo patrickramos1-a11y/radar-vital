@@ -48,7 +48,12 @@ export function useVisualPanelFilters({
     }
 
     if (collaboratorFilters.length > 0 && !skipCollaboratorFilter) {
-      result = result.filter(c => collaboratorFilters.some(name => c.collaborators[name]));
+      const wantNone = collaboratorFilters.includes('__none__');
+      const names = collaboratorFilters.filter(n => n !== '__none__');
+      result = result.filter(c => {
+        const hasNoResp = !Object.keys(c.collaborators).some(k => c.collaborators[k]);
+        return (wantNone && hasNoResp) || names.some(n => c.collaborators[n]);
+      });
     }
 
     // Apply flags

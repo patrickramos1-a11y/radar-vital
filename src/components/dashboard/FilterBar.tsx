@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check, UserX } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { ClientType } from "@/types/client";
@@ -433,10 +433,11 @@ function CollaboratorDropdown({ collaborators, selectedNames, onToggle }: Collab
 
   const selectedCount = selectedNames.length;
 
+  const noneSelected = selectedNames.includes('__none__');
   const displayLabel = selectedCount === 0
     ? 'Colaboradores'
     : selectedCount === 1
-      ? collaborators.find(c => selectedNames.includes(c.name))?.name || 'Colaboradores'
+      ? (noneSelected ? 'Sem responsável' : collaborators.find(c => selectedNames.includes(c.name))?.name || 'Colaboradores')
       : `${selectedCount} selecionados`;
 
   return (
@@ -468,37 +469,61 @@ function CollaboratorDropdown({ collaborators, selectedNames, onToggle }: Collab
           </div>
         </div>
         <div className="max-h-52 overflow-y-auto p-1">
-          {filtered.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-3">Nenhum colaborador encontrado</p>
-          ) : (
-            filtered.map(collab => {
-              const isSelected = selectedNames.includes(collab.name);
-              return (
-                <button
-                  key={collab.id}
-                  onClick={() => onToggle(collab.name)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors text-left ${
-                    isSelected
-                      ? 'bg-primary/10 text-foreground'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                    isSelected ? 'bg-primary border-primary' : 'border-border'
-                  }`}>
-                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-                  </div>
-                  <span
-                    className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: collab.color }}
+          {(() => {
+            const showNone = 'sem responsável'.includes(search.toLowerCase()) || search.trim() === '';
+            if (!showNone && filtered.length === 0) {
+              return <p className="text-xs text-muted-foreground text-center py-3">Nenhum colaborador encontrado</p>;
+            }
+            return (
+              <>
+                {showNone && (
+                  <button
+                    onClick={() => onToggle('__none__')}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors text-left ${
+                      noneSelected ? 'bg-primary/10 text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
                   >
-                    {collab.initials}
-                  </span>
-                  {collab.name}
-                </button>
-              );
-            })
-          )}
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                      noneSelected ? 'bg-primary border-primary' : 'border-border'
+                    }`}>
+                      {noneSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                    </div>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border border-dashed border-muted-foreground text-muted-foreground">
+                      <UserX className="w-3 h-3" />
+                    </span>
+                    <span className="italic">Sem responsável</span>
+                  </button>
+                )}
+                {filtered.map(collab => {
+                  const isSelected = selectedNames.includes(collab.name);
+                  return (
+                    <button
+                      key={collab.id}
+                      onClick={() => onToggle(collab.name)}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors text-left ${
+                        isSelected
+                          ? 'bg-primary/10 text-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-primary border-primary' : 'border-border'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                      <span
+                        className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: collab.color }}
+                      >
+                        {collab.initials}
+                      </span>
+                      {collab.name}
+                    </button>
+                  );
+                })}
+              </>
+            );
+          })()}
         </div>
         {selectedCount > 0 && (
           <div className="p-2 border-t border-border">

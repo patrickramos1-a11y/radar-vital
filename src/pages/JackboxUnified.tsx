@@ -108,13 +108,18 @@ export default function JackboxUnified() {
   // Task-based collaborator filtering (instead of client.collaborators)
   const displayClients = useMemo(() => {
     if (collaboratorFilters.length === 0) return filteredClients;
+    const wantNone = collaboratorFilters.includes('__none__');
+    const names = collaboratorFilters.filter(n => n !== '__none__');
     return filteredClients.filter(c => {
       const clientTasks = statusFilter === "pendentes"
         ? getActiveTasksForClient(c.id)
         : statusFilter === "concluidas"
         ? getTasksForClient(c.id).filter(t => t.completed)
         : getTasksForClient(c.id);
-      return clientTasks.some(t => assigneeMatchesAny(t.assigned_to, collaboratorFilters));
+      return clientTasks.some(t => {
+        const noResp = !t.assigned_to || t.assigned_to.length === 0;
+        return (wantNone && noResp) || (names.length > 0 && assigneeMatchesAny(t.assigned_to, names));
+      });
     });
   }, [filteredClients, collaboratorFilters, tasks, statusFilter]);
 
@@ -157,7 +162,12 @@ export default function JackboxUnified() {
     else clientTasks = getTasksForClient(clientId);
     
     if (collaboratorFilters.length > 0) {
-      clientTasks = clientTasks.filter(t => assigneeMatchesAny(t.assigned_to, collaboratorFilters));
+      const wantNone = collaboratorFilters.includes('__none__');
+      const names = collaboratorFilters.filter(n => n !== '__none__');
+      clientTasks = clientTasks.filter(t => {
+        const noResp = !t.assigned_to || t.assigned_to.length === 0;
+        return (wantNone && noResp) || (names.length > 0 && assigneeMatchesAny(t.assigned_to, names));
+      });
     }
     return clientTasks;
   };
