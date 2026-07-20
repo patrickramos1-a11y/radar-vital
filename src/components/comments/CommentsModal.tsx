@@ -28,11 +28,8 @@ function isCommentFullyRead(comment: ClientComment): boolean {
   return READ_STATUS_NAMES.every(n => comment.readStatus[n]);
 }
 
-// Helper: is Patrick blocked from marking as read?
-function isPatrickBlocked(comment: ClientComment): boolean {
-  const othersNames = READ_STATUS_NAMES.filter(n => n !== 'patrick');
-  return !othersNames.every(n => comment.readStatus[n]);
-}
+
+
 
 type ViewFilter = 'pendentes' | 'lidos' | 'arquivados' | 'todos';
 
