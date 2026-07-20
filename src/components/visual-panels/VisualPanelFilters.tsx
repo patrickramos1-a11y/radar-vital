@@ -57,15 +57,21 @@ function CollaboratorDropdown({ collaborators: collabs, selected, onToggle }: {
     collabs.filter(c => c.name.toLowerCase().includes(search.toLowerCase())),
     [collabs, search]
   );
-  const label = selected.length === 0 ? 'Colaboradores' : selected.length === 1
-    ? collabs.find(c => c.name === selected[0])?.name || selected[0]
-    : `${selected.length} colaboradores`;
+  const noneSelected = selected.includes(NO_RESPONSIBLE);
+  const nameCount = selected.filter(n => n !== NO_RESPONSIBLE).length;
+  const totalCount = selected.length;
+  const label = totalCount === 0
+    ? 'Colaboradores'
+    : totalCount === 1
+      ? (noneSelected ? 'Sem responsável' : (collabs.find(c => c.name === selected[0])?.name || selected[0]))
+      : `${totalCount} selecionados`;
+  const showNoneEntry = 'sem responsável'.includes(search.toLowerCase()) || search.trim() === '';
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border transition-colors ${
-          selected.length > 0 ? 'bg-primary/10 border-primary text-primary' : 'bg-secondary/50 border-border text-secondary-foreground hover:bg-secondary'
+          totalCount > 0 ? 'bg-primary/10 border-primary text-primary' : 'bg-secondary/50 border-border text-secondary-foreground hover:bg-secondary'
         }`}>
           {label}
           <ChevronDown className="w-3 h-3" />
@@ -79,6 +85,23 @@ function CollaboratorDropdown({ collaborators: collabs, selected, onToggle }: {
           className="h-7 text-xs mb-2"
         />
         <div className="max-h-48 overflow-y-auto space-y-0.5">
+          {showNoneEntry && (
+            <button
+              onClick={() => onToggle(NO_RESPONSIBLE)}
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors"
+            >
+              <span
+                className="w-5 h-5 rounded-md flex items-center justify-center border-2 border-dashed shrink-0 text-muted-foreground"
+                style={{
+                  backgroundColor: noneSelected ? 'hsl(var(--muted))' : 'transparent',
+                }}
+              >
+                <UserX className="w-3 h-3" />
+              </span>
+              <span className="flex-1 text-left truncate italic text-muted-foreground">Sem responsável</span>
+              {noneSelected && <Check className="w-3 h-3 text-primary shrink-0" />}
+            </button>
+          )}
           {filtered.map(c => (
             <button
               key={c.id}
