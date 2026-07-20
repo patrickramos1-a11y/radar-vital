@@ -28,11 +28,8 @@ function isCommentFullyRead(comment: ClientComment): boolean {
   return READ_STATUS_NAMES.every(n => comment.readStatus[n]);
 }
 
-// Helper: is Patrick blocked from marking as read?
-function isPatrickBlocked(comment: ClientComment): boolean {
-  const othersNames = READ_STATUS_NAMES.filter(n => n !== 'patrick');
-  return !othersNames.every(n => comment.readStatus[n]);
-}
+
+
 
 type ViewFilter = 'pendentes' | 'lidos' | 'arquivados' | 'todos';
 
@@ -764,10 +761,6 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
   const canMarkSelf = READ_STATUS_NAMES.includes(currentReadStatusName);
   const selfIsRead = canMarkSelf && comment.readStatus[currentReadStatusName];
 
-  // Patrick lock rule
-  const isPatrick = currentReadStatusName === 'patrick';
-  const patrickLocked = isPatrick && !selfIsRead && isPatrickBlocked(comment);
-
   const currentCollaborator = collaborators.find(c => c.name.toLowerCase() === currentReadStatusName);
   const selfColor = (currentCollaborator as any)?.color || '#6B7280';
 
@@ -781,15 +774,14 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
     <div className="flex items-center gap-1.5">
       {canMarkSelf && (
         <button
-          onClick={() => !patrickLocked && onToggleRead(currentReadStatusName)}
-          disabled={patrickLocked}
+          onClick={() => onToggleRead(currentReadStatusName)}
           className={cn(
             'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all',
-            patrickLocked && 'opacity-50 cursor-not-allowed',
             selfIsRead ? 'text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/80 border border-border'
           )}
           style={selfIsRead ? { backgroundColor: selfColor } : {}}
-          title={patrickLocked ? 'Aguardando equipe ler primeiro' : selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
+          title={selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
+
         >
           {selfIsRead ? <CheckCheck className="w-4 h-4" /> : <Check className="w-4 h-4" />}
         </button>

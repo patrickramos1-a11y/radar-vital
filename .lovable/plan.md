@@ -1,63 +1,35 @@
-# Evolução dos Entregáveis — Filtros, Solicitante e Duração
+## Objetivo
+Remover a regra que impede o Patrick de marcar comentários como lidos antes dos demais colaboradores. Após a mudança, o Patrick se comporta exatamente como qualquer outro usuário nos sistemas de leitura de comentários.
 
-## 1. Banco de dados (migração)
+## Onde a regra existe hoje
+Duas ocorrências, ambas com a mesma lógica ("patrick lock"):
 
-Adicionar coluna `requester` (texto simples) na tabela `deliverables`:
+1. `src/components/comments/CommentsModal.tsx`
+   - Função `isPatrickBlocked(comment)` (linhas ~32-36).
+   - Uso em `patrickLocked` (linhas ~767-792): desabilita o botão de marcar como lido e mostra o tooltip "Aguardando equipe ler primeiro".
 
-- `requester TEXT NULL` — nome do colaborador solicitante. Opcional. Não afeta permissões nem status.
-- Não altera lógica de responsáveis (`assigned_to`) nem de avaliação.
-- Duração real é calculada em runtime a partir de `created_at` e `completed_at` — não precisa de coluna nova.
+2. `src/pages/CommentsPanel.tsx`
+   - Bloco `patrickLocked` (linhas ~1053-1071): mesma lógica, mesmo tooltip, mesmo `disabled`.
 
-## 2. Cadastro / edição (DeliverableModal)
+Não há regra equivalente em outras abas/hooks. As anotações sobre colaboradores (`collaborator_comments`) e o auto-arquivamento (`autoArchiveIfFullyRead`) não usam esse gate — o auto-arquivamento continua acontecendo quando todos leem, o que é apenas efeito colateral desejável e não bloqueia ninguém.
 
-- Novo campo **Solicitante** (opcional, seleção única) logo abaixo de Responsáveis. Fonte: mesma lista de colaboradores já usada em Responsáveis (inclui os que não participam do painel). Botão "Nenhum" para limpar.
-- Preview de duração ao editar: se em aberto, mostra "X dias em aberto"; se concluído, mostra "concluído em Y dias".
-- Sem input manual de duração — cálculo é automático.
+## Alterações
 
-## 3. Card do entregável (DeliverablesTab)
+### 1. `src/components/comments/CommentsModal.tsx`
+- Remover a função `isPatrickBlocked`.
+- Remover as constantes `isPatrick` e `patrickLocked`.
+- No botão de marcar como lido: remover `disabled={patrickLocked}`, o ramo `patrickLocked` do `title` e as classes condicionais `opacity-50 cursor-not-allowed`. O `onClick` passa a chamar `onToggleRead(currentReadStatusName)` sempre.
 
-Adicionar duas informações ao card, em linha discreta abaixo do nome/descrição:
+### 2. `src/pages/CommentsPanel.tsx`
+- Remover as constantes `isPatrick` e `patrickLocked`.
+- No botão de marcar como lido: mesma limpeza — sem `disabled`, sem classe de bloqueio, tooltip volta a alternar apenas entre "Marcar como lido" / "Desmarcar como lido", e o `onClick` sempre chama `onToggleRead(currentUserName)`.
 
-- **Solicitante** (quando existir): chip pequeno com avatar/inicial + nome, prefixado por "Solicitado por".
-- **Dias**:
-  - Em aberto/andamento → `Ícone relógio + "X dias em aberto"`.
-  - Concluído → `"concluído em Y dias"` (usa `completed_at - created_at`).
-  - Cancelado → oculto.
+## Preservado
+- Papel de admin do Patrick (arquivar/encerrar/editar/excluir) continua intacto.
+- Auto-arquivamento quando todos leem continua funcionando via `autoArchiveIfFullyRead`.
+- Comentários de Ciência Obrigatória continuam com sua própria regra (leitores obrigatórios), sem qualquer tratamento especial para Patrick.
+- Nenhuma mudança de banco de dados.
 
-## 4. Barra de filtros (nova, acima da lista de entregáveis)
-
-Barra compacta com múltiplos grupos, todos multi-seleção (chips clicáveis):
-
-- **Status**: Aberto · Em andamento · Concluído · Cancelado. (Substitui o toggle atual "incluir concluídos".)
-- **Avaliação**: Joinha · Estrela · Super Estrela — filtra entregáveis que receberam pelo menos uma daquele tipo.
-- **Sem avaliação** (dois toggles independentes):
-  - `Sem nenhuma avaliação` — entregáveis concluídos com 0 avaliações totais.
-  - `Não avaliei ainda` — entregáveis concluídos onde o usuário logado ainda não deu sua avaliação.
-- **Solicitante**: dropdown multi-select com lista de colaboradores que aparecem como solicitantes.
-
-Regras:
-
-- Filtros combinam com **AND** entre grupos e **OR** dentro do mesmo grupo.
-- Botão "Limpar filtros" quando algum estiver ativo.
-- Contador "N de M entregáveis" ao lado.
-
-## 5. KPIs da aba (mini-cards existentes)
-
-Continuam refletindo o colaborador selecionado, mas passam a respeitar os filtros ativos (Total, Concluídos, Pendentes, % Conclusão, Joinhas, Estrelas, Super, Pontos).
-
-## Arquivos afetados
-
-```text
-supabase/migrations/…_add_requester_to_deliverables.sql   (novo)
-src/types/deliverable.ts                                  (+ requester)
-src/hooks/useDeliverables.ts                              (map/insert/update requester)
-src/components/central-entregas/DeliverableModal.tsx      (campo Solicitante + preview duração)
-src/components/central-entregas/DeliverablesTab.tsx       (barra de filtros + KPIs filtrados)
-src/components/central-entregas/DeliverableCard*          (solicitante + dias no card — inline em DeliverablesTab)
-```
-
-## Fora de escopo
-
-- Nenhuma alteração em Prioridades, Tarefas, Comentários, Performance ou Histórico.
-- Sem mudança em permissões/RLS.
-- Sem alteração no cálculo de pontuação/ranking.
+## Verificação
+- Typecheck automático do build.
+- Conferir visualmente na Central de Entregas → Comentários e no painel `/comentarios` que o botão de "marcar como lido" fica habilitado para o Patrick mesmo quando ninguém mais leu.
