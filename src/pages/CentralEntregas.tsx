@@ -21,6 +21,9 @@ import { PerformanceTab } from '@/components/central-entregas/PerformanceTab';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { Star, CheckSquare, MessageSquare, Package, TrendingUp, Archive } from 'lucide-react';
 import { startOfMonth } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { QuickCreatePanel } from '@/components/central-entregas/QuickCreatePanel';
+
 
 const DEFAULT_NAMES = ['Patrick', 'Celine', 'Gabi', 'Darley', 'Vanessa'];
 
@@ -151,18 +154,23 @@ export default function CentralEntregas() {
     };
   }, [isTeamView, selectedInfo, tasksHook.tasks, prioritiesHook.priorities, deliverablesHook.deliverables, comments, statsByName]);
 
+  const isMobile = useIsMobile();
+
   return (
     <AppLayout>
       <div className="h-full overflow-auto bg-gradient-to-br from-background via-background to-primary/[0.02]">
-        <div className="max-w-[1600px] mx-auto p-4 md:p-6 space-y-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Central de Entregas</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Responsabilidades, prioridades, entregas e performance da equipe
-            </p>
+        <div className={isMobile ? "p-3 pb-24 space-y-3" : "max-w-[1600px] mx-auto p-4 md:p-6 space-y-4"}>
+          <div className={isMobile ? "sticky top-0 z-30 -mx-3 px-3 pt-1 pb-2 bg-background/95 backdrop-blur border-b" : ""}>
+            <h1 className={isMobile ? "text-lg font-bold text-foreground" : "text-2xl md:text-3xl font-bold text-foreground"}>Central de Entregas</h1>
+            {!isMobile && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Responsabilidades, prioridades, entregas e performance da equipe
+              </p>
+            )}
           </div>
 
-          <GlobalSummary {...global} />
+          {!isMobile && <GlobalSummary {...global} />}
+
 
           <TeamSelector
             options={responsibleList}
@@ -172,31 +180,40 @@ export default function CentralEntregas() {
           />
 
           {isTeamView ? (
-            <TeamOverview
-              responsibleList={responsibleList}
-              tasks={tasksHook.tasks}
-              priorities={prioritiesHook.priorities}
-              deliverables={deliverablesHook.deliverables}
-            />
+            !isMobile && (
+              <TeamOverview
+                responsibleList={responsibleList}
+                tasks={tasksHook.tasks}
+                priorities={prioritiesHook.priorities}
+                deliverables={deliverablesHook.deliverables}
+              />
+            )
           ) : (
             panelStats && (
-              <CollaboratorPanel
-                name={selectedInfo.name}
-                color={selectedInfo.color}
-                {...panelStats}
-              />
+              isMobile ? (
+                <MobileCollaboratorMiniPanel name={selectedInfo.name} color={selectedInfo.color} {...panelStats} />
+              ) : (
+                <CollaboratorPanel
+                  name={selectedInfo.name}
+                  color={selectedInfo.color}
+                  {...panelStats}
+                />
+              )
             )
           )}
 
           <Tabs defaultValue="priorities" className="w-full">
-            <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto gap-1 bg-card/60 backdrop-blur-sm border">
-              <TabsTrigger value="priorities" className="flex items-center gap-1.5 py-2"><Star className="w-4 h-4" /><span className="hidden sm:inline">Prioridades</span></TabsTrigger>
-              <TabsTrigger value="tasks" className="flex items-center gap-1.5 py-2"><CheckSquare className="w-4 h-4" /><span className="hidden sm:inline">Tarefas</span></TabsTrigger>
-              <TabsTrigger value="comments" className="flex items-center gap-1.5 py-2"><MessageSquare className="w-4 h-4" /><span className="hidden sm:inline">Comentários</span></TabsTrigger>
-              <TabsTrigger value="deliverables" className="flex items-center gap-1.5 py-2"><Package className="w-4 h-4" /><span className="hidden sm:inline">Entregáveis</span></TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-1.5 py-2"><Archive className="w-4 h-4" /><span className="hidden sm:inline">Histórico</span></TabsTrigger>
-              <TabsTrigger value="performance" className="flex items-center gap-1.5 py-2"><TrendingUp className="w-4 h-4" /><span className="hidden sm:inline">Performance</span></TabsTrigger>
+            <TabsList className={isMobile
+              ? "flex w-full overflow-x-auto gap-1 bg-card/60 backdrop-blur-sm border justify-start"
+              : "grid grid-cols-3 md:grid-cols-6 h-auto gap-1 bg-card/60 backdrop-blur-sm border"}>
+              <TabsTrigger value="priorities" className="flex items-center gap-1.5 py-2 shrink-0"><Star className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Prioridades</span></TabsTrigger>
+              <TabsTrigger value="tasks" className="flex items-center gap-1.5 py-2 shrink-0"><CheckSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Tarefas</span></TabsTrigger>
+              <TabsTrigger value="comments" className="flex items-center gap-1.5 py-2 shrink-0"><MessageSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Comentários</span></TabsTrigger>
+              <TabsTrigger value="deliverables" className="flex items-center gap-1.5 py-2 shrink-0"><Package className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Entregáveis</span></TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-1.5 py-2 shrink-0"><Archive className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Histórico</span></TabsTrigger>
+              <TabsTrigger value="performance" className="flex items-center gap-1.5 py-2 shrink-0"><TrendingUp className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Performance</span></TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="priorities" className="mt-4">
               <PrioritiesTab
@@ -281,7 +298,58 @@ export default function CentralEntregas() {
             </TabsContent>
           </Tabs>
         </div>
+
+        <QuickCreatePanel
+          collaborator={selectedInfo.name}
+          color={selectedInfo.color}
+          isTeamView={isTeamView}
+          clients={clients}
+          responsibleList={responsibleList}
+          priorities={prioritiesHook.priorities}
+          tasks={tasksHook.tasks}
+          onCreatePriority={prioritiesHook.addPriority}
+          onCreateTask={tasksHook.addTask}
+          onCreateDeliverable={deliverablesHook.addDeliverable}
+          variant="fab"
+        />
       </div>
     </AppLayout>
   );
 }
+
+function MobileCollaboratorMiniPanel({
+  name, color, clients, openTasks, openPriorities, deliverables, pendingComments, overdue, score,
+}: {
+  name: string; color: string;
+  clients: number; openTasks: number; openPriorities: number; doneTasks: number;
+  deliverables: number; pendingComments: number; overdue: number; score: number;
+}) {
+  const kpis = [
+    { label: 'Tarefas', value: openTasks },
+    { label: 'Prioridades', value: openPriorities },
+    { label: 'Atrasos', value: overdue, danger: overdue > 0 },
+    { label: 'Comentários', value: pendingComments, danger: pendingComments > 0 },
+    { label: 'Clientes', value: clients },
+    { label: 'Pontos', value: score, success: true },
+  ];
+  return (
+    <div
+      className="rounded-2xl border p-3"
+      style={{ background: `linear-gradient(135deg, ${color}0f 0%, transparent 60%)` }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+        <div className="text-sm font-bold truncate" style={{ color }}>{name}</div>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {kpis.map(k => (
+          <div key={k.label} className={`rounded-lg border bg-card px-2 py-1.5 ${k.danger ? 'border-red-200 bg-red-50/40' : ''}`}>
+            <div className="text-[9px] text-muted-foreground uppercase tracking-wide">{k.label}</div>
+            <div className={`text-base font-bold ${k.danger ? 'text-red-600' : k.success ? 'text-emerald-700' : ''}`}>{k.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+

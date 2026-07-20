@@ -359,6 +359,54 @@ export type Database = {
         }
         Relationships: []
       }
+      collaborator_comments: {
+        Row: {
+          archived_at: string | null
+          archived_by: string | null
+          author_name: string
+          collaborator_name: string
+          comment_text: string
+          context: string
+          created_at: string
+          id: string
+          is_archived: boolean
+          is_read: boolean
+          read_at: string | null
+          read_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
+          author_name: string
+          collaborator_name: string
+          comment_text: string
+          context?: string
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          is_read?: boolean
+          read_at?: string | null
+          read_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          archived_by?: string | null
+          author_name?: string
+          collaborator_name?: string
+          comment_text?: string
+          context?: string
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          is_read?: boolean
+          read_at?: string | null
+          read_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       collaborators: {
         Row: {
           color: string
