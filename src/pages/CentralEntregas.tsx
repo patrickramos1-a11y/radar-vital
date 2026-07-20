@@ -180,31 +180,40 @@ export default function CentralEntregas() {
           />
 
           {isTeamView ? (
-            <TeamOverview
-              responsibleList={responsibleList}
-              tasks={tasksHook.tasks}
-              priorities={prioritiesHook.priorities}
-              deliverables={deliverablesHook.deliverables}
-            />
+            !isMobile && (
+              <TeamOverview
+                responsibleList={responsibleList}
+                tasks={tasksHook.tasks}
+                priorities={prioritiesHook.priorities}
+                deliverables={deliverablesHook.deliverables}
+              />
+            )
           ) : (
             panelStats && (
-              <CollaboratorPanel
-                name={selectedInfo.name}
-                color={selectedInfo.color}
-                {...panelStats}
-              />
+              isMobile ? (
+                <MobileCollaboratorMiniPanel name={selectedInfo.name} color={selectedInfo.color} {...panelStats} />
+              ) : (
+                <CollaboratorPanel
+                  name={selectedInfo.name}
+                  color={selectedInfo.color}
+                  {...panelStats}
+                />
+              )
             )
           )}
 
           <Tabs defaultValue="priorities" className="w-full">
-            <TabsList className="grid grid-cols-3 md:grid-cols-6 h-auto gap-1 bg-card/60 backdrop-blur-sm border">
-              <TabsTrigger value="priorities" className="flex items-center gap-1.5 py-2"><Star className="w-4 h-4" /><span className="hidden sm:inline">Prioridades</span></TabsTrigger>
-              <TabsTrigger value="tasks" className="flex items-center gap-1.5 py-2"><CheckSquare className="w-4 h-4" /><span className="hidden sm:inline">Tarefas</span></TabsTrigger>
-              <TabsTrigger value="comments" className="flex items-center gap-1.5 py-2"><MessageSquare className="w-4 h-4" /><span className="hidden sm:inline">Comentários</span></TabsTrigger>
-              <TabsTrigger value="deliverables" className="flex items-center gap-1.5 py-2"><Package className="w-4 h-4" /><span className="hidden sm:inline">Entregáveis</span></TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-1.5 py-2"><Archive className="w-4 h-4" /><span className="hidden sm:inline">Histórico</span></TabsTrigger>
-              <TabsTrigger value="performance" className="flex items-center gap-1.5 py-2"><TrendingUp className="w-4 h-4" /><span className="hidden sm:inline">Performance</span></TabsTrigger>
+            <TabsList className={isMobile
+              ? "flex w-full overflow-x-auto gap-1 bg-card/60 backdrop-blur-sm border justify-start"
+              : "grid grid-cols-3 md:grid-cols-6 h-auto gap-1 bg-card/60 backdrop-blur-sm border"}>
+              <TabsTrigger value="priorities" className="flex items-center gap-1.5 py-2 shrink-0"><Star className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Prioridades</span></TabsTrigger>
+              <TabsTrigger value="tasks" className="flex items-center gap-1.5 py-2 shrink-0"><CheckSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Tarefas</span></TabsTrigger>
+              <TabsTrigger value="comments" className="flex items-center gap-1.5 py-2 shrink-0"><MessageSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Comentários</span></TabsTrigger>
+              <TabsTrigger value="deliverables" className="flex items-center gap-1.5 py-2 shrink-0"><Package className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Entregáveis</span></TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-1.5 py-2 shrink-0"><Archive className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Histórico</span></TabsTrigger>
+              <TabsTrigger value="performance" className="flex items-center gap-1.5 py-2 shrink-0"><TrendingUp className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Performance</span></TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="priorities" className="mt-4">
               <PrioritiesTab
