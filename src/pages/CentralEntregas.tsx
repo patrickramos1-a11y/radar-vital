@@ -298,7 +298,58 @@ export default function CentralEntregas() {
             </TabsContent>
           </Tabs>
         </div>
+
+        <QuickCreatePanel
+          collaborator={selectedInfo.name}
+          color={selectedInfo.color}
+          isTeamView={isTeamView}
+          clients={clients}
+          responsibleList={responsibleList}
+          priorities={prioritiesHook.priorities}
+          tasks={tasksHook.tasks}
+          onCreatePriority={prioritiesHook.addPriority}
+          onCreateTask={tasksHook.addTask}
+          onCreateDeliverable={deliverablesHook.addDeliverable}
+          variant="fab"
+        />
       </div>
     </AppLayout>
   );
 }
+
+function MobileCollaboratorMiniPanel({
+  name, color, clients, openTasks, openPriorities, deliverables, pendingComments, overdue, score,
+}: {
+  name: string; color: string;
+  clients: number; openTasks: number; openPriorities: number; doneTasks: number;
+  deliverables: number; pendingComments: number; overdue: number; score: number;
+}) {
+  const kpis = [
+    { label: 'Tarefas', value: openTasks },
+    { label: 'Prioridades', value: openPriorities },
+    { label: 'Atrasos', value: overdue, danger: overdue > 0 },
+    { label: 'Comentários', value: pendingComments, danger: pendingComments > 0 },
+    { label: 'Clientes', value: clients },
+    { label: 'Pontos', value: score, success: true },
+  ];
+  return (
+    <div
+      className="rounded-2xl border p-3"
+      style={{ background: `linear-gradient(135deg, ${color}0f 0%, transparent 60%)` }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+        <div className="text-sm font-bold truncate" style={{ color }}>{name}</div>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {kpis.map(k => (
+          <div key={k.label} className={`rounded-lg border bg-card px-2 py-1.5 ${k.danger ? 'border-red-200 bg-red-50/40' : ''}`}>
+            <div className="text-[9px] text-muted-foreground uppercase tracking-wide">{k.label}</div>
+            <div className={`text-base font-bold ${k.danger ? 'text-red-600' : k.success ? 'text-emerald-700' : ''}`}>{k.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
