@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Deliverable, DeliverableFormData, DeliverableStatus, DeliverableItem } from '@/types/deliverable';
 import { toast } from 'sonner';
-import { ActivityLogger } from '@/lib/activityLogger';
 
 const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
@@ -75,7 +74,6 @@ export function useDeliverables() {
       }
       await fetch();
       toast.success('Entregável criado');
-      ActivityLogger.createDeliverable(getCurrentUserName(), data.name);
       return inserted;
     } catch (e) {
       console.error(e);

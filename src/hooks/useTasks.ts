@@ -90,32 +90,25 @@ export function useTasks() {
     }
   }, [fetchTasks]);
 
-  const deleteTask = useCallback(async (taskId: string, clientName?: string) => {
-    const task = tasks.find(t => t.id === taskId);
+  const deleteTask = useCallback(async (taskId: string, _clientName?: string) => {
     try {
       const { error } = await supabase.from('tasks').delete().eq('id', taskId);
       if (error) throw error;
       await fetchTasks();
       toast.success('Tarefa excluída');
-      if (task) {
-        ActivityLogger.deleteTask(getCurrentUserName(), clientName || 'Cliente', task.client_id, task.title);
-      }
       return true;
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('Erro ao excluir tarefa');
       return false;
     }
-  }, [tasks, fetchTasks]);
+  }, [fetchTasks]);
 
-  const toggleComplete = useCallback(async (taskId: string, clientName?: string) => {
+  const toggleComplete = useCallback(async (taskId: string, _clientName?: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return false;
     const newCompleted = !task.completed;
     const result = await updateTask(taskId, { completed: newCompleted });
-    if (result) {
-      ActivityLogger.completeTask(getCurrentUserName(), clientName || 'Cliente', task.client_id, task.title, newCompleted);
-    }
     return result;
   }, [tasks, updateTask]);
 

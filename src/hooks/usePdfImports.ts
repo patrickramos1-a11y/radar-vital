@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import type { PdfImport, PdfDetectedClient, PdfMetric, ClientMatchResult, ParsedPdfData } from '@/types/pdfImport';
 import { normalizeClientName, calculateSimilarity, calculateFileHash } from '@/lib/pdfParser';
 import { useAuth } from '@/contexts/AuthContext';
-import { logActivity } from '@/hooks/useActivityLogs';
 
 // Fetch all PDF imports
 export function usePdfImports() {
@@ -348,12 +347,6 @@ export function useCompleteImport() {
       }
       
       // Fetch the import record for metadata
-      const { data: importRecord } = await supabase
-        .from('pdf_imports')
-        .select('*')
-        .eq('id', importId)
-        .single();
-      
       // For each detected client, we need to save their metrics
       // This would require the parsed data which we stored in raw_metadata
       // For now, we'll mark the import as complete
@@ -367,16 +360,6 @@ export function useCompleteImport() {
         .eq('id', importId);
       
       if (updateError) throw updateError;
-      
-      // Log activity
-      await logActivity({
-        entityType: 'pdf_import',
-        actionType: 'import',
-        description: `Importou PDF "${importRecord?.file_name}" com ${detectedClients.length} clientes`,
-        entityId: importId,
-        entityName: importRecord?.file_name || 'PDF',
-        userName: currentUser?.name || 'Sistema',
-      });
       
       return { importedCount: detectedClients.length };
     },

@@ -2,10 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ActivityLogger } from '@/lib/activityLogger';
-
-// Get current user from localStorage for logging
-const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
 interface ClientContextType {
   clients: Client[];
@@ -372,7 +368,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     if (client) {
       const newValue = !client.isActive;
       updateClient(id, { isActive: newValue });
-      ActivityLogger.toggleActive(getCurrentUserName(), client.name, id, newValue);
     }
   }, [clients, updateClient]);
 
@@ -381,7 +376,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     if (client) {
       const newValue = !client.isPriority;
       updateClient(id, { isPriority: newValue });
-      ActivityLogger.togglePriority(getCurrentUserName(), client.name, id, newValue);
     }
   }, [clients, updateClient]);
 
@@ -404,7 +398,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
           [collaborator]: newValue,
         }
       });
-      ActivityLogger.toggleCollaborator(getCurrentUserName(), client.name, id, collaborator, newValue);
     }
   }, [clients, updateClient]);
 
@@ -414,7 +407,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       const newValue = !client.isHighlighted;
       // Update in database and sync local state
       updateClient(id, { isHighlighted: newValue });
-      ActivityLogger.toggleHighlight(getCurrentUserName(), client.name, id, newValue);
     }
     // Also update the in-memory set for immediate UI feedback
     setHighlightedClients(prev => {
@@ -444,7 +436,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       const oldType = client.clientType;
       const newType = oldType === 'AC' ? 'AV' : 'AC';
       updateClient(id, { clientType: newType });
-      ActivityLogger.toggleClientType(getCurrentUserName(), client.name, id, oldType, newType);
     }
   }, [clients, updateClient]);
 
