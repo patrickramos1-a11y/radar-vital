@@ -8,31 +8,8 @@ export type CollaboratorFilterName = string;
 export type ActionType =
   | 'LOGIN'
   | 'LOGOUT'
-  | 'TOGGLE_PRIORITY'
-  | 'TOGGLE_HIGHLIGHT'
-  | 'TOGGLE_ACTIVE'
-  | 'TOGGLE_CHECKED'
-  | 'TOGGLE_COLLABORATOR'
-  | 'TOGGLE_CLIENT_TYPE'
   | 'CREATE_COMMENT'
-  | 'DELETE_COMMENT'
-  | 'PIN_COMMENT'
-  | 'CREATE_TASK'
-  | 'COMPLETE_TASK'
-  | 'DELETE_TASK'
-  | 'UPDATE_TASK'
-  | 'IMPORT_DEMANDS'
-  | 'IMPORT_LICENSES'
-  | 'IMPORT_PROCESSES'
-  | 'IMPORT_DATA'
-  | 'CREATE_CLIENT'
-  | 'DELETE_CLIENT'
-  | 'UPDATE_DEMAND_STATUS'
-  | 'CREATE_DEMAND'
-  | 'UPDATE_DEMAND'
-  | 'CHANGE_RESPONSIBLE'
-  | 'CHANGE_PROJECT_YEAR'
-  | 'MOVE_CLIENT';
+  | 'CREATE_TASK';
 
 export interface ActivityLog {
   id: string;
@@ -66,13 +43,8 @@ export const DEFAULT_FILTERS: LogFilters = {
 
 // Quick filter categories
 export const QUICK_FILTER_CATEGORIES = {
-  priority: ['TOGGLE_PRIORITY'],
-  highlight: ['TOGGLE_HIGHLIGHT'],
-  comments: ['CREATE_COMMENT', 'DELETE_COMMENT', 'PIN_COMMENT'],
-  imports: ['IMPORT_DEMANDS', 'IMPORT_LICENSES', 'IMPORT_PROCESSES', 'IMPORT_DATA'],
-  demands: ['CREATE_DEMAND', 'UPDATE_DEMAND', 'UPDATE_DEMAND_STATUS', 'CHANGE_RESPONSIBLE'],
-  tasks: ['CREATE_TASK', 'COMPLETE_TASK', 'DELETE_TASK', 'UPDATE_TASK'],
-  collaborators: ['TOGGLE_COLLABORATOR', 'CHANGE_RESPONSIBLE'],
+  comments: ['CREATE_COMMENT'],
+  tasks: ['CREATE_TASK'],
   session: ['LOGIN', 'LOGOUT'],
 };
 

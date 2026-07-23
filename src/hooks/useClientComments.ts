@@ -123,7 +123,6 @@ export function useClientComments(clientId: string) {
       if (error) throw error;
       setComments(prev => prev.filter(c => c.id !== id));
       toast.success('Comentário excluído');
-      ActivityLogger.deleteComment(getCurrentUserName(), clientName || 'Cliente', clientId);
     } catch (error) {
       console.error('Error deleting comment:', error);
       toast.error('Erro ao excluir comentário');
@@ -138,7 +137,6 @@ export function useClientComments(clientId: string) {
       const { error } = await supabase.from('client_comments').update({ is_pinned: newPinned }).eq('id', id);
       if (error) throw error;
       setComments(prev => prev.map(c => c.id === id ? { ...c, isPinned: newPinned } : c));
-      ActivityLogger.pinComment(getCurrentUserName(), clientName || 'Cliente', clientId, newPinned);
     } catch (error) {
       console.error('Error toggling pinned:', error);
       toast.error('Erro ao fixar comentário');

@@ -252,11 +252,15 @@ const Index = () => {
         const matchesWithComments = filterFlags.withComments && getCommentCount(c.id) > 0;
         const matchesWithoutComments = filterFlags.withoutComments && getCommentCount(c.id) === 0;
         const assignedIds = getAssignedCollaboratorIds(c.id);
-        const matchesCollaborator = collaboratorFilters.length > 0 && 
-          collaboratorFilters.some(collab => {
+        const wantNoneResp = collaboratorFilters.includes('__none__');
+        const nameFilters = collaboratorFilters.filter(n => n !== '__none__');
+        const matchesCollaborator = collaboratorFilters.length > 0 && (
+          (wantNoneResp && assignedIds.length === 0) ||
+          (nameFilters.length > 0 && nameFilters.some(collab => {
             const collabObj = allCollaborators.find(co => co.name === collab);
             return collabObj && assignedIds.includes(collabObj.id);
-          });
+          }))
+        );
 
         return matchesPriority || matchesHighlighted || matchesSelected || matchesHasCollaborators ||
                matchesWithJackbox || matchesWithoutJackbox || 

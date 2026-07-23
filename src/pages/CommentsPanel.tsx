@@ -1050,29 +1050,22 @@ function PanelReadStatusBar({ comment, currentUserName, isAdmin, collaborators, 
   const readCount = readNames.length;
   const allRead = readCount === collaboratorNames.length;
 
-  // Patrick lock rule: if current user is "Patrick", they can't mark as read until all others have read
-  const isPatrick = currentUserName.toLowerCase() === 'patrick';
-  const patrickLocked = isPatrick && !selfIsRead && !collaboratorNames
-    .filter(n => n.toLowerCase() !== 'patrick')
-    .every(n => !!comment.readTimestamps[n]);
-
   return (
     <div className="flex items-center gap-1.5">
       {canMarkSelf && (
         <button
-          onClick={() => !patrickLocked && onToggleRead(currentUserName)}
-          disabled={patrickLocked}
+          onClick={() => onToggleRead(currentUserName)}
           className={cn(
             'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all',
-            patrickLocked && 'opacity-50 cursor-not-allowed',
             selfIsRead ? 'text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/80 border border-border'
           )}
           style={selfIsRead ? { backgroundColor: selfColor } : {}}
-          title={patrickLocked ? 'Aguardando equipe ler primeiro' : selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
+          title={selfIsRead ? 'Desmarcar como lido' : 'Marcar como lido'}
         >
           {selfIsRead ? <CheckCheck className="w-4 h-4" /> : <Check className="w-4 h-4" />}
         </button>
       )}
+
       <span className="text-[10px] text-muted-foreground font-medium">
         {allRead ? (
           <span className="text-green-600 dark:text-green-400">✓✓</span>

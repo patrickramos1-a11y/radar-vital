@@ -1,63 +1,79 @@
-# Evolução dos Entregáveis — Filtros, Solicitante e Duração
+## Objetivo
+Adicionar a opção **"Sem responsável"** dentro dos dropdowns de filtro de colaborador, permitindo listar tarefas/clientes que não têm ninguém atribuído. A opção pode ser combinada com colaboradores selecionados (OR).
 
-## 1. Banco de dados (migração)
+## Onde a opção precisa aparecer
+Existem dois dropdowns de "Colaboradores" reutilizados no sistema:
 
-Adicionar coluna `requester` (texto simples) na tabela `deliverables`:
+1. **`src/components/visual-panels/VisualPanelFilters.tsx`** — usado em:
+   - Painel de Tarefas (`src/pages/JackboxUnified.tsx`) — filtro por responsável **das tarefas**.
+   - Painel Jackbox (`src/pages/JackboxPanel.tsx`) — filtro por responsável do cliente.
 
-- `requester TEXT NULL` — nome do colaborador solicitante. Opcional. Não afeta permissões nem status.
-- Não altera lógica de responsáveis (`assigned_to`) nem de avaliação.
-- Duração real é calculada em runtime a partir de `created_at` e `completed_at` — não precisa de coluna nova.
+2. **`src/components/dashboard/FilterBar.tsx`** — usado no Dashboard (`src/pages/Index.tsx`) para filtrar clientes por colaborador atribuído.
 
-## 2. Cadastro / edição (DeliverableModal)
+Nenhuma outra tela tem dropdown de "responsáveis por tarefas": a Central de Entregas trabalha com um único responsável escolhido no `TeamSelector`, e o `MobileCompactFilters` não filtra por colaborador.
 
-- Novo campo **Solicitante** (opcional, seleção única) logo abaixo de Responsáveis. Fonte: mesma lista de colaboradores já usada em Responsáveis (inclui os que não participam do painel). Botão "Nenhum" para limpar.
-- Preview de duração ao editar: se em aberto, mostra "X dias em aberto"; se concluído, mostra "concluído em Y dias".
-- Sem input manual de duração — cálculo é automático.
+## Convenção
+Introduzir o sentinela `'__none__'` (constante exportada `NO_RESPONSIBLE = '__none__'`) reutilizado em ambos os componentes. Quando presente em `collaboratorFilters`, o item combina com registros sem responsável.
 
-## 3. Card do entregável (DeliverablesTab)
+## Alterações
 
-Adicionar duas informações ao card, em linha discreta abaixo do nome/descrição:
+### 1. `VisualPanelFilters.tsx` (dropdown)
+- No topo da lista renderizada dentro do `CollaboratorDropdown`, adicionar uma entrada fixa "Sem responsável" com ícone tracejado (círculo `border-dashed` com `–`), acima do input de busca ou como primeiro item da lista filtrada (independente do texto pesquisado, aparece se o termo casar com "sem" ou estiver vazio).
+- Label do botão: se apenas `__none__` estiver selecionado, mostrar "Sem responsável"; combinação com colaboradores continua exibindo "N selecionados".
+- `onToggle('__none__')` usa o mesmo handler existente.
 
-- **Solicitante** (quando existir): chip pequeno com avatar/inicial + nome, prefixado por "Solicitado por".
-- **Dias**:
-  - Em aberto/andamento → `Ícone relógio + "X dias em aberto"`.
-  - Concluído → `"concluído em Y dias"` (usa `completed_at - created_at`).
-  - Cancelado → oculto.
+### 2. `JackboxUnified.tsx` (Painel de Tarefas — filtragem por tarefa)
+Nos dois pontos que hoje filtram por `assigneeMatchesAny(t.assigned_to, collaboratorFilters)`:
+- Linha ~117 (`displayClients`)
+- Linha ~160 (`getFilteredTasks`)
 
-## 4. Barra de filtros (nova, acima da lista de entregáveis)
+Ajustar para:
+```
+const wantNone = collaboratorFilters.includes('__none__');
+const names = collaboratorFilters.filter(n => n !== '__none__');
+tasks.filter(t =>
+  (wantNone && (!t.assigned_to || t.assigned_to.length === 0)) ||
+  (names.length > 0 && assigneeMatchesAny(t.assigned_to, names))
+);
+```
+Se apenas `__none__` estiver ativo, retorna apenas tarefas sem responsável.
 
-Barra compacta com múltiplos grupos, todos multi-seleção (chips clicáveis):
-
-- **Status**: Aberto · Em andamento · Concluído · Cancelado. (Substitui o toggle atual "incluir concluídos".)
-- **Avaliação**: Joinha · Estrela · Super Estrela — filtra entregáveis que receberam pelo menos uma daquele tipo.
-- **Sem avaliação** (dois toggles independentes):
-  - `Sem nenhuma avaliação` — entregáveis concluídos com 0 avaliações totais.
-  - `Não avaliei ainda` — entregáveis concluídos onde o usuário logado ainda não deu sua avaliação.
-- **Solicitante**: dropdown multi-select com lista de colaboradores que aparecem como solicitantes.
-
-Regras:
-
-- Filtros combinam com **AND** entre grupos e **OR** dentro do mesmo grupo.
-- Botão "Limpar filtros" quando algum estiver ativo.
-- Contador "N de M entregáveis" ao lado.
-
-## 5. KPIs da aba (mini-cards existentes)
-
-Continuam refletindo o colaborador selecionado, mas passam a respeitar os filtros ativos (Total, Concluídos, Pendentes, % Conclusão, Joinhas, Estrelas, Super, Pontos).
-
-## Arquivos afetados
-
-```text
-supabase/migrations/…_add_requester_to_deliverables.sql   (novo)
-src/types/deliverable.ts                                  (+ requester)
-src/hooks/useDeliverables.ts                              (map/insert/update requester)
-src/components/central-entregas/DeliverableModal.tsx      (campo Solicitante + preview duração)
-src/components/central-entregas/DeliverablesTab.tsx       (barra de filtros + KPIs filtrados)
-src/components/central-entregas/DeliverableCard*          (solicitante + dias no card — inline em DeliverablesTab)
+### 3. `useVisualPanelFilters.ts` (Painel Jackbox — filtragem por cliente)
+No bloco `if (collaboratorFilters.length > 0 && !skipCollaboratorFilter)`:
+```
+const wantNone = collaboratorFilters.includes('__none__');
+const names = collaboratorFilters.filter(n => n !== '__none__');
+result = result.filter(c => {
+  const assignedNames = Object.keys(c.collaborators).filter(k => c.collaborators[k]);
+  const noResp = assignedNames.length === 0;
+  return (wantNone && noResp) || names.some(n => c.collaborators[n]);
+});
 ```
 
-## Fora de escopo
+### 4. `FilterBar.tsx` (Dashboard dropdown)
+- Adicionar a mesma entrada "Sem responsável" no topo da lista do `CollaboratorDropdown`.
+- Ajustar `displayLabel` para exibir "Sem responsável" quando único selecionado.
 
-- Nenhuma alteração em Prioridades, Tarefas, Comentários, Performance ou Histórico.
-- Sem mudança em permissões/RLS.
-- Sem alteração no cálculo de pontuação/ranking.
+### 5. `Index.tsx` (aplicação do filtro no Dashboard)
+No bloco `matchesCollaborator` (linhas ~254-259), tratar o sentinela:
+```
+const wantNone = collaboratorFilters.includes('__none__');
+const names = collaboratorFilters.filter(n => n !== '__none__');
+const noneMatch = wantNone && assignedIds.length === 0;
+const nameMatch = names.length > 0 && names.some(collab => {
+  const co = allCollaborators.find(x => x.name === collab);
+  return co && assignedIds.includes(co.id);
+});
+const matchesCollaborator = collaboratorFilters.length > 0 && (noneMatch || nameMatch);
+```
+
+## Preservado
+- Comportamento atual quando nenhum colaborador está selecionado (mostra tudo).
+- Comportamento OR entre múltiplas seleções.
+- `MobileCompactFilters`, Central de Entregas e demais telas ficam intocadas.
+- Sem mudanças no banco de dados.
+
+## Verificação
+- Typecheck automático do build.
+- Conferir no Painel de Tarefas: selecionar "Sem responsável" isolado lista apenas tarefas sem responsável; combinado com um colaborador, lista as duas categorias.
+- Conferir no Dashboard: "Sem responsável" mostra clientes sem colaborador atribuído.

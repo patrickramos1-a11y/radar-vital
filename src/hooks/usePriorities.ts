@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Priority, PriorityFormData, PriorityStatus } from '@/types/priority';
 import { toast } from 'sonner';
-import { ActivityLogger } from '@/lib/activityLogger';
 
 const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
 
@@ -69,7 +68,6 @@ export function usePriorities() {
       if (error) throw error;
       await fetch();
       toast.success('Prioridade criada');
-      ActivityLogger.createPriorityEntity(getCurrentUserName(), data.title, clientName);
       return inserted ? dbRowToPriority(inserted) : null;
     } catch (e) {
       console.error(e);
@@ -87,8 +85,6 @@ export function usePriorities() {
       if (error) throw error;
       await fetch();
       toast.success('Prioridade atualizada');
-      const p = priorities.find(x => x.id === id);
-      if (p) ActivityLogger.updatePriorityEntity(getCurrentUserName(), p.title, data);
       return true;
     } catch (e) {
       console.error(e);
@@ -117,7 +113,6 @@ export function usePriorities() {
     try {
       const { error } = await supabase.from('tasks').update({ priority_id: priority.id }).eq('id', taskId);
       if (error) throw error;
-      ActivityLogger.promoteTaskToPriority(getCurrentUserName(), taskTitle, priority.title, clientName);
       return priority;
     } catch (e) {
       console.error(e);
