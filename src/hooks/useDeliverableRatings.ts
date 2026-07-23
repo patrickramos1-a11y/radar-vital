@@ -74,6 +74,7 @@ export function useDeliverableRatings() {
           { onConflict: 'deliverable_id,rater_name' }
         );
       if (error) throw error;
+      await fetch();
       toast.success('Avaliação registrada');
     } catch (e) {
       console.error(e);
