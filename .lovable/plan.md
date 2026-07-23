@@ -1,79 +1,33 @@
 ## Objetivo
-Adicionar a opção **"Sem responsável"** dentro dos dropdowns de filtro de colaborador, permitindo listar tarefas/clientes que não têm ninguém atribuído. A opção pode ser combinada com colaboradores selecionados (OR).
-
-## Onde a opção precisa aparecer
-Existem dois dropdowns de "Colaboradores" reutilizados no sistema:
-
-1. **`src/components/visual-panels/VisualPanelFilters.tsx`** — usado em:
-   - Painel de Tarefas (`src/pages/JackboxUnified.tsx`) — filtro por responsável **das tarefas**.
-   - Painel Jackbox (`src/pages/JackboxPanel.tsx`) — filtro por responsável do cliente.
-
-2. **`src/components/dashboard/FilterBar.tsx`** — usado no Dashboard (`src/pages/Index.tsx`) para filtrar clientes por colaborador atribuído.
-
-Nenhuma outra tela tem dropdown de "responsáveis por tarefas": a Central de Entregas trabalha com um único responsável escolhido no `TeamSelector`, e o `MobileCompactFilters` não filtra por colaborador.
-
-## Convenção
-Introduzir o sentinela `'__none__'` (constante exportada `NO_RESPONSIBLE = '__none__'`) reutilizado em ambos os componentes. Quando presente em `collaboratorFilters`, o item combina com registros sem responsável.
+Somente o administrador (Patrick) poderá avaliar entregáveis (joinha, estrelas, super estrela). Isso impede auto-atribuição de pontos pelos colaboradores.
 
 ## Alterações
 
-### 1. `VisualPanelFilters.tsx` (dropdown)
-- No topo da lista renderizada dentro do `CollaboratorDropdown`, adicionar uma entrada fixa "Sem responsável" com ícone tracejado (círculo `border-dashed` com `–`), acima do input de busca ou como primeiro item da lista filtrada (independente do texto pesquisado, aparece se o termo casar com "sem" ou estiver vazio).
-- Label do botão: se apenas `__none__` estiver selecionado, mostrar "Sem responsável"; combinação com colaboradores continua exibindo "N selecionados".
-- `onToggle('__none__')` usa o mesmo handler existente.
+### 1. `src/components/central-entregas/DeliverableRating.tsx`
+- Detectar se o usuário atual é admin comparando `currentUser` com `'Patrick'` (case-insensitive), padrão já usado no projeto (`mem://logic/activity-log-attribution`).
+- Se não for admin: desabilitar os botões de joinha, estrelas e super estrela (mesmo tratamento visual do `disabled` atual — opacity + pointer-events-none), e exibir uma linha explicativa com ícone `Lock`: "Apenas o administrador pode avaliar."
+- Manter a exibição dos totais (joinhas, estrelas, super, pontos) visível para todos.
+- A regra do `disabled` existente (entregável não concluído) continua valendo em cima disso.
 
-### 2. `JackboxUnified.tsx` (Painel de Tarefas — filtragem por tarefa)
-Nos dois pontos que hoje filtram por `assigneeMatchesAny(t.assigned_to, collaboratorFilters)`:
-- Linha ~117 (`displayClients`)
-- Linha ~160 (`getFilteredTasks`)
+### 2. Limpeza de avaliações antigas (banco)
+Executar uma exclusão única em `deliverable_ratings` removendo qualquer registro cujo `rater_name` não seja "Patrick" (comparação case-insensitive, sem acentos). Isso zera joinhas/estrelas atribuídas por não-admin, mantendo apenas as do admin.
 
-Ajustar para:
-```
-const wantNone = collaboratorFilters.includes('__none__');
-const names = collaboratorFilters.filter(n => n !== '__none__');
-tasks.filter(t =>
-  (wantNone && (!t.assigned_to || t.assigned_to.length === 0)) ||
-  (names.length > 0 && assigneeMatchesAny(t.assigned_to, names))
-);
-```
-Se apenas `__none__` estiver ativo, retorna apenas tarefas sem responsável.
-
-### 3. `useVisualPanelFilters.ts` (Painel Jackbox — filtragem por cliente)
-No bloco `if (collaboratorFilters.length > 0 && !skipCollaboratorFilter)`:
-```
-const wantNone = collaboratorFilters.includes('__none__');
-const names = collaboratorFilters.filter(n => n !== '__none__');
-result = result.filter(c => {
-  const assignedNames = Object.keys(c.collaborators).filter(k => c.collaborators[k]);
-  const noResp = assignedNames.length === 0;
-  return (wantNone && noResp) || names.some(n => c.collaborators[n]);
-});
+```sql
+DELETE FROM public.deliverable_ratings
+WHERE lower(rater_name) <> 'patrick';
 ```
 
-### 4. `FilterBar.tsx` (Dashboard dropdown)
-- Adicionar a mesma entrada "Sem responsável" no topo da lista do `CollaboratorDropdown`.
-- Ajustar `displayLabel` para exibir "Sem responsável" quando único selecionado.
-
-### 5. `Index.tsx` (aplicação do filtro no Dashboard)
-No bloco `matchesCollaborator` (linhas ~254-259), tratar o sentinela:
-```
-const wantNone = collaboratorFilters.includes('__none__');
-const names = collaboratorFilters.filter(n => n !== '__none__');
-const noneMatch = wantNone && assignedIds.length === 0;
-const nameMatch = names.length > 0 && names.some(collab => {
-  const co = allCollaborators.find(x => x.name === collab);
-  return co && assignedIds.includes(co.id);
-});
-const matchesCollaborator = collaboratorFilters.length > 0 && (noneMatch || nameMatch);
-```
+### 3. Defesa no hook `src/hooks/useDeliverableRatings.ts`
+- Em `rate()` e `removeRating()`: se `getCurrentUserName()` não for Patrick, abortar com `toast.error('Apenas o administrador pode avaliar')` antes de chamar o Supabase. Camada de proteção extra, além da UI desabilitada.
 
 ## Preservado
-- Comportamento atual quando nenhum colaborador está selecionado (mostra tudo).
-- Comportamento OR entre múltiplas seleções.
-- `MobileCompactFilters`, Central de Entregas e demais telas ficam intocadas.
-- Sem mudanças no banco de dados.
+- Fórmula de pontuação (estrela = valor 1–5, super = 10, joinha = 0) conforme `mem://logic/governance-responsible-tracking-v2` e código atual.
+- Regra que libera avaliação apenas após conclusão do entregável.
+- Ranking na aba Entregáveis e KPIs de Performance continuam funcionando; recalcularão automaticamente após a limpeza.
+- Nenhuma mudança em RLS/policies do banco (o gate é por identidade local, coerente com `mem://auth/local-user-selection-model`).
 
 ## Verificação
-- Typecheck automático do build.
-- Conferir no Painel de Tarefas: selecionar "Sem responsável" isolado lista apenas tarefas sem responsável; combinado com um colaborador, lista as duas categorias.
-- Conferir no Dashboard: "Sem responsável" mostra clientes sem colaborador atribuído.
+- Typecheck do build.
+- Logar como colaborador não-admin: botões de avaliação aparecem desabilitados com mensagem "Apenas o administrador pode avaliar"; totais continuam visíveis.
+- Logar como Patrick: avaliação funciona normalmente em entregáveis concluídos.
+- Após migração de limpeza: cards mostram apenas avaliações do Patrick; ranking recalculado.
