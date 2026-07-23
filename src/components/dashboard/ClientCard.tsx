@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
 import { ChecklistButton } from "@/components/checklist/ChecklistButton";
 import { CommentButton } from "@/components/comments/CommentButton";
+import { MarkerReasonDialog } from "@/components/dashboard/MarkerReasonDialog";
 import { CommentSnippet } from "@/hooks/useAllClientsCommentSnippets";
 import {
   Popover,
@@ -122,6 +124,7 @@ export function ClientCard({
   activeTasks = [],
   commentSnippets = [],
 }: ClientCardProps) {
+  const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
   const hasCollaborators = assignedCollaborators.length > 0;
   const collaboratorBg = getCollaboratorGradient(assignedCollaborators);
@@ -133,9 +136,7 @@ export function ClientCard({
   const handleHighlightClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isHighlighted) {
-      const reason = window.prompt('Motivo curto para Pode dar BO:', client.boReason || '');
-      if (reason === null) return;
-      onHighlight(client.id, reason.trim());
+      setReasonDialog("bo");
       return;
     }
     onHighlight(client.id);
@@ -144,9 +145,7 @@ export function ClientCard({
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!client.isPriority) {
-      const reason = window.prompt('Motivo curto da prioridade:', client.priorityReason || '');
-      if (reason === null) return;
-      onTogglePriority(client.id, reason.trim());
+      setReasonDialog("priority");
       return;
     }
     onTogglePriority(client.id);
@@ -163,21 +162,22 @@ export function ClientCard({
   };
 
   return (
-    <div
-      className={`client-card-compact h-full min-h-0 min-w-0 ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
-      onClick={() => onSelect(client.id)}
-    >
-      {/* Top right icons */}
-      <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
-        <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
-        <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />
-        <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
-          <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
-        </button>
-        <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? `Prioridade: ${client.priorityReason || 'sem motivo informado'}` : "Marcar como prioritário"}>
-          <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
-        </button>
-      </div>
+    <>
+      <div
+        className={`client-card-compact h-full min-h-0 min-w-0 ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+        onClick={() => onSelect(client.id)}
+      >
+        {/* Top right icons */}
+        <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
+          <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
+          <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />
+          <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
+            <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
+          </button>
+          <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? `Prioridade: ${client.priorityReason || 'sem motivo informado'}` : "Marcar como prioritário"}>
+            <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
+          </button>
+        </div>
 
       {/* Header */}
       <div className={`flex items-center gap-1.5 ${headerSizes.headerPadding} bg-card-elevated/80 border-b border-border/50`}>
@@ -251,7 +251,21 @@ export function ClientCard({
           </div>
         )}
       </div>
-    </div>
+      </div>
+
+      {reasonDialog && (
+        <MarkerReasonDialog
+          open={!!reasonDialog}
+          kind={reasonDialog}
+          defaultValue={reasonDialog === "priority" ? client.priorityReason : client.boReason}
+          onOpenChange={(open) => !open && setReasonDialog(null)}
+          onConfirm={(reason) => {
+            if (reasonDialog === "priority") onTogglePriority(client.id, reason);
+            else onHighlight(client.id, reason);
+          }}
+        />
+      )}
+    </>
   );
 }
 

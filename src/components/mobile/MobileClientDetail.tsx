@@ -2,18 +2,15 @@ import { useState } from "react";
 import { 
   Star, 
   Bomb,
-  CheckSquare, 
   MessageCircle, 
   ListChecks,
-  FileText,
-  Shield,
-  ClipboardList,
   X
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import { TaskModal } from "@/components/checklist/TaskModal";
 import { CommentsModal } from "@/components/comments/CommentsModal";
+import { MarkerReasonDialog } from "@/components/dashboard/MarkerReasonDialog";
 import { Task, TaskFormData } from "@/types/task";
 
 interface MobileClientDetailProps {
@@ -53,6 +50,7 @@ export function MobileClientDetail({
 }: MobileClientDetailProps) {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
 
   if (!client) return null;
 
@@ -102,9 +100,7 @@ export function MobileClientDetail({
                 color="rgb(245, 158, 11)"
                 onClick={() => {
                   if (!client.isPriority) {
-                    const reason = window.prompt('Motivo curto da prioridade:', client.priorityReason || '');
-                    if (reason === null) return;
-                    onTogglePriority(client.id, reason.trim());
+                    setReasonDialog("priority");
                     return;
                   }
                   onTogglePriority(client.id);
@@ -117,9 +113,7 @@ export function MobileClientDetail({
                 color="rgb(239, 68, 68)"
                 onClick={() => {
                   if (!isHighlighted) {
-                    const reason = window.prompt('Motivo curto para Pode dar BO:', client.boReason || '');
-                    if (reason === null) return;
-                    onToggleHighlight(client.id, reason.trim());
+                    setReasonDialog("bo");
                     return;
                   }
                   onToggleHighlight(client.id);
@@ -218,6 +212,19 @@ export function MobileClientDetail({
           onClose={() => setShowCommentsModal(false)}
           clientId={client.id}
           clientName={client.name}
+        />
+      )}
+
+      {reasonDialog && (
+        <MarkerReasonDialog
+          open={!!reasonDialog}
+          kind={reasonDialog}
+          defaultValue={reasonDialog === "priority" ? client.priorityReason : client.boReason}
+          onOpenChange={(open) => !open && setReasonDialog(null)}
+          onConfirm={(reason) => {
+            if (reasonDialog === "priority") onTogglePriority(client.id, reason);
+            else onToggleHighlight(client.id, reason);
+          }}
         />
       )}
     </>
