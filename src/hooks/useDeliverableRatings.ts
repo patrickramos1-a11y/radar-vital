@@ -15,6 +15,7 @@ export interface DeliverableRating {
 }
 
 const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
+const isAdmin = (name: string) => name.trim().toLowerCase() === 'patrick';
 
 /**
  * OFFICIAL SCORE: thumbs = 0 (just a like), star = value (1-5), superstar = 10.
@@ -65,6 +66,7 @@ export function useDeliverableRatings() {
   const rate = useCallback(async (deliverableId: string, rating_type: RatingType, value: number) => {
     try {
       const rater = getCurrentUserName();
+      if (!isAdmin(rater)) { toast.error('Apenas o administrador pode avaliar'); return; }
       const { error } = await supabase
         .from('deliverable_ratings' as any)
         .upsert(
@@ -82,6 +84,7 @@ export function useDeliverableRatings() {
   const removeRating = useCallback(async (deliverableId: string) => {
     try {
       const rater = getCurrentUserName();
+      if (!isAdmin(rater)) { toast.error('Apenas o administrador pode avaliar'); return; }
       const { error } = await supabase
         .from('deliverable_ratings' as any)
         .delete()

@@ -1,0 +1,1 @@
+DELETE FROM public.deliverable_ratings WHERE lower(trim(rater_name)) <> 'patrick';

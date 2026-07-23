@@ -14,19 +14,21 @@ interface Props {
 export function DeliverableRatingControl({ deliverableId, ratings, currentUser, disabled, onRate, onRemove }: Props) {
   const { thumbs, stars, superstars, score } = summarizeRatings(ratings);
   const mine = ratings.find(r => r.rater_name.toLowerCase() === currentUser.toLowerCase());
+  const isAdmin = currentUser.trim().toLowerCase() === 'patrick';
+  const locked = disabled || !isAdmin;
 
   const handleStar = (n: number) => {
-    if (disabled) return;
+    if (locked) return;
     if (mine?.rating_type === 'star' && mine.value === n) onRemove(deliverableId);
     else onRate(deliverableId, 'star', n);
   };
   const handleThumbs = () => {
-    if (disabled) return;
+    if (locked) return;
     if (mine?.rating_type === 'thumbs') onRemove(deliverableId);
     else onRate(deliverableId, 'thumbs', 1);
   };
   const handleSuper = () => {
-    if (disabled) return;
+    if (locked) return;
     if (mine?.rating_type === 'superstar') onRemove(deliverableId);
     else onRate(deliverableId, 'superstar', 10);
   };
@@ -41,7 +43,14 @@ export function DeliverableRatingControl({ deliverableId, ratings, currentUser, 
           A avaliação ficará disponível após a conclusão do entregável.
         </div>
       )}
-      <div className={cn('flex items-center justify-between gap-2 flex-wrap', disabled && 'opacity-50 pointer-events-none')}>
+      {!disabled && !isAdmin && (
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-1.5 italic">
+          <Lock className="w-3 h-3" />
+          Apenas o administrador pode avaliar.
+        </div>
+      )}
+      <div className={cn('flex items-center justify-between gap-2 flex-wrap', locked && 'opacity-50 pointer-events-none')}>
+
         <div className="flex items-center gap-1">
           <button onClick={handleThumbs} title="Joinha (reconhecimento — não pontua)"
             className={cn('p-1.5 rounded-md transition',
