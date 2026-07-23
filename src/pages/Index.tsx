@@ -12,7 +12,7 @@ import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippe
 import { useAuth } from "@/contexts/AuthContext";
 import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { Client } from "@/types/client";
-import { Users, Star, Sparkles, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "lucide-react";
+import { Users, Star, Bomb, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -486,7 +486,7 @@ const Index = () => {
               color="#10B981"
               active={alertFilter === 'deBoa'}
               onClick={() => setAlertFilter(alertFilter === 'deBoa' ? 'all' : 'deBoa')}
-              tooltip="Clientes estáveis — sem prioridade, destaque ou tarefas ativas."
+              tooltip="Clientes estáveis — sem prioridade, Pode dar BO ou tarefas ativas."
             />
             <AlertFilterButton
               icon={<AlertTriangle className="w-3.5 h-3.5" />}
@@ -495,7 +495,7 @@ const Index = () => {
               color="#EF4444"
               active={alertFilter === 'comAlerta'}
               onClick={() => setAlertFilter(alertFilter === 'comAlerta' ? 'all' : 'comAlerta')}
-              tooltip="Clientes que demandam atenção — possuem prioridade, destaque ou tarefas ativas."
+              tooltip="Clientes que demandam atenção — possuem prioridade, Pode dar BO ou tarefas ativas."
             />
             <div className="w-px h-6 bg-border/40 mx-1" />
             {allCollaborators.map((collab) => (
@@ -510,7 +510,7 @@ const Index = () => {
             ))}
             <div className="w-px h-6 bg-border/40 mx-1" />
             <StatBadge icon={<Star className="w-3.5 h-3.5" />} value={priorityCount} label="Prioridade" color="rgb(245, 158, 11)" active={filterFlags.priority} onClick={() => handleFilterFlagToggle('priority')} />
-            <StatBadge icon={<Sparkles className="w-3.5 h-3.5" />} value={highlightedClients.size} label="Destaque" color="rgb(99, 130, 246)" active={filterFlags.highlighted} onClick={() => handleFilterFlagToggle('highlighted')} />
+            <StatBadge icon={<Bomb className="w-3.5 h-3.5" />} value={highlightedClients.size} label="Pode dar BO" color="rgb(239, 68, 68)" active={filterFlags.highlighted} onClick={() => handleFilterFlagToggle('highlighted')} />
             <StatBadge icon={<UserCheck className="w-3.5 h-3.5" />} value={responsaveisCount} label="Responsáveis" color="rgb(16, 185, 129)" active={filterFlags.hasCollaborators} onClick={() => handleFilterFlagToggle('hasCollaborators')} />
             <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(129, 140, 248)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
             <StatBadge icon={<ListChecks className="w-3.5 h-3.5" />} value={jackboxCount} label="Tarefas" color="rgb(250, 204, 21)" active={filterFlags.withJackbox} onClick={() => handleFilterFlagToggle('withJackbox')} />

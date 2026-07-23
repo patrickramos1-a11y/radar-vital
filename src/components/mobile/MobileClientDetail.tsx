@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { 
   Star, 
-  Sparkles, 
+  Bomb,
   CheckSquare, 
   MessageCircle, 
   ListChecks,
@@ -24,8 +24,8 @@ interface MobileClientDetailProps {
   activeTaskCount: number;
   commentCount: number;
   tasks: Task[];
-  onTogglePriority: (id: string) => void;
-  onToggleHighlight: (id: string) => void;
+  onTogglePriority: (id: string, reason?: string) => void;
+  onToggleHighlight: (id: string, reason?: string) => void;
   onToggleChecked: (id: string) => void;
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
   onAddTask: (clientId: string, data: TaskFormData) => Promise<boolean>;
@@ -100,14 +100,30 @@ export function MobileClientDetail({
                 label="Prioridade"
                 active={client.isPriority}
                 color="rgb(245, 158, 11)"
-                onClick={() => onTogglePriority(client.id)}
+                onClick={() => {
+                  if (!client.isPriority) {
+                    const reason = window.prompt('Motivo curto da prioridade:', client.priorityReason || '');
+                    if (reason === null) return;
+                    onTogglePriority(client.id, reason.trim());
+                    return;
+                  }
+                  onTogglePriority(client.id);
+                }}
               />
               <ActionButton
-                icon={<Sparkles className={`w-5 h-5 ${isHighlighted ? 'fill-current' : ''}`} />}
-                label="Destaque"
+                icon={<Bomb className="w-5 h-5" />}
+                label="Pode dar BO"
                 active={isHighlighted}
-                color="rgb(59, 130, 246)"
-                onClick={() => onToggleHighlight(client.id)}
+                color="rgb(239, 68, 68)"
+                onClick={() => {
+                  if (!isHighlighted) {
+                    const reason = window.prompt('Motivo curto para Pode dar BO:', client.boReason || '');
+                    if (reason === null) return;
+                    onToggleHighlight(client.id, reason.trim());
+                    return;
+                  }
+                  onToggleHighlight(client.id);
+                }}
               />
               <ActionButton
                 icon={<ListChecks className="w-5 h-5" />}

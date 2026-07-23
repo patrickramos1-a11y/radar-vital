@@ -1,4 +1,4 @@
-import { Users, Settings, Star, Sparkles } from "lucide-react";
+import { Users, Settings, Star, Bomb } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -62,9 +62,9 @@ export function DashboardHeader({
           variant="priority"
         />
         <StatCardCompact 
-          icon={<Sparkles className="w-3.5 h-3.5" />} 
+          icon={<Bomb className="w-3.5 h-3.5" />} 
           value={highlightedCount} 
-          label="Destaques" 
+          label="Pode dar BO" 
           variant="highlight"
         />
       </div>

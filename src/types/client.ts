@@ -47,9 +47,11 @@ export interface Client {
   initials: string;
   logoUrl?: string;
   isPriority: boolean;
+  priorityReason?: string | null;
   isActive: boolean;
   isChecked: boolean;
   isHighlighted: boolean;
+  boReason?: string | null;
   clientType: ClientType;
   order: number;
   processes: number; // Calculated: em_andamento (análise + notificado)

@@ -35,7 +35,7 @@ export const DEFAULT_TV_SCENES: TVScene[] = [
   },
   {
     id: 'destaque-geral',
-    titulo: 'Destaque (Geral)',
+    titulo: 'Pode dar BO (Geral)',
     duracaoSegundos: 120,
     filtros: {
       tipoCliente: 'TODOS',

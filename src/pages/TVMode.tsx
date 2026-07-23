@@ -2,7 +2,7 @@ import { useMemo, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Play, Pause, SkipForward, SkipBack, Settings, Clock, 
-  Monitor, Star, Sparkles, Users, MessageSquare, Building2, X, CheckSquare
+  Monitor, Star, Bomb, Users, MessageSquare, Building2, X, CheckSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -155,7 +155,7 @@ export default function TVMode() {
   const getSceneIcon = () => {
     const { recorte, responsavel } = currentScene.filtros;
     if (recorte === 'prioridade') return <Star className="w-5 h-5 text-amber-500" />;
-    if (recorte === 'destaque') return <Sparkles className="w-5 h-5 text-blue-500" />;
+    if (recorte === 'destaque') return <Bomb className="w-5 h-5 text-red-500" />;
     if (recorte === 'responsaveis') return <Users className="w-5 h-5 text-violet-500" />;
     if (recorte === 'comentarios') return <MessageSquare className="w-5 h-5 text-emerald-500" />;
     if (recorte === 'checklist') return <CheckSquare className="w-5 h-5 text-primary" />;

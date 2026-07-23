@@ -1,4 +1,4 @@
-import { Star, Sparkles, Building2, Plus, MessageCircle, ListChecks } from "lucide-react";
+import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
@@ -23,8 +23,8 @@ interface ClientCardProps {
   allCollaborators: Collaborator[];
   assignedCollaboratorIds: string[];
   onSelect: (id: string) => void;
-  onHighlight: (id: string) => void;
-  onTogglePriority: (id: string) => void;
+  onHighlight: (id: string, reason?: string) => void;
+  onTogglePriority: (id: string, reason?: string) => void;
   onToggleCollaboratorAssignment: (clientId: string, collaboratorId: string) => void;
   onOpenChecklist: (id: string) => void;
   clientCount?: number;
@@ -132,11 +132,23 @@ export function ClientCard({
 
   const handleHighlightClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isHighlighted) {
+      const reason = window.prompt('Motivo curto para Pode dar BO:', client.boReason || '');
+      if (reason === null) return;
+      onHighlight(client.id, reason.trim());
+      return;
+    }
     onHighlight(client.id);
   };
 
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!client.isPriority) {
+      const reason = window.prompt('Motivo curto da prioridade:', client.priorityReason || '');
+      if (reason === null) return;
+      onTogglePriority(client.id, reason.trim());
+      return;
+    }
     onTogglePriority(client.id);
   };
 
@@ -159,10 +171,10 @@ export function ClientCard({
       <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
         <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
         <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />
-        <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? "Remover destaque" : "Destacar cliente"}>
-          <Sparkles className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-blue-400 fill-blue-400' : 'text-muted-foreground/40 hover:text-blue-400'}`} />
+        <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
+          <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
         </button>
-        <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? "Remover prioridade" : "Marcar como prioritário"}>
+        <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? `Prioridade: ${client.priorityReason || 'sem motivo informado'}` : "Marcar como prioritário"}>
           <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
         </button>
       </div>
@@ -207,7 +219,7 @@ export function ClientCard({
         className={`flex flex-col transition-all overflow-hidden ${fitAll ? 'p-1.5' : 'p-2'} ${cardContentMode === 'logo' ? 'items-center justify-center' : ''}`}
         style={{
           background: cardContentMode === 'logo'
-            ? (hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(230 75% 62% / 0.15)' : 'hsl(var(--muted) / 0.2)'))
+            ? (hasCollaborators ? collaboratorBg : (isHighlighted ? 'hsl(0 84% 60% / 0.18)' : 'hsl(var(--muted) / 0.2)'))
             : 'hsl(var(--card))',
           ...(fitAll ? {} : { minHeight: logoAreaStyle.minHeight }),
           flex: logoAreaStyle.flex,

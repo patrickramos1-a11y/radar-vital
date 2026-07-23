@@ -1,4 +1,4 @@
-import { Users, Star, Sparkles, UserCheck, MessageCircle, ListChecks, CheckSquare, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Users, Star, Bomb, UserCheck, MessageCircle, ListChecks, CheckSquare, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileCompactHeaderProps {
@@ -115,12 +115,12 @@ export function MobileCompactHeader({
           activeColor="rgb(245, 158, 11)"
         />
         <FilterBadge
-          icon={<Sparkles className="w-3 h-3" />}
+          icon={<Bomb className="w-3 h-3" />}
           value={highlightedCount}
-          label="DEST"
+          label="BO"
           active={filterFlags.highlighted}
           onClick={() => onFilterFlagToggle('highlighted')}
-          activeColor="rgb(59, 130, 246)"
+          activeColor="rgb(239, 68, 68)"
         />
         <FilterBadge
           icon={<UserCheck className="w-3 h-3" />}

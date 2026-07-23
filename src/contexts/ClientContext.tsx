@@ -14,10 +14,10 @@ interface ClientContextType {
   deleteSelectedClients: (ids: string[]) => Promise<void>;
   clearAllClients: () => Promise<void>;
   toggleClientActive: (id: string) => void;
-  togglePriority: (id: string) => void;
+  togglePriority: (id: string, reason?: string) => void;
   toggleChecked: (id: string) => void;
   toggleCollaborator: (id: string, collaborator: keyof Client['collaborators']) => void;
-  toggleHighlight: (id: string) => void;
+  toggleHighlight: (id: string, reason?: string) => void;
   clearHighlights: () => void;
   toggleClientType: (id: string) => void;
   getClient: (id: string) => Client | undefined;
@@ -70,6 +70,19 @@ const CLIENT_LIST_COLUMNS = [
 ].join(',');
 
 // Convert database row to Client type
+const getStoredClientReason = (clientId: string, kind: 'priority' | 'bo') => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(`radar-vital:client-reason:${kind}:${clientId}`);
+};
+
+const setStoredClientReason = (clientId: string, kind: 'priority' | 'bo', reason?: string | null) => {
+  if (typeof window === 'undefined') return;
+  const key = `radar-vital:client-reason:${kind}:${clientId}`;
+  const clean = reason?.trim();
+  if (clean) window.localStorage.setItem(key, clean);
+  else window.localStorage.removeItem(key);
+};
+
 const dbRowToClient = (row: any): Client => {
   // Calculate "em andamento" = análise órgão + análise ramos + notificado
   const procEmAndamento = (row.proc_em_analise_orgao_count || 0) + (row.proc_em_analise_ramos_count || 0) + (row.proc_notificado_count || 0);
@@ -80,9 +93,11 @@ const dbRowToClient = (row: any): Client => {
     initials: row.initials,
     logoUrl: row.logo_url || undefined,
     isPriority: row.is_priority,
+    priorityReason: getStoredClientReason(row.id, 'priority'),
     isActive: row.is_active,
     isChecked: row.is_checked || false,
     isHighlighted: row.is_highlighted || false,
+    boReason: getStoredClientReason(row.id, 'bo'),
     clientType: row.client_type || 'AC',
     order: row.display_order,
     processes: procEmAndamento, // "P" = processes in progress (not deferido)
@@ -371,11 +386,16 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clients, updateClient]);
 
-  const togglePriority = useCallback((id: string) => {
+  const togglePriority = useCallback((id: string, reason?: string) => {
     const client = clients.find(c => c.id === id);
     if (client) {
       const newValue = !client.isPriority;
-      updateClient(id, { isPriority: newValue });
+      const nextReason = newValue ? (reason ?? client.priorityReason ?? '') : null;
+      setStoredClientReason(id, 'priority', nextReason);
+      updateClient(id, {
+        isPriority: newValue,
+        priorityReason: nextReason,
+      });
     }
   }, [clients, updateClient]);
 
@@ -401,14 +421,17 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clients, updateClient]);
 
-  const toggleHighlight = useCallback((id: string) => {
+  const toggleHighlight = useCallback((id: string, reason?: string) => {
     const client = clients.find(c => c.id === id);
     if (client) {
       const newValue = !client.isHighlighted;
-      // Update in database and sync local state
-      updateClient(id, { isHighlighted: newValue });
+      const nextReason = newValue ? (reason ?? client.boReason ?? '') : null;
+      setStoredClientReason(id, 'bo', nextReason);
+      updateClient(id, {
+        isHighlighted: newValue,
+        boReason: nextReason,
+      });
     }
-    // Also update the in-memory set for immediate UI feedback
     setHighlightedClients(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -424,6 +447,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     // Clear all highlights in database
     const highlightedIds = clients.filter(c => c.isHighlighted).map(c => c.id);
     for (const id of highlightedIds) {
+      setStoredClientReason(id, 'bo', null);
       await supabase.from('clients').update({ is_highlighted: false }).eq('id', id);
     }
     setHighlightedClients(new Set());
@@ -543,9 +567,11 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
           initials: client.initials || generateInitials(client.name),
           logoUrl: client.logoUrl,
           isPriority: client.isPriority || false,
+          priorityReason: client.priorityReason || null,
           isActive: client.isActive ?? true,
           isChecked: client.isChecked || false,
           isHighlighted: client.isHighlighted || false,
+          boReason: client.boReason || null,
           clientType: client.clientType || 'AC',
           order: client.order || 1,
           processes: client.processes || 0,
