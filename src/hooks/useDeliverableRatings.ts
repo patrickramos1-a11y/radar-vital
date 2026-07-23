@@ -92,6 +92,7 @@ export function useDeliverableRatings() {
         .eq('deliverable_id', deliverableId)
         .eq('rater_name', rater);
       if (error) throw error;
+      await fetch();
     } catch (e) { console.error(e); }
   }, []);
 
