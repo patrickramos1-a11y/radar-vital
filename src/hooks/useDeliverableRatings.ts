@@ -15,6 +15,7 @@ export interface DeliverableRating {
 }
 
 const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
+const isAdmin = (name: string) => name.trim().toLowerCase() === 'patrick';
 
 /**
  * OFFICIAL SCORE: thumbs = 0 (just a like), star = value (1-5), superstar = 10.
