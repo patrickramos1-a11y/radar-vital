@@ -2,10 +2,13 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Client, ClientFormData, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { filterClientsByScope } from '@/lib/clientScope';
 
 interface ClientContextType {
   clients: Client[];
+  allActiveClients: Client[];
   activeClients: Client[];
+  universeClients: Client[];
   highlightedClients: Set<string>;
   isLoading: boolean;
   addClient: (data: ClientFormData) => Promise<void>;
@@ -264,9 +267,11 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     fetchClients();
   }, [fetchClients]);
 
-  const activeClients = clients
+  const allActiveClients = clients
     .filter(c => c.isActive)
     .sort((a, b) => a.order - b.order);
+  const activeClients = filterClientsByScope(allActiveClients, 'external');
+  const universeClients = filterClientsByScope(allActiveClients, 'universe');
 
   const addClient = useCallback(async (data: ClientFormData) => {
     try {
@@ -458,7 +463,12 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     const client = clients.find(c => c.id === id);
     if (client) {
       const oldType = client.clientType;
-      const newType = oldType === 'AC' ? 'AV' : 'AC';
+      const newType =
+        oldType === 'AC'
+          ? 'AV'
+          : oldType === 'AV'
+            ? 'UNIVERSO_RAMOS'
+            : 'AC';
       updateClient(id, { clientType: newType });
     }
   }, [clients, updateClient]);
@@ -649,7 +659,9 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   return (
     <ClientContext.Provider value={{
       clients,
+      allActiveClients,
       activeClients,
+      universeClients,
       highlightedClients,
       isLoading,
       addClient,

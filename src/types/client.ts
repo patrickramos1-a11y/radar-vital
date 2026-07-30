@@ -38,8 +38,8 @@ export interface ProcessBreakdown {
   reprovado: number;
 }
 
-// Client type: AC = Acompanhamento, AV = Avulso
-export type ClientType = 'AC' | 'AV';
+// Client scope: external clients (AC/AV) or internal Ramos workspace.
+export type ClientType = 'AC' | 'AV' | 'UNIVERSO_RAMOS';
 
 export interface Client {
   id: string;
@@ -93,7 +93,9 @@ export function calculateTotalDemands(demands: DemandBreakdown): number {
 }
 
 export function calculateTotals(clients: Client[]) {
-  const activeClients = clients.filter(c => c.isActive);
+  const activeClients = clients.filter(
+    c => c.isActive && c.clientType !== 'UNIVERSO_RAMOS',
+  );
   return {
     totalClients: activeClients.length,
     totalProcesses: activeClients.reduce((sum, c) => sum + c.processes, 0),

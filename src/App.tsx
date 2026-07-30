@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import JackboxPanel from "./pages/JackboxPanel";
 import JackboxUnified from "./pages/JackboxUnified";
 import CentralEntregas from "./pages/CentralEntregas";
+import UniversoRamos from "./pages/UniversoRamos";
 
 import CommentsPanel from "./pages/CommentsPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="/jackbox" element={<JackboxPanel />} />
                 <Route path="/jackbox-unificado" element={<JackboxUnified />} />
                 <Route path="/central-entregas" element={<CentralEntregas />} />
+                <Route path="/universo-ramos" element={<UniversoRamos />} />
                 <Route path="/config" element={<Config />} />
                 <Route path="/tv" element={<TVMode />} />
                 <Route path="*" element={<NotFound />} />

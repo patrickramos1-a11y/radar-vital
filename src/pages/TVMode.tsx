@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Play, Pause, SkipForward, SkipBack, Settings, Clock, 
   Monitor, Star, Bomb, Users, MessageSquare, Building2, X, CheckSquare
@@ -21,7 +21,10 @@ import { cn } from "@/lib/utils";
 
 export default function TVMode() {
   const navigate = useNavigate();
-  const { activeClients, highlightedClients } = useClients();
+  const [searchParams] = useSearchParams();
+  const universeMode = searchParams.get("scope") === "UNIVERSO_RAMOS";
+  const { activeClients, universeClients, highlightedClients } = useClients();
+  const scopedClients = universeMode ? universeClients : activeClients;
   const { getActiveTaskCount } = useTasks();
   const [commentCounts] = useAllClientsCommentCountsWithRefresh();
   const getCommentCount = useCallback((clientId: string) => commentCounts.get(clientId) || 0, [commentCounts]);
@@ -38,7 +41,7 @@ export default function TVMode() {
   } = useTVMode();
 
   const handleExit = () => {
-    navigate('/');
+    navigate(universeMode ? '/universo-ramos' : '/');
   };
 
   // Current time
@@ -54,10 +57,10 @@ export default function TVMode() {
   // Filter clients based on current scene
   const filteredClients = useMemo(() => {
     const { filtros } = currentScene;
-    let result = [...activeClients];
+    let result = [...scopedClients];
 
     // Filter by client type
-    if (filtros.tipoCliente !== 'TODOS') {
+    if (!universeMode && filtros.tipoCliente !== 'TODOS') {
       result = result.filter(c => c.clientType === filtros.tipoCliente);
     }
 
@@ -105,7 +108,7 @@ export default function TVMode() {
     }
 
     return result;
-  }, [activeClients, currentScene, highlightedClients, getCommentCount, getActiveTaskCount]);
+  }, [scopedClients, universeMode, currentScene, highlightedClients, getCommentCount, getActiveTaskCount]);
 
   // Calculate grid columns based on client count and density
   const gridColumns = useMemo(() => {
@@ -256,7 +259,9 @@ export default function TVMode() {
         <div className="flex-1 flex flex-col items-center gap-1 px-4">
           <div className="flex items-center gap-2">
             {getSceneIcon()}
-            <span className="font-semibold text-foreground">{currentScene.titulo}</span>
+            <span className="font-semibold text-foreground">
+              {universeMode ? `Universo Ramos · ${currentScene.titulo}` : currentScene.titulo}
+            </span>
             <span className="text-sm text-muted-foreground">
               ({currentSceneIndex + 1}/{scenes.length})
             </span>
@@ -296,7 +301,7 @@ export default function TVMode() {
           <Building2 className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm font-medium">{filteredClients.length} empresas</span>
         </div>
-        {currentScene.filtros.tipoCliente !== 'TODOS' && (
+        {!universeMode && currentScene.filtros.tipoCliente !== 'TODOS' && (
           <span className={cn(
             "px-2 py-0.5 rounded text-xs font-bold",
             currentScene.filtros.tipoCliente === 'AC' 

@@ -23,8 +23,8 @@ Atualizado em: 2026-07-30
 | Fase | Estado | Dependencia | Proxima acao |
 | --- | --- | --- | --- |
 | 0. Fundacao e seguranca | EM ANDAMENTO | Supabase de teste | Aplicar migrations e provar RLS |
-| 1. Universo Ramos | NAO INICIADA | Fase 0 parcial | Definir migration e refatoracao do workspace |
-| 2. Visao Unificada | NAO INICIADA | Nenhuma | Definir `WorkItem` e adaptadores atuais |
+| 1. Universo Ramos | EM ANDAMENTO | Supabase de teste | Aplicar migration e validar isolamento com dados reais |
+| 2. Visao Unificada | NAO INICIADA | Fase 1 local | Definir `WorkItem` e adaptadores atuais |
 | 3. Auditorias | NAO INICIADA | Fases 0 e 2 | Criar migration e RPC de abertura |
 | 4. Desafios | NAO INICIADA | Fases 0 e 2 | Criar modelo e fluxo de validacao |
 | 5. Tesouro | NAO INICIADA | Fases 0 e 4 | Criar livro de transacoes |
@@ -49,7 +49,7 @@ Atualizado em: 2026-07-30
 - Lint observado: 98 erros e 26 avisos preexistentes.
 - Framework: React 18, Vite, TypeScript, Tailwind e shadcn/ui.
 - Dados: Supabase.
-- Testes automatizados: ainda sem estrutura suficiente para os fluxos novos.
+- Testes automatizados: Vitest configurado; 7 testes aprovados no checkpoint da Fase 1.
 
 ## Riscos conhecidos
 
@@ -64,9 +64,10 @@ Atualizado em: 2026-07-30
 
 ## Proxima entrega recomendada
 
-Aplicar a fundacao da Fase 0 em um projeto Supabase isolado, provisionar um
-usuario admin e um usuario comum, regenerar os tipos e executar a matriz de
-testes RLS documentada em `PHASE0_AUDIT.md`.
+Implementar a Visao Unificada da Fase 2 enquanto a validacao das migrations das
+Fases 0 e 1 aguarda um projeto Supabase isolado. Quando o ambiente estiver
+disponivel, aplicar as migrations em ordem, regenerar os tipos e executar a
+matriz de testes RLS documentada em `PHASE0_AUDIT.md`.
 
 ## Registro de execucao
 
@@ -86,6 +87,14 @@ Migrations: 20260730120000_auth_foundation.sql e 20260730121000_conditional_rls_
 Testes: Vitest 3 testes aprovados; build de producao aprovado.
 Resultado: implementacao local aprovada; producao preservada.
 Pendencias: aplicar em Supabase isolado, regenerar tipos e validar RLS com usuarios admin/comum.
+
+2026-07-30 - Fase 1
+Resumo: Universo Ramos implementado como workspace isolado, com cadastro unico AC/AV/Universo, rota propria e escopo explicito na Central de Entregas.
+Arquivos: tipos e contexto de clientes, cadastro/configuracao, sidebar, App, TV, Central de Entregas, pagina Universo Ramos e helpers de escopo.
+Migrations: 20260730130000_universo_ramos.sql, ainda nao aplicada.
+Testes: Vitest 7 testes aprovados; build de producao aprovado; lint manteve o baseline intermediario de 94 erros e 22 avisos preexistentes.
+Resultado: implementacao local aprovada; painel principal e totais externos excluem Universo Ramos; producao preservada.
+Pendencias: aplicar migration em Supabase isolado, validar CRUD real e executar verificacao visual autenticada em desktop, mobile e TV.
 ```
 
 ## Modelo para proximos registros

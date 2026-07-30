@@ -23,6 +23,7 @@ import { Star, CheckSquare, MessageSquare, Package, TrendingUp, Archive } from '
 import { startOfMonth } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { QuickCreatePanel } from '@/components/central-entregas/QuickCreatePanel';
+import { filterClientsByScope, type ClientScope } from '@/lib/clientScope';
 
 
 const DEFAULT_NAMES = ['Patrick', 'Celine', 'Gabi', 'Darley', 'Vanessa'];
@@ -34,6 +35,7 @@ export default function CentralEntregas() {
   const prioritiesHook = usePriorities();
   const deliverablesHook = useDeliverables();
   const { ratings } = useDeliverableRatings();
+  const [clientScope, setClientScope] = useState<ClientScope>('external');
 
   const responsibleList = useMemo(() => {
     const active = collaborators.filter(c => c.isActive);
@@ -73,14 +75,86 @@ export default function CentralEntregas() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const scopedClients = useMemo(() => {
+    return filterClientsByScope(clients, clientScope);
+  }, [clientScope, clients]);
+
+  const scopedClientIds = useMemo(
+    () => new Set(scopedClients.map(client => client.id)),
+    [scopedClients],
+  );
+  const universeClientIds = useMemo(
+    () => new Set(
+      clients
+        .filter(client => client.clientType === 'UNIVERSO_RAMOS')
+        .map(client => client.id),
+    ),
+    [clients],
+  );
+
+  const scopedTasks = useMemo(
+    () => tasksHook.tasks.filter(task => {
+      if (task.client_id) return scopedClientIds.has(task.client_id);
+      return clientScope !== 'universe';
+    }),
+    [clientScope, scopedClientIds, tasksHook.tasks],
+  );
+  const scopedPriorities = useMemo(
+    () => prioritiesHook.priorities.filter(priority => {
+      if (priority.client_id) return scopedClientIds.has(priority.client_id);
+      return clientScope !== 'universe';
+    }),
+    [clientScope, prioritiesHook.priorities, scopedClientIds],
+  );
+  const scopedComments = useMemo(
+    () => comments.filter(comment => scopedClientIds.has(comment.client_id)),
+    [comments, scopedClientIds],
+  );
+  const scopedDeliverables = useMemo(() => {
+    if (clientScope === 'all') return deliverablesHook.deliverables;
+
+    const taskById = new Map(
+      tasksHook.tasks.map(task => [task.id, task]),
+    );
+    const priorityById = new Map(
+      prioritiesHook.priorities.map(priority => [priority.id, priority]),
+    );
+
+    return deliverablesHook.deliverables.filter(deliverable => {
+      const linkedClientIds = deliverable.items.flatMap(item => {
+        if (item.item_type === 'task') {
+          const clientId = taskById.get(item.item_id)?.client_id;
+          return clientId ? [clientId] : [];
+        }
+        if (item.item_type === 'priority') {
+          const clientId = priorityById.get(item.item_id)?.client_id;
+          return clientId ? [clientId] : [];
+        }
+        return [];
+      });
+      const belongsToUniverse = linkedClientIds.some(clientId =>
+        universeClientIds.has(clientId),
+      );
+      return clientScope === 'universe'
+        ? belongsToUniverse
+        : !belongsToUniverse;
+    });
+  }, [
+    clientScope,
+    deliverablesHook.deliverables,
+    prioritiesHook.priorities,
+    tasksHook.tasks,
+    universeClientIds,
+  ]);
+
   // Per-collaborator stats for chips
   const statsByName = useMemo(() => {
     const map = new Map<string, { openTasks: number; openPriorities: number; score: number }>();
     responsibleList.forEach(r => {
-      const openTasks = tasksHook.tasks.filter(t => !t.completed && assigneeMatches(t.assigned_to, r.name)).length;
-      const openPriorities = prioritiesHook.priorities.filter(p => assigneeMatches(p.assigned_to, r.name) && p.status !== 'concluida' && p.status !== 'cancelada').length;
+      const openTasks = scopedTasks.filter(t => !t.completed && assigneeMatches(t.assigned_to, r.name)).length;
+      const openPriorities = scopedPriorities.filter(p => assigneeMatches(p.assigned_to, r.name) && p.status !== 'concluida' && p.status !== 'cancelada').length;
       let score = 0;
-      deliverablesHook.deliverables.forEach(d => {
+      scopedDeliverables.forEach(d => {
         if (!assigneeMatches(d.assigned_to, r.name)) return;
         const rs = ratings.filter(rr => rr.deliverable_id === d.id);
         if (rs.length === 0) return;
@@ -90,21 +164,21 @@ export default function CentralEntregas() {
       map.set(r.name, { openTasks, openPriorities, score: Math.round(score * 10) / 10 });
     });
     return map;
-  }, [responsibleList, tasksHook.tasks, prioritiesHook.priorities, deliverablesHook.deliverables, ratings]);
+  }, [responsibleList, scopedTasks, scopedPriorities, scopedDeliverables, ratings]);
 
   // Global summary
   const global = useMemo(() => {
-    const totalOpenTasks = tasksHook.tasks.filter(t => !t.completed).length;
-    const totalOpenPriorities = prioritiesHook.priorities.filter(p => p.status !== 'concluida' && p.status !== 'cancelada').length;
+    const totalOpenTasks = scopedTasks.filter(t => !t.completed).length;
+    const totalOpenPriorities = scopedPriorities.filter(p => p.status !== 'concluida' && p.status !== 'cancelada').length;
     const monthStart = startOfMonth(new Date()).getTime();
-    const deliverablesDoneMonth = deliverablesHook.deliverables.filter(d =>
+    const deliverablesDoneMonth = scopedDeliverables.filter(d =>
       d.status === 'concluido' && d.completed_at && new Date(d.completed_at).getTime() >= monthStart
     ).length;
-    const pendingComments = comments.filter(c => !c.is_archived).length;
+    const pendingComments = scopedComments.filter(c => !c.is_archived).length;
 
     // Top performer of the month = highest score in current month
     const scoresMonth = new Map<string, { score: number; stars: number }>();
-    deliverablesHook.deliverables.forEach(d => {
+    scopedDeliverables.forEach(d => {
       if (!d.completed_at || new Date(d.completed_at).getTime() < monthStart) return;
       const rs = ratings.filter(r => r.deliverable_id === d.id);
       if (rs.length === 0) return;
@@ -126,15 +200,15 @@ export default function CentralEntregas() {
       topPerformer: topPerformer ? { name: topPerformer.name, value: topPerformer.score, sublabel: 'pontos no mês' } : undefined,
       topStars: topStars && topStars.stars > 0 ? { name: topStars.name, value: topStars.stars, sublabel: 'estrelas' } : undefined,
     };
-  }, [tasksHook.tasks, prioritiesHook.priorities, deliverablesHook.deliverables, comments, ratings]);
+  }, [scopedTasks, scopedPriorities, scopedDeliverables, scopedComments, ratings]);
 
   // Panel stats for selected collaborator
   const panelStats = useMemo(() => {
     if (isTeamView) return null;
     const name = selectedInfo.name;
-    const myTasks = tasksHook.tasks.filter(t => assigneeMatches(t.assigned_to, name));
-    const myPri = prioritiesHook.priorities.filter(p => assigneeMatches(p.assigned_to, name));
-    const myDeliv = deliverablesHook.deliverables.filter(d => assigneeMatches(d.assigned_to, name));
+    const myTasks = scopedTasks.filter(t => assigneeMatches(t.assigned_to, name));
+    const myPri = scopedPriorities.filter(p => assigneeMatches(p.assigned_to, name));
+    const myDeliv = scopedDeliverables.filter(d => assigneeMatches(d.assigned_to, name));
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const readField = `read_${name.toLowerCase()}`;
     const clientsSet = new Set<string>();
@@ -146,13 +220,13 @@ export default function CentralEntregas() {
       openPriorities: myPri.filter(p => p.status !== 'concluida' && p.status !== 'cancelada').length,
       doneTasks: myTasks.filter(t => t.completed).length,
       deliverables: myDeliv.length,
-      pendingComments: comments.filter(c => !c.is_archived && !(c as any)[readField]).length,
+      pendingComments: scopedComments.filter(c => !c.is_archived && !(c as any)[readField]).length,
       overdue:
         myTasks.filter(t => !t.completed && t.due_date && new Date(t.due_date) < today).length +
         myPri.filter(p => p.due_date && new Date(p.due_date) < today && p.status !== 'concluida' && p.status !== 'cancelada').length,
       score: statsByName.get(name)?.score || 0,
     };
-  }, [isTeamView, selectedInfo, tasksHook.tasks, prioritiesHook.priorities, deliverablesHook.deliverables, comments, statsByName]);
+  }, [isTeamView, selectedInfo, scopedTasks, scopedPriorities, scopedDeliverables, scopedComments, statsByName]);
 
   const isMobile = useIsMobile();
 
@@ -161,7 +235,29 @@ export default function CentralEntregas() {
       <div className="h-full overflow-auto bg-gradient-to-br from-background via-background to-primary/[0.02]">
         <div className={isMobile ? "p-3 pb-24 space-y-3" : "max-w-[1600px] mx-auto p-4 md:p-6 space-y-4"}>
           <div className={isMobile ? "sticky top-0 z-30 -mx-3 px-3 pt-1 pb-2 bg-background/95 backdrop-blur border-b" : ""}>
-            <h1 className={isMobile ? "text-lg font-bold text-foreground" : "text-2xl md:text-3xl font-bold text-foreground"}>Central de Entregas</h1>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h1 className={isMobile ? "text-lg font-bold text-foreground" : "text-2xl md:text-3xl font-bold text-foreground"}>Central de Entregas</h1>
+              <div className="inline-flex border bg-card p-0.5">
+                {([
+                  ['external', 'Clientes AC/AV'],
+                  ['universe', 'Universo Ramos'],
+                  ['all', 'Tudo'],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setClientScope(value)}
+                    className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+                      clientScope === value
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
             {!isMobile && (
               <p className="text-sm text-muted-foreground mt-1">
                 Responsabilidades, prioridades, entregas e performance da equipe
@@ -183,9 +279,9 @@ export default function CentralEntregas() {
             !isMobile && (
               <TeamOverview
                 responsibleList={responsibleList}
-                tasks={tasksHook.tasks}
-                priorities={prioritiesHook.priorities}
-                deliverables={deliverablesHook.deliverables}
+                tasks={scopedTasks}
+                priorities={scopedPriorities}
+                deliverables={scopedDeliverables}
               />
             )
           ) : (
@@ -220,8 +316,8 @@ export default function CentralEntregas() {
                 collaborator={selectedInfo.name}
                 color={selectedInfo.color}
                 isTeamView={isTeamView}
-                priorities={prioritiesHook.priorities}
-                clients={clients}
+                priorities={scopedPriorities}
+                clients={scopedClients}
                 responsibleList={responsibleList}
                 onCreate={prioritiesHook.addPriority}
                 onUpdate={prioritiesHook.updatePriority}
@@ -234,9 +330,9 @@ export default function CentralEntregas() {
                 collaborator={selectedInfo.name}
                 color={selectedInfo.color}
                 isTeamView={isTeamView}
-                tasks={tasksHook.tasks}
-                priorities={prioritiesHook.priorities}
-                clients={clients}
+                tasks={scopedTasks}
+                priorities={scopedPriorities}
+                clients={scopedClients}
                 responsibleList={responsibleList}
                 onPromote={prioritiesHook.promoteTaskToPriority}
                 onToggleComplete={tasksHook.toggleComplete}
@@ -250,8 +346,8 @@ export default function CentralEntregas() {
                 collaborator={selectedInfo.name}
                 color={selectedInfo.color}
                 isTeamView={isTeamView}
-                comments={comments}
-                clients={clients}
+                comments={scopedComments}
+                clients={scopedClients}
               />
             </TabsContent>
 
@@ -260,10 +356,10 @@ export default function CentralEntregas() {
                 collaborator={selectedInfo.name}
                 color={selectedInfo.color}
                 isTeamView={isTeamView}
-                deliverables={deliverablesHook.deliverables}
-                priorities={prioritiesHook.priorities}
-                tasks={tasksHook.tasks}
-                clients={clients}
+                deliverables={scopedDeliverables}
+                priorities={scopedPriorities}
+                tasks={scopedTasks}
+                clients={scopedClients}
                 responsibleList={responsibleList}
                 onCreate={deliverablesHook.addDeliverable}
                 onUpdate={deliverablesHook.updateDeliverable}
@@ -275,11 +371,11 @@ export default function CentralEntregas() {
               <HistoryTab
                 collaborator={selectedInfo.name}
                 isTeamView={isTeamView}
-                tasks={tasksHook.tasks}
-                priorities={prioritiesHook.priorities}
-                deliverables={deliverablesHook.deliverables}
-                comments={comments}
-                clients={clients}
+                tasks={scopedTasks}
+                priorities={scopedPriorities}
+                deliverables={scopedDeliverables}
+                comments={scopedComments}
+                clients={scopedClients}
               />
             </TabsContent>
 
@@ -287,12 +383,12 @@ export default function CentralEntregas() {
               <PerformanceTab
                 collaborator={isTeamView ? responsibleList[0]?.name || 'Patrick' : selectedInfo.name}
                 color={isTeamView ? (responsibleList[0]?.color || '#6B9B37') : selectedInfo.color}
-                tasks={tasksHook.tasks}
-                priorities={prioritiesHook.priorities}
-                deliverables={deliverablesHook.deliverables}
-                clients={clients}
+                tasks={scopedTasks}
+                priorities={scopedPriorities}
+                deliverables={scopedDeliverables}
+                clients={scopedClients}
                 responsibleList={responsibleList}
-                comments={comments}
+                comments={scopedComments}
                 getDaysOpen={tasksHook.getDaysOpen}
               />
             </TabsContent>
@@ -303,10 +399,10 @@ export default function CentralEntregas() {
           collaborator={selectedInfo.name}
           color={selectedInfo.color}
           isTeamView={isTeamView}
-          clients={clients}
+          clients={scopedClients}
           responsibleList={responsibleList}
-          priorities={prioritiesHook.priorities}
-          tasks={tasksHook.tasks}
+          priorities={scopedPriorities}
+          tasks={scopedTasks}
           onCreatePriority={prioritiesHook.addPriority}
           onCreateTask={tasksHook.addTask}
           onCreateDeliverable={deliverablesHook.addDeliverable}

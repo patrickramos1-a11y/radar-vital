@@ -75,16 +75,17 @@ com valor financeiro.
 
 ### Entregas
 
-- [ ] Criar migration para aceitar `UNIVERSO_RAMOS`.
-- [ ] Atualizar tipos e validacoes.
-- [ ] Adaptar o cadastro unico com tres naturezas.
-- [ ] Tornar municipio opcional para Universo Ramos.
-- [ ] Extrair a grade atual para um workspace reutilizavel.
-- [ ] Criar rota `/universo-ramos`.
-- [ ] Adicionar item de menu com icone de globo.
-- [ ] Excluir Universo Ramos dos totais AC/AV.
-- [ ] Adicionar filtro de escopo na Central de Entregas.
-- [ ] Cobrir desktop, mobile e modo apresentacao.
+- [x] Criar migration para aceitar `UNIVERSO_RAMOS`.
+- [x] Atualizar tipos e validacoes.
+- [x] Adaptar o cadastro unico com tres naturezas.
+- [x] Tornar municipio opcional para Universo Ramos.
+- [x] Extrair regras de escopo para reutilizacao entre workspaces.
+- [x] Criar rota `/universo-ramos`.
+- [x] Adicionar item de menu com icone de globo.
+- [x] Excluir Universo Ramos dos totais AC/AV.
+- [x] Adicionar filtro de escopo na Central de Entregas.
+- [x] Cobrir o codigo dos fluxos desktop, mobile e modo apresentacao.
+- [!] Aplicar migration e validar visualmente os fluxos em Supabase isolado.
 
 ### Criterios de aceite
 
