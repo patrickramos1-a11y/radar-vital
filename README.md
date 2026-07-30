@@ -1,5 +1,18 @@
 # Welcome to your Lovable project
 
+## Product roadmap
+
+The implementation roadmap for Universo Ramos, unified client work, audits,
+challenges, the Star Treasury, and team performance is maintained in:
+
+- [Roadmap overview](docs/roadmap/README.md)
+- [Implementation plan](docs/roadmap/IMPLEMENTATION_PLAN.md)
+- [Functional decisions](docs/roadmap/DECISIONS.md)
+- [Execution status](docs/roadmap/STATUS.md)
+
+The roadmap uses phased development in an isolated branch and database, followed
+by one integrated production release through GitHub, Supabase, and Lovable.
+
 ## Project info
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
