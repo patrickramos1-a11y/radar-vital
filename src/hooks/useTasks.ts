@@ -24,8 +24,11 @@ export function useTasks() {
   const currentUserName = actorName(currentUser);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchTasks = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase
         .from('tasks')
@@ -36,6 +39,7 @@ export function useTasks() {
       setTasks((data || []).map(dbRowToTask));
     } catch (error) {
       console.error('Error fetching tasks:', error);
+      setError('Não foi possível carregar as tarefas.');
       toast.error('Erro ao carregar tarefas');
     } finally {
       setIsLoading(false);
@@ -171,6 +175,7 @@ export function useTasks() {
   return {
     tasks,
     isLoading,
+    error,
     addTask,
     updateTask,
     deleteTask,

@@ -24,11 +24,13 @@ import { startOfMonth } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { QuickCreatePanel } from '@/components/central-entregas/QuickCreatePanel';
 import { filterClientsByScope, type ClientScope } from '@/lib/clientScope';
+import { useSearchParams } from 'react-router-dom';
 
 
 const DEFAULT_NAMES = ['Patrick', 'Celine', 'Gabi', 'Darley', 'Vanessa'];
 
 export default function CentralEntregas() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { collaborators } = useCollaborators();
   const { clients } = useClients();
   const tasksHook = useTasks();
@@ -36,6 +38,26 @@ export default function CentralEntregas() {
   const deliverablesHook = useDeliverables();
   const { ratings } = useDeliverableRatings();
   const [clientScope, setClientScope] = useState<ClientScope>('external');
+  const requestedTab = searchParams.get('tab');
+  const activeTab = [
+    'priorities',
+    'tasks',
+    'comments',
+    'deliverables',
+    'history',
+    'performance',
+  ].includes(requestedTab ?? '')
+    ? requestedTab!
+    : 'priorities';
+
+  useEffect(() => {
+    const clientId = searchParams.get('clientId');
+    if (!clientId) return;
+    const client = clients.find(item => item.id === clientId);
+    if (client?.clientType === 'UNIVERSO_RAMOS') {
+      setClientScope('universe');
+    }
+  }, [clients, searchParams]);
 
   const responsibleList = useMemo(() => {
     const active = collaborators.filter(c => c.isActive);
@@ -298,7 +320,15 @@ export default function CentralEntregas() {
             )
           )}
 
-          <Tabs defaultValue="priorities" className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={(tab) => {
+              const next = new URLSearchParams(searchParams);
+              next.set('tab', tab);
+              setSearchParams(next, { replace: true });
+            }}
+            className="w-full"
+          >
             <TabsList className={isMobile
               ? "flex w-full overflow-x-auto gap-1 bg-card/60 backdrop-blur-sm border justify-start"
               : "grid grid-cols-3 md:grid-cols-6 h-auto gap-1 bg-card/60 backdrop-blur-sm border"}>

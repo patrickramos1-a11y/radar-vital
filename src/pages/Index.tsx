@@ -3,7 +3,7 @@ import { useMunicipalities } from "@/hooks/useMunicipalities";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter, ViewMode, GridSize } from "@/components/dashboard/FilterBar";
-import { TaskModal } from "@/components/checklist/TaskModal";
+import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { CommentsModal } from "@/components/comments/CommentsModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
@@ -450,7 +450,7 @@ const Index = () => {
 
           {/* Jackbox modal - opened from card action */}
           {mobileJackboxClient && (
-            <TaskModal
+            <ClientWorkDialog
               isOpen={!!mobileJackboxClientId}
               onClose={() => setMobileJackboxClientId(null)}
               client={mobileJackboxClient}
@@ -604,7 +604,7 @@ const Index = () => {
           </div>
 
           {checklistClient && (
-            <TaskModal
+            <ClientWorkDialog
               isOpen={!!checklistClientId}
               onClose={() => setChecklistClientId(null)}
               client={checklistClient}

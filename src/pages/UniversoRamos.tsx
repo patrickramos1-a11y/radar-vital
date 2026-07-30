@@ -13,7 +13,7 @@ import {
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientCard } from "@/components/dashboard/ClientCard";
 import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
-import { TaskModal } from "@/components/checklist/TaskModal";
+import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 import { Button } from "@/components/ui/button";
@@ -251,7 +251,7 @@ export default function UniversoRamos() {
       </div>
 
       {taskClient && (
-        <TaskModal
+        <ClientWorkDialog
           isOpen
           onClose={() => setTaskClientId(null)}
           client={taskClient}

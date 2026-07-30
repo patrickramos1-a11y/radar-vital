@@ -107,14 +107,15 @@ com valor financeiro.
 
 ### Entregas
 
-- [ ] Definir o tipo `WorkItem`.
-- [ ] Criar adaptadores para tarefas, prioridades e entregaveis existentes.
-- [ ] Criar `useClientWorkItems(clientId)`.
-- [ ] Substituir o modal por `ClientWorkDialog`.
-- [ ] Adicionar filtros Tudo, Tarefas, Prioridades e Entregaveis.
-- [ ] Incluir estados de carregamento, erro e vazio.
-- [ ] Preparar adaptadores para auditorias e desafios.
-- [ ] Garantir navegacao para o registro original.
+- [x] Definir o tipo `WorkItem`.
+- [x] Criar adaptadores para tarefas, prioridades e entregaveis existentes.
+- [x] Criar `useClientWorkItems(clientId)`.
+- [x] Substituir as entradas do modal por `ClientWorkDialog`.
+- [x] Adicionar filtros Tudo, Tarefas, Prioridades e Entregaveis.
+- [x] Incluir estados de carregamento, erro e vazio.
+- [x] Preparar adaptadores para auditorias e desafios.
+- [x] Garantir navegacao para o modulo original.
+- [!] Validar o fluxo visual completo com uma sessao autenticada de teste.
 
 ### Criterios de aceite
 

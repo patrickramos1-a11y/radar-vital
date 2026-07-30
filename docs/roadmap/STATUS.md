@@ -24,8 +24,8 @@ Atualizado em: 2026-07-30
 | --- | --- | --- | --- |
 | 0. Fundacao e seguranca | EM ANDAMENTO | Supabase de teste | Aplicar migrations e provar RLS |
 | 1. Universo Ramos | EM ANDAMENTO | Supabase de teste | Aplicar migration e validar isolamento com dados reais |
-| 2. Visao Unificada | NAO INICIADA | Fase 1 local | Definir `WorkItem` e adaptadores atuais |
-| 3. Auditorias | NAO INICIADA | Fases 0 e 2 | Criar migration e RPC de abertura |
+| 2. Visao Unificada | EM ANDAMENTO | Login de teste | Validar a Central do Cliente com dados autenticados |
+| 3. Auditorias | NAO INICIADA | Fases 0 e 2 locais | Criar migration e RPC de abertura |
 | 4. Desafios | NAO INICIADA | Fases 0 e 2 | Criar modelo e fluxo de validacao |
 | 5. Tesouro | NAO INICIADA | Fases 0 e 4 | Criar livro de transacoes |
 | 6. Performance | NAO INICIADA | Fases 3, 4 e 5 | Criar consultas agregadas |
@@ -64,10 +64,10 @@ Atualizado em: 2026-07-30
 
 ## Proxima entrega recomendada
 
-Implementar a Visao Unificada da Fase 2 enquanto a validacao das migrations das
-Fases 0 e 1 aguarda um projeto Supabase isolado. Quando o ambiente estiver
-disponivel, aplicar as migrations em ordem, regenerar os tipos e executar a
-matriz de testes RLS documentada em `PHASE0_AUDIT.md`.
+Implementar as Auditorias da Fase 3 sobre os adaptadores da Visao Unificada,
+mantendo migrations sem aplicacao em producao. Quando o ambiente isolado estiver
+disponivel, aplicar as migrations em ordem, regenerar os tipos e executar as
+matrizes de RLS e os fluxos autenticados acumulados.
 
 ## Registro de execucao
 
@@ -95,6 +95,14 @@ Migrations: 20260730130000_universo_ramos.sql, ainda nao aplicada.
 Testes: Vitest 7 testes aprovados; build de producao aprovado; lint manteve o baseline intermediario de 94 erros e 22 avisos preexistentes.
 Resultado: implementacao local aprovada; painel principal e totais externos excluem Universo Ramos; producao preservada.
 Pendencias: aplicar migration em Supabase isolado, validar CRUD real e executar verificacao visual autenticada em desktop, mobile e TV.
+
+2026-07-30 - Fase 2
+Resumo: tarefas, prioridades e entregaveis reunidos na Central do Cliente sem duplicacao de registros.
+Arquivos: WorkItem, adaptadores, useClientWorkItems, ClientWorkDialog/ClientWorkList, TaskModal, Central de Entregas e entradas desktop/mobile.
+Migrations: nenhuma.
+Testes: Vitest 10 testes aprovados; build de producao aprovado; lint permaneceu em 94 erros e 22 avisos preexistentes.
+Resultado: implementacao local aprovada; filtros e navegacao para o modulo de origem disponiveis; adaptadores de auditoria e desafio preparados.
+Pendencias: validar visualmente com sessao autenticada e dados de teste; login local foi exibido corretamente, sem contornar a autenticacao.
 ```
 
 ## Modelo para proximos registros

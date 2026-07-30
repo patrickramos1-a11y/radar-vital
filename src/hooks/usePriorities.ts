@@ -26,8 +26,11 @@ export function usePriorities() {
   const currentUserName = actorName(currentUser);
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase
         .from('priorities')
@@ -37,6 +40,7 @@ export function usePriorities() {
       setPriorities((data || []).map(dbRowToPriority));
     } catch (e) {
       console.error(e);
+      setError('Não foi possível carregar as prioridades.');
       toast.error('Erro ao carregar prioridades');
     } finally {
       setIsLoading(false);
@@ -123,5 +127,5 @@ export function usePriorities() {
     }
   }, [addPriority]);
 
-  return { priorities, isLoading, addPriority, updatePriority, deletePriority, promoteTaskToPriority, refetch: fetch };
+  return { priorities, isLoading, error, addPriority, updatePriority, deletePriority, promoteTaskToPriority, refetch: fetch };
 }
