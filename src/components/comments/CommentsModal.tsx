@@ -42,7 +42,7 @@ interface CommentsModalProps {
 
 export function CommentsModal({ clientId, clientName, isOpen, onClose }: CommentsModalProps) {
   const { comments, isLoading, addComment, editComment, deleteComment, togglePinned, toggleReadStatus, confirmReading, closeComment, reopenComment, updateRequiredReaders, archiveComment, unarchiveComment } = useClientComments(clientId);
-  const { currentUser, collaborators } = useAuth();
+  const { currentUser, collaborators, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [commentType, setCommentType] = useState<CommentType>('informativo');
   const [selectedReaders, setSelectedReaders] = useState<string[]>([]);
@@ -51,7 +51,6 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
   const [replyingTo, setReplyingTo] = useState<ClientComment | null>(null);
 
   const currentUserName = currentUser?.name || 'Sistema';
-  const isAdmin = currentUserName === 'Patrick';
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;

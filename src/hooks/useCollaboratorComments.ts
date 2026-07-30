@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CollaboratorComment, CollaboratorCommentFormData } from '@/types/collaboratorComment';
 import { toast } from 'sonner';
-
-const currentUser = () => localStorage.getItem('painel_ac_user') || 'Sistema';
+import { useAuth } from '@/contexts/AuthContext';
+import { actorName } from '@/lib/auth';
 
 export function useCollaboratorComments() {
+  const { currentUser } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [comments, setComments] = useState<CollaboratorComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,7 +38,7 @@ export function useCollaboratorComments() {
   const create = useCallback(async (data: CollaboratorCommentFormData) => {
     const { error } = await supabase.from('collaborator_comments' as any).insert({
       collaborator_name: data.collaborator_name,
-      author_name: currentUser(),
+      author_name: currentUserName,
       comment_text: data.comment_text,
       context: data.context,
     });
@@ -44,28 +46,28 @@ export function useCollaboratorComments() {
     toast.success('Anotação registrada');
     await fetchAll();
     return true;
-  }, [fetchAll]);
+  }, [currentUserName, fetchAll]);
 
   const markRead = useCallback(async (id: string, isRead: boolean) => {
     const patch: any = {
       is_read: isRead,
       read_at: isRead ? new Date().toISOString() : null,
-      read_by: isRead ? currentUser() : null,
+      read_by: isRead ? currentUserName : null,
     };
     const { error } = await supabase.from('collaborator_comments' as any).update(patch).eq('id', id);
     if (error) toast.error('Erro ao atualizar');
     else await fetchAll();
-  }, [fetchAll]);
+  }, [currentUserName, fetchAll]);
 
   const archive = useCallback(async (id: string) => {
     const { error } = await supabase.from('collaborator_comments' as any).update({
       is_archived: true,
       archived_at: new Date().toISOString(),
-      archived_by: currentUser(),
+      archived_by: currentUserName,
     }).eq('id', id);
     if (error) toast.error('Erro ao arquivar');
     else { toast.success('Arquivado'); await fetchAll(); }
-  }, [fetchAll]);
+  }, [currentUserName, fetchAll]);
 
   const remove = useCallback(async (id: string) => {
     const { error } = await supabase.from('collaborator_comments' as any).delete().eq('id', id);

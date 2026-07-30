@@ -22,7 +22,7 @@ Atualizado em: 2026-07-30
 
 | Fase | Estado | Dependencia | Proxima acao |
 | --- | --- | --- | --- |
-| 0. Fundacao e seguranca | EM ANDAMENTO | Nenhuma | Auditar auth, perfis, schema e RLS |
+| 0. Fundacao e seguranca | EM ANDAMENTO | Supabase de teste | Aplicar migrations e provar RLS |
 | 1. Universo Ramos | NAO INICIADA | Fase 0 parcial | Definir migration e refatoracao do workspace |
 | 2. Visao Unificada | NAO INICIADA | Nenhuma | Definir `WorkItem` e adaptadores atuais |
 | 3. Auditorias | NAO INICIADA | Fases 0 e 2 | Criar migration e RPC de abertura |
@@ -64,17 +64,9 @@ Atualizado em: 2026-07-30
 
 ## Proxima entrega recomendada
 
-Iniciar a Fase 0 com um inventario de:
-
-- tabelas e politicas RLS;
-- fluxo atual de usuario;
-- relacionamento entre usuarios e colaboradores;
-- migrations aplicadas;
-- divergencias nos tipos gerados.
-
-Depois do inventario, dividir a Fase 0 em migrations pequenas e revisaveis.
-
-Antes de iniciar, definir o ambiente isolado e criar a branch de integracao.
+Aplicar a fundacao da Fase 0 em um projeto Supabase isolado, provisionar um
+usuario admin e um usuario comum, regenerar os tipos e executar a matriz de
+testes RLS documentada em `PHASE0_AUDIT.md`.
 
 ## Registro de execucao
 
@@ -86,6 +78,14 @@ Migrations: nenhuma aplicada.
 Testes: verificacao inicial do ambiente.
 Resultado: Fase 0 iniciada.
 Pendencias: Docker e Supabase CLI indisponiveis; preparar alternativa de teste.
+
+2026-07-30 - Fase 0
+Resumo: autenticacao real, papeis, login, autoria autenticada e corte condicional de RLS preparados.
+Arquivos: AuthContext, AuthGate, Login, hooks operacionais, tipos e documentacao de corte.
+Migrations: 20260730120000_auth_foundation.sql e 20260730121000_conditional_rls_cutover.sql, ainda nao aplicadas.
+Testes: Vitest 3 testes aprovados; build de producao aprovado.
+Resultado: implementacao local aprovada; producao preservada.
+Pendencias: aplicar em Supabase isolado, regenerar tipos e validar RLS com usuarios admin/comum.
 ```
 
 ## Modelo para proximos registros

@@ -17,6 +17,7 @@ export type Database = {
       activity_logs: {
         Row: {
           action_type: string
+          actor_user_id: string | null
           client_name: string | null
           created_at: string
           description: string
@@ -24,12 +25,14 @@ export type Database = {
           entity_name: string | null
           entity_type: string
           id: string
+          metadata: Json
           new_value: string | null
           old_value: string | null
           user_name: string
         }
         Insert: {
           action_type: string
+          actor_user_id?: string | null
           client_name?: string | null
           created_at?: string
           description: string
@@ -37,12 +40,14 @@ export type Database = {
           entity_name?: string | null
           entity_type: string
           id?: string
+          metadata?: Json
           new_value?: string | null
           old_value?: string | null
           user_name: string
         }
         Update: {
           action_type?: string
+          actor_user_id?: string | null
           client_name?: string | null
           created_at?: string
           description?: string
@@ -50,6 +55,7 @@ export type Database = {
           entity_name?: string | null
           entity_type?: string
           id?: string
+          metadata?: Json
           new_value?: string | null
           old_value?: string | null
           user_name?: string
@@ -925,6 +931,30 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string[]
@@ -1005,7 +1035,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bootstrap_current_profile: { Args: never; Returns: string | null }
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
+      current_collaborator_id: { Args: never; Returns: string | null }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1013,8 +1045,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: never; Returns: boolean }
+      is_auth_enforced: { Args: never; Returns: boolean }
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
+        Returns: undefined
+      }
+      set_auth_enforced: {
+        Args: { enabled: boolean }
         Returns: undefined
       }
     }

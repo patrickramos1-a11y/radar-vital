@@ -4,8 +4,8 @@ import { Task, TaskFormData } from '@/types/task';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
 import { assigneeMatches } from '@/lib/taskAssignee';
-
-const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
+import { useAuth } from '@/contexts/AuthContext';
+import { actorName } from '@/lib/auth';
 
 const dbRowToTask = (row: any): Task => ({
   id: row.id,
@@ -20,6 +20,8 @@ const dbRowToTask = (row: any): Task => ({
 });
 
 export function useTasks() {
+  const { currentUser } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -57,14 +59,14 @@ export function useTasks() {
       if (error) throw error;
       await fetchTasks();
       toast.success('Tarefa criada!');
-      ActivityLogger.createTask(getCurrentUserName(), clientName || 'Cliente', clientId, data.title);
+      ActivityLogger.createTask(currentUserName, clientName || 'Cliente', clientId, data.title);
       return true;
     } catch (error) {
       console.error('Error adding task:', error);
       toast.error('Erro ao criar tarefa');
       return false;
     }
-  }, [tasks, fetchTasks]);
+  }, [currentUserName, fetchTasks]);
 
   const updateTask = useCallback(async (taskId: string, data: Partial<Task>) => {
     try {

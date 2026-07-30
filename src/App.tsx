@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ClientProvider } from "@/contexts/ClientContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthGate } from "@/components/auth/AuthGate";
 import Index from "./pages/Index";
 import Config from "./pages/Config";
 import Dashboard from "./pages/Dashboard";
@@ -26,23 +27,24 @@ const App = () => (
     <TooltipProvider>
       <BrowserRouter>
         <AuthProvider>
-          <ClientProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/comentarios" element={<CommentsPanel />} />
-              <Route path="/relatorios-pdf" element={<RelatoriosPdf />} />
-              <Route path="/jackbox" element={<JackboxPanel />} />
-              <Route path="/jackbox-unificado" element={<JackboxUnified />} />
-              <Route path="/central-entregas" element={<CentralEntregas />} />
-              
-              <Route path="/config" element={<Config />} />
-              <Route path="/tv" element={<TVMode />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ClientProvider>
+          <AuthGate>
+            <ClientProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/comentarios" element={<CommentsPanel />} />
+                <Route path="/relatorios-pdf" element={<RelatoriosPdf />} />
+                <Route path="/jackbox" element={<JackboxPanel />} />
+                <Route path="/jackbox-unificado" element={<JackboxUnified />} />
+                <Route path="/central-entregas" element={<CentralEntregas />} />
+                <Route path="/config" element={<Config />} />
+                <Route path="/tv" element={<TVMode />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ClientProvider>
+          </AuthGate>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

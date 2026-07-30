@@ -38,19 +38,19 @@ com valor financeiro.
 
 ### Entregas
 
-- [ ] Criar a branch de integracao do roadmap.
+- [x] Criar a branch de integracao do roadmap.
 - [ ] Preparar Supabase local ou projeto remoto de teste.
-- [ ] Registrar uma baseline segura do schema e das migrations de producao.
+- [x] Registrar uma baseline segura do schema e das migrations de producao.
 - [ ] Preparar dados de teste sem alterar a base de producao.
-- [ ] Mapear tabelas e politicas RLS atuais.
-- [ ] Implantar Supabase Auth.
-- [ ] Criar ou adaptar perfis com `user_id` e papel.
-- [ ] Migrar a autorizacao administrativa para `auth.uid()`.
-- [ ] Regenerar `src/integrations/supabase/types.ts`.
-- [ ] Remover contornos de schema mantidos em `localStorage`.
-- [ ] Criar helper unico de autorizacao na aplicacao.
-- [ ] Criar base de testes com Vitest e React Testing Library.
-- [ ] Documentar o fluxo de login e recuperacao.
+- [x] Mapear tabelas e politicas RLS atuais.
+- [x] Preparar Supabase Auth no frontend e nas migrations.
+- [x] Criar ou adaptar perfis com `user_id` e papel.
+- [x] Migrar a autorizacao administrativa do frontend para o papel autenticado.
+- [ ] Regenerar `src/integrations/supabase/types.ts` a partir do banco aplicado.
+- [x] Remover a identidade operacional mantida em `localStorage`.
+- [x] Criar helper unico de autorizacao na aplicacao.
+- [x] Criar base de testes com Vitest e React Testing Library.
+- [x] Documentar o fluxo de login, recuperacao e corte de RLS.
 
 ### Criterios de aceite
 

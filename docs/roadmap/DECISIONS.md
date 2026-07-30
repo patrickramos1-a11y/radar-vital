@@ -142,15 +142,26 @@ No ciclo final:
 
 1. gerar backup do banco de producao;
 2. revisar o `dry-run` das migrations;
-3. aplicar migrations aditivas no Supabase de producao;
+3. aplicar migrations aditivas com `auth_enforced = false`;
 4. confirmar que a versao antiga continua funcional;
-5. mesclar a branch de integracao em `main`;
-6. confirmar a sincronizacao do Lovable;
-7. publicar a atualizacao;
-8. executar smoke tests.
+5. provisionar e conferir os usuarios;
+6. mesclar a branch de integracao em `main`;
+7. confirmar a sincronizacao do Lovable;
+8. publicar a atualizacao;
+9. validar o frontend autenticado;
+10. ativar `auth_enforced`;
+11. executar smoke tests autenticados.
 
 O banco entra primeiro porque o novo frontend dependera das novas estruturas.
 As migrations precisam manter compatibilidade temporaria com o frontend antigo.
+
+## D-016 - Corte de autenticacao em duas etapas
+
+A autenticacao e as politicas RLS serao instaladas em modo de compatibilidade.
+O bloqueio de acesso anonimo sera ativado somente depois que o frontend
+autenticado estiver publicado e validado na mesma janela final.
+
+O procedimento e o retorno estao definidos em `AUTH_CUTOVER.md`.
 
 ## Decisoes pendentes
 
@@ -160,4 +171,4 @@ As migrations precisam manter compatibilidade temporaria com o frontend antigo.
 | P-002 | Forma de pagamento e comprovante | Antes da primeira liquidacao |
 | P-003 | Exibicao publica ou privada do valor em reais | Durante a Fase 5 |
 | P-004 | Meta anual configuravel no produto | Depois da Fase 6 |
-| P-005 | Supabase local ou projeto remoto de teste | Antes de iniciar a Fase 0 |
+| P-005 | Supabase local ou projeto remoto de teste | Antes de concluir a Fase 0 |

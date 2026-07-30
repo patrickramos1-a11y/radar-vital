@@ -54,7 +54,7 @@ type ViewFilter = 'pendentes' | 'lidos' | 'arquivados' | 'todos';
 
 export default function CommentsPanel() {
   const { activeClients } = useClients();
-  const { currentUser, collaborators } = useAuth();
+  const { currentUser, collaborators, isAdmin } = useAuth();
   const [comments, setComments] = useState<CommentWithClient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -736,6 +736,7 @@ export default function CommentsPanel() {
               <CommentCard
                 comment={comment}
                 currentUserName={currentUserName}
+                isAdmin={isAdmin}
                 collaborators={collaborators}
                 collaboratorNames={collaboratorNames}
                 allComments={comments}
@@ -770,6 +771,7 @@ export default function CommentsPanel() {
 interface CommentCardProps {
   comment: CommentWithClient;
   currentUserName: string;
+  isAdmin: boolean;
   collaborators: { id: string; name: string; color?: string }[];
   collaboratorNames: string[];
   allComments: CommentWithClient[];
@@ -785,9 +787,7 @@ interface CommentCardProps {
   onReply: (comment: CommentWithClient) => void;
 }
 
-function CommentCard({ comment, currentUserName, collaborators, collaboratorNames, allComments, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen, onArchive, onUnarchive, onReply }: CommentCardProps) {
-  const currentCollaboratorForAdmin = collaborators.find(c => c.name.toLowerCase() === currentUserName.toLowerCase());
-  const isAdmin = (currentCollaboratorForAdmin as any)?.role === 'admin' || currentUserName === 'Patrick';
+function CommentCard({ comment, currentUserName, isAdmin, collaborators, collaboratorNames, allComments, onToggleRead, onTogglePinned, onDelete, onEdit, onConfirmReading, onClose, onReopen, onArchive, onUnarchive, onReply }: CommentCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.commentText);
   const isCiencia = comment.commentType === 'ciencia';

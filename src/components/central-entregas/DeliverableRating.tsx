@@ -1,6 +1,7 @@
 import { ThumbsUp, Star, Sparkles, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DeliverableRating, RatingType, summarizeRatings } from '@/hooks/useDeliverableRatings';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   deliverableId: string;
@@ -12,9 +13,9 @@ interface Props {
 }
 
 export function DeliverableRatingControl({ deliverableId, ratings, currentUser, disabled, onRate, onRemove }: Props) {
+  const { isAdmin } = useAuth();
   const { thumbs, stars, superstars, score } = summarizeRatings(ratings);
   const mine = ratings.find(r => r.rater_name.toLowerCase() === currentUser.toLowerCase());
-  const isAdmin = currentUser.trim().toLowerCase() === 'patrick';
   const locked = disabled || !isAdmin;
 
   const handleStar = (n: number) => {

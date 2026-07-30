@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Deliverable, DeliverableFormData, DeliverableStatus, DeliverableItem } from '@/types/deliverable';
 import { toast } from 'sonner';
-
-const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
+import { useAuth } from '@/contexts/AuthContext';
+import { actorName } from '@/lib/auth';
 
 export function useDeliverables() {
+  const { currentUser } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -64,7 +66,7 @@ export function useDeliverables() {
         requester: data.requester || null,
         due_date: data.due_date || null,
         status: data.status || 'aberto',
-        created_by: getCurrentUserName(),
+        created_by: currentUserName,
       } as any).select().single();
       if (error) throw error;
       if (data.items && data.items.length > 0) {
@@ -80,7 +82,7 @@ export function useDeliverables() {
       toast.error('Erro ao criar entregável');
       return null;
     }
-  }, [fetch]);
+  }, [currentUserName, fetch]);
 
   const updateDeliverable = useCallback(async (id: string, data: Partial<DeliverableFormData>) => {
     try {

@@ -51,7 +51,7 @@ export const QUICK_FILTER_CATEGORIES = {
 const STORAGE_KEY = 'activity_logs_last_seen';
 
 export function useActivityLogs() {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<LogFilters>(DEFAULT_FILTERS);
@@ -61,8 +61,6 @@ export function useActivityLogs() {
 
   // Get current user name for filtering
   const currentUserName = currentUser?.name || null;
-  // For now, we'll consider admin anyone with Patrick name - can be enhanced with roles later
-  const isAdmin = currentUserName?.toLowerCase() === 'patrick';
 
   // Load last seen timestamp from localStorage
   useEffect(() => {
@@ -261,7 +259,9 @@ export async function logActivity(params: {
   newValue?: string | null;
 }) {
   try {
+    const { data } = await supabase.auth.getUser();
     await supabase.from('activity_logs').insert({
+      actor_user_id: data.user?.id ?? null,
       user_name: params.userName,
       action_type: params.actionType,
       entity_type: params.entityType,
