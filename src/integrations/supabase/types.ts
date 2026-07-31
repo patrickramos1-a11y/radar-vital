@@ -504,11 +504,14 @@ export type Database = {
       }
       challenges: {
         Row: {
+          challenge_kind: string
           client_id: string | null
           created_at: string
           created_by: string
           description: string | null
-          due_at: string
+          due_at: string | null
+          evidence_requirements: string | null
+          expected_deliverable: string | null
           id: string
           penalty_stars: number
           resolution_notes: string | null
@@ -521,11 +524,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          challenge_kind?: string
           client_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
-          due_at: string
+          due_at?: string | null
+          evidence_requirements?: string | null
+          expected_deliverable?: string | null
           id?: string
           penalty_stars?: number
           resolution_notes?: string | null
@@ -538,11 +544,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          challenge_kind?: string
           client_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
-          due_at?: string
+          due_at?: string | null
+          evidence_requirements?: string | null
+          expected_deliverable?: string | null
           id?: string
           penalty_stars?: number
           resolution_notes?: string | null
@@ -710,6 +719,8 @@ export type Database = {
       clients: {
         Row: {
           client_type: string
+          universe_category: string | null
+          universe_collaborator_id: string | null
           collaborator_celine: boolean
           collaborator_darley: boolean
           collaborator_gabi: boolean
@@ -760,6 +771,8 @@ export type Database = {
         }
         Insert: {
           client_type?: string
+          universe_category?: string | null
+          universe_collaborator_id?: string | null
           collaborator_celine?: boolean
           collaborator_darley?: boolean
           collaborator_gabi?: boolean
@@ -810,6 +823,8 @@ export type Database = {
         }
         Update: {
           client_type?: string
+          universe_category?: string | null
+          universe_collaborator_id?: string | null
           collaborator_celine?: boolean
           collaborator_darley?: boolean
           collaborator_gabi?: boolean
@@ -1806,6 +1821,27 @@ export type Database = {
           p_title: string
         }
         Returns: string
+      }
+      create_universe_challenge: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_kind?: string
+          p_client_id?: string | null
+          p_description?: string | null
+          p_due_at?: string | null
+          p_evidence_requirements?: string | null
+          p_expected_deliverable?: string | null
+          p_participant_ids?: string[]
+          p_penalty_stars?: number
+          p_reward_superstars?: number
+          p_success_criteria?: string | null
+          p_title: string
+        }
+        Returns: string
+      }
+      accept_universe_challenge: {
+        Args: { p_actor_name?: string; p_challenge_id: string; p_collaborator_id: string }
+        Returns: undefined
       }
       credit_deliverable_rating: {
         Args: { p_actor_name?: string; p_rating_id: string; p_version: string }

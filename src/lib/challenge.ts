@@ -18,6 +18,9 @@ export function mapChallenge(row: ChallengeRow): Challenge {
     title: row.title,
     description: row.description,
     successCriteria: row.success_criteria,
+    kind: (row.challenge_kind ?? "company_general") as Challenge["kind"],
+    expectedDeliverable: row.expected_deliverable,
+    evidenceRequirements: row.evidence_requirements,
     clientId: row.client_id,
     status: row.status as ChallengeStatus,
     dueAt: row.due_at,
@@ -58,7 +61,8 @@ export function getEffectiveChallengeStatus(
   now = new Date(),
 ): ChallengeStatus {
   if (
-    challenge.status === "active" &&
+    (challenge.status === "active" || challenge.status === "accepted" || challenge.status === "in_progress") &&
+    challenge.dueAt &&
     new Date(challenge.dueAt).getTime() <= now.getTime()
   ) {
     return "awaiting_validation";

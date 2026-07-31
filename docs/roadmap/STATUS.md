@@ -10,6 +10,7 @@ Atualizado em: 2026-07-30
 - Banco de desenvolvimento: Supabase local ou projeto de teste.
 - Banco de producao: migrations somente no ciclo final.
 - Lovable: uma unica publicacao depois da Fase 7.
+- Universo Ramos: extensao em andamento na branch `feat/universo-ramos-categorias`.
 
 ## Legenda
 
@@ -70,6 +71,36 @@ atual, validar os fluxos operacionais e preparar a publicacao unica da Fase 7.
 ## Registro de execucao
 
 ```text
+2026-07-31 - Universo Ramos, UR-1 concluida
+Resumo: o dominio challenges foi ampliado para origem interna, desafio aberto
+sem participante, prazo opcional, criterios, entregavel e evidencias.
+Resultado: migration aditiva `20260731230000_universe_ramos_challenges.sql`,
+tipos e mapeadores atualizados; build e testes locais aprovados.
+Bloqueio externo: a integracao Supabase desta sessao nao possui permissao para
+aplicar migrations. Nenhuma alteracao foi enviada para producao.
+
+2026-07-31 - Universo Ramos, UR-2, UR-3 e UR-5 preparados
+Resumo: foram implementados o cadastro completo de desafio interno, a Central
+da unidade aberta pelo card, a validacao administrativa e o mural de desafios
+abertos com aceite pelo usuario selecionado.
+Resultado: a interface usa o dominio `challenges` existente e preserva AC/AV.
+Build e testes locais aprovados. A execucao real permanece dependente da
+migration UR-1; portanto esta branch ainda nao pode ser publicada.
+
+2026-07-31 - Universo Ramos, UR-4 concluida localmente
+Resumo: cards legados de colaborador passam a se conectar ao cadastro oficial
+da equipe por `universe_collaborator_id`; nome, iniciais e foto exibidos no
+Universo seguem o perfil do colaborador. Novos cadastros internos nao oferecem
+a categoria Colaborador, evitando duplicacao futura.
+Pendencia: aplicar a migration e conferir a associacao dos registros legados em
+ambiente de validacao.
+
+2026-07-31 - Universo Ramos, UR-6 concluida localmente
+Resumo: a carga inicial possui CSV-modelo, parser com validacao por linha,
+testes e RPC idempotente baseada em `import_key`.
+Resultado: 19 testes e build aprovados. A importacao real continua bloqueada
+ate que a migration seja aplicada em ambiente de validacao.
+
 2026-07-30 - Replanejamento de acesso
 Resumo: autenticacao, login, senha, convite por e-mail e corte de RLS foram adiados por decisao funcional.
 Resultado: o lancamento deve preservar o mesmo acesso da versao publicada; os artefatos locais de Auth nao devem ser enviados ao Lovable.

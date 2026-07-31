@@ -6,6 +6,7 @@ import {
   MessageCircle,
   MonitorUp,
   Star,
+  Sparkles,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -22,6 +23,10 @@ import {
 } from "@/components/dashboard/FilterBar";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
+import { ClientQuickEditDialog } from "@/components/dashboard/ClientQuickEditDialog";
+import { UniverseChallengeDialog } from "@/components/universe-ramos/UniverseChallengeDialog";
+import { UniverseUnitDialog } from "@/components/universe-ramos/UniverseUnitDialog";
+import { OpenChallengesDialog } from "@/components/universe-ramos/OpenChallengesDialog";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
@@ -32,11 +37,13 @@ import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments
 import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTasks } from "@/hooks/useTasks";
+import { useChallenges } from "@/hooks/useChallenges";
+import { Client, UniversoRamosCategory } from "@/types/client";
 
 export default function UniversoRamos() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { currentUser, collaborators } = useAuth();
+  const { currentUser, collaborators, isAdmin } = useAuth();
   const {
     universeClients,
     highlightedClients,
@@ -46,6 +53,7 @@ export default function UniversoRamos() {
     toggleCollaborator,
     toggleHighlight,
     togglePriority,
+    updateClient,
   } = useClients();
   const {
     getAssignedCollaboratorIds,
@@ -82,6 +90,12 @@ export default function UniversoRamos() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [taskClientId, setTaskClientId] = useState<string | null>(null);
   const [newClientOpen, setNewClientOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [universeCategories, setUniverseCategories] = useState<UniversoRamosCategory[]>([]);
+  const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
+  const [openChallengesOpen, setOpenChallengesOpen] = useState(false);
+  const [challengeUnitId, setChallengeUnitId] = useState<string | null>(null);
+  const { challenges, participantsByChallenge, createUniverseChallenge, acceptUniverseChallenge, resolveChallenge } = useChallenges();
 
   const getCommentCount = useCallback(
     (clientId: string) => commentCounts.get(clientId) ?? 0,
@@ -128,6 +142,7 @@ export default function UniversoRamos() {
     });
     setCollaboratorFilters([]);
     setSearchQuery("");
+    setUniverseCategories([]);
   };
 
   const visibleClients = useMemo(() => {
@@ -144,6 +159,7 @@ export default function UniversoRamos() {
         client.initials.toLocaleLowerCase("pt-BR").includes(query) ||
         assignedNames.some((name) => name.includes(query));
       if (!matchesSearch) return false;
+      if (universeCategories.length > 0 && !universeCategories.includes(client.universeCategory as UniversoRamosCategory)) return false;
 
       const activeFilters = [
         filterFlags.priority,
@@ -200,7 +216,16 @@ export default function UniversoRamos() {
       }
       return (left.order - right.order) * multiplier;
     });
-    return result;
+    return result.map((client) => {
+      if (client.universeCategory !== "COLABORADOR") return client;
+      const collaborator = collaborators.find((person) =>
+        person.id === client.universeCollaboratorId ||
+        person.name.localeCompare(client.name, "pt-BR", { sensitivity: "base" }) === 0,
+      );
+      return collaborator
+        ? { ...client, name: collaborator.name, initials: collaborator.initials, logoUrl: collaborator.photoUrl ?? client.logoUrl }
+        : client;
+    });
   }, [
     collaborators,
     collaboratorFilters,
@@ -213,6 +238,7 @@ export default function UniversoRamos() {
     sortBy,
     sortDirection,
     universeClients,
+    universeCategories,
   ]);
 
   const stats = useMemo(
@@ -238,6 +264,18 @@ export default function UniversoRamos() {
       universeClients,
     ],
   );
+
+  const universeChallenges = useMemo(
+    () => challenges.filter((challenge) => challenge.clientId && universeClients.some((client) => client.id === challenge.clientId)),
+    [challenges, universeClients],
+  );
+  const openUniverseChallenges = universeChallenges.filter((challenge) => challenge.status === "open");
+
+  const toggleUniverseCategory = (category: UniversoRamosCategory) => {
+    setUniverseCategories((current) => current.includes(category)
+      ? current.filter((item) => item !== category)
+      : [...current, category]);
+  };
 
   const selectedClient = selectedClientId
     ? getClient(selectedClientId)
@@ -276,19 +314,26 @@ export default function UniversoRamos() {
                 <UserPlus className="h-4 w-4" />
                 Novo cliente
               </Button>
+              <Button variant="outline" size="sm" onClick={() => { setChallengeUnitId(null); setChallengeDialogOpen(true); }}>
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">Novo desafio</span>
+              </Button>
             </div>
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Summary label="Cadastros" value={stats.total} icon={Globe2} />
-            <Summary label="Tarefas" value={stats.tasks} icon={ListChecks} />
+            <Summary label="Cadastros" value={stats.total} icon={Globe2} onClick={clearFilters} />
+            <Summary label="Tarefas" value={stats.tasks} icon={ListChecks} onClick={() => handleFilterFlagToggle("withJackbox")} active={filterFlags.withJackbox} />
             <Summary
               label="Comentários"
               value={stats.comments}
               icon={MessageCircle}
+              onClick={() => handleFilterFlagToggle("withComments")}
+              active={filterFlags.withComments}
             />
-            <Summary label="Prioridades" value={stats.priority} icon={Star} />
-            <Summary label="Com responsáveis" value={stats.assigned} icon={Users} />
+            <Summary label="Prioridades" value={stats.priority} icon={Star} onClick={() => handleFilterFlagToggle("priority")} active={filterFlags.priority} />
+            <Summary label="Com responsáveis" value={stats.assigned} icon={Users} onClick={() => handleFilterFlagToggle("hasCollaborators")} active={filterFlags.hasCollaborators} />
+            <Summary label="Desafios abertos" value={openUniverseChallenges.length} icon={Sparkles} onClick={() => setOpenChallengesOpen(true)} />
           </div>
         </header>
 
@@ -329,6 +374,7 @@ export default function UniversoRamos() {
           showClientTypeFilter={false}
           showMunicipalityFilter={false}
           tvPath="/tv?scope=UNIVERSO_RAMOS"
+          extraControls={<UniverseCategoryControl selected={universeCategories} onToggle={toggleUniverseCategory} />}
         />
 
         <main className="min-h-0 flex-1 overflow-auto p-3 sm:p-4">
@@ -397,12 +443,14 @@ export default function UniversoRamos() {
               allCollaborators={collaborators}
               getAssignedCollaboratorIds={getAssignedCollaboratorIds}
               onSelectClient={(id) =>
-                setSelectedClientId((current) => (current === id ? null : id))
+                setSelectedClientId(id)
               }
               onHighlightClient={toggleHighlight}
               onTogglePriority={togglePriority}
               onToggleCollaboratorAssignment={toggleAssignment}
               onOpenChecklist={setTaskClientId}
+              onEditClient={setEditingClient}
+              showHighlight={false}
               viewMode={viewMode}
               gridSize={gridSize}
               fitAllLocked={fitAllLocked}
@@ -429,6 +477,41 @@ export default function UniversoRamos() {
         onOpenChange={setNewClientOpen}
         defaultClientType="UNIVERSO_RAMOS"
       />
+      <ClientQuickEditDialog
+        client={editingClient}
+        open={Boolean(editingClient)}
+        onOpenChange={(open) => !open && setEditingClient(null)}
+        onSave={async (client, data) => updateClient(client.id, data)}
+      />
+      <UniverseChallengeDialog
+        open={challengeDialogOpen}
+        onOpenChange={setChallengeDialogOpen}
+        units={universeClients}
+        collaborators={collaborators}
+        defaultUnitId={challengeUnitId}
+        onCreate={createUniverseChallenge}
+      />
+      <UniverseUnitDialog
+        client={selectedClient}
+        open={Boolean(selectedClient) && !isMobile}
+        onOpenChange={(open) => !open && setSelectedClientId(null)}
+        challenges={universeChallenges}
+        participantsByChallenge={participantsByChallenge}
+        collaborators={collaborators}
+        commentCount={selectedClient ? getCommentCount(selectedClient.id) : 0}
+        taskCount={selectedClient ? getActiveTaskCount(selectedClient.id) : 0}
+        canManage={isAdmin}
+        onNewChallenge={() => { setChallengeUnitId(selectedClient?.id ?? null); setChallengeDialogOpen(true); }}
+        onResolve={(challengeId, outcome) => void resolveChallenge(challengeId, outcome)}
+      />
+      <OpenChallengesDialog
+        open={openChallengesOpen}
+        onOpenChange={setOpenChallengesOpen}
+        challenges={openUniverseChallenges}
+        units={universeClients}
+        currentUser={currentUser}
+        onAccept={acceptUniverseChallenge}
+      />
     </AppLayout>
   );
 }
@@ -437,16 +520,30 @@ function Summary({
   label,
   value,
   icon: Icon,
+  onClick,
+  active,
 }: {
   label: string;
   value: number;
   icon: typeof Globe2;
+  onClick?: () => void;
+  active?: boolean;
 }) {
   return (
-    <div className="flex h-9 items-center gap-2 border bg-background px-2.5">
+    <button type="button" onClick={onClick} className={`flex h-9 items-center gap-2 border px-2.5 transition-colors ${active ? "border-cyan-500 bg-cyan-50" : "bg-background hover:bg-muted/60"}`}>
       <Icon className="h-3.5 w-3.5 text-cyan-700" />
       <span className="text-sm font-semibold">{value}</span>
       <span className="text-[10px] text-muted-foreground">{label}</span>
-    </div>
+    </button>
   );
+}
+
+function UniverseCategoryControl({ selected, onToggle }: { selected: UniversoRamosCategory[]; onToggle: (category: UniversoRamosCategory) => void }) {
+  const categories: { value: UniversoRamosCategory; label: string }[] = [
+    { value: "EMPRESA", label: "Empresas" },
+    { value: "SETOR", label: "Setores" },
+    { value: "COLABORADOR", label: "Colaboradores" },
+    { value: "PROJETO", label: "Projetos" },
+  ];
+  return <div className="flex items-center gap-1 border-l pl-2">{categories.map((category) => <button key={category.value} type="button" onClick={() => onToggle(category.value)} className={`h-7 px-2 text-[10px] font-medium ${selected.includes(category.value) ? "bg-cyan-700 text-white" : "bg-cyan-50 text-cyan-800 hover:bg-cyan-100"}`}>{category.label}</button>)}</div>;
 }

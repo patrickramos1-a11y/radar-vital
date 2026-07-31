@@ -1,5 +1,8 @@
 export type ChallengeStatus =
   | "draft"
+  | "open"
+  | "accepted"
+  | "in_progress"
   | "active"
   | "awaiting_validation"
   | "won"
@@ -7,15 +10,19 @@ export type ChallengeStatus =
   | "cancelled";
 
 export type ChallengeItemType = "task" | "priority" | "deliverable";
+export type ChallengeKind = "sector" | "project" | "company" | "individual_goal" | "company_general";
 
 export interface Challenge {
   id: string;
   title: string;
   description: string | null;
   successCriteria: string;
+  kind: ChallengeKind;
+  expectedDeliverable: string | null;
+  evidenceRequirements: string | null;
   clientId: string | null;
   status: ChallengeStatus;
-  dueAt: string;
+  dueAt: string | null;
   rewardSuperstars: number;
   penaltyStars: number;
   createdBy: string;
@@ -46,7 +53,10 @@ export interface ChallengeFormData {
   description?: string;
   successCriteria: string;
   clientId?: string | null;
-  dueAt: string;
+  dueAt?: string | null;
+  kind?: ChallengeKind;
+  expectedDeliverable?: string;
+  evidenceRequirements?: string;
   rewardSuperstars: number;
   penaltyStars: number;
   participantIds: string[];
@@ -58,6 +68,9 @@ export const CHALLENGE_STATUS_CONFIG: Record<
   { label: string; className: string }
 > = {
   draft: { label: "Rascunho", className: "bg-slate-100 text-slate-700" },
+  open: { label: "Aberto", className: "bg-violet-100 text-violet-800" },
+  accepted: { label: "Aceito", className: "bg-sky-100 text-sky-800" },
+  in_progress: { label: "Em execução", className: "bg-sky-100 text-sky-800" },
   active: { label: "Em andamento", className: "bg-sky-100 text-sky-800" },
   awaiting_validation: {
     label: "Aguardando validação",

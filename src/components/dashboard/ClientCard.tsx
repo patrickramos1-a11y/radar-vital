@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, ShieldCheck } from "lucide-react";
+import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, ShieldCheck, Pencil } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
@@ -30,6 +30,8 @@ interface ClientCardProps {
   onTogglePriority: (id: string, reason?: string) => void;
   onToggleCollaboratorAssignment: (clientId: string, collaboratorId: string) => void;
   onOpenChecklist: (id: string) => void;
+  onEdit?: (client: Client) => void;
+  showHighlight?: boolean;
   clientCount?: number;
   fitAll?: boolean;
   cardContentMode?: CardContentMode;
@@ -120,6 +122,8 @@ export function ClientCard({
   onTogglePriority,
   onToggleCollaboratorAssignment,
   onOpenChecklist,
+  onEdit,
+  showHighlight = true,
   clientCount = 40,
   fitAll = false,
   cardContentMode = 'logo',
@@ -198,9 +202,11 @@ export function ClientCard({
           )}
           <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
           <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />
-          <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
-            <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
-          </button>
+          {showHighlight && (
+            <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
+              <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
+            </button>
+          )}
           <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? `Prioridade: ${client.priorityReason || 'sem motivo informado'}` : "Marcar como prioritário"}>
             <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
           </button>
@@ -218,9 +224,15 @@ export function ClientCard({
             className="h-5 w-5 object-contain rounded shrink-0"
           />
         )}
-        <span className={`${headerSizes.nameSize} font-medium text-foreground truncate flex-1 pr-12`}>
+        <button
+          type="button"
+          onClick={(event) => { event.stopPropagation(); onEdit?.(client); }}
+          className={`${headerSizes.nameSize} min-w-0 flex-1 truncate text-left font-medium text-foreground hover:text-primary`}
+          title={onEdit ? `Editar ${client.name}` : client.name}
+        >
           {client.name}
-        </span>
+        </button>
+        {onEdit && <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
       </div>
 
       {/* Collaborator Row */}

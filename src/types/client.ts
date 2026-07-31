@@ -40,6 +40,7 @@ export interface ProcessBreakdown {
 
 // Client scope: external clients (AC/AV) or internal Ramos workspace.
 export type ClientType = 'AC' | 'AV' | 'UNIVERSO_RAMOS';
+export type UniversoRamosCategory = 'EMPRESA' | 'SETOR' | 'COLABORADOR' | 'PROJETO';
 
 export interface Client {
   id: string;
@@ -53,6 +54,8 @@ export interface Client {
   isHighlighted: boolean;
   boReason?: string | null;
   clientType: ClientType;
+  universeCategory?: UniversoRamosCategory | null;
+  universeCollaboratorId?: string | null;
   order: number;
   processes: number; // Calculated: em_andamento (análise + notificado)
   processBreakdown: ProcessBreakdown; // Process counts by status

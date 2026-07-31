@@ -44,6 +44,7 @@ const CLIENT_LIST_COLUMNS = [
   'is_checked',
   'is_highlighted',
   'client_type',
+  'universe_category',
   'display_order',
   'proc_total_count',
   'proc_deferido_count',
@@ -102,6 +103,8 @@ const dbRowToClient = (row: any): Client => {
     isHighlighted: row.is_highlighted || false,
     boReason: getStoredClientReason(row.id, 'bo'),
     clientType: row.client_type || 'AC',
+    universeCategory: row.universe_category || null,
+    universeCollaboratorId: row.universe_collaborator_id || null,
     order: row.display_order,
     processes: procEmAndamento, // "P" = processes in progress (not deferido)
     processBreakdown: {
@@ -155,6 +158,8 @@ const clientToDbRow = (client: Partial<ClientFormData>) => {
   if (client.isChecked !== undefined) row.is_checked = client.isChecked;
   if (client.isHighlighted !== undefined) row.is_highlighted = client.isHighlighted;
   if (client.clientType !== undefined) row.client_type = client.clientType;
+  if (client.universeCategory !== undefined) row.universe_category = client.universeCategory || null;
+  if (client.universeCollaboratorId !== undefined) row.universe_collaborator_id = client.universeCollaboratorId || null;
   if (client.order !== undefined) row.display_order = client.order;
   // Note: processes is calculated from processBreakdown, don't write directly
   if (client.processBreakdown !== undefined) {

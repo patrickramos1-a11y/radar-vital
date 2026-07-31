@@ -22,6 +22,7 @@ import { MobileCompactFilters } from "@/components/mobile/MobileCompactFilters";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
+import { ClientQuickEditDialog } from "@/components/dashboard/ClientQuickEditDialog";
 import { useAudits } from "@/hooks/useAudits";
 import type { AuditSummary } from "@/types/audit";
 const Index = () => {
@@ -39,6 +40,7 @@ const Index = () => {
     toggleCollaborator,
     isLoading,
     getClient,
+    updateClient,
   } = useClients();
 
   const {
@@ -75,6 +77,7 @@ const Index = () => {
   const [gridSize, setGridSize] = useState<GridSize>(null);
   const [fitAllLocked, setFitAllLocked] = useState(false);
   const [newClientOpen, setNewClientOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedAuditId, setSelectedAuditId] = useState<string>('');
   const selectedAudit = useMemo(
     () =>
@@ -647,6 +650,7 @@ const Index = () => {
                 onTogglePriority={togglePriority}
                 onToggleCollaboratorAssignment={handleToggleCollaboratorAssignment}
                 onOpenChecklist={handleOpenChecklist}
+                onEditClient={setEditingClient}
                 viewMode={viewMode}
                 gridSize={gridSize}
                 fitAllLocked={fitAllLocked}
@@ -674,6 +678,12 @@ const Index = () => {
           )}
 
           <NewClientDialog open={newClientOpen} onOpenChange={setNewClientOpen} />
+          <ClientQuickEditDialog
+            client={editingClient}
+            open={Boolean(editingClient)}
+            onOpenChange={(open) => !open && setEditingClient(null)}
+            onSave={async (client, data) => updateClient(client.id, data)}
+          />
         </div>
       </TooltipProvider>
     </AppLayout>

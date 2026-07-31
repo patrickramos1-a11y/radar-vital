@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useClients } from "@/contexts/ClientContext";
 import { useMunicipalities } from "@/hooks/useMunicipalities";
-import { ClientType, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from "@/types/client";
+import { ClientType, UniversoRamosCategory, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from "@/types/client";
 import { Landmark, Briefcase, Globe2, Star, Upload, X, Search, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }
   const [isPriority, setIsPriority] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [municipios, setMunicipios] = useState<string[]>([]);
+  const [universeCategory, setUniverseCategory] = useState<UniversoRamosCategory | "">("");
   const [errors, setErrors] = useState<{ name?: string; municipios?: string }>({});
 
   const reset = () => {
@@ -34,6 +35,7 @@ export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }
     setIsPriority(false);
     setIsActive(true);
     setMunicipios([]);
+    setUniverseCategory("");
     setErrors({});
   };
 
@@ -65,6 +67,7 @@ export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }
         isChecked: false,
         isHighlighted: false,
         clientType,
+        universeCategory: clientType === "UNIVERSO_RAMOS" ? universeCategory || null : null,
         order: clients.length + 1,
         processes: 0,
         processBreakdown: DEFAULT_PROCESS_BREAKDOWN,
@@ -208,6 +211,18 @@ export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Municípios *</label>
               <MunicipiosSelect value={municipios} onChange={setMunicipios} />
               {errors.municipios && <p className="text-xs text-destructive mt-1">{errors.municipios}</p>}
+            </div>
+          )}
+
+          {clientType === "UNIVERSO_RAMOS" && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoria interna</label>
+              <select value={universeCategory} onChange={(event) => setUniverseCategory(event.target.value as UniversoRamosCategory)} className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm">
+                <option value="">Selecione uma categoria</option>
+                <option value="EMPRESA">Empresa</option>
+                <option value="SETOR">Setor</option>
+                <option value="PROJETO">Projeto / Painel</option>
+              </select>
             </div>
           )}
 
