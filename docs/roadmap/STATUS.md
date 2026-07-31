@@ -57,10 +57,10 @@ Atualizado em: 2026-07-30
 2. A autorizacao administrativa atual usa o nome Patrick no frontend.
 3. Algumas politicas RLS permitem acesso publico amplo.
 4. Tipos gerados do Supabase estao defasados.
-5. Pontuacao de entregaveis e dividida entre responsaveis.
+5. Migrations de Tesouro, Desafios e Performance ainda nao foram executadas em banco isolado.
 6. Relacionamentos antigos usam nomes em vez de UUID.
 7. Estatisticas sao calculadas em grande parte no cliente.
-8. O bundle deve ser dividido antes de receber muitas rotas novas.
+8. O carregamento sob demanda foi aplicado, mas deve ser medido com dados e navegacao autenticada.
 
 ## Proxima entrega recomendada
 
