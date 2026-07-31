@@ -1,4 +1,5 @@
 import { ChevronDown, LogOut, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -49,10 +50,12 @@ export function UserSelector() {
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
-            <div className="px-2 py-1.5 flex items-center gap-2 text-xs text-emerald-700">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Administrador
-            </div>
+            <DropdownMenuItem asChild>
+              <Link to="/acessos-equipe" className="flex cursor-pointer items-center gap-2 text-emerald-700">
+                <ShieldCheck className="h-4 w-4" />
+                Gerenciar acessos
+              </Link>
+            </DropdownMenuItem>
           </>
         )}
         <DropdownMenuSeparator />

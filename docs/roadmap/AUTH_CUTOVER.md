@@ -13,7 +13,7 @@ integrada, na janela unica de lancamento.
 
 ## Provisionamento
 
-1. Criar ou convidar os usuarios no Supabase Auth.
+1. Em `Acessos da equipe`, cadastrar o e-mail de cada colaborador ativo e enviar o convite. A Edge Function `invite-collaborator` cria o convite apenas quando acionada por administrador.
 2. Confirmar que o e-mail do usuario corresponde ao e-mail do colaborador.
 3. Fazer o primeiro login para executar `bootstrap_current_profile()`.
 4. Conferir o vinculo em `profiles.collaborator_id` e
@@ -77,4 +77,3 @@ apagadas em uma emergencia.
 O valor `auth_enforced = true` somente pode ser aplicado depois da publicacao do
 frontend autenticado e dos testes de login. A publicacao so e considerada
 concluida depois desse corte e dos smoke tests.
-
