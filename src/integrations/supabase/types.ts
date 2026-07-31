@@ -125,6 +125,13 @@ export type Database = {
             foreignKeyName: "audit_client_items_assignee_id_fkey"
             columns: ["assignee_id"]
             isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "audit_client_items_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
             referencedRelation: "collaborators"
             referencedColumns: ["id"]
           },
@@ -469,6 +476,13 @@ export type Database = {
             foreignKeyName: "challenge_participants_collaborator_id_fkey"
             columns: ["collaborator_id"]
             isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
             referencedRelation: "collaborators"
             referencedColumns: ["id"]
           },
@@ -562,6 +576,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_collaborator_assignments_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
           },
           {
             foreignKeyName: "client_collaborator_assignments_collaborator_id_fkey"
@@ -950,6 +971,7 @@ export type Database = {
           id: string
           rater_name: string
           rating_type: string
+          star_transaction_version: string | null
           updated_at: string
           value: number
         }
@@ -959,6 +981,7 @@ export type Database = {
           id?: string
           rater_name: string
           rating_type: string
+          star_transaction_version?: string | null
           updated_at?: string
           value?: number
         }
@@ -968,6 +991,7 @@ export type Database = {
           id?: string
           rater_name?: string
           rating_type?: string
+          star_transaction_version?: string | null
           updated_at?: string
           value?: number
         }
@@ -1379,7 +1403,189 @@ export type Database = {
             foreignKeyName: "profiles_collaborator_id_fkey"
             columns: ["collaborator_id"]
             isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "profiles_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
             referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      star_settlement_items: {
+        Row: {
+          amount_brl: number
+          balance_before: number
+          collaborator_id: string
+          created_at: string
+          id: string
+          settlement_id: string
+          settlement_transaction_id: string | null
+          stars_settled: number
+        }
+        Insert: {
+          amount_brl?: number
+          balance_before: number
+          collaborator_id: string
+          created_at?: string
+          id?: string
+          settlement_id: string
+          settlement_transaction_id?: string | null
+          stars_settled: number
+        }
+        Update: {
+          amount_brl?: number
+          balance_before?: number
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+          settlement_id?: string
+          settlement_transaction_id?: string | null
+          stars_settled?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "star_settlement_items_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "star_settlement_items_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "star_settlement_items_settlement_id_fkey"
+            columns: ["settlement_id"]
+            isOneToOne: false
+            referencedRelation: "star_settlements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "star_settlement_items_settlement_transaction_id_fkey"
+            columns: ["settlement_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "star_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      star_settlements: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          period_end: string | null
+          period_start: string | null
+          star_to_brl: number | null
+          total_brl: number
+          total_stars: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          star_to_brl?: number | null
+          total_brl?: number
+          total_stars?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          star_to_brl?: number | null
+          total_brl?: number
+          total_stars?: number
+        }
+        Relationships: []
+      }
+      star_transactions: {
+        Row: {
+          amount: number
+          collaborator_id: string
+          created_at: string
+          created_by: string
+          id: string
+          idempotency_key: string
+          metadata: Json
+          reason: string
+          reverses_transaction_id: string | null
+          settlement_id: string | null
+          source_id: string | null
+          source_type: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          collaborator_id: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          idempotency_key: string
+          metadata?: Json
+          reason: string
+          reverses_transaction_id?: string | null
+          settlement_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          collaborator_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          idempotency_key?: string
+          metadata?: Json
+          reason?: string
+          reverses_transaction_id?: string | null
+          settlement_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "star_transactions_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "star_transactions_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "star_transactions_reverses_transaction_id_fkey"
+            columns: ["reverses_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "star_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "star_transactions_settlement_id_fkey"
+            columns: ["settlement_id"]
+            isOneToOne: false
+            referencedRelation: "star_settlements"
             referencedColumns: ["id"]
           },
         ]
@@ -1482,8 +1688,30 @@ export type Database = {
         }
         Relationships: []
       }
+      collaborator_star_balances: {
+        Row: {
+          balance: number | null
+          collaborator_color: string | null
+          collaborator_id: string | null
+          collaborator_name: string | null
+          credits: number | null
+          debits: number | null
+          photo_url: string | null
+        }
+        Relationships: []
+      }
+      star_treasury_summary: {
+        Row: {
+          collective_balance: number | null
+          total_credits: number | null
+          total_debits: number | null
+          transaction_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      backfill_star_sources: { Args: { p_actor_name?: string }; Returns: Json }
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
       close_audit: {
         Args: { p_actor_name?: string; p_audit_id: string }
@@ -1504,12 +1732,53 @@ export type Database = {
         }
         Returns: string
       }
+      credit_deliverable_rating: {
+        Args: { p_actor_name?: string; p_rating_id: string; p_version: string }
+        Returns: undefined
+      }
+      grant_manual_stars: {
+        Args: {
+          p_actor_name?: string
+          p_amount: number
+          p_collaborator_id: string
+          p_is_penalty?: boolean
+          p_reason: string
+          p_request_id?: string
+        }
+        Returns: string
+      }
+      grant_opening_stars: {
+        Args: {
+          p_actor_name?: string
+          p_amount?: number
+          p_batch_id?: string
+          p_collaborator_ids: string[]
+          p_reason?: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      insert_star_transaction: {
+        Args: {
+          p_actor_name?: string
+          p_amount: number
+          p_collaborator_id: string
+          p_idempotency_key: string
+          p_metadata?: Json
+          p_reason: string
+          p_reverses_transaction_id?: string
+          p_settlement_id?: string
+          p_source_id: string
+          p_source_type: string
+          p_transaction_type: string
+        }
+        Returns: string
       }
       open_audit: {
         Args: {
@@ -1527,9 +1796,21 @@ export type Database = {
         Args: { p_client_id: string }
         Returns: undefined
       }
+      record_challenge_resolution_transactions: {
+        Args: { p_actor_name?: string; p_challenge_id: string }
+        Returns: undefined
+      }
       refresh_overdue_challenges: {
         Args: { p_actor_name?: string }
         Returns: number
+      }
+      remove_deliverable_rating: {
+        Args: {
+          p_actor_name?: string
+          p_deliverable_id: string
+          p_rater_name: string
+        }
+        Returns: undefined
       }
       resolve_challenge: {
         Args: {
@@ -1537,6 +1818,39 @@ export type Database = {
           p_challenge_id: string
           p_outcome: string
           p_resolution_notes?: string
+        }
+        Returns: string
+      }
+      reverse_active_rating_transactions: {
+        Args: { p_actor_name?: string; p_rating_id: string; p_reason: string }
+        Returns: undefined
+      }
+      reverse_star_transaction: {
+        Args: {
+          p_actor_name?: string
+          p_reason: string
+          p_transaction_id: string
+        }
+        Returns: string
+      }
+      set_deliverable_rating: {
+        Args: {
+          p_actor_name?: string
+          p_deliverable_id: string
+          p_rater_name: string
+          p_rating_type: string
+          p_value?: number
+        }
+        Returns: string
+      }
+      settle_star_balances: {
+        Args: {
+          p_actor_name?: string
+          p_collaborator_ids: string[]
+          p_notes?: string
+          p_period_end?: string
+          p_period_start?: string
+          p_star_to_brl?: number
         }
         Returns: string
       }
