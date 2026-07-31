@@ -185,27 +185,27 @@ regra deve ser removida. Cada participante recebe a avaliacao integral.
 
 ### Entregas de banco
 
-- [ ] Criar livro `star_transactions`.
-- [ ] Criar liquidacoes e itens de liquidacao.
-- [ ] Criar views de saldo individual e coletivo.
-- [ ] Criar RPC para premio manual.
-- [ ] Criar RPC para penalidade manual.
-- [ ] Criar RPC para credito inicial em lote.
-- [ ] Criar RPC de liquidacao.
-- [ ] Criar estorno administrativo.
-- [ ] Integrar entregaveis e desafios ao livro.
+- [x] Criar livro `star_transactions`.
+- [x] Criar liquidacoes e itens de liquidacao.
+- [x] Criar views de saldo individual e coletivo.
+- [x] Criar RPC para premio manual.
+- [x] Criar RPC para penalidade manual.
+- [x] Criar RPC para credito inicial em lote.
+- [x] Criar RPC de liquidacao.
+- [x] Criar estorno administrativo.
+- [x] Integrar entregaveis e desafios ao livro.
 
 ### Entregas de interface
 
-- [ ] Criar pagina Tesouro.
-- [ ] Mostrar saldo coletivo e individual.
-- [ ] Mostrar extrato filtravel.
-- [ ] Mostrar positivos, negativos e liquidados.
-- [ ] Criar concessao manual com justificativa.
-- [ ] Criar credito inicial de 500 por colaborador selecionado.
-- [ ] Criar simulacao de conversao em reais.
-- [ ] Criar fluxo de liquidacao com confirmacao.
-- [ ] Exibir historico de liquidacoes.
+- [x] Criar pagina Tesouro.
+- [x] Mostrar saldo coletivo e individual.
+- [x] Mostrar extrato filtravel.
+- [x] Mostrar positivos, negativos e liquidados.
+- [x] Criar concessao manual com justificativa.
+- [x] Criar credito inicial de 500 por colaborador selecionado.
+- [x] Criar simulacao de conversao em reais.
+- [x] Criar fluxo de liquidacao com confirmacao.
+- [x] Exibir historico de liquidacoes.
 
 ### Criterios de aceite
 

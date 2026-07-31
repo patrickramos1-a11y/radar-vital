@@ -14,6 +14,7 @@ import JackboxUnified from "./pages/JackboxUnified";
 import CentralEntregas from "./pages/CentralEntregas";
 import UniversoRamos from "./pages/UniversoRamos";
 import Auditorias from "./pages/Auditorias";
+import Tesouro from "./pages/Tesouro";
 
 import CommentsPanel from "./pages/CommentsPanel";
 import RelatoriosPdf from "./pages/RelatoriosPdf";
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/central-entregas" element={<CentralEntregas />} />
                 <Route path="/universo-ramos" element={<UniversoRamos />} />
                 <Route path="/auditorias" element={<Auditorias />} />
+                <Route path="/tesouro" element={<Tesouro />} />
                 <Route path="/config" element={<Config />} />
                 <Route path="/tv" element={<TVMode />} />
                 <Route path="*" element={<NotFound />} />

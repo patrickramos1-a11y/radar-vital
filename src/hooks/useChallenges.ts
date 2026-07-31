@@ -128,8 +128,8 @@ export function useChallenges() {
       await refetch();
       toast.success(
         outcome === "won"
-          ? "Desafio validado. O Tesouro registrará o crédito na próxima fase."
-          : "Desafio validado como não concluído. A penalidade aguarda o Tesouro.",
+          ? "Desafio validado e crédito integral registrado no Tesouro."
+          : "Desafio validado como não concluído e penalidade registrada no Tesouro.",
       );
       return true;
     },

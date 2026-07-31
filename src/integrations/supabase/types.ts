@@ -1348,9 +1348,146 @@ export type Database = {
         }
         Relationships: []
       }
+      star_settlements: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          period_end: string | null
+          period_start: string | null
+          star_to_brl: number | null
+          total_brl: number
+          total_stars: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          star_to_brl?: number | null
+          total_brl?: number
+          total_stars?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          star_to_brl?: number | null
+          total_brl?: number
+          total_stars?: number
+        }
+        Relationships: []
+      }
+      star_transactions: {
+        Row: {
+          amount: number
+          collaborator_id: string
+          created_at: string
+          created_by: string
+          id: string
+          idempotency_key: string
+          metadata: Json
+          reason: string
+          reverses_transaction_id: string | null
+          settlement_id: string | null
+          source_id: string | null
+          source_type: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          collaborator_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          idempotency_key: string
+          metadata?: Json
+          reason: string
+          reverses_transaction_id?: string | null
+          settlement_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          collaborator_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          idempotency_key?: string
+          metadata?: Json
+          reason?: string
+          reverses_transaction_id?: string | null
+          settlement_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          transaction_type?: string
+        }
+        Relationships: []
+      }
+      star_settlement_items: {
+        Row: {
+          amount_brl: number
+          balance_before: number
+          collaborator_id: string
+          created_at: string
+          id: string
+          settlement_id: string
+          settlement_transaction_id: string | null
+          stars_settled: number
+        }
+        Insert: {
+          amount_brl?: number
+          balance_before: number
+          collaborator_id: string
+          created_at?: string
+          id?: string
+          settlement_id: string
+          settlement_transaction_id?: string | null
+          stars_settled: number
+        }
+        Update: {
+          amount_brl?: number
+          balance_before?: number
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+          settlement_id?: string
+          settlement_transaction_id?: string | null
+          stars_settled?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      collaborator_star_balances: {
+        Row: {
+          balance: number | null
+          collaborator_color: string | null
+          collaborator_id: string | null
+          collaborator_name: string | null
+          credits: number | null
+          debits: number | null
+          photo_url: string | null
+        }
+        Relationships: []
+      }
+      star_treasury_summary: {
+        Row: {
+          collective_balance: number | null
+          total_credits: number | null
+          total_debits: number | null
+          transaction_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       bootstrap_current_profile: { Args: never; Returns: string | null }
@@ -1391,6 +1528,30 @@ export type Database = {
         Returns: string
       }
       refresh_overdue_challenges: { Args: never; Returns: number }
+      backfill_star_sources: { Args: never; Returns: Json }
+      grant_manual_stars: {
+        Args: {
+          p_amount: number
+          p_collaborator_id: string
+          p_is_penalty?: boolean
+          p_reason: string
+          p_request_id?: string
+        }
+        Returns: string | null
+      }
+      grant_opening_stars: {
+        Args: {
+          p_amount?: number
+          p_batch_id?: string
+          p_collaborator_ids: string[]
+          p_reason?: string
+        }
+        Returns: number
+      }
+      remove_deliverable_rating: {
+        Args: { p_deliverable_id: string; p_rater_name: string }
+        Returns: undefined
+      }
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
         Returns: undefined
@@ -1404,6 +1565,29 @@ export type Database = {
           p_challenge_id: string
           p_outcome: string
           p_resolution_notes?: string | null
+        }
+        Returns: string
+      }
+      reverse_star_transaction: {
+        Args: { p_reason: string; p_transaction_id: string }
+        Returns: string | null
+      }
+      set_deliverable_rating: {
+        Args: {
+          p_deliverable_id: string
+          p_rater_name: string
+          p_rating_type: string
+          p_value?: number
+        }
+        Returns: string
+      }
+      settle_star_balances: {
+        Args: {
+          p_collaborator_ids: string[]
+          p_notes?: string | null
+          p_period_end?: string | null
+          p_period_start?: string | null
+          p_star_to_brl?: number | null
         }
         Returns: string
       }

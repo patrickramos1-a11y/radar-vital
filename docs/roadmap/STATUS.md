@@ -27,7 +27,7 @@ Atualizado em: 2026-07-30
 | 2. Visao Unificada | EM ANDAMENTO | Login de teste | Validar a Central do Cliente com dados autenticados |
 | 3. Auditorias | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
 | 4. Desafios | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
-| 5. Tesouro | NAO INICIADA | Fases 0 e 4 | Criar livro de transacoes |
+| 5. Tesouro | EM ANDAMENTO | Supabase de teste | Validar livro, RPCs, RLS e liquidacao com usuarios autenticados |
 | 6. Performance | NAO INICIADA | Fases 3, 4 e 5 | Criar consultas agregadas |
 | 7. Integracao e publicacao unica | NAO INICIADA | Todas | Validar e executar ciclo final |
 
@@ -64,9 +64,9 @@ Atualizado em: 2026-07-30
 
 ## Proxima entrega recomendada
 
-Validar as Auditorias e os Desafios em Supabase isolado. Quando o ambiente
-estiver disponivel, aplicar as migrations em ordem, regenerar os tipos e
-executar as matrizes de RLS e os fluxos autenticados acumulados antes da Fase 5.
+Validar as Auditorias, os Desafios e o Tesouro em Supabase isolado. Quando o
+ambiente estiver disponivel, aplicar as migrations em ordem, regenerar os tipos
+e executar as matrizes de RLS e os fluxos autenticados acumulados antes da Fase 6.
 
 ## Registro de execucao
 
@@ -118,6 +118,14 @@ Migrations: 20260731010205_challenges.sql, ainda nao aplicada.
 Testes: Vitest 15 testes aprovados; build de producao aprovado; lint dos arquivos da fase sem erros.
 Resultado: implementacao local aprovada; desafio vencido muda apenas para aguardando validacao e a resolucao administrativa ainda nao movimenta o Tesouro, evitando premio ou penalidade duplicados antes da Fase 5.
 Pendencias: aplicar migration em Supabase isolado, regenerar tipos, validar RLS admin/nao admin, testar idempotencia da resolucao e integrar movimentacoes financeiras na Fase 5.
+
+2026-07-30 - Fase 5
+Resumo: Tesouro de Estrelas implementado como livro imutavel com creditos, penalidades, estornos, liquidacoes e saldos individual/coletivo. Avaliacoes e desafios agora creditam cada participante de forma integral.
+Arquivos: migration 20260731011448_star_treasury.sql, tipos/adaptadores/testes do Tesouro, useTreasury, pagina Tesouro, rota/navegacao e integracoes de avaliacao, desafio e Performance.
+Migrations: 20260731011448_star_treasury.sql, ainda nao aplicada.
+Testes: Vitest 17 testes aprovados; build de producao aprovado; lint dos arquivos da fase sem erros.
+Resultado: implementacao local aprovada; joinha segue sem pontuacao, Super Estrela gera 10 estrelas-base, saldos podem ser negativos e liquidacao cria compensacao sem apagar o extrato.
+Pendencias: aplicar migration em Supabase isolado, regenerar tipos, validar RLS admin/nao admin, exercitar premio/penalidade/estorno/liquidacao e confirmar a conciliacao de desafios e avaliacoes antes da Fase 6.
 ```
 
 ## Modelo para proximos registros

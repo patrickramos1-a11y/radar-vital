@@ -583,8 +583,8 @@ function ResolutionDialog({
           <div className="space-y-3 text-sm">
             <p>
               {isWin
-                ? `Cada participante receberá ${getChallengeRewardStars(intent.challenge)} estrelas quando o Tesouro for integrado.`
-                : `Cada participante receberá uma penalidade de ${intent.challenge.penaltyStars} estrelas quando o Tesouro for integrado.`}
+                ? `Cada participante receberá ${getChallengeRewardStars(intent.challenge)} estrelas no Tesouro.`
+                : `Cada participante receberá uma penalidade de ${intent.challenge.penaltyStars} estrelas no Tesouro.`}
             </p>
             <Textarea
               value={notes}

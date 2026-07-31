@@ -7,13 +7,17 @@ import { assigneeMatches } from '@/lib/taskAssignee';
 import { useDeliverableRatings, summarizeRatings } from '@/hooks/useDeliverableRatings';
 import { KpiCard } from './KpiCard';
 import { CollaboratorAvatar } from './CollaboratorAvatar';
-import { CheckSquare, CheckCircle2, Clock, Star, MessageSquare, TrendingUp, Package, ThumbsUp, Sparkles, Trophy, AlertTriangle, Users, Percent, ArrowUpDown } from 'lucide-react';
+import { CheckSquare, CheckCircle2, Clock, Star, MessageSquare, TrendingUp, Package, ThumbsUp, Sparkles, Trophy, AlertTriangle, Users, Percent, ArrowUpDown, type LucideIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 interface RespOption { name: string; color: string; initials: string; }
+interface ClientCommentRow {
+  author_name?: string | null;
+  [field: string]: unknown;
+}
 
 interface Props {
   collaborator: string;
@@ -21,7 +25,7 @@ interface Props {
   tasks: Task[];
   priorities: Priority[];
   deliverables?: Deliverable[];
-  comments: any[];
+  comments: ClientCommentRow[];
   clients?: Client[];
   responsibleList?: RespOption[];
   getDaysOpen: (t: Task) => number;
@@ -34,7 +38,7 @@ type MetricKey =
   | 'comments' | 'commentsRead'
   | 'clients' | 'priorities' | 'prioritiesDone';
 
-const METRICS: { key: MetricKey; label: string; icon: any; higherIsBetter?: boolean }[] = [
+const METRICS: { key: MetricKey; label: string; icon: LucideIcon; higherIsBetter?: boolean }[] = [
   { key: 'score', label: 'Pontuação oficial', icon: Trophy },
   { key: 'stars', label: 'Estrelas', icon: Star },
   { key: 'supers', label: 'Super estrelas', icon: Sparkles },
@@ -53,7 +57,7 @@ const METRICS: { key: MetricKey; label: string; icon: any; higherIsBetter?: bool
   { key: 'prioritiesDone', label: 'Prioridades concluídas', icon: CheckCircle2 },
 ];
 
-function computeStats(name: string, tasks: Task[], priorities: Priority[], comments: any[], deliverables: Deliverable[], ratings: ReturnType<typeof useDeliverableRatings>['ratings']) {
+function computeStats(name: string, tasks: Task[], priorities: Priority[], comments: ClientCommentRow[], deliverables: Deliverable[], ratings: ReturnType<typeof useDeliverableRatings>['ratings']) {
   const myTasks = tasks.filter(t => assigneeMatches(t.assigned_to, name));
   const doneTasks = myTasks.filter(t => t.completed);
   const openTasks = myTasks.filter(t => !t.completed);
@@ -76,21 +80,20 @@ function computeStats(name: string, tasks: Task[], priorities: Priority[], comme
   const delivPending = myDeliv.filter(d => d.status !== 'concluido' && d.status !== 'cancelado').length;
   const delivPct = myDeliv.length > 0 ? Math.round((delivDone / myDeliv.length) * 100) : 0;
 
-  // Ratings received by this collaborator through their deliverables (split by assignees)
+  // Deliverable recognition is integral for every responsible collaborator.
   let score = 0, stars = 0, supers = 0, thumbs = 0;
   myDeliv.forEach(d => {
     const rs = ratings.filter(r => r.deliverable_id === d.id);
     if (rs.length === 0) return;
     const s = summarizeRatings(rs);
-    const n = Math.max(1, d.assigned_to.length);
-    score += s.score / n;
-    stars += s.stars / n;
-    supers += s.superstars / n;
-    thumbs += s.thumbs / n;
+    score += s.score;
+    stars += s.stars;
+    supers += s.superstars;
+    thumbs += s.thumbs;
   });
 
   const readField = `read_${name.toLowerCase()}`;
-  const commentsRead = comments.filter(c => !!(c as any)[readField]).length;
+  const commentsRead = comments.filter(c => c[readField] === true).length;
   const commentsAuthored = comments.filter(c => (c.author_name || '').toLowerCase() === name.toLowerCase()).length;
 
   const clientIds = new Set<string>();
