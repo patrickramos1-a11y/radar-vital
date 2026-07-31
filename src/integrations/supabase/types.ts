@@ -125,6 +125,13 @@ export type Database = {
             foreignKeyName: "audit_client_items_assignee_id_fkey"
             columns: ["assignee_id"]
             isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "audit_client_items_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
             referencedRelation: "collaborator_star_balances"
             referencedColumns: ["collaborator_id"]
           },
@@ -476,6 +483,13 @@ export type Database = {
             foreignKeyName: "challenge_participants_collaborator_id_fkey"
             columns: ["collaborator_id"]
             isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
             referencedRelation: "collaborator_star_balances"
             referencedColumns: ["collaborator_id"]
           },
@@ -576,6 +590,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_collaborator_assignments_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
           },
           {
             foreignKeyName: "client_collaborator_assignments_collaborator_id_fkey"
@@ -1403,6 +1424,13 @@ export type Database = {
             foreignKeyName: "profiles_collaborator_id_fkey"
             columns: ["collaborator_id"]
             isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "profiles_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
             referencedRelation: "collaborator_star_balances"
             referencedColumns: ["collaborator_id"]
           },
@@ -1447,6 +1475,13 @@ export type Database = {
           stars_settled?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "star_settlement_items_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
           {
             foreignKeyName: "star_settlement_items_collaborator_id_fkey"
             columns: ["collaborator_id"]
@@ -1560,6 +1595,13 @@ export type Database = {
           transaction_type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "star_transactions_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
           {
             foreignKeyName: "star_transactions_collaborator_id_fkey"
             columns: ["collaborator_id"]
@@ -1685,6 +1727,39 @@ export type Database = {
           effective_status: string | null
           linked_item_count: number | null
           participant_count: number | null
+        }
+        Relationships: []
+      }
+      collaborator_performance_all_time: {
+        Row: {
+          audits_assigned: number | null
+          audits_completed: number | null
+          challenges_active: number | null
+          challenges_won: number | null
+          clients_linked: number | null
+          collaborator_color: string | null
+          collaborator_id: string | null
+          collaborator_name: string | null
+          comments_authored: number | null
+          deliverables_completed: number | null
+          deliverables_total: number | null
+          official_star_balance: number | null
+          photo_url: string | null
+          priorities_completed: number | null
+          priorities_total: number | null
+          tasks_completed: number | null
+          tasks_overdue: number | null
+          tasks_total: number | null
+        }
+        Relationships: []
+      }
+      collaborator_performance_monthly: {
+        Row: {
+          collaborator_id: string | null
+          comments_authored: number | null
+          month_start: string | null
+          stars_delta: number | null
+          tasks_completed: number | null
         }
         Relationships: []
       }
