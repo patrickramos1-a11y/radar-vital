@@ -22,7 +22,7 @@ Atualizado em: 2026-07-30
 
 | Fase | Estado | Dependencia | Proxima acao |
 | --- | --- | --- | --- |
-| 0. Fundacao de compatibilidade | EM ANDAMENTO | Revisao de migrations | Remover dependencias de login das migrations de lancamento |
+| 0. Fundacao de compatibilidade | EM ANDAMENTO | Revisao de migrations | Adaptar as migrations do roadmap ao acesso atual |
 | 1. Universo Ramos | EM ANDAMENTO | Supabase de teste | Aplicar migration e validar isolamento com dados reais |
 | 2. Visao Unificada | EM ANDAMENTO | Dados de teste | Validar a Central do Cliente no fluxo atual |
 | 3. Auditorias | EM ANDAMENTO | Revisao de compatibilidade | Adaptar migration e validar o fluxo atual |
@@ -82,6 +82,13 @@ Resumo: autorizacao final recebida, mas a revisao identificou incompatibilidade 
 Resultado: lancamento bloqueado tecnicamente nesta etapa; nao enviar prompt de SQL ou publicacao ao Lovable ainda.
 Bloqueios: App ainda usa AuthGate/AuthProvider; existe tela de login e Edge Function de convite; migrations do roadmap foram escritas com dependencias de auth.users/auth.uid/RLS autenticada; o conector Lovable nao localizou o projeto informado; os projetos Supabase visiveis nesta sessao nao incluem o projeto configurado pelo repositorio.
 Proxima acao: executar a revisao de compatibilidade da Fase 0, remover do pacote de lancamento os artefatos de Auth e adaptar as migrations para o fluxo atual antes de reconectar Lovable e Supabase corretos.
+
+2026-07-30 - Fase 0, compatibilidade do frontend
+Resumo: o frontend voltou ao acesso atual por seletor operacional de colaborador; AuthGate, tela de login, convite por e-mail e rota de acessos foram retirados do pacote de lancamento.
+Arquivos: App, AuthContext, UserSelector; arquivos de login e Edge Function removidos.
+Testes: Vitest 17 testes aprovados; build de producao aprovado.
+Resultado: o painel volta a abrir sem login obrigatorio e preserva a identificacao operacional anterior.
+Pendencias: adaptar ou substituir migrations de Auditorias, Desafios, Tesouro e Performance que ainda dependem de auth.users, auth.uid() ou RLS autenticada.
 
 2026-07-30 - Fase 0
 Resumo: branch de integracao criada e portao de producao preservado.

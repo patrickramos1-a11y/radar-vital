@@ -44,10 +44,10 @@ login, senha, convite por e-mail ou cadastro de conta.
 - [ ] Preparar dados de teste sem alterar a base de producao.
 - [x] Mapear tabelas e politicas RLS atuais.
 - [ ] Revisar migrations que dependem de `auth.users`, `auth.uid()` ou RLS autenticada.
-- [ ] Garantir que a versao publicada mantenha o acesso atual, sem `AuthGate` ou tela de login.
-- [ ] Adaptar autoria e a identificacao administrativa para o modelo operacional atual.
+- [x] Garantir que a versao publicada mantenha o acesso atual, sem `AuthGate` ou tela de login.
+- [x] Adaptar autoria e a identificacao administrativa para o modelo operacional atual.
 - [ ] Regenerar `src/integrations/supabase/types.ts` a partir do banco aplicado.
-- [ ] Manter a identidade operacional atual ate uma futura decisao de autenticacao.
+- [x] Manter a identidade operacional atual ate uma futura decisao de autenticacao.
 - [x] Criar base de testes com Vitest e React Testing Library.
 - [x] Documentar o adiamento de login e do corte de RLS.
 

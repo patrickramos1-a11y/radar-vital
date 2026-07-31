@@ -6,10 +6,8 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ClientProvider } from "@/contexts/ClientContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { AuthGate } from "@/components/auth/AuthGate";
 const Index = lazy(() => import("./pages/Index"));
 const Config = lazy(() => import("./pages/Config"));
-const AcessosEquipe = lazy(() => import("./pages/AcessosEquipe"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const JackboxPanel = lazy(() => import("./pages/JackboxPanel"));
 const JackboxUnified = lazy(() => import("./pages/JackboxUnified"));
@@ -31,8 +29,7 @@ const App = () => (
     <TooltipProvider>
       <BrowserRouter>
         <AuthProvider>
-          <AuthGate>
-            <ClientProvider>
+          <ClientProvider>
               <Toaster />
               <Sonner />
               <Suspense
@@ -54,13 +51,11 @@ const App = () => (
                   <Route path="/auditorias" element={<Auditorias />} />
                   <Route path="/tesouro" element={<Tesouro />} />
                   <Route path="/config" element={<Config />} />
-                  <Route path="/acessos-equipe" element={<AcessosEquipe />} />
                   <Route path="/tv" element={<TVMode />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
-            </ClientProvider>
-          </AuthGate>
+          </ClientProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
