@@ -47,7 +47,7 @@ export function useDeliverableRatings() {
     try {
       const { data, error } = await supabase.from('deliverable_ratings').select('*');
       if (error) throw error;
-      setRatings(data ?? []);
+      setRatings((data ?? []) as unknown as DeliverableRating[]);
     } catch (e) {
       console.error(e);
     } finally {
