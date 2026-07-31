@@ -22,6 +22,7 @@ O objetivo e permitir que uma nova execucao consiga entender rapidamente:
 | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Fases, tarefas, arquivos e criterios de aceite |
 | [DATA_MODEL.md](DATA_MODEL.md) | Modelo de dados alvo e regras de integridade |
 | [STATUS.md](STATUS.md) | Estado vivo da execucao e proxima acao |
+| [ISOLATED_VALIDATION.md](ISOLATED_VALIDATION.md) | Roteiro de banco de teste e portao da publicacao unica |
 
 ## Visao do produto
 
