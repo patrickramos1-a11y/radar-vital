@@ -95,10 +95,11 @@ a categoria Colaborador, evitando duplicacao futura.
 Pendencia: aplicar a migration e conferir a associacao dos registros legados em
 ambiente de validacao.
 
-2026-07-31 - Universo Ramos, UR-6 pendente de ambiente
-Resumo: a carga inicial possui CSV-modelo e regras de validacao versionadas.
-Pendencia: executar/importar a carga idempotente somente depois que a migration
-puder ser aplicada em um ambiente de validacao.
+2026-07-31 - Universo Ramos, UR-6 concluida localmente
+Resumo: a carga inicial possui CSV-modelo, parser com validacao por linha,
+testes e RPC idempotente baseada em `import_key`.
+Resultado: 19 testes e build aprovados. A importacao real continua bloqueada
+ate que a migration seja aplicada em ambiente de validacao.
 
 2026-07-30 - Replanejamento de acesso
 Resumo: autenticacao, login, senha, convite por e-mail e corte de RLS foram adiados por decisao funcional.

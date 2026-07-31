@@ -3,7 +3,11 @@ BEGIN;
 ALTER TABLE public.challenges
   ADD COLUMN IF NOT EXISTS challenge_kind TEXT NOT NULL DEFAULT 'company_general',
   ADD COLUMN IF NOT EXISTS expected_deliverable TEXT,
-  ADD COLUMN IF NOT EXISTS evidence_requirements TEXT;
+  ADD COLUMN IF NOT EXISTS evidence_requirements TEXT,
+  ADD COLUMN IF NOT EXISTS import_key TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS challenges_import_key_unique
+  ON public.challenges (import_key) WHERE import_key IS NOT NULL;
 
 ALTER TABLE public.challenges ALTER COLUMN due_at DROP NOT NULL;
 
@@ -110,6 +114,35 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.accept_universe_challenge(UUID, UUID, TEXT) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.import_universe_challenge(
+  p_import_key TEXT,
+  p_title TEXT,
+  p_description TEXT DEFAULT NULL,
+  p_success_criteria TEXT DEFAULT NULL,
+  p_client_id UUID DEFAULT NULL,
+  p_challenge_kind TEXT DEFAULT 'company_general',
+  p_expected_deliverable TEXT DEFAULT NULL,
+  p_evidence_requirements TEXT DEFAULT NULL,
+  p_due_at TIMESTAMPTZ DEFAULT NULL,
+  p_reward_superstars INTEGER DEFAULT 0,
+  p_penalty_stars INTEGER DEFAULT 0,
+  p_participant_ids UUID[] DEFAULT ARRAY[]::UUID[],
+  p_status TEXT DEFAULT 'open',
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
+RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE existing_id UUID; new_id UUID;
+BEGIN
+  IF length(btrim(COALESCE(p_import_key, ''))) = 0 THEN RAISE EXCEPTION 'Import key is required'; END IF;
+  SELECT id INTO existing_id FROM public.challenges WHERE import_key = btrim(p_import_key);
+  IF existing_id IS NOT NULL THEN RETURN existing_id; END IF;
+  new_id := public.create_universe_challenge(p_title, p_description, p_success_criteria, p_client_id, p_challenge_kind, p_expected_deliverable, p_evidence_requirements, p_due_at, p_reward_superstars, p_penalty_stars, p_participant_ids, p_actor_name);
+  UPDATE public.challenges SET import_key = btrim(p_import_key), status = CASE WHEN p_status = 'draft' THEN 'draft' WHEN p_status = 'accepted' AND cardinality(COALESCE(p_participant_ids, ARRAY[]::UUID[])) > 0 THEN 'accepted' ELSE status END WHERE id = new_id;
+  RETURN new_id;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.import_universe_challenge(TEXT, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TEXT, TIMESTAMPTZ, INTEGER, INTEGER, UUID[], TEXT, TEXT) TO anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.resolve_challenge(
   p_challenge_id UUID,
