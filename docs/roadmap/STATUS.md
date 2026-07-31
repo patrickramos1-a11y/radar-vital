@@ -39,7 +39,7 @@ Atualizado em: 2026-07-30
 | Branch de integracao | ATIVA | `roadmap/radar-vital-integrado` |
 | Supabase de desenvolvimento | BLOQUEADO | Docker indisponivel; avaliar projeto remoto de teste |
 | Supabase de producao | PRESERVADO | Aplicar migrations apenas na Fase 7 |
-| Lovable publicado | PRESERVADO | Publicar uma unica vez no final |
+| Lovable publicado | IDENTIFICADO | Projeto `ff634e1a-388b-4ec0-8a30-e4b3f23c2e3e` (`radar-vital.lovable.app`); publicar uma unica vez no final |
 
 ## Baseline tecnico
 
@@ -94,6 +94,11 @@ Arquivos: migrations 20260730140000_audits.sql, 20260731010205_challenges.sql, 2
 Testes: Vitest 17 testes aprovados; build de producao aprovado.
 Resultado: o pacote novo do roadmap nao usa auth.users, auth.uid() ou grants exclusivos para authenticated. Regras de administrador continuam na interface, coerentes com o acesso atual sem login.
 Pendencias: aplicar o pacote em Supabase isolado, regenerar tipos a partir do schema real e validar autoria, idempotencia financeira e leitura anonima antes da Fase 7.
+
+2026-07-30 - Reconexao dos ambientes
+Resumo: o projeto Lovable correto foi localizado: `ff634e1a-388b-4ec0-8a30-e4b3f23c2e3e`, publicado em `radar-vital.lovable.app`.
+Resultado: o Lovable deixou de ser bloqueio de identificacao. A conta Supabase conectada, entretanto, ainda nao enxerga o projeto configurado pelo repositorio (`ixiffabjunvpoizdhwtk`), portanto nao ha ambiente isolado valido para aplicar ou verificar o SQL.
+Pendencias: conectar a conta/projeto Supabase correto ou indicar um projeto de teste equivalente. Nao aplicar migrations novas na producao antes dessa validacao.
 
 2026-07-30 - Fase 0
 Resumo: branch de integracao criada e portao de producao preservado.
