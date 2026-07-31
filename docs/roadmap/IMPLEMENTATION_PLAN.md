@@ -256,12 +256,12 @@ regra deve ser removida. Cada participante recebe a avaliacao integral.
 
 ### Entregas
 
-- [ ] Confirmar que todas as fases estao integradas na mesma branch.
-- [ ] Carregar novas rotas com `React.lazy`.
+- [x] Confirmar que todas as fases estao integradas na mesma branch.
+- [x] Carregar novas rotas com `React.lazy`.
 - [ ] Revisar performance das consultas.
 - [ ] Validar acessibilidade e responsividade.
 - [ ] Validar em desktop, mobile e TV.
-- [ ] Executar build, lint e testes.
+- [x] Executar build, lint e testes.
 - [ ] Revisar migrations e politicas RLS.
 - [ ] Atualizar documentacao final.
 - [ ] Congelar novas funcionalidades durante a validacao final.

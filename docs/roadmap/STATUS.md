@@ -29,7 +29,7 @@ Atualizado em: 2026-07-30
 | 4. Desafios | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
 | 5. Tesouro | EM ANDAMENTO | Supabase de teste | Validar livro, RPCs, RLS e liquidacao com usuarios autenticados |
 | 6. Performance | EM ANDAMENTO | Supabase de teste | Validar agregados, periodos e conciliacao com dados reais |
-| 7. Integracao e publicacao unica | NAO INICIADA | Todas | Validar e executar ciclo final |
+| 7. Integracao e publicacao unica | EM ANDAMENTO | Conectores Supabase e Lovable | Validar banco isolado e executar ciclo final |
 
 ## Estado dos ambientes
 
@@ -64,10 +64,10 @@ Atualizado em: 2026-07-30
 
 ## Proxima entrega recomendada
 
-Validar as Auditorias, os Desafios, o Tesouro e a Performance em Supabase
-isolado. Quando o ambiente estiver disponivel, aplicar as migrations em ordem,
-regenerar os tipos e executar as matrizes de RLS e os fluxos autenticados
-acumulados antes da Fase 7.
+Conectar o Supabase e o Lovable nesta sessao. Depois, criar ou selecionar um
+ambiente Supabase isolado, aplicar as migrations, regenerar os tipos, executar
+as matrizes de RLS e os fluxos autenticados acumulados. Somente entao executar
+o backup, a revisao de migrations e a publicacao unica da Fase 7.
 
 ## Registro de execucao
 
@@ -135,6 +135,14 @@ Migrations: 20260731012821_performance_aggregates.sql, ainda nao aplicada.
 Testes: Vitest 17 testes aprovados; build de producao aprovado; lint dos arquivos da fase sem erros.
 Resultado: implementacao local aprovada; ranking oficial usa o saldo do livro de estrelas, joinhas seguem separados e a tela permite comparar produtividade, comunicacao, responsabilidades, auditorias e desafios.
 Pendencias: aplicar migrations em Supabase isolado, regenerar tipos, validar resultados agregados contra os registros de origem e realizar verificacao autenticada em desktop, mobile e TV antes da Fase 7.
+
+2026-07-30 - Fase 7
+Resumo: integracao local revisada, rotas convertidas para carregamento sob demanda e servidor local iniciado para verificacao de disponibilidade.
+Arquivos: App.tsx e documentacao de status.
+Migrations: nenhuma aplicada; todas permanecem pendentes de validacao no Supabase isolado.
+Testes: Vitest 17 testes aprovados; build de producao aprovado; lint dos arquivos modificados sem erros; aplicacao local respondeu HTTP 200.
+Resultado: branch de integracao pronta para a validacao remota. O bundle inicial foi reduzido para aproximadamente 513 kB, com paginas carregadas sob demanda.
+Pendencias: os conectores Supabase e Lovable retornaram indisponiveis/nao autenticados nesta sessao. Sem projeto de teste, matriz RLS, backup de producao, `db push --dry-run`, regeneracao real dos tipos e sincronizacao Lovable, a publicacao final permanece bloqueada.
 ```
 
 ## Modelo para proximos registros
