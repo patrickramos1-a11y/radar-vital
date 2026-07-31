@@ -26,7 +26,7 @@ Atualizado em: 2026-07-30
 | 1. Universo Ramos | EM ANDAMENTO | Supabase de teste | Aplicar migration e validar isolamento com dados reais |
 | 2. Visao Unificada | EM ANDAMENTO | Login de teste | Validar a Central do Cliente com dados autenticados |
 | 3. Auditorias | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
-| 4. Desafios | NAO INICIADA | Fases 0 e 2 | Criar modelo e fluxo de validacao |
+| 4. Desafios | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
 | 5. Tesouro | NAO INICIADA | Fases 0 e 4 | Criar livro de transacoes |
 | 6. Performance | NAO INICIADA | Fases 3, 4 e 5 | Criar consultas agregadas |
 | 7. Integracao e publicacao unica | NAO INICIADA | Todas | Validar e executar ciclo final |
@@ -64,9 +64,9 @@ Atualizado em: 2026-07-30
 
 ## Proxima entrega recomendada
 
-Validar as Auditorias da Fase 3 em Supabase isolado. Quando o ambiente estiver
-disponivel, aplicar as migrations em ordem, regenerar os tipos e executar as
-matrizes de RLS e os fluxos autenticados acumulados antes de iniciar a Fase 4.
+Validar as Auditorias e os Desafios em Supabase isolado. Quando o ambiente
+estiver disponivel, aplicar as migrations em ordem, regenerar os tipos e
+executar as matrizes de RLS e os fluxos autenticados acumulados antes da Fase 5.
 
 ## Registro de execucao
 
@@ -110,6 +110,14 @@ Migrations: 20260730140000_audits.sql, ainda nao aplicada.
 Testes: Vitest 12 testes aprovados; build de producao aprovado; lint dos arquivos da fase sem erros (1 aviso preexistente em Index.tsx).
 Resultado: implementacao local aprovada; producao e Lovable preservados.
 Pendencias: aplicar em Supabase isolado, regenerar tipos, executar matriz RLS admin/nao admin e validar o fluxo autenticado em desktop, mobile e TV.
+
+2026-07-30 - Fase 4
+Resumo: desafios implementados como tarefas especiais com participantes, prazo, condicao de sucesso, recompensa integral em Super Estrelas e penalidade integral em estrelas.
+Arquivos: migration 20260731010205_challenges.sql, tipos/adaptadores/testes de desafios, useChallenges, aba Desafios da Central de Entregas, Visao Unificada e tipos Supabase locais.
+Migrations: 20260731010205_challenges.sql, ainda nao aplicada.
+Testes: Vitest 15 testes aprovados; build de producao aprovado; lint dos arquivos da fase sem erros.
+Resultado: implementacao local aprovada; desafio vencido muda apenas para aguardando validacao e a resolucao administrativa ainda nao movimenta o Tesouro, evitando premio ou penalidade duplicados antes da Fase 5.
+Pendencias: aplicar migration em Supabase isolado, regenerar tipos, validar RLS admin/nao admin, testar idempotencia da resolucao e integrar movimentacoes financeiras na Fase 5.
 ```
 
 ## Modelo para proximos registros

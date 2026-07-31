@@ -159,15 +159,15 @@ com valor financeiro.
 
 ### Entregas
 
-- [ ] Criar tabelas e RPC de resolucao.
-- [ ] Criar aba Desafios na Central de Entregas.
-- [ ] Criar formulario com participantes, prazo, recompensa e penalidade.
-- [ ] Permitir cliente opcional.
-- [ ] Permitir vinculo com tarefas e entregaveis.
-- [ ] Criar estado `aguardando_validacao`.
-- [ ] Criar acao administrativa de sucesso ou insucesso.
-- [ ] Integrar desafios a Visao Unificada.
-- [ ] Preparar geracao das transacoes do Tesouro.
+- [x] Criar tabelas e RPC de resolucao.
+- [x] Criar aba Desafios na Central de Entregas.
+- [x] Criar formulario com participantes, prazo, recompensa e penalidade.
+- [x] Permitir cliente opcional.
+- [x] Permitir vinculo com tarefas e entregaveis.
+- [x] Criar estado `aguardando_validacao`.
+- [x] Criar acao administrativa de sucesso ou insucesso.
+- [x] Integrar desafios a Visao Unificada.
+- [x] Preparar geracao das transacoes do Tesouro sem movimentar valores antes da Fase 5.
 
 ### Criterios de aceite
 

@@ -4,7 +4,9 @@ import { useTasks } from '@/hooks/useTasks';
 import { usePriorities } from '@/hooks/usePriorities';
 import { useDeliverables } from '@/hooks/useDeliverables';
 import { useCollaborators } from '@/hooks/useCollaborators';
+import { useChallenges } from '@/hooks/useChallenges';
 import { useClients } from '@/contexts/ClientContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDeliverableRatings, summarizeRatings } from '@/hooks/useDeliverableRatings';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -18,8 +20,9 @@ import { CommentsTab } from '@/components/central-entregas/CommentsTab';
 import { DeliverablesTab } from '@/components/central-entregas/DeliverablesTab';
 import { HistoryTab } from '@/components/central-entregas/HistoryTab';
 import { PerformanceTab } from '@/components/central-entregas/PerformanceTab';
+import { ChallengesTab } from '@/components/central-entregas/ChallengesTab';
 import { assigneeMatches } from '@/lib/taskAssignee';
-import { Star, CheckSquare, MessageSquare, Package, TrendingUp, Archive } from 'lucide-react';
+import { Star, CheckSquare, MessageSquare, Package, TrendingUp, Archive, Sparkles } from 'lucide-react';
 import { startOfMonth } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { QuickCreatePanel } from '@/components/central-entregas/QuickCreatePanel';
@@ -29,13 +32,21 @@ import { useSearchParams } from 'react-router-dom';
 
 const DEFAULT_NAMES = ['Patrick', 'Celine', 'Gabi', 'Darley', 'Vanessa'];
 
+type ClientCommentRow = {
+  client_id: string;
+  is_archived: boolean;
+  [field: string]: unknown;
+};
+
 export default function CentralEntregas() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { collaborators } = useCollaborators();
+  const { isAdmin } = useAuth();
   const { clients } = useClients();
   const tasksHook = useTasks();
   const prioritiesHook = usePriorities();
   const deliverablesHook = useDeliverables();
+  const challengesHook = useChallenges();
   const { ratings } = useDeliverableRatings();
   const [clientScope, setClientScope] = useState<ClientScope>('external');
   const requestedTab = searchParams.get('tab');
@@ -44,6 +55,7 @@ export default function CentralEntregas() {
     'tasks',
     'comments',
     'deliverables',
+    'challenges',
     'history',
     'performance',
   ].includes(requestedTab ?? '')
@@ -80,19 +92,33 @@ export default function CentralEntregas() {
 
   const [selected, setSelected] = useState<string>('Patrick');
   const isTeamView = selected === TEAM_VIEW;
-  const selectedInfo = isTeamView
-    ? { name: 'Equipe', color: 'hsl(var(--primary))', initials: 'EQ' }
-    : (responsibleList.find(r => r.name.toLowerCase() === selected.toLowerCase()) || responsibleList[0]);
+  const selectedInfo = useMemo(
+    () =>
+      isTeamView
+        ? { name: 'Equipe', color: 'hsl(var(--primary))', initials: 'EQ' }
+        : (responsibleList.find(r => r.name.toLowerCase() === selected.toLowerCase()) ||
+          responsibleList[0] ||
+          { name: 'Equipe', color: 'hsl(var(--primary))', initials: 'EQ' }),
+    [isTeamView, responsibleList, selected],
+  );
+  const selectedCollaboratorId = useMemo(
+    () =>
+      collaborators.find(
+        (collaborator) =>
+          collaborator.name.toLowerCase() === selectedInfo.name.toLowerCase(),
+      )?.id ?? null,
+    [collaborators, selectedInfo.name],
+  );
 
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<ClientCommentRow[]>([]);
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from('client_comments').select('*').order('created_at', { ascending: false });
-      setComments(data || []);
+       setComments((data ?? []) as ClientCommentRow[]);
     })();
     const ch = supabase.channel('ce_comments').on('postgres_changes', { event: '*', schema: 'public', table: 'client_comments' }, async () => {
       const { data } = await supabase.from('client_comments').select('*').order('created_at', { ascending: false });
-      setComments(data || []);
+       setComments((data ?? []) as ClientCommentRow[]);
     }).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
@@ -242,7 +268,9 @@ export default function CentralEntregas() {
       openPriorities: myPri.filter(p => p.status !== 'concluida' && p.status !== 'cancelada').length,
       doneTasks: myTasks.filter(t => t.completed).length,
       deliverables: myDeliv.length,
-      pendingComments: scopedComments.filter(c => !c.is_archived && !(c as any)[readField]).length,
+       pendingComments: scopedComments.filter(
+         comment => !comment.is_archived && !comment[readField],
+       ).length,
       overdue:
         myTasks.filter(t => !t.completed && t.due_date && new Date(t.due_date) < today).length +
         myPri.filter(p => p.due_date && new Date(p.due_date) < today && p.status !== 'concluida' && p.status !== 'cancelada').length,
@@ -331,11 +359,12 @@ export default function CentralEntregas() {
           >
             <TabsList className={isMobile
               ? "flex w-full overflow-x-auto gap-1 bg-card/60 backdrop-blur-sm border justify-start"
-              : "grid grid-cols-3 md:grid-cols-6 h-auto gap-1 bg-card/60 backdrop-blur-sm border"}>
+              : "grid grid-cols-3 md:grid-cols-7 h-auto gap-1 bg-card/60 backdrop-blur-sm border"}>
               <TabsTrigger value="priorities" className="flex items-center gap-1.5 py-2 shrink-0"><Star className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Prioridades</span></TabsTrigger>
               <TabsTrigger value="tasks" className="flex items-center gap-1.5 py-2 shrink-0"><CheckSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Tarefas</span></TabsTrigger>
               <TabsTrigger value="comments" className="flex items-center gap-1.5 py-2 shrink-0"><MessageSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Comentários</span></TabsTrigger>
               <TabsTrigger value="deliverables" className="flex items-center gap-1.5 py-2 shrink-0"><Package className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Entregáveis</span></TabsTrigger>
+              <TabsTrigger value="challenges" className="flex items-center gap-1.5 py-2 shrink-0"><Sparkles className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Desafios</span></TabsTrigger>
               <TabsTrigger value="history" className="flex items-center gap-1.5 py-2 shrink-0"><Archive className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Histórico</span></TabsTrigger>
               <TabsTrigger value="performance" className="flex items-center gap-1.5 py-2 shrink-0"><TrendingUp className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Performance</span></TabsTrigger>
             </TabsList>
@@ -394,6 +423,26 @@ export default function CentralEntregas() {
                 onCreate={deliverablesHook.addDeliverable}
                 onUpdate={deliverablesHook.updateDeliverable}
                 onDelete={deliverablesHook.deleteDeliverable}
+              />
+            </TabsContent>
+
+            <TabsContent value="challenges" className="mt-4">
+              <ChallengesTab
+                challenges={challengesHook.challenges}
+                participantsByChallenge={challengesHook.participantsByChallenge}
+                itemsByChallenge={challengesHook.itemsByChallenge}
+                clients={scopedClients}
+                collaborators={collaborators}
+                selectedCollaboratorId={selectedCollaboratorId}
+                isTeamView={isTeamView}
+                tasks={scopedTasks}
+                priorities={scopedPriorities}
+                deliverables={scopedDeliverables}
+                canManage={isAdmin}
+                isLoading={challengesHook.isLoading}
+                error={challengesHook.error}
+                onCreate={challengesHook.createChallenge}
+                onResolve={challengesHook.resolveChallenge}
               />
             </TabsContent>
 

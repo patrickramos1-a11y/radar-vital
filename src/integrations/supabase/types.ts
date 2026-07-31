@@ -251,6 +251,135 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_events: {
+        Row: {
+          action_type: string
+          actor_user_id: string
+          after_data: Json | null
+          before_data: Json | null
+          challenge_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action_type: string
+          actor_user_id: string
+          after_data?: Json | null
+          before_data?: Json | null
+          challenge_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action_type?: string
+          actor_user_id?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          challenge_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      challenge_items: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+        }
+        Relationships: []
+      }
+      challenge_participants: {
+        Row: {
+          challenge_id: string
+          collaborator_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          challenge_id: string
+          collaborator_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          challenge_id?: string
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      challenges: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string
+          id: string
+          penalty_stars: number
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          reward_superstars: number
+          status: string
+          success_criteria: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_at: string
+          id?: string
+          penalty_stars?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reward_superstars?: number
+          status?: string
+          success_criteria: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string
+          id?: string
+          penalty_stars?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reward_superstars?: number
+          status?: string
+          success_criteria?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_users: {
         Row: {
           created_at: string
@@ -1236,6 +1365,20 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_auth_enforced: { Args: never; Returns: boolean }
+      create_challenge: {
+        Args: {
+          p_client_id?: string | null
+          p_description?: string | null
+          p_due_at?: string | null
+          p_items?: Json
+          p_participant_ids?: string[]
+          p_penalty_stars?: number
+          p_reward_superstars?: number
+          p_success_criteria: string
+          p_title: string
+        }
+        Returns: string
+      }
       open_audit: {
         Args: {
           p_criteria?: string[]
@@ -1247,6 +1390,7 @@ export type Database = {
         }
         Returns: string
       }
+      refresh_overdue_challenges: { Args: never; Returns: number }
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
         Returns: undefined
@@ -1254,6 +1398,14 @@ export type Database = {
       set_auth_enforced: {
         Args: { enabled: boolean }
         Returns: undefined
+      }
+      resolve_challenge: {
+        Args: {
+          p_challenge_id: string
+          p_outcome: string
+          p_resolution_notes?: string | null
+        }
+        Returns: string
       }
       close_audit: {
         Args: { p_audit_id: string }
