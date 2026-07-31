@@ -72,6 +72,7 @@ export function useDeliverableRatings() {
         p_rater_name: currentUserName,
         p_rating_type: rating_type,
         p_value: value,
+        p_actor_name: currentUserName,
       });
       if (error) throw error;
       await fetch();
@@ -88,6 +89,7 @@ export function useDeliverableRatings() {
       const { error } = await supabase.rpc('remove_deliverable_rating', {
         p_deliverable_id: deliverableId,
         p_rater_name: currentUserName,
+        p_actor_name: currentUserName,
       });
       if (error) throw error;
       await fetch();

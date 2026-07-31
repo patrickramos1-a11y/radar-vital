@@ -1537,6 +1537,7 @@ export type Database = {
       is_auth_enforced: { Args: never; Returns: boolean }
       create_challenge: {
         Args: {
+          p_actor_name?: string
           p_client_id?: string | null
           p_description?: string | null
           p_due_at?: string | null
@@ -1551,6 +1552,7 @@ export type Database = {
       }
       open_audit: {
         Args: {
+          p_actor_name?: string
           p_criteria?: string[]
           p_description?: string | null
           p_due_at?: string | null
@@ -1560,11 +1562,18 @@ export type Database = {
         }
         Returns: string
       }
-      refresh_overdue_challenges: { Args: never; Returns: number }
-      backfill_star_sources: { Args: never; Returns: Json }
+      refresh_overdue_challenges: {
+        Args: { p_actor_name?: string }
+        Returns: number
+      }
+      backfill_star_sources: {
+        Args: { p_actor_name?: string }
+        Returns: Json
+      }
       grant_manual_stars: {
         Args: {
           p_amount: number
+          p_actor_name?: string
           p_collaborator_id: string
           p_is_penalty?: boolean
           p_reason: string
@@ -1575,6 +1584,7 @@ export type Database = {
       grant_opening_stars: {
         Args: {
           p_amount?: number
+          p_actor_name?: string
           p_batch_id?: string
           p_collaborator_ids: string[]
           p_reason?: string
@@ -1582,7 +1592,11 @@ export type Database = {
         Returns: number
       }
       remove_deliverable_rating: {
-        Args: { p_deliverable_id: string; p_rater_name: string }
+        Args: {
+          p_actor_name?: string
+          p_deliverable_id: string
+          p_rater_name: string
+        }
         Returns: undefined
       }
       recalculate_pending_ciencia: {
@@ -1595,6 +1609,7 @@ export type Database = {
       }
       resolve_challenge: {
         Args: {
+          p_actor_name?: string
           p_challenge_id: string
           p_outcome: string
           p_resolution_notes?: string | null
@@ -1602,11 +1617,16 @@ export type Database = {
         Returns: string
       }
       reverse_star_transaction: {
-        Args: { p_reason: string; p_transaction_id: string }
+        Args: {
+          p_actor_name?: string
+          p_reason: string
+          p_transaction_id: string
+        }
         Returns: string | null
       }
       set_deliverable_rating: {
         Args: {
+          p_actor_name?: string
           p_deliverable_id: string
           p_rater_name: string
           p_rating_type: string
@@ -1616,6 +1636,7 @@ export type Database = {
       }
       settle_star_balances: {
         Args: {
+          p_actor_name?: string
           p_collaborator_ids: string[]
           p_notes?: string | null
           p_period_end?: string | null
@@ -1625,11 +1646,12 @@ export type Database = {
         Returns: string
       }
       close_audit: {
-        Args: { p_audit_id: string }
+        Args: { p_actor_name?: string; p_audit_id: string }
         Returns: undefined
       }
       update_audit_client_item: {
         Args: {
+          p_actor_name?: string
           p_item_id: string
           p_notes?: string | null
           p_status: string
@@ -1638,6 +1660,7 @@ export type Database = {
       }
       update_audit_client_result: {
         Args: {
+          p_actor_name?: string
           p_evidence_url?: string | null
           p_notes?: string | null
           p_result: string

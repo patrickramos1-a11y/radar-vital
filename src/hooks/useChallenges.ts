@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { actorName } from "@/lib/auth";
 import {
   mapChallenge,
   mapChallengeItem,
@@ -14,6 +16,8 @@ import type {
 } from "@/types/challenge";
 
 export function useChallenges() {
+  const { currentUser } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [participants, setParticipants] = useState<ChallengeParticipant[]>([]);
   const [items, setItems] = useState<ChallengeItem[]>([]);
@@ -24,7 +28,9 @@ export function useChallenges() {
     setIsLoading(true);
     setError(null);
     try {
-      const refreshResult = await supabase.rpc("refresh_overdue_challenges");
+      const refreshResult = await supabase.rpc("refresh_overdue_challenges", {
+        p_actor_name: currentUserName,
+      });
       if (refreshResult.error) throw refreshResult.error;
 
       const [challengeResult, participantResult, itemResult] = await Promise.all([
@@ -46,7 +52,7 @@ export function useChallenges() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentUserName]);
 
   useEffect(() => {
     void refetch();
@@ -91,6 +97,7 @@ export function useChallenges() {
             item_type: item.itemType,
             item_id: item.itemId,
           })),
+          p_actor_name: currentUserName,
         },
       );
 
@@ -104,7 +111,7 @@ export function useChallenges() {
       toast.success("Desafio criado e aguardando a entrega da equipe.");
       return challengeId;
     },
-    [refetch],
+    [currentUserName, refetch],
   );
 
   const resolveChallenge = useCallback(
@@ -117,6 +124,7 @@ export function useChallenges() {
         p_challenge_id: challengeId,
         p_outcome: outcome,
         p_resolution_notes: notes ?? null,
+        p_actor_name: currentUserName,
       });
 
       if (resolveError) {
@@ -133,7 +141,7 @@ export function useChallenges() {
       );
       return true;
     },
-    [refetch],
+    [currentUserName, refetch],
   );
 
   const participantsByChallenge = useMemo(() => {

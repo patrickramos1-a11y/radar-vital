@@ -22,7 +22,7 @@ Atualizado em: 2026-07-30
 
 | Fase | Estado | Dependencia | Proxima acao |
 | --- | --- | --- | --- |
-| 0. Fundacao de compatibilidade | EM ANDAMENTO | Revisao de migrations | Adaptar as migrations do roadmap ao acesso atual |
+| 0. Fundacao de compatibilidade | EM ANDAMENTO | Supabase de teste | Aplicar e validar o pacote compativel com o acesso atual |
 | 1. Universo Ramos | EM ANDAMENTO | Supabase de teste | Aplicar migration e validar isolamento com dados reais |
 | 2. Visao Unificada | EM ANDAMENTO | Dados de teste | Validar a Central do Cliente no fluxo atual |
 | 3. Auditorias | EM ANDAMENTO | Revisao de compatibilidade | Adaptar migration e validar o fluxo atual |
@@ -57,17 +57,15 @@ Atualizado em: 2026-07-30
 2. A autorizacao administrativa atual usa o nome Patrick no frontend.
 3. Algumas politicas RLS permitem acesso publico amplo.
 4. Tipos gerados do Supabase estao defasados.
-5. Migrations de Tesouro, Desafios e Performance ainda nao foram executadas em banco isolado.
+5. Migrations de Auditorias, Desafios, Tesouro e Performance ainda nao foram executadas em banco isolado.
 6. Relacionamentos antigos usam nomes em vez de UUID.
 7. Estatisticas sao calculadas em grande parte no cliente.
 8. O carregamento sob demanda foi aplicado, mas deve ser medido com dados e navegacao autenticada.
 
 ## Proxima entrega recomendada
 
-Revisar as migrations e o frontend preparados para autenticacao, para que o
-lancamento preserve exatamente o acesso atual do painel. Depois, aplicar em
-Supabase isolado somente as migrations compativeis, validar os fluxos
-operacionais e preparar a publicacao unica da Fase 7.
+Aplicar em Supabase isolado somente as migrations compativeis com o acesso
+atual, validar os fluxos operacionais e preparar a publicacao unica da Fase 7.
 
 ## Registro de execucao
 
@@ -89,6 +87,13 @@ Arquivos: App, AuthContext, UserSelector; arquivos de login e Edge Function remo
 Testes: Vitest 17 testes aprovados; build de producao aprovado.
 Resultado: o painel volta a abrir sem login obrigatorio e preserva a identificacao operacional anterior.
 Pendencias: adaptar ou substituir migrations de Auditorias, Desafios, Tesouro e Performance que ainda dependem de auth.users, auth.uid() ou RLS autenticada.
+
+2026-07-30 - Fase 0, compatibilidade das migrations do roadmap
+Resumo: migrations de Auditorias, Desafios, Tesouro e Performance foram adaptadas ao seletor operacional atual. A autoria passa a registrar o nome do colaborador selecionado, sem exigir sessao do Supabase Auth.
+Arquivos: migrations 20260730140000_audits.sql, 20260731010205_challenges.sql, 20260731011448_star_treasury.sql e 20260731012821_performance_aggregates.sql; hooks e tipos Supabase locais.
+Testes: Vitest 17 testes aprovados; build de producao aprovado.
+Resultado: o pacote novo do roadmap nao usa auth.users, auth.uid() ou grants exclusivos para authenticated. Regras de administrador continuam na interface, coerentes com o acesso atual sem login.
+Pendencias: aplicar o pacote em Supabase isolado, regenerar tipos a partir do schema real e validar autoria, idempotencia financeira e leitura anonima antes da Fase 7.
 
 2026-07-30 - Fase 0
 Resumo: branch de integracao criada e portao de producao preservado.

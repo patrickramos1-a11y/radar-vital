@@ -10,8 +10,8 @@ CREATE TABLE public.audits (
   starts_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   due_at TIMESTAMPTZ,
   closed_at TIMESTAMPTZ,
-  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
-  validated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_by TEXT NOT NULL DEFAULT 'Sistema',
+  validated_by TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CHECK (due_at IS NULL OR due_at >= starts_at)
@@ -37,7 +37,7 @@ CREATE TABLE public.audit_client_items (
   started_at TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
   validated_at TIMESTAMPTZ,
-  validated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  validated_by TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (audit_id, client_id)
@@ -54,7 +54,7 @@ CREATE TABLE public.audit_client_results (
   notes TEXT,
   evidence_url TEXT,
   evaluated_at TIMESTAMPTZ,
-  evaluated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  evaluated_by TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (audit_client_item_id, audit_criterion_id)
@@ -65,7 +65,7 @@ CREATE TABLE public.audit_events (
   audit_id UUID NOT NULL REFERENCES public.audits(id) ON DELETE CASCADE,
   audit_client_item_id UUID
     REFERENCES public.audit_client_items(id) ON DELETE CASCADE,
-  actor_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+  actor_user_id TEXT NOT NULL DEFAULT 'Sistema',
   action_type TEXT NOT NULL,
   before_data JSONB,
   after_data JSONB,
@@ -135,49 +135,20 @@ ALTER TABLE public.audit_client_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_client_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_events ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY audits_authenticated_read
-  ON public.audits FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY audit_criteria_authenticated_read
-  ON public.audit_criteria FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY audit_client_items_authenticated_read
-  ON public.audit_client_items FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY audit_client_results_authenticated_read
-  ON public.audit_client_results FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY audit_events_authenticated_read
-  ON public.audit_events FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY audits_current_access_read
+  ON public.audits FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY audit_criteria_current_access_read
+  ON public.audit_criteria FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY audit_client_items_current_access_read
+  ON public.audit_client_items FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY audit_client_results_current_access_read
+  ON public.audit_client_results FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY audit_events_current_access_read
+  ON public.audit_events FOR SELECT TO anon, authenticated USING (TRUE);
 
-CREATE POLICY audits_admin_manage
-  ON public.audits FOR ALL TO authenticated
-  USING (public.is_admin()) WITH CHECK (public.is_admin());
-CREATE POLICY audit_criteria_admin_manage
-  ON public.audit_criteria FOR ALL TO authenticated
-  USING (public.is_admin()) WITH CHECK (public.is_admin());
-CREATE POLICY audit_client_items_admin_manage
-  ON public.audit_client_items FOR ALL TO authenticated
-  USING (public.is_admin()) WITH CHECK (public.is_admin());
-CREATE POLICY audit_client_results_admin_manage
-  ON public.audit_client_results FOR ALL TO authenticated
-  USING (public.is_admin()) WITH CHECK (public.is_admin());
-
-REVOKE ALL ON public.audits FROM anon;
-REVOKE ALL ON public.audit_criteria FROM anon;
-REVOKE ALL ON public.audit_client_items FROM anon;
-REVOKE ALL ON public.audit_client_results FROM anon;
-REVOKE ALL ON public.audit_events FROM anon;
-REVOKE ALL ON public.audit_campaign_summary FROM anon;
-
-REVOKE INSERT, UPDATE, DELETE ON public.audits FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.audit_criteria FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.audit_client_items FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.audit_client_results FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.audit_events FROM authenticated;
-
-GRANT SELECT ON public.audits TO authenticated;
-GRANT SELECT ON public.audit_criteria TO authenticated;
-GRANT SELECT ON public.audit_client_items TO authenticated;
-GRANT SELECT ON public.audit_client_results TO authenticated;
-GRANT SELECT ON public.audit_events TO authenticated;
-GRANT SELECT ON public.audit_campaign_summary TO authenticated;
+GRANT SELECT ON public.audits, public.audit_criteria, public.audit_client_items,
+  public.audit_client_results, public.audit_events, public.audit_campaign_summary
+  TO anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.open_audit(
   p_title TEXT,
@@ -185,7 +156,8 @@ CREATE OR REPLACE FUNCTION public.open_audit(
   p_objective TEXT DEFAULT NULL,
   p_starts_at TIMESTAMPTZ DEFAULT now(),
   p_due_at TIMESTAMPTZ DEFAULT NULL,
-  p_criteria TEXT[] DEFAULT ARRAY[]::TEXT[]
+  p_criteria TEXT[] DEFAULT ARRAY[]::TEXT[],
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -197,10 +169,6 @@ DECLARE
   criterion_title TEXT;
   snapshot_count INTEGER;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF length(btrim(COALESCE(p_title, ''))) = 0 THEN
     RAISE EXCEPTION 'Audit title is required';
   END IF;
@@ -225,7 +193,7 @@ BEGIN
     'active',
     p_starts_at,
     p_due_at,
-    auth.uid()
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema')
   )
   RETURNING id INTO new_audit_id;
 
@@ -279,7 +247,7 @@ BEGIN
   )
   VALUES (
     new_audit_id,
-    auth.uid(),
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     'audit_opened',
     jsonb_build_object('client_count', snapshot_count)
   );
@@ -291,7 +259,8 @@ $$;
 CREATE OR REPLACE FUNCTION public.update_audit_client_item(
   p_item_id UUID,
   p_status TEXT,
-  p_notes TEXT DEFAULT NULL
+  p_notes TEXT DEFAULT NULL,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -302,10 +271,6 @@ DECLARE
   previous_item public.audit_client_items%ROWTYPE;
   updated_item public.audit_client_items%ROWTYPE;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF p_status NOT IN ('pending', 'in_progress', 'completed', 'validated') THEN
     RAISE EXCEPTION 'Invalid audit client status';
   END IF;
@@ -337,7 +302,7 @@ BEGIN
       ELSE NULL
     END,
     validated_by = CASE
-      WHEN p_status = 'validated' THEN auth.uid()
+      WHEN p_status = 'validated' THEN COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema')
       ELSE NULL
     END
   WHERE id = p_item_id
@@ -354,7 +319,7 @@ BEGIN
   VALUES (
     updated_item.audit_id,
     updated_item.id,
-    auth.uid(),
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     'audit_client_status_changed',
     to_jsonb(previous_item),
     to_jsonb(updated_item)
@@ -362,7 +327,10 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.close_audit(p_audit_id UUID)
+CREATE OR REPLACE FUNCTION public.close_audit(
+  p_audit_id UUID,
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -373,10 +341,6 @@ DECLARE
   previous_audit public.audits%ROWTYPE;
   updated_audit public.audits%ROWTYPE;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   SELECT * INTO previous_audit
   FROM public.audits
   WHERE id = p_audit_id
@@ -399,7 +363,7 @@ BEGIN
   SET
     status = 'closed',
     closed_at = now(),
-    validated_by = auth.uid()
+    validated_by = COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema')
   WHERE id = p_audit_id
   RETURNING * INTO updated_audit;
 
@@ -412,7 +376,7 @@ BEGIN
   )
   VALUES (
     p_audit_id,
-    auth.uid(),
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     'audit_closed',
     to_jsonb(previous_audit),
     to_jsonb(updated_audit)
@@ -424,7 +388,8 @@ CREATE OR REPLACE FUNCTION public.update_audit_client_result(
   p_result_id UUID,
   p_result TEXT,
   p_notes TEXT DEFAULT NULL,
-  p_evidence_url TEXT DEFAULT NULL
+  p_evidence_url TEXT DEFAULT NULL,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -437,10 +402,6 @@ DECLARE
   parent_item public.audit_client_items%ROWTYPE;
   pending_count INTEGER;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF p_result NOT IN ('pending', 'ok', 'not_ok', 'not_applicable') THEN
     RAISE EXCEPTION 'Invalid audit criterion result';
   END IF;
@@ -460,7 +421,10 @@ BEGIN
     notes = NULLIF(btrim(COALESCE(p_notes, '')), ''),
     evidence_url = NULLIF(btrim(COALESCE(p_evidence_url, '')), ''),
     evaluated_at = CASE WHEN p_result = 'pending' THEN NULL ELSE now() END,
-    evaluated_by = CASE WHEN p_result = 'pending' THEN NULL ELSE auth.uid() END
+    evaluated_by = CASE
+      WHEN p_result = 'pending' THEN NULL
+      ELSE COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema')
+    END
   WHERE id = p_result_id
   RETURNING * INTO updated_result;
 
@@ -502,7 +466,7 @@ BEGIN
   VALUES (
     parent_item.audit_id,
     parent_item.id,
-    auth.uid(),
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     'audit_criterion_evaluated',
     to_jsonb(previous_result),
     to_jsonb(updated_result)
@@ -511,25 +475,25 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.open_audit(
-  TEXT, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TEXT[]
+  TEXT, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TEXT[], TEXT
 ) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.update_audit_client_item(
-  UUID, TEXT, TEXT
-) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.close_audit(UUID) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.update_audit_client_result(
   UUID, TEXT, TEXT, TEXT
+) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.close_audit(UUID, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.update_audit_client_result(
+  UUID, TEXT, TEXT, TEXT, TEXT
 ) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.open_audit(
-  TEXT, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TEXT[]
-) TO authenticated;
+  TEXT, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TEXT[], TEXT
+) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.update_audit_client_item(
-  UUID, TEXT, TEXT
-) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.close_audit(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_audit_client_result(
   UUID, TEXT, TEXT, TEXT
-) TO authenticated;
+) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.close_audit(UUID, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.update_audit_client_result(
+  UUID, TEXT, TEXT, TEXT, TEXT
+) TO anon, authenticated;
 
 COMMIT;

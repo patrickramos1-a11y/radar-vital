@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { actorName } from "@/lib/auth";
 import {
   mapAudit,
   mapAuditClientResult,
@@ -19,6 +21,8 @@ import type {
 } from "@/types/audit";
 
 export function useAudits() {
+  const { currentUser } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [audits, setAudits] = useState<Audit[]>([]);
   const [items, setItems] = useState<AuditClientItem[]>([]);
   const [criteria, setCriteria] = useState<AuditCriterion[]>([]);
@@ -113,6 +117,7 @@ export function useAudits() {
           ? new Date(`${data.dueAt}T23:59:59`).toISOString()
           : null,
         p_criteria: data.criteria,
+        p_actor_name: currentUserName,
       });
 
       if (result.error) {
@@ -125,7 +130,7 @@ export function useAudits() {
       toast.success("Auditoria aberta");
       return result.data;
     },
-    [fetchAudits],
+    [currentUserName, fetchAudits],
   );
 
   const updateClientItem = useCallback(
@@ -138,6 +143,7 @@ export function useAudits() {
         p_item_id: itemId,
         p_status: status,
         p_notes: notes || null,
+        p_actor_name: currentUserName,
       });
       if (result.error) {
         console.error("Error updating audit client:", result.error);
@@ -147,13 +153,14 @@ export function useAudits() {
       await fetchAudits();
       return true;
     },
-    [fetchAudits],
+    [currentUserName, fetchAudits],
   );
 
   const closeAudit = useCallback(
     async (auditId: string) => {
       const result = await supabase.rpc("close_audit", {
         p_audit_id: auditId,
+        p_actor_name: currentUserName,
       });
       if (result.error) {
         console.error("Error closing audit:", result.error);
@@ -166,7 +173,7 @@ export function useAudits() {
       toast.success("Auditoria encerrada");
       return true;
     },
-    [fetchAudits],
+    [currentUserName, fetchAudits],
   );
 
   const updateClientResult = useCallback(
@@ -181,6 +188,7 @@ export function useAudits() {
         p_result: resultStatus,
         p_notes: notes || null,
         p_evidence_url: evidenceUrl || null,
+        p_actor_name: currentUserName,
       });
       if (result.error) {
         console.error("Error updating audit criterion:", result.error);
@@ -191,7 +199,7 @@ export function useAudits() {
       toast.success("Critério atualizado");
       return true;
     },
-    [fetchAudits],
+    [currentUserName, fetchAudits],
   );
 
   const getItemsForAudit = useCallback(

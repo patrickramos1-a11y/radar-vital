@@ -20,8 +20,8 @@ CREATE TABLE public.challenges (
     CHECK (reward_superstars >= 0),
   penalty_stars INTEGER NOT NULL DEFAULT 0
     CHECK (penalty_stars >= 0),
-  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
-  resolved_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_by TEXT NOT NULL DEFAULT 'Sistema',
+  resolved_by TEXT,
   resolved_at TIMESTAMPTZ,
   resolution_notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -52,7 +52,7 @@ CREATE TABLE public.challenge_items (
 CREATE TABLE public.challenge_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   challenge_id UUID NOT NULL REFERENCES public.challenges(id) ON DELETE CASCADE,
-  actor_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+  actor_user_id TEXT NOT NULL DEFAULT 'Sistema',
   action_type TEXT NOT NULL,
   before_data JSONB,
   after_data JSONB,
@@ -109,31 +109,18 @@ ALTER TABLE public.challenge_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.challenge_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.challenge_events ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY challenges_authenticated_read
-  ON public.challenges FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY challenge_participants_authenticated_read
-  ON public.challenge_participants FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY challenge_items_authenticated_read
-  ON public.challenge_items FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY challenge_events_authenticated_read
-  ON public.challenge_events FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY challenges_current_access_read
+  ON public.challenges FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY challenge_participants_current_access_read
+  ON public.challenge_participants FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY challenge_items_current_access_read
+  ON public.challenge_items FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY challenge_events_current_access_read
+  ON public.challenge_events FOR SELECT TO anon, authenticated USING (TRUE);
 
-REVOKE ALL ON public.challenges FROM anon;
-REVOKE ALL ON public.challenge_participants FROM anon;
-REVOKE ALL ON public.challenge_items FROM anon;
-REVOKE ALL ON public.challenge_events FROM anon;
-REVOKE ALL ON public.challenge_summary FROM anon;
-
-REVOKE INSERT, UPDATE, DELETE ON public.challenges FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.challenge_participants FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.challenge_items FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.challenge_events FROM authenticated;
-
-GRANT SELECT ON public.challenges TO authenticated;
-GRANT SELECT ON public.challenge_participants TO authenticated;
-GRANT SELECT ON public.challenge_items TO authenticated;
-GRANT SELECT ON public.challenge_events TO authenticated;
-GRANT SELECT ON public.challenge_summary TO authenticated;
+GRANT SELECT ON public.challenges, public.challenge_participants,
+  public.challenge_items, public.challenge_events, public.challenge_summary
+  TO anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.create_challenge(
   p_title TEXT,
@@ -144,7 +131,8 @@ CREATE OR REPLACE FUNCTION public.create_challenge(
   p_reward_superstars INTEGER DEFAULT 0,
   p_penalty_stars INTEGER DEFAULT 0,
   p_participant_ids UUID[] DEFAULT ARRAY[]::UUID[],
-  p_items JSONB DEFAULT '[]'::JSONB
+  p_items JSONB DEFAULT '[]'::JSONB,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -156,10 +144,6 @@ DECLARE
   participant_count INTEGER;
   expected_participant_count INTEGER;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF length(btrim(COALESCE(p_title, ''))) = 0 THEN
     RAISE EXCEPTION 'Challenge title is required';
   END IF;
@@ -213,7 +197,7 @@ BEGIN
     p_due_at,
     COALESCE(p_reward_superstars, 0),
     COALESCE(p_penalty_stars, 0),
-    auth.uid()
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema')
   )
   RETURNING id INTO new_challenge_id;
 
@@ -239,7 +223,7 @@ BEGIN
     after_data
   ) VALUES (
     new_challenge_id,
-    auth.uid(),
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     'challenge_created',
     jsonb_build_object(
       'participant_count', expected_participant_count,
@@ -252,7 +236,9 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.refresh_overdue_challenges()
+CREATE OR REPLACE FUNCTION public.refresh_overdue_challenges(
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
 RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -262,10 +248,6 @@ DECLARE
   changed_challenge RECORD;
   changed_count INTEGER := 0;
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
-
   FOR changed_challenge IN
     UPDATE public.challenges
     SET status = 'awaiting_validation'
@@ -280,7 +262,7 @@ BEGIN
       after_data
     ) VALUES (
       changed_challenge.id,
-      auth.uid(),
+      COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
       'challenge_due_for_validation',
       to_jsonb(changed_challenge)
     );
@@ -294,7 +276,8 @@ $$;
 CREATE OR REPLACE FUNCTION public.resolve_challenge(
   p_challenge_id UUID,
   p_outcome TEXT,
-  p_resolution_notes TEXT DEFAULT NULL
+  p_resolution_notes TEXT DEFAULT NULL,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -305,10 +288,6 @@ DECLARE
   previous_challenge public.challenges%ROWTYPE;
   updated_challenge public.challenges%ROWTYPE;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF p_outcome NOT IN ('won', 'lost') THEN
     RAISE EXCEPTION 'Challenge outcome must be won or lost';
   END IF;
@@ -336,7 +315,7 @@ BEGIN
   UPDATE public.challenges
   SET
     status = p_outcome,
-    resolved_by = auth.uid(),
+    resolved_by = COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     resolved_at = now(),
     resolution_notes = NULLIF(btrim(COALESCE(p_resolution_notes, '')), '')
   WHERE id = p_challenge_id
@@ -350,7 +329,7 @@ BEGIN
     after_data
   ) VALUES (
     updated_challenge.id,
-    auth.uid(),
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     CASE WHEN p_outcome = 'won' THEN 'challenge_won' ELSE 'challenge_lost' END,
     to_jsonb(previous_challenge),
     to_jsonb(updated_challenge)
@@ -361,16 +340,16 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.create_challenge(
-  TEXT, TEXT, TEXT, UUID, TIMESTAMPTZ, INTEGER, INTEGER, UUID[], JSONB
+  TEXT, TEXT, TEXT, UUID, TIMESTAMPTZ, INTEGER, INTEGER, UUID[], JSONB, TEXT
 ) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.refresh_overdue_challenges() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.resolve_challenge(UUID, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.refresh_overdue_challenges(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.resolve_challenge(UUID, TEXT, TEXT, TEXT) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.create_challenge(
-  TEXT, TEXT, TEXT, UUID, TIMESTAMPTZ, INTEGER, INTEGER, UUID[], JSONB
-) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.refresh_overdue_challenges() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.resolve_challenge(UUID, TEXT, TEXT)
-  TO authenticated;
+  TEXT, TEXT, TEXT, UUID, TIMESTAMPTZ, INTEGER, INTEGER, UUID[], JSONB, TEXT
+) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.refresh_overdue_challenges(TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.resolve_challenge(UUID, TEXT, TEXT, TEXT)
+  TO anon, authenticated;
 
 COMMIT;

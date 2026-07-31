@@ -43,7 +43,8 @@ login, senha, convite por e-mail ou cadastro de conta.
 - [x] Registrar uma baseline segura do schema e das migrations de producao.
 - [ ] Preparar dados de teste sem alterar a base de producao.
 - [x] Mapear tabelas e politicas RLS atuais.
-- [ ] Revisar migrations que dependem de `auth.users`, `auth.uid()` ou RLS autenticada.
+- [x] Adaptar as migrations novas do roadmap que dependiam de `auth.users`,
+  `auth.uid()` ou RLS exclusiva para `authenticated`.
 - [x] Garantir que a versao publicada mantenha o acesso atual, sem `AuthGate` ou tela de login.
 - [x] Adaptar autoria e a identificacao administrativa para o modelo operacional atual.
 - [ ] Regenerar `src/integrations/supabase/types.ts` a partir do banco aplicado.
@@ -114,7 +115,7 @@ login, senha, convite por e-mail ou cadastro de conta.
 - [x] Incluir estados de carregamento, erro e vazio.
 - [x] Preparar adaptadores para auditorias e desafios.
 - [x] Garantir navegacao para o modulo original.
-- [!] Validar o fluxo visual completo com uma sessao autenticada de teste.
+- [!] Validar o fluxo visual completo com o seletor operacional e dados de teste.
 
 ### Criterios de aceite
 
@@ -144,7 +145,7 @@ login, senha, convite por e-mail ou cadastro de conta.
 - [x] Adicionar modo `audit` ao card do cliente.
 - [x] Adicionar auditorias a Visao Unificada.
 - [x] Criar validacao e encerramento exclusivos do admin.
-- [!] Aplicar a migration e validar os fluxos com usuarios autenticados em Supabase isolado.
+- [!] Aplicar a migration e validar os fluxos com o acesso atual em Supabase isolado.
 
 ### Criterios de aceite
 

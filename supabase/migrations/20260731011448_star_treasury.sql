@@ -8,7 +8,7 @@ CREATE TABLE public.star_settlements (
   total_stars INTEGER NOT NULL DEFAULT 0,
   total_brl NUMERIC(14, 2) NOT NULL DEFAULT 0,
   notes TEXT,
-  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+  created_by TEXT NOT NULL DEFAULT 'Sistema',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CHECK (star_to_brl IS NULL OR star_to_brl >= 0),
   CHECK (period_end IS NULL OR period_start IS NULL OR period_end >= period_start)
@@ -32,7 +32,7 @@ CREATE TABLE public.star_transactions (
   source_type TEXT,
   source_id UUID,
   reason TEXT NOT NULL CHECK (length(btrim(reason)) > 0),
-  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+  created_by TEXT NOT NULL DEFAULT 'Sistema',
   reverses_transaction_id UUID REFERENCES public.star_transactions(id) ON DELETE RESTRICT,
   settlement_id UUID REFERENCES public.star_settlements(id) ON DELETE RESTRICT,
   idempotency_key TEXT NOT NULL UNIQUE,
@@ -98,28 +98,16 @@ ALTER TABLE public.star_settlements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.star_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.star_settlement_items ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY star_settlements_authenticated_read
-  ON public.star_settlements FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY star_transactions_authenticated_read
-  ON public.star_transactions FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY star_settlement_items_authenticated_read
-  ON public.star_settlement_items FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY star_settlements_current_access_read
+  ON public.star_settlements FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY star_transactions_current_access_read
+  ON public.star_transactions FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY star_settlement_items_current_access_read
+  ON public.star_settlement_items FOR SELECT TO anon, authenticated USING (TRUE);
 
-REVOKE ALL ON public.star_settlements FROM anon;
-REVOKE ALL ON public.star_transactions FROM anon;
-REVOKE ALL ON public.star_settlement_items FROM anon;
-REVOKE ALL ON public.collaborator_star_balances FROM anon;
-REVOKE ALL ON public.star_treasury_summary FROM anon;
-
-REVOKE INSERT, UPDATE, DELETE ON public.star_settlements FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.star_transactions FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.star_settlement_items FROM authenticated;
-
-GRANT SELECT ON public.star_settlements TO authenticated;
-GRANT SELECT ON public.star_transactions TO authenticated;
-GRANT SELECT ON public.star_settlement_items TO authenticated;
-GRANT SELECT ON public.collaborator_star_balances TO authenticated;
-GRANT SELECT ON public.star_treasury_summary TO authenticated;
+GRANT SELECT ON public.star_settlements, public.star_transactions,
+  public.star_settlement_items, public.collaborator_star_balances,
+  public.star_treasury_summary TO anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.insert_star_transaction(
   p_collaborator_id UUID,
@@ -131,7 +119,8 @@ CREATE OR REPLACE FUNCTION public.insert_star_transaction(
   p_idempotency_key TEXT,
   p_metadata JSONB DEFAULT '{}'::JSONB,
   p_reverses_transaction_id UUID DEFAULT NULL,
-  p_settlement_id UUID DEFAULT NULL
+  p_settlement_id UUID DEFAULT NULL,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -164,7 +153,7 @@ BEGIN
     p_source_type,
     p_source_id,
     p_reason,
-    auth.uid(),
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     p_reverses_transaction_id,
     p_settlement_id,
     p_idempotency_key,
@@ -179,7 +168,8 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.credit_deliverable_rating(
   p_rating_id UUID,
-  p_version UUID
+  p_version UUID,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -237,7 +227,10 @@ BEGIN
         'rating_type', rating_record.rating_type,
         'rating_value', rating_record.value,
         'rating_version', p_version
-      )
+      ),
+      NULL,
+      NULL,
+      p_actor_name
     );
   END LOOP;
 END;
@@ -245,7 +238,8 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.reverse_active_rating_transactions(
   p_rating_id UUID,
-  p_reason TEXT
+  p_reason TEXT,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -276,7 +270,9 @@ BEGIN
       p_reason,
       format('deliverable-rating-reversal:%s', transaction_record.id),
       jsonb_build_object('reversed_transaction_id', transaction_record.id),
-      transaction_record.id
+      transaction_record.id,
+      NULL,
+      p_actor_name
     );
   END LOOP;
 END;
@@ -286,7 +282,8 @@ CREATE OR REPLACE FUNCTION public.set_deliverable_rating(
   p_deliverable_id UUID,
   p_rater_name TEXT,
   p_rating_type TEXT,
-  p_value INTEGER DEFAULT 1
+  p_value INTEGER DEFAULT 1,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -298,10 +295,6 @@ DECLARE
   rating_id UUID;
   rating_version UUID := gen_random_uuid();
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF p_rating_type NOT IN ('thumbs', 'star', 'superstar') THEN
     RAISE EXCEPTION 'Invalid rating type';
   END IF;
@@ -323,7 +316,8 @@ BEGIN
   IF existing_rating.id IS NOT NULL THEN
     PERFORM public.reverse_active_rating_transactions(
       existing_rating.id,
-      'Estorno por atualizacao da avaliacao do entregavel'
+      'Estorno por atualizacao da avaliacao do entregavel',
+      p_actor_name
     );
 
     UPDATE public.deliverable_ratings
@@ -351,14 +345,15 @@ BEGIN
     RETURNING id INTO rating_id;
   END IF;
 
-  PERFORM public.credit_deliverable_rating(rating_id, rating_version);
+  PERFORM public.credit_deliverable_rating(rating_id, rating_version, p_actor_name);
   RETURN rating_id;
 END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.remove_deliverable_rating(
   p_deliverable_id UUID,
-  p_rater_name TEXT
+  p_rater_name TEXT,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -368,10 +363,6 @@ AS $$
 DECLARE
   rating_record public.deliverable_ratings%ROWTYPE;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   SELECT * INTO rating_record
   FROM public.deliverable_ratings
   WHERE deliverable_id = p_deliverable_id
@@ -384,7 +375,8 @@ BEGIN
 
   PERFORM public.reverse_active_rating_transactions(
     rating_record.id,
-    'Estorno por remocao da avaliacao do entregavel'
+    'Estorno por remocao da avaliacao do entregavel',
+    p_actor_name
   );
 
   DELETE FROM public.deliverable_ratings WHERE id = rating_record.id;
@@ -392,7 +384,8 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.record_challenge_resolution_transactions(
-  p_challenge_id UUID
+  p_challenge_id UUID,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -447,7 +440,10 @@ BEGIN
         'reward_superstars', challenge_record.reward_superstars,
         'penalty_stars', challenge_record.penalty_stars,
         'integral_per_participant', TRUE
-      )
+      ),
+      NULL,
+      NULL,
+      p_actor_name
     );
   END LOOP;
 END;
@@ -456,7 +452,8 @@ $$;
 CREATE OR REPLACE FUNCTION public.resolve_challenge(
   p_challenge_id UUID,
   p_outcome TEXT,
-  p_resolution_notes TEXT DEFAULT NULL
+  p_resolution_notes TEXT DEFAULT NULL,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -467,10 +464,6 @@ DECLARE
   previous_challenge public.challenges%ROWTYPE;
   updated_challenge public.challenges%ROWTYPE;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF p_outcome NOT IN ('won', 'lost') THEN
     RAISE EXCEPTION 'Challenge outcome must be won or lost';
   END IF;
@@ -486,7 +479,7 @@ BEGIN
 
   IF previous_challenge.status IN ('won', 'lost') THEN
     IF previous_challenge.status = p_outcome THEN
-      PERFORM public.record_challenge_resolution_transactions(p_challenge_id);
+      PERFORM public.record_challenge_resolution_transactions(p_challenge_id, p_actor_name);
       RETURN previous_challenge.status;
     END IF;
     RAISE EXCEPTION 'Challenge has already been resolved';
@@ -499,7 +492,7 @@ BEGIN
   UPDATE public.challenges
   SET
     status = p_outcome,
-    resolved_by = auth.uid(),
+    resolved_by = COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     resolved_at = now(),
     resolution_notes = NULLIF(btrim(COALESCE(p_resolution_notes, '')), '')
   WHERE id = p_challenge_id
@@ -513,13 +506,13 @@ BEGIN
     after_data
   ) VALUES (
     updated_challenge.id,
-    auth.uid(),
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'),
     CASE WHEN p_outcome = 'won' THEN 'challenge_won' ELSE 'challenge_lost' END,
     to_jsonb(previous_challenge),
     to_jsonb(updated_challenge)
   );
 
-  PERFORM public.record_challenge_resolution_transactions(p_challenge_id);
+  PERFORM public.record_challenge_resolution_transactions(p_challenge_id, p_actor_name);
   RETURN updated_challenge.status;
 END;
 $$;
@@ -529,7 +522,8 @@ CREATE OR REPLACE FUNCTION public.grant_manual_stars(
   p_amount INTEGER,
   p_reason TEXT,
   p_is_penalty BOOLEAN DEFAULT FALSE,
-  p_request_id UUID DEFAULT gen_random_uuid()
+  p_request_id UUID DEFAULT gen_random_uuid(),
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -537,10 +531,6 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF p_amount <= 0 THEN
     RAISE EXCEPTION 'Manual star amount must be positive';
   END IF;
@@ -561,7 +551,10 @@ BEGIN
     NULL,
     btrim(p_reason),
     format('manual:%s:%s', p_request_id, p_collaborator_id),
-    jsonb_build_object('request_id', p_request_id, 'is_penalty', p_is_penalty)
+    jsonb_build_object('request_id', p_request_id, 'is_penalty', p_is_penalty),
+    NULL,
+    NULL,
+    p_actor_name
   );
 END;
 $$;
@@ -570,7 +563,8 @@ CREATE OR REPLACE FUNCTION public.grant_opening_stars(
   p_collaborator_ids UUID[],
   p_amount INTEGER DEFAULT 500,
   p_reason TEXT DEFAULT 'Credito inicial',
-  p_batch_id UUID DEFAULT gen_random_uuid()
+  p_batch_id UUID DEFAULT gen_random_uuid(),
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -582,10 +576,6 @@ DECLARE
   inserted_count INTEGER := 0;
   transaction_id UUID;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF p_amount <= 0 THEN
     RAISE EXCEPTION 'Opening credit must be positive';
   END IF;
@@ -608,7 +598,10 @@ BEGIN
       NULL,
       btrim(COALESCE(p_reason, 'Credito inicial')),
       format('opening:%s:%s', p_batch_id, collaborator_record.id),
-      jsonb_build_object('batch_id', p_batch_id)
+      jsonb_build_object('batch_id', p_batch_id),
+      NULL,
+      NULL,
+      p_actor_name
     );
     IF transaction_id IS NOT NULL THEN
       inserted_count := inserted_count + 1;
@@ -624,7 +617,8 @@ CREATE OR REPLACE FUNCTION public.settle_star_balances(
   p_period_start DATE DEFAULT NULL,
   p_period_end DATE DEFAULT NULL,
   p_star_to_brl NUMERIC DEFAULT NULL,
-  p_notes TEXT DEFAULT NULL
+  p_notes TEXT DEFAULT NULL,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -640,10 +634,6 @@ DECLARE
   total_stars_value INTEGER := 0;
   total_brl_value NUMERIC(14, 2) := 0;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF COALESCE(array_length(p_collaborator_ids, 1), 0) = 0 THEN
     RAISE EXCEPTION 'Select at least one collaborator';
   END IF;
@@ -663,7 +653,7 @@ BEGIN
     p_period_end,
     p_star_to_brl,
     NULLIF(btrim(COALESCE(p_notes, '')), ''),
-    auth.uid()
+    COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema')
   )
   RETURNING id INTO settlement_id;
 
@@ -695,7 +685,8 @@ BEGIN
         'cash_value', current_cash
       ),
       NULL,
-      settlement_id
+      settlement_id,
+      p_actor_name
     );
 
     INSERT INTO public.star_settlement_items (
@@ -729,7 +720,8 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.reverse_star_transaction(
   p_transaction_id UUID,
-  p_reason TEXT
+  p_reason TEXT,
+  p_actor_name TEXT DEFAULT 'Sistema'
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -739,10 +731,6 @@ AS $$
 DECLARE
   transaction_record public.star_transactions%ROWTYPE;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   IF length(btrim(COALESCE(p_reason, ''))) = 0 THEN
     RAISE EXCEPTION 'A reversal reason is required';
   END IF;
@@ -776,12 +764,16 @@ BEGIN
     btrim(p_reason),
     format('reversal:%s', transaction_record.id),
     jsonb_build_object('original_transaction_id', transaction_record.id),
-    transaction_record.id
+    transaction_record.id,
+    NULL,
+    p_actor_name
   );
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.backfill_star_sources()
+CREATE OR REPLACE FUNCTION public.backfill_star_sources(
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -794,10 +786,6 @@ DECLARE
   challenge_count INTEGER := 0;
   version_id UUID;
 BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Administrator role required';
-  END IF;
-
   FOR rating_record IN SELECT * FROM public.deliverable_ratings
   LOOP
     version_id := COALESCE(rating_record.star_transaction_version, gen_random_uuid());
@@ -805,14 +793,14 @@ BEGIN
     SET star_transaction_version = version_id
     WHERE id = rating_record.id
       AND star_transaction_version IS NULL;
-    PERFORM public.credit_deliverable_rating(rating_record.id, version_id);
+    PERFORM public.credit_deliverable_rating(rating_record.id, version_id, p_actor_name);
     rating_count := rating_count + 1;
   END LOOP;
 
   FOR challenge_record IN
     SELECT id FROM public.challenges WHERE status IN ('won', 'lost')
   LOOP
-    PERFORM public.record_challenge_resolution_transactions(challenge_record.id);
+    PERFORM public.record_challenge_resolution_transactions(challenge_record.id, p_actor_name);
     challenge_count := challenge_count + 1;
   END LOOP;
 
@@ -823,26 +811,26 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.insert_star_transaction(UUID, INTEGER, TEXT, TEXT, UUID, TEXT, TEXT, JSONB, UUID, UUID) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.credit_deliverable_rating(UUID, UUID) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.reverse_active_rating_transactions(UUID, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.record_challenge_resolution_transactions(UUID) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.set_deliverable_rating(UUID, TEXT, TEXT, INTEGER) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.remove_deliverable_rating(UUID, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.resolve_challenge(UUID, TEXT, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.grant_manual_stars(UUID, INTEGER, TEXT, BOOLEAN, UUID) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.grant_opening_stars(UUID[], INTEGER, TEXT, UUID) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.settle_star_balances(UUID[], DATE, DATE, NUMERIC, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.reverse_star_transaction(UUID, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.backfill_star_sources() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.insert_star_transaction(UUID, INTEGER, TEXT, TEXT, UUID, TEXT, TEXT, JSONB, UUID, UUID, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.credit_deliverable_rating(UUID, UUID, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.reverse_active_rating_transactions(UUID, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.record_challenge_resolution_transactions(UUID, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.set_deliverable_rating(UUID, TEXT, TEXT, INTEGER, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.remove_deliverable_rating(UUID, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.resolve_challenge(UUID, TEXT, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.grant_manual_stars(UUID, INTEGER, TEXT, BOOLEAN, UUID, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.grant_opening_stars(UUID[], INTEGER, TEXT, UUID, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.settle_star_balances(UUID[], DATE, DATE, NUMERIC, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.reverse_star_transaction(UUID, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.backfill_star_sources(TEXT) FROM PUBLIC;
 
-GRANT EXECUTE ON FUNCTION public.set_deliverable_rating(UUID, TEXT, TEXT, INTEGER) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.remove_deliverable_rating(UUID, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.resolve_challenge(UUID, TEXT, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.grant_manual_stars(UUID, INTEGER, TEXT, BOOLEAN, UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.grant_opening_stars(UUID[], INTEGER, TEXT, UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.settle_star_balances(UUID[], DATE, DATE, NUMERIC, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.reverse_star_transaction(UUID, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.backfill_star_sources() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_deliverable_rating(UUID, TEXT, TEXT, INTEGER, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.remove_deliverable_rating(UUID, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.resolve_challenge(UUID, TEXT, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.grant_manual_stars(UUID, INTEGER, TEXT, BOOLEAN, UUID, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.grant_opening_stars(UUID[], INTEGER, TEXT, UUID, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.settle_star_balances(UUID[], DATE, DATE, NUMERIC, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.reverse_star_transaction(UUID, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.backfill_star_sources(TEXT) TO anon, authenticated;
 
 COMMIT;

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { actorName } from "@/lib/auth";
 import {
   mapCollaboratorStarBalance,
   mapStarSettlement,
@@ -23,6 +25,8 @@ const emptySummary: StarTreasurySummary = {
 };
 
 export function useTreasury() {
+  const { currentUser } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [balances, setBalances] = useState<CollaboratorStarBalance[]>([]);
   const [transactions, setTransactions] = useState<StarTransaction[]>([]);
   const [settlements, setSettlements] = useState<StarSettlement[]>([]);
@@ -93,6 +97,7 @@ export function useTreasury() {
         p_reason: input.reason,
         p_is_penalty: input.isPenalty,
         p_request_id: crypto.randomUUID(),
+        p_actor_name: currentUserName,
       });
       if (grantError) {
         console.error("Error granting stars:", grantError);
@@ -103,7 +108,7 @@ export function useTreasury() {
       toast.success(input.isPenalty ? "Penalidade registrada." : "Estrelas adicionadas.");
       return true;
     },
-    [refetch],
+    [currentUserName, refetch],
   );
 
   const grantOpening = useCallback(
@@ -113,6 +118,7 @@ export function useTreasury() {
         p_amount: amount,
         p_reason: reason,
         p_batch_id: crypto.randomUUID(),
+        p_actor_name: currentUserName,
       });
       if (grantError) {
         console.error("Error granting opening stars:", grantError);
@@ -123,7 +129,7 @@ export function useTreasury() {
       toast.success("Crédito inicial registrado.");
       return true;
     },
-    [refetch],
+    [currentUserName, refetch],
   );
 
   const settle = useCallback(
@@ -134,6 +140,7 @@ export function useTreasury() {
         p_period_end: input.periodEnd || null,
         p_star_to_brl: input.starToBrl ?? null,
         p_notes: input.notes || null,
+        p_actor_name: currentUserName,
       });
       if (settlementError) {
         console.error("Error settling stars:", settlementError);
@@ -144,7 +151,7 @@ export function useTreasury() {
       toast.success("Liquidação registrada sem apagar o histórico.");
       return true;
     },
-    [refetch],
+    [currentUserName, refetch],
   );
 
   const reverse = useCallback(
@@ -152,6 +159,7 @@ export function useTreasury() {
       const { error: reverseError } = await supabase.rpc("reverse_star_transaction", {
         p_transaction_id: transactionId,
         p_reason: reason,
+        p_actor_name: currentUserName,
       });
       if (reverseError) {
         console.error("Error reversing transaction:", reverseError);
@@ -162,11 +170,13 @@ export function useTreasury() {
       toast.success("Estorno registrado no extrato.");
       return true;
     },
-    [refetch],
+    [currentUserName, refetch],
   );
 
   const backfillSources = useCallback(async () => {
-    const { error: backfillError } = await supabase.rpc("backfill_star_sources");
+    const { error: backfillError } = await supabase.rpc("backfill_star_sources", {
+      p_actor_name: currentUserName,
+    });
     if (backfillError) {
       console.error("Error backfilling Treasury sources:", backfillError);
       toast.error("Não foi possível sincronizar o histórico.");
@@ -175,7 +185,7 @@ export function useTreasury() {
     await refetch();
     toast.success("Histórico de avaliações e desafios sincronizado.");
     return true;
-  }, [refetch]);
+  }, [currentUserName, refetch]);
 
   return {
     balances,

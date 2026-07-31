@@ -152,9 +152,7 @@ SELECT
 FROM events
 GROUP BY collaborator_id, month_start;
 
-REVOKE ALL ON public.collaborator_performance_all_time FROM anon;
-REVOKE ALL ON public.collaborator_performance_monthly FROM anon;
-GRANT SELECT ON public.collaborator_performance_all_time TO authenticated;
-GRANT SELECT ON public.collaborator_performance_monthly TO authenticated;
+GRANT SELECT ON public.collaborator_performance_all_time,
+  public.collaborator_performance_monthly TO anon, authenticated;
 
 COMMIT;
