@@ -1,6 +1,6 @@
 # Estado de Execucao
 
-Atualizado em: 2026-07-30
+Atualizado em: 2026-07-31
 
 ## Estrategia ativa
 
@@ -30,13 +30,13 @@ Atualizado em: 2026-07-30
 | 4. Desafios | CONCLUIDA | Validacao final | Aplicar migration aditiva na janela final |
 | 5. Tesouro | CONCLUIDA | Validacao final | Aplicar migration aditiva na janela final |
 | 6. Performance | CONCLUIDA | Validacao final | Aplicar migration aditiva na janela final |
-| 7. Integracao e publicacao unica | EM ANDAMENTO | Conectores Supabase e Lovable | Validar banco isolado e executar ciclo final |
+| 7. Integracao e publicacao unica | CONCLUIDA | Nenhuma | Monitorar uso e cadastrar os desafios iniciais |
 
 ## Estado dos ambientes
 
 | Ambiente | Estado | Regra |
 | --- | --- | --- |
-| Producao atual | PRESERVADO | Nao alterar durante as Fases 0 a 6 |
+| Producao atual | ATUALIZADO | Pacote do Universo Ramos aplicado em 2026-07-31 |
 | Branch de integracao | ATIVA | `roadmap/radar-vital-integrado` |
 | Supabase de desenvolvimento | BLOQUEADO | Docker indisponivel; avaliar projeto remoto de teste |
 | Supabase de producao | PRESERVADO | Aplicar migrations apenas na Fase 7 |
@@ -100,6 +100,16 @@ Resumo: a carga inicial possui CSV-modelo, parser com validacao por linha,
 testes e RPC idempotente baseada em `import_key`.
 Resultado: 19 testes e build aprovados. A importacao real continua bloqueada
 ate que a migration seja aplicada em ambiente de validacao.
+
+2026-07-31 - Lancamento Universo Ramos
+Resumo: migrations de categorias e desafios internos aplicadas ao Supabase do
+projeto Lovable; o frontend foi integrado ao `main` e enviado ao GitHub.
+Validacao: schema confirmou os novos campos, a tabela de evidencias e as
+funcoes `create_universe_challenge`, `accept_universe_challenge` e
+`import_universe_challenge`; build e 19 testes aprovados; Vercel respondeu
+HTTP 200 em `/universo-ramos`.
+Resultado: desafios abertos, direcionados, central da unidade, mural e base
+para carga idempotente estao publicados no pacote final.
 
 2026-07-30 - Replanejamento de acesso
 Resumo: autenticacao, login, senha, convite por e-mail e corte de RLS foram adiados por decisao funcional.
