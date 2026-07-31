@@ -28,7 +28,7 @@ Atualizado em: 2026-07-30
 | 3. Auditorias | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
 | 4. Desafios | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
 | 5. Tesouro | EM ANDAMENTO | Supabase de teste | Validar livro, RPCs, RLS e liquidacao com usuarios autenticados |
-| 6. Performance | NAO INICIADA | Fases 3, 4 e 5 | Criar consultas agregadas |
+| 6. Performance | EM ANDAMENTO | Supabase de teste | Validar agregados, periodos e conciliacao com dados reais |
 | 7. Integracao e publicacao unica | NAO INICIADA | Todas | Validar e executar ciclo final |
 
 ## Estado dos ambientes
@@ -64,9 +64,10 @@ Atualizado em: 2026-07-30
 
 ## Proxima entrega recomendada
 
-Validar as Auditorias, os Desafios e o Tesouro em Supabase isolado. Quando o
-ambiente estiver disponivel, aplicar as migrations em ordem, regenerar os tipos
-e executar as matrizes de RLS e os fluxos autenticados acumulados antes da Fase 6.
+Validar as Auditorias, os Desafios, o Tesouro e a Performance em Supabase
+isolado. Quando o ambiente estiver disponivel, aplicar as migrations em ordem,
+regenerar os tipos e executar as matrizes de RLS e os fluxos autenticados
+acumulados antes da Fase 7.
 
 ## Registro de execucao
 
@@ -126,6 +127,14 @@ Migrations: 20260731011448_star_treasury.sql, ainda nao aplicada.
 Testes: Vitest 17 testes aprovados; build de producao aprovado; lint dos arquivos da fase sem erros.
 Resultado: implementacao local aprovada; joinha segue sem pontuacao, Super Estrela gera 10 estrelas-base, saldos podem ser negativos e liquidacao cria compensacao sem apagar o extrato.
 Pendencias: aplicar migration em Supabase isolado, regenerar tipos, validar RLS admin/nao admin, exercitar premio/penalidade/estorno/liquidacao e confirmar a conciliacao de desafios e avaliacoes antes da Fase 6.
+
+2026-07-30 - Fase 6
+Resumo: Performance ampliada para consolidar Tesouro, tarefas, comentarios, clientes, prioridades, auditorias, desafios e entregaveis, com leitura individual, equipe, periodo e ordenacao por indicador.
+Arquivos: PerformanceTab, migration 20260731012821_performance_aggregates.sql, tipos Supabase e documentacao.
+Migrations: 20260731012821_performance_aggregates.sql, ainda nao aplicada.
+Testes: Vitest 17 testes aprovados; build de producao aprovado; lint dos arquivos da fase sem erros.
+Resultado: implementacao local aprovada; ranking oficial usa o saldo do livro de estrelas, joinhas seguem separados e a tela permite comparar produtividade, comunicacao, responsabilidades, auditorias e desafios.
+Pendencias: aplicar migrations em Supabase isolado, regenerar tipos, validar resultados agregados contra os registros de origem e realizar verificacao autenticada em desktop, mobile e TV antes da Fase 7.
 ```
 
 ## Modelo para proximos registros

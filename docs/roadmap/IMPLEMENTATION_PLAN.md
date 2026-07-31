@@ -220,17 +220,17 @@ regra deve ser removida. Cada participante recebe a avaliacao integral.
 
 ### Entregas
 
-- [ ] Criar consultas agregadas no banco.
-- [ ] Separar visao individual e equipe.
-- [ ] Adicionar seletor de periodo.
-- [ ] Adicionar seletor de escopo.
-- [ ] Permitir ranking por qualquer indicador suportado.
-- [ ] Integrar tarefas concluidas.
-- [ ] Integrar comentarios realizados e respondidos.
-- [ ] Integrar clientes e empresas vinculadas.
-- [ ] Integrar auditorias e desafios.
-- [ ] Exibir estrelas, Super Estrelas e joinhas separadamente.
-- [ ] Criar evolucao mensal.
+- [x] Criar consultas agregadas no banco.
+- [x] Separar visao individual e equipe.
+- [x] Adicionar seletor de periodo.
+- [x] Adicionar seletor de escopo.
+- [x] Permitir ranking por qualquer indicador suportado.
+- [x] Integrar tarefas concluidas.
+- [x] Integrar comentarios realizados e respondidos.
+- [x] Integrar clientes e empresas vinculadas.
+- [x] Integrar auditorias e desafios.
+- [x] Exibir estrelas, Super Estrelas e joinhas separadamente.
+- [x] Criar evolucao mensal.
 
 ### Criterios de aceite
 

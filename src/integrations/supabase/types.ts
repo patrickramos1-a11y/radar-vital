@@ -1488,6 +1488,39 @@ export type Database = {
         }
         Relationships: []
       }
+      collaborator_performance_all_time: {
+        Row: {
+          audits_assigned: number | null
+          audits_completed: number | null
+          challenges_active: number | null
+          challenges_won: number | null
+          clients_linked: number | null
+          collaborator_color: string | null
+          collaborator_id: string | null
+          collaborator_name: string | null
+          comments_authored: number | null
+          deliverables_completed: number | null
+          deliverables_total: number | null
+          official_star_balance: number | null
+          photo_url: string | null
+          priorities_completed: number | null
+          priorities_total: number | null
+          tasks_completed: number | null
+          tasks_overdue: number | null
+          tasks_total: number | null
+        }
+        Relationships: []
+      }
+      collaborator_performance_monthly: {
+        Row: {
+          collaborator_id: string | null
+          comments_authored: number | null
+          month_start: string | null
+          stars_delta: number | null
+          tasks_completed: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       bootstrap_current_profile: { Args: never; Returns: string | null }
