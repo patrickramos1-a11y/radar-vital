@@ -20,6 +20,8 @@ interface ClientGridProps {
   onTogglePriority: (id: string) => void;
   onToggleCollaboratorAssignment: (clientId: string, collaboratorId: string) => void;
   onOpenChecklist: (id: string) => void;
+  onEditClient?: (client: Client) => void;
+  showHighlight?: boolean;
   viewMode: ViewMode;
   gridSize: GridSize;
   fitAllLocked: boolean;
@@ -42,6 +44,8 @@ export function ClientGrid({
   onTogglePriority,
   onToggleCollaboratorAssignment,
   onOpenChecklist,
+  onEditClient,
+  showHighlight = true,
   viewMode,
   gridSize,
   fitAllLocked,
@@ -162,6 +166,8 @@ export function ClientGrid({
           onTogglePriority={onTogglePriority}
           onToggleCollaboratorAssignment={onToggleCollaboratorAssignment}
           onOpenChecklist={onOpenChecklist}
+          onEdit={onEditClient}
+          showHighlight={showHighlight}
           clientCount={clients.length}
           fitAll={useFitAll}
           cardContentMode={cardContentMode}

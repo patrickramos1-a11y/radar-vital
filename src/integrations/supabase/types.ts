@@ -710,6 +710,7 @@ export type Database = {
       clients: {
         Row: {
           client_type: string
+          universe_category: string | null
           collaborator_celine: boolean
           collaborator_darley: boolean
           collaborator_gabi: boolean
@@ -760,6 +761,7 @@ export type Database = {
         }
         Insert: {
           client_type?: string
+          universe_category?: string | null
           collaborator_celine?: boolean
           collaborator_darley?: boolean
           collaborator_gabi?: boolean
@@ -810,6 +812,7 @@ export type Database = {
         }
         Update: {
           client_type?: string
+          universe_category?: string | null
           collaborator_celine?: boolean
           collaborator_darley?: boolean
           collaborator_gabi?: boolean

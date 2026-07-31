@@ -22,6 +22,7 @@ import {
 } from "@/components/dashboard/FilterBar";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
+import { ClientQuickEditDialog } from "@/components/dashboard/ClientQuickEditDialog";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
@@ -32,6 +33,7 @@ import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments
 import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTasks } from "@/hooks/useTasks";
+import { Client, UniversoRamosCategory } from "@/types/client";
 
 export default function UniversoRamos() {
   const navigate = useNavigate();
@@ -46,6 +48,7 @@ export default function UniversoRamos() {
     toggleCollaborator,
     toggleHighlight,
     togglePriority,
+    updateClient,
   } = useClients();
   const {
     getAssignedCollaboratorIds,
@@ -82,6 +85,8 @@ export default function UniversoRamos() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [taskClientId, setTaskClientId] = useState<string | null>(null);
   const [newClientOpen, setNewClientOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [universeCategories, setUniverseCategories] = useState<UniversoRamosCategory[]>([]);
 
   const getCommentCount = useCallback(
     (clientId: string) => commentCounts.get(clientId) ?? 0,
@@ -128,6 +133,7 @@ export default function UniversoRamos() {
     });
     setCollaboratorFilters([]);
     setSearchQuery("");
+    setUniverseCategories([]);
   };
 
   const visibleClients = useMemo(() => {
@@ -144,6 +150,7 @@ export default function UniversoRamos() {
         client.initials.toLocaleLowerCase("pt-BR").includes(query) ||
         assignedNames.some((name) => name.includes(query));
       if (!matchesSearch) return false;
+      if (universeCategories.length > 0 && !universeCategories.includes(client.universeCategory as UniversoRamosCategory)) return false;
 
       const activeFilters = [
         filterFlags.priority,
@@ -213,6 +220,7 @@ export default function UniversoRamos() {
     sortBy,
     sortDirection,
     universeClients,
+    universeCategories,
   ]);
 
   const stats = useMemo(
@@ -238,6 +246,12 @@ export default function UniversoRamos() {
       universeClients,
     ],
   );
+
+  const toggleUniverseCategory = (category: UniversoRamosCategory) => {
+    setUniverseCategories((current) => current.includes(category)
+      ? current.filter((item) => item !== category)
+      : [...current, category]);
+  };
 
   const selectedClient = selectedClientId
     ? getClient(selectedClientId)
@@ -280,15 +294,17 @@ export default function UniversoRamos() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Summary label="Cadastros" value={stats.total} icon={Globe2} />
-            <Summary label="Tarefas" value={stats.tasks} icon={ListChecks} />
+            <Summary label="Cadastros" value={stats.total} icon={Globe2} onClick={clearFilters} />
+            <Summary label="Tarefas" value={stats.tasks} icon={ListChecks} onClick={() => handleFilterFlagToggle("withJackbox")} active={filterFlags.withJackbox} />
             <Summary
               label="Comentários"
               value={stats.comments}
               icon={MessageCircle}
+              onClick={() => handleFilterFlagToggle("withComments")}
+              active={filterFlags.withComments}
             />
-            <Summary label="Prioridades" value={stats.priority} icon={Star} />
-            <Summary label="Com responsáveis" value={stats.assigned} icon={Users} />
+            <Summary label="Prioridades" value={stats.priority} icon={Star} onClick={() => handleFilterFlagToggle("priority")} active={filterFlags.priority} />
+            <Summary label="Com responsáveis" value={stats.assigned} icon={Users} onClick={() => handleFilterFlagToggle("hasCollaborators")} active={filterFlags.hasCollaborators} />
           </div>
         </header>
 
@@ -329,6 +345,7 @@ export default function UniversoRamos() {
           showClientTypeFilter={false}
           showMunicipalityFilter={false}
           tvPath="/tv?scope=UNIVERSO_RAMOS"
+          extraControls={<UniverseCategoryControl selected={universeCategories} onToggle={toggleUniverseCategory} />}
         />
 
         <main className="min-h-0 flex-1 overflow-auto p-3 sm:p-4">
@@ -403,6 +420,8 @@ export default function UniversoRamos() {
               onTogglePriority={togglePriority}
               onToggleCollaboratorAssignment={toggleAssignment}
               onOpenChecklist={setTaskClientId}
+              onEditClient={setEditingClient}
+              showHighlight={false}
               viewMode={viewMode}
               gridSize={gridSize}
               fitAllLocked={fitAllLocked}
@@ -429,6 +448,12 @@ export default function UniversoRamos() {
         onOpenChange={setNewClientOpen}
         defaultClientType="UNIVERSO_RAMOS"
       />
+      <ClientQuickEditDialog
+        client={editingClient}
+        open={Boolean(editingClient)}
+        onOpenChange={(open) => !open && setEditingClient(null)}
+        onSave={async (client, data) => updateClient(client.id, data)}
+      />
     </AppLayout>
   );
 }
@@ -441,12 +466,24 @@ function Summary({
   label: string;
   value: number;
   icon: typeof Globe2;
+  onClick?: () => void;
+  active?: boolean;
 }) {
   return (
-    <div className="flex h-9 items-center gap-2 border bg-background px-2.5">
+    <button type="button" onClick={onClick} className={`flex h-9 items-center gap-2 border px-2.5 transition-colors ${active ? "border-cyan-500 bg-cyan-50" : "bg-background hover:bg-muted/60"}`}>
       <Icon className="h-3.5 w-3.5 text-cyan-700" />
       <span className="text-sm font-semibold">{value}</span>
       <span className="text-[10px] text-muted-foreground">{label}</span>
-    </div>
+    </button>
   );
+}
+
+function UniverseCategoryControl({ selected, onToggle }: { selected: UniversoRamosCategory[]; onToggle: (category: UniversoRamosCategory) => void }) {
+  const categories: { value: UniversoRamosCategory; label: string }[] = [
+    { value: "EMPRESA", label: "Empresas" },
+    { value: "SETOR", label: "Setores" },
+    { value: "COLABORADOR", label: "Colaboradores" },
+    { value: "PROJETO", label: "Projetos" },
+  ];
+  return <div className="flex items-center gap-1 border-l pl-2">{categories.map((category) => <button key={category.value} type="button" onClick={() => onToggle(category.value)} className={`h-7 px-2 text-[10px] font-medium ${selected.includes(category.value) ? "bg-cyan-700 text-white" : "bg-cyan-50 text-cyan-800 hover:bg-cyan-100"}`}>{category.label}</button>)}</div>;
 }
