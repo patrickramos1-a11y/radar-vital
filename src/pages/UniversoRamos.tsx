@@ -5,19 +5,27 @@ import {
   ListChecks,
   MessageCircle,
   MonitorUp,
-  Search,
   Star,
   UserPlus,
   Users,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientCard } from "@/components/dashboard/ClientCard";
+import {
+  FilterBar,
+  type ClientTypeFilter,
+  type FilterFlags,
+  type GridSize,
+  type SortDirection,
+  type SortOption,
+  type ViewMode,
+} from "@/components/dashboard/FilterBar";
+import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClients } from "@/contexts/ClientContext";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
@@ -54,7 +62,23 @@ export default function UniversoRamos() {
   const [commentCounts] = useAllClientsCommentCountsWithRefresh(
     currentUser?.name,
   );
-  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("order");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [filterFlags, setFilterFlags] = useState<FilterFlags>({
+    priority: false,
+    highlighted: false,
+    selected: false,
+    hasCollaborators: false,
+    withJackbox: false,
+    withoutJackbox: false,
+    withComments: false,
+    withoutComments: false,
+  });
+  const [collaboratorFilters, setCollaboratorFilters] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("fit-all");
+  const [gridSize, setGridSize] = useState<GridSize>(null);
+  const [fitAllLocked, setFitAllLocked] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [taskClientId, setTaskClientId] = useState<string | null>(null);
   const [newClientOpen, setNewClientOpen] = useState(false);
@@ -64,15 +88,132 @@ export default function UniversoRamos() {
     [commentCounts],
   );
 
-  const visibleClients = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase("pt-BR");
-    if (!query) return universeClients;
-    return universeClients.filter(
-      (client) =>
-        client.name.toLocaleLowerCase("pt-BR").includes(query) ||
-        client.initials.toLocaleLowerCase("pt-BR").includes(query),
+  const handleFilterFlagToggle = (flag: keyof FilterFlags) => {
+    setFilterFlags((current) => ({
+      ...current,
+      [flag]: !current[flag],
+      ...(flag === "withJackbox" && !current.withJackbox
+        ? { withoutJackbox: false }
+        : {}),
+      ...(flag === "withoutJackbox" && !current.withoutJackbox
+        ? { withJackbox: false }
+        : {}),
+      ...(flag === "withComments" && !current.withComments
+        ? { withoutComments: false }
+        : {}),
+      ...(flag === "withoutComments" && !current.withoutComments
+        ? { withComments: false }
+        : {}),
+    }));
+  };
+
+  const handleCollaboratorFilterToggle = (name: string) => {
+    setCollaboratorFilters((current) =>
+      current.includes(name)
+        ? current.filter((item) => item !== name)
+        : [...current, name],
     );
-  }, [search, universeClients]);
+  };
+
+  const clearFilters = () => {
+    setFilterFlags({
+      priority: false,
+      highlighted: false,
+      selected: false,
+      hasCollaborators: false,
+      withJackbox: false,
+      withoutJackbox: false,
+      withComments: false,
+      withoutComments: false,
+    });
+    setCollaboratorFilters([]);
+    setSearchQuery("");
+  };
+
+  const visibleClients = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase("pt-BR");
+    const multiplier = sortDirection === "desc" ? 1 : -1;
+    let result = universeClients.filter((client) => {
+      const assignedIds = getAssignedCollaboratorIds(client.id);
+      const assignedNames = collaborators
+        .filter((collaborator) => assignedIds.includes(collaborator.id))
+        .map((collaborator) => collaborator.name.toLocaleLowerCase("pt-BR"));
+      const matchesSearch =
+        !query ||
+        client.name.toLocaleLowerCase("pt-BR").includes(query) ||
+        client.initials.toLocaleLowerCase("pt-BR").includes(query) ||
+        assignedNames.some((name) => name.includes(query));
+      if (!matchesSearch) return false;
+
+      const activeFilters = [
+        filterFlags.priority,
+        filterFlags.highlighted,
+        filterFlags.selected,
+        filterFlags.hasCollaborators,
+        filterFlags.withJackbox,
+        filterFlags.withoutJackbox,
+        filterFlags.withComments,
+        filterFlags.withoutComments,
+        collaboratorFilters.length > 0,
+      ].some(Boolean);
+      if (!activeFilters) return true;
+
+      const matchesCollaborator =
+        collaboratorFilters.length > 0 &&
+        ((collaboratorFilters.includes("__none__") && assignedIds.length === 0) ||
+          collaboratorFilters
+            .filter((name) => name !== "__none__")
+            .some((name) =>
+              collaborators.some(
+                (collaborator) =>
+                  collaborator.name === name && assignedIds.includes(collaborator.id),
+              ),
+            ));
+
+      return (
+        (filterFlags.priority && client.isPriority) ||
+        (filterFlags.highlighted && highlightedClients.has(client.id)) ||
+        (filterFlags.selected && client.isChecked) ||
+        (filterFlags.hasCollaborators && assignedIds.length > 0) ||
+        (filterFlags.withJackbox && getActiveTaskCount(client.id) > 0) ||
+        (filterFlags.withoutJackbox && getActiveTaskCount(client.id) === 0) ||
+        (filterFlags.withComments && getCommentCount(client.id) > 0) ||
+        (filterFlags.withoutComments && getCommentCount(client.id) === 0) ||
+        matchesCollaborator
+      );
+    });
+
+    result.sort((left, right) => {
+      if (sortBy === "priority") {
+        return (Number(right.isPriority) - Number(left.isPriority)) * multiplier;
+      }
+      if (sortBy === "jackbox") {
+        return (
+          (getActiveTaskCount(right.id) - getActiveTaskCount(left.id)) * multiplier
+        );
+      }
+      if (sortBy === "comments") {
+        return (getCommentCount(right.id) - getCommentCount(left.id)) * multiplier;
+      }
+      if (sortBy === "name") {
+        return left.name.localeCompare(right.name) * multiplier;
+      }
+      return (left.order - right.order) * multiplier;
+    });
+    return result;
+  }, [
+    collaborators,
+    collaboratorFilters,
+    filterFlags,
+    getActiveTaskCount,
+    getAssignedCollaboratorIds,
+    getCommentCount,
+    highlightedClients,
+    searchQuery,
+    sortBy,
+    sortDirection,
+    universeClients,
+  ]);
 
   const stats = useMemo(
     () => ({
@@ -148,17 +289,47 @@ export default function UniversoRamos() {
             />
             <Summary label="Prioridades" value={stats.priority} icon={Star} />
             <Summary label="Com responsáveis" value={stats.assigned} icon={Users} />
-            <div className="relative ml-auto w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar no Universo Ramos"
-                className="pl-9"
-              />
-            </div>
           </div>
         </header>
+
+        <FilterBar
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          filterFlags={filterFlags}
+          collaboratorFilters={collaboratorFilters}
+          clientTypeFilter={"all" as ClientTypeFilter}
+          priorityCount={stats.priority}
+          highlightedCount={universeClients.filter((client) => highlightedClients.has(client.id)).length}
+          selectedCount={universeClients.filter((client) => client.isChecked).length}
+          jackboxCount={stats.tasks}
+          commentsCount={stats.comments}
+          visibleCount={visibleClients.length}
+          totalCount={universeClients.length}
+          acCount={0}
+          avCount={0}
+          searchQuery={searchQuery}
+          viewMode={viewMode}
+          gridSize={gridSize}
+          fitAllLocked={fitAllLocked}
+          municipalities={[]}
+          clientMunicipioNames={new Set()}
+          municipioFilters={[]}
+          onMunicipioFilterToggle={() => undefined}
+          onSearchChange={setSearchQuery}
+          onSortChange={setSortBy}
+          onSortDirectionChange={setSortDirection}
+          onFilterFlagToggle={handleFilterFlagToggle}
+          onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
+          onClientTypeFilterChange={() => undefined}
+          onClearHighlights={clearFilters}
+          onClearAllFilters={clearFilters}
+          onViewModeChange={setViewMode}
+          onGridSizeChange={setGridSize}
+          onFitAllLockedChange={setFitAllLocked}
+          showClientTypeFilter={false}
+          showMunicipalityFilter={false}
+          tvPath="/tv?scope=UNIVERSO_RAMOS"
+        />
 
         <main className="min-h-0 flex-1 overflow-auto p-3 sm:p-4">
           {isLoading ? (
@@ -217,35 +388,25 @@ export default function UniversoRamos() {
               />
             </>
           ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {visibleClients.map((client, index) => (
-                <div key={client.id} className="min-h-[310px]">
-                  <ClientCard
-                    client={client}
-                    displayNumber={index + 1}
-                    isSelected={selectedClientId === client.id}
-                    isHighlighted={highlightedClients.has(client.id)}
-                    activeTaskCount={getActiveTaskCount(client.id)}
-                    commentCount={getCommentCount(client.id)}
-                    allCollaborators={collaborators}
-                    assignedCollaboratorIds={getAssignedCollaboratorIds(
-                      client.id,
-                    )}
-                    onSelect={(id) =>
-                      setSelectedClientId((current) =>
-                        current === id ? null : id,
-                      )
-                    }
-                    onHighlight={toggleHighlight}
-                    onTogglePriority={togglePriority}
-                    onToggleCollaboratorAssignment={toggleAssignment}
-                    onOpenChecklist={setTaskClientId}
-                    clientCount={visibleClients.length}
-                    fitAll={false}
-                  />
-                </div>
-              ))}
-            </div>
+            <ClientGrid
+              clients={visibleClients}
+              selectedClientId={selectedClientId}
+              highlightedClients={highlightedClients}
+              getActiveTaskCount={getActiveTaskCount}
+              getCommentCount={getCommentCount}
+              allCollaborators={collaborators}
+              getAssignedCollaboratorIds={getAssignedCollaboratorIds}
+              onSelectClient={(id) =>
+                setSelectedClientId((current) => (current === id ? null : id))
+              }
+              onHighlightClient={toggleHighlight}
+              onTogglePriority={togglePriority}
+              onToggleCollaboratorAssignment={toggleAssignment}
+              onOpenChecklist={setTaskClientId}
+              viewMode={viewMode}
+              gridSize={gridSize}
+              fitAllLocked={fitAllLocked}
+            />
           )}
         </main>
       </div>

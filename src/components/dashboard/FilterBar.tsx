@@ -1,6 +1,7 @@
 import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check, UserX } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import type { ReactNode } from "react";
 import { ClientType } from "@/types/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -61,6 +62,10 @@ interface FilterBarProps {
   onViewModeChange: (mode: ViewMode) => void;
   onGridSizeChange: (size: GridSize) => void;
   onFitAllLockedChange: (locked: boolean) => void;
+  showClientTypeFilter?: boolean;
+  showMunicipalityFilter?: boolean;
+  tvPath?: string;
+  extraControls?: ReactNode;
 }
 
 export function FilterBar({
@@ -93,6 +98,10 @@ export function FilterBar({
   onGridSizeChange,
   onFitAllLockedChange,
   highlightedCount,
+  showClientTypeFilter = true,
+  showMunicipalityFilter = true,
+  tvPath = "/tv",
+  extraControls,
 }: FilterBarProps) {
   const { collaborators: allCollaborators } = useAuth();
   const handleSortClick = (sort: SortOption) => {
@@ -192,12 +201,16 @@ export function FilterBar({
         </div>
 
         {/* Municipality Filter */}
-        <MunicipalityDropdown
-          municipalities={municipalities}
-          clientMunicipioNames={clientMunicipioNames}
-          selectedMunicipios={municipioFilters}
-          onToggle={onMunicipioFilterToggle}
-        />
+        {showMunicipalityFilter && (
+          <MunicipalityDropdown
+            municipalities={municipalities}
+            clientMunicipioNames={clientMunicipioNames}
+            selectedMunicipios={municipioFilters}
+            onToggle={onMunicipioFilterToggle}
+          />
+        )}
+
+        {extraControls}
 
         {/* Grid Size Picker + Lock Toggle + TV Mode */}
         <div className="flex items-center gap-1">
@@ -231,7 +244,7 @@ export function FilterBar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                to="/tv"
+                to={tvPath}
                 className="p-1.5 rounded-md border bg-secondary/50 border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
               >
                 <Tv className="w-4 h-4" />
@@ -246,29 +259,31 @@ export function FilterBar({
         {/* Right side: Client Type + Collaborators + Reset */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {/* Client Type Filter (AC/AV) */}
-          <div className="flex items-center gap-0.5">
-            <ClientTypeButton
-              type="all"
-              active={clientTypeFilter === 'all'}
-              count={totalCount}
-              onClick={() => onClientTypeFilterChange('all')}
-            />
-            <ClientTypeButton
-              type="AC"
-              active={clientTypeFilter === 'AC'}
-              count={acCount}
-              onClick={() => onClientTypeFilterChange('AC')}
-            />
-            <ClientTypeButton
-              type="AV"
-              active={clientTypeFilter === 'AV'}
-              count={avCount}
-              onClick={() => onClientTypeFilterChange('AV')}
-            />
-          </div>
-
-          {/* Separator */}
-          <div className="w-px h-5 bg-border mx-0.5" />
+          {showClientTypeFilter && (
+            <>
+              <div className="flex items-center gap-0.5">
+                <ClientTypeButton
+                  type="all"
+                  active={clientTypeFilter === 'all'}
+                  count={totalCount}
+                  onClick={() => onClientTypeFilterChange('all')}
+                />
+                <ClientTypeButton
+                  type="AC"
+                  active={clientTypeFilter === 'AC'}
+                  count={acCount}
+                  onClick={() => onClientTypeFilterChange('AC')}
+                />
+                <ClientTypeButton
+                  type="AV"
+                  active={clientTypeFilter === 'AV'}
+                  count={avCount}
+                  onClick={() => onClientTypeFilterChange('AV')}
+                />
+              </div>
+              <div className="w-px h-5 bg-border mx-0.5" />
+            </>
+          )}
 
           {/* Collaborator filters - searchable dropdown */}
           <CollaboratorDropdown
