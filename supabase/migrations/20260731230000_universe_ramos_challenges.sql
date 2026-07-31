@@ -93,4 +93,29 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.accept_universe_challenge(UUID, UUID, TEXT) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.resolve_challenge(
+  p_challenge_id UUID,
+  p_outcome TEXT,
+  p_resolution_notes TEXT DEFAULT NULL,
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
+RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE previous_challenge public.challenges%ROWTYPE; updated_challenge public.challenges%ROWTYPE;
+BEGIN
+  IF p_outcome NOT IN ('won', 'lost') THEN RAISE EXCEPTION 'Challenge outcome must be won or lost'; END IF;
+  SELECT * INTO previous_challenge FROM public.challenges WHERE id = p_challenge_id FOR UPDATE;
+  IF previous_challenge.id IS NULL THEN RAISE EXCEPTION 'Challenge not found'; END IF;
+  IF previous_challenge.status IN ('won', 'lost') THEN
+    IF previous_challenge.status = p_outcome THEN PERFORM public.record_challenge_resolution_transactions(p_challenge_id, p_actor_name); RETURN previous_challenge.status; END IF;
+    RAISE EXCEPTION 'Challenge has already been resolved';
+  END IF;
+  IF previous_challenge.status NOT IN ('accepted', 'in_progress', 'active', 'awaiting_validation') THEN RAISE EXCEPTION 'Only accepted or active challenges can be resolved'; END IF;
+  UPDATE public.challenges SET status = p_outcome, resolved_by = COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'), resolved_at = now(), resolution_notes = NULLIF(btrim(COALESCE(p_resolution_notes, '')), '') WHERE id = p_challenge_id RETURNING * INTO updated_challenge;
+  INSERT INTO public.challenge_events (challenge_id, actor_user_id, action_type, before_data, after_data)
+  VALUES (updated_challenge.id, COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'), CASE WHEN p_outcome = 'won' THEN 'challenge_won' ELSE 'challenge_lost' END, to_jsonb(previous_challenge), to_jsonb(updated_challenge));
+  PERFORM public.record_challenge_resolution_transactions(p_challenge_id, p_actor_name);
+  RETURN updated_challenge.status;
+END;
+$$;
 COMMIT;

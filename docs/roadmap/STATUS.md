@@ -79,6 +79,21 @@ tipos e mapeadores atualizados; build e testes locais aprovados.
 Bloqueio externo: a integracao Supabase desta sessao nao possui permissao para
 aplicar migrations. Nenhuma alteracao foi enviada para producao.
 
+2026-07-31 - Universo Ramos, UR-2, UR-3 e UR-5 preparados
+Resumo: foram implementados o cadastro completo de desafio interno, a Central
+da unidade aberta pelo card, a validacao administrativa e o mural de desafios
+abertos com aceite pelo usuario selecionado.
+Resultado: a interface usa o dominio `challenges` existente e preserva AC/AV.
+Build e testes locais aprovados. A execucao real permanece dependente da
+migration UR-1; portanto esta branch ainda nao pode ser publicada.
+
+2026-07-31 - Universo Ramos, UR-4 e UR-6 pendentes de ambiente
+Resumo: a tela reutiliza o cadastro existente de colaboradores e a carga
+inicial recebeu modelo CSV e regras de validacao versionadas.
+Pendencia: finalizar os cards derivados de colaboradores e executar/importar a
+carga idempotente somente depois que a migration puder ser aplicada em um
+ambiente de validacao.
+
 2026-07-30 - Replanejamento de acesso
 Resumo: autenticacao, login, senha, convite por e-mail e corte de RLS foram adiados por decisao funcional.
 Resultado: o lancamento deve preservar o mesmo acesso da versao publicada; os artefatos locais de Auth nao devem ser enviados ao Lovable.

@@ -114,6 +114,67 @@ export function useChallenges() {
     [currentUserName, refetch],
   );
 
+  // Universo Ramos allows an internal demand to be published without a
+  // responsible person. The database assigns "open" in that case.
+  const createUniverseChallenge = useCallback(
+    async (data: ChallengeFormData): Promise<string | null> => {
+      const { data: challengeId, error: createError } = await supabase.rpc(
+        "create_universe_challenge",
+        {
+          p_title: data.title,
+          p_description: data.description ?? null,
+          p_success_criteria: data.successCriteria,
+          p_client_id: data.clientId ?? null,
+          p_challenge_kind: data.kind ?? "company_general",
+          p_expected_deliverable: data.expectedDeliverable ?? null,
+          p_evidence_requirements: data.evidenceRequirements ?? null,
+          p_due_at: data.dueAt ?? null,
+          p_reward_superstars: data.rewardSuperstars,
+          p_penalty_stars: data.penaltyStars,
+          p_participant_ids: data.participantIds,
+          p_actor_name: currentUserName,
+        },
+      );
+
+      if (createError) {
+        toast.error("Não foi possível publicar o desafio.");
+        console.error("Error creating Universo Ramos challenge:", createError);
+        return null;
+      }
+
+      await refetch();
+      toast.success(
+        data.participantIds.length === 0
+          ? "Desafio aberto publicado para a equipe."
+          : "Desafio direcionado criado com sucesso.",
+      );
+      return challengeId;
+    },
+    [currentUserName, refetch],
+  );
+
+  const acceptUniverseChallenge = useCallback(
+    async (challengeId: string, collaboratorId: string): Promise<boolean> => {
+      const { error: acceptError } = await supabase.rpc(
+        "accept_universe_challenge",
+        {
+          p_challenge_id: challengeId,
+          p_collaborator_id: collaboratorId,
+          p_actor_name: currentUserName,
+        },
+      );
+      if (acceptError) {
+        toast.error("Não foi possível aceitar este desafio.");
+        console.error("Error accepting Universo Ramos challenge:", acceptError);
+        return false;
+      }
+      await refetch();
+      toast.success("Desafio aceito. Agora ele aparece nas suas entregas.");
+      return true;
+    },
+    [currentUserName, refetch],
+  );
+
   const resolveChallenge = useCallback(
     async (
       challengeId: string,
@@ -174,6 +235,8 @@ export function useChallenges() {
     error,
     refetch,
     createChallenge,
+    createUniverseChallenge,
+    acceptUniverseChallenge,
     resolveChallenge,
   };
 }

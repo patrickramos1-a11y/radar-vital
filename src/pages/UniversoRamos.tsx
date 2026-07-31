@@ -6,6 +6,7 @@ import {
   MessageCircle,
   MonitorUp,
   Star,
+  Sparkles,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -23,6 +24,9 @@ import {
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
 import { ClientQuickEditDialog } from "@/components/dashboard/ClientQuickEditDialog";
+import { UniverseChallengeDialog } from "@/components/universe-ramos/UniverseChallengeDialog";
+import { UniverseUnitDialog } from "@/components/universe-ramos/UniverseUnitDialog";
+import { OpenChallengesDialog } from "@/components/universe-ramos/OpenChallengesDialog";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
@@ -33,12 +37,13 @@ import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments
 import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTasks } from "@/hooks/useTasks";
+import { useChallenges } from "@/hooks/useChallenges";
 import { Client, UniversoRamosCategory } from "@/types/client";
 
 export default function UniversoRamos() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { currentUser, collaborators } = useAuth();
+  const { currentUser, collaborators, isAdmin } = useAuth();
   const {
     universeClients,
     highlightedClients,
@@ -87,6 +92,10 @@ export default function UniversoRamos() {
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [universeCategories, setUniverseCategories] = useState<UniversoRamosCategory[]>([]);
+  const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
+  const [openChallengesOpen, setOpenChallengesOpen] = useState(false);
+  const [challengeUnitId, setChallengeUnitId] = useState<string | null>(null);
+  const { challenges, participantsByChallenge, createUniverseChallenge, acceptUniverseChallenge, resolveChallenge } = useChallenges();
 
   const getCommentCount = useCallback(
     (clientId: string) => commentCounts.get(clientId) ?? 0,
@@ -247,6 +256,12 @@ export default function UniversoRamos() {
     ],
   );
 
+  const universeChallenges = useMemo(
+    () => challenges.filter((challenge) => challenge.clientId && universeClients.some((client) => client.id === challenge.clientId)),
+    [challenges, universeClients],
+  );
+  const openUniverseChallenges = universeChallenges.filter((challenge) => challenge.status === "open");
+
   const toggleUniverseCategory = (category: UniversoRamosCategory) => {
     setUniverseCategories((current) => current.includes(category)
       ? current.filter((item) => item !== category)
@@ -290,6 +305,10 @@ export default function UniversoRamos() {
                 <UserPlus className="h-4 w-4" />
                 Novo cliente
               </Button>
+              <Button variant="outline" size="sm" onClick={() => { setChallengeUnitId(null); setChallengeDialogOpen(true); }}>
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">Novo desafio</span>
+              </Button>
             </div>
           </div>
 
@@ -305,6 +324,7 @@ export default function UniversoRamos() {
             />
             <Summary label="Prioridades" value={stats.priority} icon={Star} onClick={() => handleFilterFlagToggle("priority")} active={filterFlags.priority} />
             <Summary label="Com responsáveis" value={stats.assigned} icon={Users} onClick={() => handleFilterFlagToggle("hasCollaborators")} active={filterFlags.hasCollaborators} />
+            <Summary label="Desafios abertos" value={openUniverseChallenges.length} icon={Sparkles} onClick={() => setOpenChallengesOpen(true)} />
           </div>
         </header>
 
@@ -414,7 +434,7 @@ export default function UniversoRamos() {
               allCollaborators={collaborators}
               getAssignedCollaboratorIds={getAssignedCollaboratorIds}
               onSelectClient={(id) =>
-                setSelectedClientId((current) => (current === id ? null : id))
+                setSelectedClientId(id)
               }
               onHighlightClient={toggleHighlight}
               onTogglePriority={togglePriority}
@@ -454,6 +474,35 @@ export default function UniversoRamos() {
         onOpenChange={(open) => !open && setEditingClient(null)}
         onSave={async (client, data) => updateClient(client.id, data)}
       />
+      <UniverseChallengeDialog
+        open={challengeDialogOpen}
+        onOpenChange={setChallengeDialogOpen}
+        units={universeClients}
+        collaborators={collaborators}
+        defaultUnitId={challengeUnitId}
+        onCreate={createUniverseChallenge}
+      />
+      <UniverseUnitDialog
+        client={selectedClient}
+        open={Boolean(selectedClient) && !isMobile}
+        onOpenChange={(open) => !open && setSelectedClientId(null)}
+        challenges={universeChallenges}
+        participantsByChallenge={participantsByChallenge}
+        collaborators={collaborators}
+        commentCount={selectedClient ? getCommentCount(selectedClient.id) : 0}
+        taskCount={selectedClient ? getActiveTaskCount(selectedClient.id) : 0}
+        canManage={isAdmin}
+        onNewChallenge={() => { setChallengeUnitId(selectedClient?.id ?? null); setChallengeDialogOpen(true); }}
+        onResolve={(challengeId, outcome) => void resolveChallenge(challengeId, outcome)}
+      />
+      <OpenChallengesDialog
+        open={openChallengesOpen}
+        onOpenChange={setOpenChallengesOpen}
+        challenges={openUniverseChallenges}
+        units={universeClients}
+        currentUser={currentUser}
+        onAccept={acceptUniverseChallenge}
+      />
     </AppLayout>
   );
 }
@@ -462,6 +511,8 @@ function Summary({
   label,
   value,
   icon: Icon,
+  onClick,
+  active,
 }: {
   label: string;
   value: number;
