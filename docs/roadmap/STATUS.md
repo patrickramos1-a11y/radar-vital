@@ -77,6 +77,12 @@ Resumo: autenticacao, login, senha, convite por e-mail e corte de RLS foram adia
 Resultado: o lancamento deve preservar o mesmo acesso da versao publicada; os artefatos locais de Auth nao devem ser enviados ao Lovable.
 Pendencias: revisar ou substituir todas as migrations do roadmap que dependem de auth.users, auth.uid() ou politicas exclusivas para authenticated.
 
+2026-07-30 - Revisao de lancamento apos adiamento de autenticacao
+Resumo: autorizacao final recebida, mas a revisao identificou incompatibilidade entre a decisao atual e a branch de integracao.
+Resultado: lancamento bloqueado tecnicamente nesta etapa; nao enviar prompt de SQL ou publicacao ao Lovable ainda.
+Bloqueios: App ainda usa AuthGate/AuthProvider; existe tela de login e Edge Function de convite; migrations do roadmap foram escritas com dependencias de auth.users/auth.uid/RLS autenticada; o conector Lovable nao localizou o projeto informado; os projetos Supabase visiveis nesta sessao nao incluem o projeto configurado pelo repositorio.
+Proxima acao: executar a revisao de compatibilidade da Fase 0, remover do pacote de lancamento os artefatos de Auth e adaptar as migrations para o fluxo atual antes de reconectar Lovable e Supabase corretos.
+
 2026-07-30 - Fase 0
 Resumo: branch de integracao criada e portao de producao preservado.
 Arquivos: documentacao do roadmap.
