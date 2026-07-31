@@ -6,6 +6,18 @@ Este roteiro valida o pacote integrado do Radar Vital antes da unica publicacao
 no Lovable. Ele deve ser executado em um projeto Supabase de teste com o schema
 atual do Radar Vital, nunca diretamente no banco publicado.
 
+## Excecao de lancamento aprovada em 2026-07-30
+
+O projeto conectado ao Lovable nao possui ambiente isolado disponivel para esta
+sessao e o conector nao permite confirmar backup automatico ou PITR. O
+responsavel autorizou expressamente o lancamento final mesmo com essa limitacao.
+
+Por isso, esta versao segue para producao apenas com migrations aditivas e
+reversiveis por novas migrations, sem `DROP`, `DELETE` em massa, renomeacao de
+colunas ou corte de acesso. O preflight registrou o baseline de producao no
+`STATUS.md`. Esta excecao nao substitui a validacao isolada para proximas
+rodadas.
+
 ## Migrations do pacote de lancamento
 
 Aplicar nesta ordem, mantendo os arquivos como fonte de verdade:

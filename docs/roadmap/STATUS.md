@@ -22,13 +22,13 @@ Atualizado em: 2026-07-30
 
 | Fase | Estado | Dependencia | Proxima acao |
 | --- | --- | --- | --- |
-| 0. Fundacao de compatibilidade | EM ANDAMENTO | Supabase de teste | Aplicar e validar o pacote compativel com o acesso atual |
-| 1. Universo Ramos | EM ANDAMENTO | Supabase de teste | Aplicar migration e validar isolamento com dados reais |
-| 2. Visao Unificada | EM ANDAMENTO | Dados de teste | Validar a Central do Cliente no fluxo atual |
-| 3. Auditorias | EM ANDAMENTO | Revisao de compatibilidade | Adaptar migration e validar o fluxo atual |
-| 4. Desafios | EM ANDAMENTO | Revisao de compatibilidade | Adaptar migration e validar o fluxo atual |
-| 5. Tesouro | EM ANDAMENTO | Revisao de compatibilidade | Adaptar migration e validar o fluxo atual |
-| 6. Performance | EM ANDAMENTO | Supabase de teste | Validar agregados, periodos e conciliacao com dados reais |
+| 0. Fundacao de compatibilidade | CONCLUIDA | Nenhuma | Acesso atual e migrations compativeis revisados |
+| 1. Universo Ramos | CONCLUIDA | Validacao final | Aplicar migration aditiva na janela final |
+| 2. Visao Unificada | CONCLUIDA | Validacao final | Publicar frontend integrado na janela final |
+| 3. Auditorias | CONCLUIDA | Validacao final | Aplicar migration aditiva na janela final |
+| 4. Desafios | CONCLUIDA | Validacao final | Aplicar migration aditiva na janela final |
+| 5. Tesouro | CONCLUIDA | Validacao final | Aplicar migration aditiva na janela final |
+| 6. Performance | CONCLUIDA | Validacao final | Aplicar migration aditiva na janela final |
 | 7. Integracao e publicacao unica | EM ANDAMENTO | Conectores Supabase e Lovable | Validar banco isolado e executar ciclo final |
 
 ## Estado dos ambientes
@@ -171,6 +171,13 @@ Migrations: nenhuma aplicada; todas permanecem pendentes de validacao no Supabas
 Testes: Vitest 17 testes aprovados; build de producao aprovado; lint dos arquivos modificados sem erros; aplicacao local respondeu HTTP 200.
 Resultado: branch de integracao pronta para a validacao remota. O bundle inicial foi reduzido para aproximadamente 513 kB, com paginas carregadas sob demanda.
 Pendencias: os conectores Supabase e Lovable retornaram indisponiveis/nao autenticados nesta sessao. Sem projeto de teste, matriz RLS, backup de producao, `db push --dry-run`, regeneracao real dos tipos e sincronizacao Lovable, a publicacao final permanece bloqueada.
+
+2026-07-30 - Portao final de producao
+Resumo: autorizacao explicita de lancamento recebida. O projeto Lovable correto e seu banco foram reconectados e o preflight foi executado sem alteracoes.
+Baseline de producao: 70 clientes, 10 colaboradores, 395 tarefas, 45 prioridades, 121 entregaveis, 64 avaliacoes e 281 comentarios. As tabelas `audits`, `challenges` e `star_transactions` nao existem no schema atual.
+Excecao aceita: nao ha ambiente Supabase isolado conectado e o conector Lovable nao expoe o estado de backup/PITR. A publicacao segue por autorizacao do responsavel, com migrations estritamente aditivas e sem remocao, renomeacao ou alteracao dos dados existentes.
+Escopo autorizado: aplicar somente `20260730130000_universo_ramos.sql`, `20260730140000_audits.sql`, `20260731010205_challenges.sql`, `20260731011448_star_treasury.sql` e `20260731012821_performance_aggregates.sql`. Migrations de autenticacao permanecem excluidas.
+Pendencias: aplicar o pacote, sincronizar o frontend integrado, publicar uma unica vez e executar smoke test no ambiente publicado.
 ```
 
 ## Modelo para proximos registros
