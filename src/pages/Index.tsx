@@ -578,13 +578,6 @@ const Index = () => {
           {/* Panel Navigation Bar */}
           <PanelNavigationBar />
 
-          <AuditPanelSelector
-            audits={auditsSource.audits}
-            selectedAuditId={selectedAuditId}
-            summary={selectedAuditSummary}
-            onChange={setSelectedAuditId}
-          />
-
           <FilterBar
             sortBy={sortBy}
             sortDirection={sortDirection}
@@ -619,6 +612,14 @@ const Index = () => {
             clientMunicipioNames={clientMunicipioNames}
             municipioFilters={municipioFilters}
             onMunicipioFilterToggle={handleMunicipioFilterToggle}
+            extraControls={
+              <AuditSelectorControl
+                audits={auditsSource.audits}
+                selectedAuditId={selectedAuditId}
+                summary={selectedAuditSummary}
+                onChange={setSelectedAuditId}
+              />
+            }
           />
 
           <div 
@@ -743,6 +744,50 @@ function AuditPanelSelector({
         className="ml-auto text-xs font-medium text-primary hover:underline"
       >
         Ver auditorias
+      </Link>
+    </div>
+  );
+}
+
+function AuditSelectorControl({
+  audits,
+  selectedAuditId,
+  summary,
+  onChange,
+}: {
+  audits: ReturnType<typeof useAudits>["audits"];
+  selectedAuditId: string;
+  summary: AuditSummary | null;
+  onChange: (auditId: string) => void;
+}) {
+  if (audits.length === 0) return null;
+
+  return (
+    <div className="flex h-7 items-center gap-1.5 rounded-md border border-border bg-secondary/50 px-2 text-xs text-muted-foreground">
+      <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-primary" />
+      <select
+        value={selectedAuditId}
+        onChange={(event) => onChange(event.target.value)}
+        className="max-w-48 bg-transparent text-xs font-medium text-foreground outline-none"
+        aria-label="Selecionar auditoria"
+      >
+        <option value="">Auditoria</option>
+        {audits.map((audit) => (
+          <option key={audit.id} value={audit.id}>
+            {audit.title} {audit.status === "active" ? "(em andamento)" : ""}
+          </option>
+        ))}
+      </select>
+      {summary && (
+        <span className="hidden border-l border-border pl-1.5 text-[10px] sm:inline">
+          {summary.validated}/{summary.total} OK · {summary.progress}%
+        </span>
+      )}
+      <Link
+        to={selectedAuditId ? `/auditorias?auditId=${selectedAuditId}` : "/auditorias"}
+        className="hidden text-[10px] font-medium text-primary hover:underline lg:inline"
+      >
+        Ver
       </Link>
     </div>
   );
