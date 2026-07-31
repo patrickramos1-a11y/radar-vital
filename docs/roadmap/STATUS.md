@@ -87,12 +87,18 @@ Resultado: a interface usa o dominio `challenges` existente e preserva AC/AV.
 Build e testes locais aprovados. A execucao real permanece dependente da
 migration UR-1; portanto esta branch ainda nao pode ser publicada.
 
-2026-07-31 - Universo Ramos, UR-4 e UR-6 pendentes de ambiente
-Resumo: a tela reutiliza o cadastro existente de colaboradores e a carga
-inicial recebeu modelo CSV e regras de validacao versionadas.
-Pendencia: finalizar os cards derivados de colaboradores e executar/importar a
-carga idempotente somente depois que a migration puder ser aplicada em um
+2026-07-31 - Universo Ramos, UR-4 concluida localmente
+Resumo: cards legados de colaborador passam a se conectar ao cadastro oficial
+da equipe por `universe_collaborator_id`; nome, iniciais e foto exibidos no
+Universo seguem o perfil do colaborador. Novos cadastros internos nao oferecem
+a categoria Colaborador, evitando duplicacao futura.
+Pendencia: aplicar a migration e conferir a associacao dos registros legados em
 ambiente de validacao.
+
+2026-07-31 - Universo Ramos, UR-6 pendente de ambiente
+Resumo: a carga inicial possui CSV-modelo e regras de validacao versionadas.
+Pendencia: executar/importar a carga idempotente somente depois que a migration
+puder ser aplicada em um ambiente de validacao.
 
 2026-07-30 - Replanejamento de acesso
 Resumo: autenticacao, login, senha, convite por e-mail e corte de RLS foram adiados por decisao funcional.

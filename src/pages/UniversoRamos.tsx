@@ -216,7 +216,16 @@ export default function UniversoRamos() {
       }
       return (left.order - right.order) * multiplier;
     });
-    return result;
+    return result.map((client) => {
+      if (client.universeCategory !== "COLABORADOR") return client;
+      const collaborator = collaborators.find((person) =>
+        person.id === client.universeCollaboratorId ||
+        person.name.localeCompare(client.name, "pt-BR", { sensitivity: "base" }) === 0,
+      );
+      return collaborator
+        ? { ...client, name: collaborator.name, initials: collaborator.initials, logoUrl: collaborator.photoUrl ?? client.logoUrl }
+        : client;
+    });
   }, [
     collaborators,
     collaboratorFilters,

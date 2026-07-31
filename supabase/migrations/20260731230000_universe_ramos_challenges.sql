@@ -7,6 +7,23 @@ ALTER TABLE public.challenges
 
 ALTER TABLE public.challenges ALTER COLUMN due_at DROP NOT NULL;
 
+ALTER TABLE public.clients
+  ADD COLUMN IF NOT EXISTS universe_collaborator_id UUID REFERENCES public.collaborators(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS clients_universe_collaborator_idx
+  ON public.clients (universe_collaborator_id)
+  WHERE client_type = 'UNIVERSO_RAMOS';
+
+-- Preserve existing cards while connecting legacy collaborator cards to the
+-- canonical team record. New collaborators must originate from collaborators.
+UPDATE public.clients AS client
+SET universe_collaborator_id = collaborator.id
+FROM public.collaborators AS collaborator
+WHERE client.client_type = 'UNIVERSO_RAMOS'
+  AND client.universe_category = 'COLABORADOR'
+  AND client.universe_collaborator_id IS NULL
+  AND lower(trim(client.name)) = lower(trim(collaborator.name));
+
 ALTER TABLE public.challenges DROP CONSTRAINT IF EXISTS challenges_status_check;
 ALTER TABLE public.challenges DROP CONSTRAINT IF EXISTS challenges_challenge_kind_check;
 ALTER TABLE public.challenges

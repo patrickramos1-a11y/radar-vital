@@ -221,7 +221,6 @@ export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }
                 <option value="">Selecione uma categoria</option>
                 <option value="EMPRESA">Empresa</option>
                 <option value="SETOR">Setor</option>
-                <option value="COLABORADOR">Colaborador</option>
                 <option value="PROJETO">Projeto / Painel</option>
               </select>
             </div>

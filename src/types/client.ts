@@ -55,6 +55,7 @@ export interface Client {
   boReason?: string | null;
   clientType: ClientType;
   universeCategory?: UniversoRamosCategory | null;
+  universeCollaboratorId?: string | null;
   order: number;
   processes: number; // Calculated: em_andamento (análise + notificado)
   processBreakdown: ProcessBreakdown; // Process counts by status

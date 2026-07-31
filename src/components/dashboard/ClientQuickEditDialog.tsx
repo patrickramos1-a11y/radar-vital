@@ -8,7 +8,6 @@ import { Client, UniversoRamosCategory, generateInitials } from "@/types/client"
 const categories: { value: UniversoRamosCategory; label: string }[] = [
   { value: "EMPRESA", label: "Empresa" },
   { value: "SETOR", label: "Setor" },
-  { value: "COLABORADOR", label: "Colaborador" },
   { value: "PROJETO", label: "Projeto / Painel" },
 ];
 
@@ -54,7 +53,9 @@ export function ClientQuickEditDialog({
         name: name.trim(),
         initials: initials.trim() || generateInitials(name.trim()),
         logoUrl,
-        universeCategory: client.clientType === "UNIVERSO_RAMOS" ? category || null : null,
+        universeCategory: client.clientType === "UNIVERSO_RAMOS"
+          ? client.universeCategory === "COLABORADOR" ? "COLABORADOR" : category || null
+          : null,
       });
       toast.success("Cadastro atualizado");
       onOpenChange(false);
@@ -68,6 +69,9 @@ export function ClientQuickEditDialog({
       <DialogContent className="max-w-md">
         <DialogHeader><DialogTitle>Editar cadastro</DialogTitle></DialogHeader>
         <div className="space-y-4">
+          {client?.universeCategory === "COLABORADOR" && (
+            <p className="border border-cyan-200 bg-cyan-50 p-3 text-xs text-cyan-900">Este card representa um colaborador. Nome, foto e perfil devem ser mantidos no cadastro de colaboradores para refletirem em todo o sistema.</p>
+          )}
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Nome</label>
             <input value={name} onChange={(event) => setName(event.target.value)} className="w-full border bg-background px-3 py-2 text-sm" autoFocus />
@@ -77,7 +81,7 @@ export function ClientQuickEditDialog({
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Sigla</label>
               <input value={initials} onChange={(event) => setInitials(event.target.value.toUpperCase().slice(0, 2))} className="w-full border bg-background px-3 py-2 text-sm" maxLength={2} />
             </div>
-            {client?.clientType === "UNIVERSO_RAMOS" && (
+            {client?.clientType === "UNIVERSO_RAMOS" && client.universeCategory !== "COLABORADOR" && (
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Categoria</label>
                 <select value={category} onChange={(event) => setCategory(event.target.value as UniversoRamosCategory)} className="w-full border bg-background px-3 py-2 text-sm">
