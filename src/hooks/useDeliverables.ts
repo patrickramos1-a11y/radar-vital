@@ -2,14 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Deliverable, DeliverableFormData, DeliverableStatus, DeliverableItem } from '@/types/deliverable';
 import { toast } from 'sonner';
-
-const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
+import { useAuth } from '@/contexts/AuthContext';
+import { actorName } from '@/lib/auth';
 
 export function useDeliverables() {
+  const { currentUser } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const [{ data: dels, error: e1 }, { data: items, error: e2 }] = await Promise.all([
         supabase.from('deliverables').select('*').order('created_at', { ascending: false }),
@@ -39,6 +44,7 @@ export function useDeliverables() {
       })));
     } catch (e) {
       console.error(e);
+      setError('Não foi possível carregar os entregáveis.');
       toast.error('Erro ao carregar entregáveis');
     } finally {
       setIsLoading(false);
@@ -64,7 +70,7 @@ export function useDeliverables() {
         requester: data.requester || null,
         due_date: data.due_date || null,
         status: data.status || 'aberto',
-        created_by: getCurrentUserName(),
+        created_by: currentUserName,
       } as any).select().single();
       if (error) throw error;
       if (data.items && data.items.length > 0) {
@@ -80,7 +86,7 @@ export function useDeliverables() {
       toast.error('Erro ao criar entregável');
       return null;
     }
-  }, [fetch]);
+  }, [currentUserName, fetch]);
 
   const updateDeliverable = useCallback(async (id: string, data: Partial<DeliverableFormData>) => {
     try {
@@ -122,5 +128,5 @@ export function useDeliverables() {
     }
   }, [fetch]);
 
-  return { deliverables, isLoading, addDeliverable, updateDeliverable, deleteDeliverable, refetch: fetch };
+  return { deliverables, isLoading, error, addDeliverable, updateDeliverable, deleteDeliverable, refetch: fetch };
 }

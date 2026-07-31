@@ -425,12 +425,14 @@ const Config = () => {
                         onClick={() => toggleClientType(client.id)}
                         className={`px-2 py-0.5 rounded text-xs font-bold transition-colors ${
                           client.clientType === 'AC' 
-                            ? 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30' 
-                            : 'bg-amber-500/20 text-amber-600 hover:bg-amber-500/30'
+                            ? 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30'
+                            : client.clientType === 'AV'
+                              ? 'bg-amber-500/20 text-amber-600 hover:bg-amber-500/30'
+                              : 'bg-cyan-500/20 text-cyan-700 hover:bg-cyan-500/30'
                         }`}
-                        title={client.clientType === 'AC' ? 'Acompanhamento - clique para mudar para Avulso' : 'Avulso - clique para mudar para Acompanhamento'}
+                        title="Clique para alternar entre AC, AV e Universo Ramos"
                       >
-                        {client.clientType}
+                        {client.clientType === 'UNIVERSO_RAMOS' ? 'UR' : client.clientType}
                       </button>
                     </td>
                     <td className="py-3">
@@ -615,7 +617,10 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
       newErrors.name = 'Nome é obrigatório';
     }
 
-    if (!formData.municipios || formData.municipios.length === 0) {
+    if (
+      formData.clientType !== 'UNIVERSO_RAMOS' &&
+      (!formData.municipios || formData.municipios.length === 0)
+    ) {
       newErrors.municipios = 'Selecione ao menos um município';
     }
 
@@ -670,6 +675,35 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-3">
+          <label className="admin-label">Natureza do cadastro *</label>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {([
+              ['AC', 'Cliente AC'],
+              ['AV', 'Cliente AV'],
+              ['UNIVERSO_RAMOS', 'Universo Ramos'],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() =>
+                  setFormData(prev => ({
+                    ...prev,
+                    clientType: value,
+                    municipios: value === 'UNIVERSO_RAMOS' ? [] : prev.municipios,
+                  }))
+                }
+                className={`border px-3 py-2 text-sm font-medium transition-colors ${
+                  formData.clientType === value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         {/* Nome */}
         <div className="lg:col-span-2">
           <label className="admin-label">Nome da Empresa *</label>
@@ -774,15 +808,16 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
           </div>
         </div>
 
-        {/* Municípios */}
-        <div className="lg:col-span-3">
-          <label className="admin-label">Municípios *</label>
-          <MunicipiosInput
-            value={formData.municipios}
-            onChange={(municipios) => setFormData(prev => ({ ...prev, municipios }))}
-          />
-          {errors.municipios && <p className="text-xs text-destructive mt-1">{errors.municipios}</p>}
-        </div>
+        {formData.clientType !== 'UNIVERSO_RAMOS' && (
+          <div className="lg:col-span-3">
+            <label className="admin-label">Municípios *</label>
+            <MunicipiosInput
+              value={formData.municipios}
+              onChange={(municipios) => setFormData(prev => ({ ...prev, municipios }))}
+            />
+            {errors.municipios && <p className="text-xs text-destructive mt-1">{errors.municipios}</p>}
+          </div>
+        )}
 
         {/* Toggles */}
         <div className="lg:col-span-3 flex items-center gap-6">

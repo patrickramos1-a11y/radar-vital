@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { actorName } from '@/lib/auth';
 
 export type RatingType = 'thumbs' | 'star' | 'superstar';
 
@@ -13,9 +15,6 @@ export interface DeliverableRating {
   created_at: string;
   updated_at: string;
 }
-
-const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
-const isAdmin = (name: string) => name.trim().toLowerCase() === 'patrick';
 
 /**
  * OFFICIAL SCORE: thumbs = 0 (just a like), star = value (1-5), superstar = 10.
@@ -39,14 +38,16 @@ export function summarizeRatings(list: Pick<DeliverableRating, 'rating_type' | '
 }
 
 export function useDeliverableRatings() {
+  const { currentUser, isAdmin } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [ratings, setRatings] = useState<DeliverableRating[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetch = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('deliverable_ratings' as any).select('*');
+      const { data, error } = await supabase.from('deliverable_ratings').select('*');
       if (error) throw error;
-      setRatings((data as any) || []);
+      setRatings(data ?? []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -65,14 +66,14 @@ export function useDeliverableRatings() {
 
   const rate = useCallback(async (deliverableId: string, rating_type: RatingType, value: number) => {
     try {
-      const rater = getCurrentUserName();
-      if (!isAdmin(rater)) { toast.error('Apenas o administrador pode avaliar'); return; }
-      const { error } = await supabase
-        .from('deliverable_ratings' as any)
-        .upsert(
-          { deliverable_id: deliverableId, rater_name: rater, rating_type, value },
-          { onConflict: 'deliverable_id,rater_name' }
-        );
+      if (!isAdmin) { toast.error('Apenas o administrador pode avaliar'); return; }
+      const { error } = await supabase.rpc('set_deliverable_rating', {
+        p_deliverable_id: deliverableId,
+        p_rater_name: currentUserName,
+        p_rating_type: rating_type,
+        p_value: value,
+        p_actor_name: currentUserName,
+      });
       if (error) throw error;
       await fetch();
       toast.success('Avaliação registrada');
@@ -80,21 +81,20 @@ export function useDeliverableRatings() {
       console.error(e);
       toast.error('Erro ao avaliar');
     }
-  }, []);
+  }, [currentUserName, fetch, isAdmin]);
 
   const removeRating = useCallback(async (deliverableId: string) => {
     try {
-      const rater = getCurrentUserName();
-      if (!isAdmin(rater)) { toast.error('Apenas o administrador pode avaliar'); return; }
-      const { error } = await supabase
-        .from('deliverable_ratings' as any)
-        .delete()
-        .eq('deliverable_id', deliverableId)
-        .eq('rater_name', rater);
+      if (!isAdmin) { toast.error('Apenas o administrador pode avaliar'); return; }
+      const { error } = await supabase.rpc('remove_deliverable_rating', {
+        p_deliverable_id: deliverableId,
+        p_rater_name: currentUserName,
+        p_actor_name: currentUserName,
+      });
       if (error) throw error;
       await fetch();
     } catch (e) { console.error(e); }
-  }, []);
+  }, [currentUserName, fetch, isAdmin]);
 
-  return { ratings, isLoading, rate, removeRating, currentUser: getCurrentUserName() };
+  return { ratings, isLoading, rate, removeRating, currentUser: currentUserName };
 }

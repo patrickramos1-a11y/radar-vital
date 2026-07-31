@@ -1,90 +1,94 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Collaborator } from '@/types/collaborator';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Collaborator } from "@/types/collaborator";
 
-const STORAGE_KEY = 'painel_ac_user';
+const STORAGE_KEY = "painel_ac_user";
 
 interface AuthContextType {
   currentUser: Collaborator | null;
   collaborators: Collaborator[];
   loading: boolean;
+  isAdmin: boolean;
   selectUser: (collaborator: Collaborator) => void;
   clearUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function mapCollaborator(row: Record<string, unknown>): Collaborator {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    email: (row.email as string | null) ?? null,
+    color: row.color as string,
+    initials: row.initials as string,
+    userId: (row.user_id as string | null) ?? null,
+    isActive: Boolean(row.is_active),
+    role: (row.role as string | null) ?? "colaborador",
+    isCentralOnly: Boolean(row.is_central_only),
+    photoUrl: (row.photo_url as string | null) ?? null,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<Collaborator | null>(null);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch collaborators from database
   const fetchCollaborators = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('collaborators')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+        .from("collaborators")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
 
-      if (error) {
-        console.error('Error fetching collaborators:', error);
-        return;
-      }
+      if (error) throw error;
 
-      const mapped: Collaborator[] = (data || []).map(row => ({
-        id: row.id,
-        name: row.name,
-        email: row.email,
-        color: row.color,
-        initials: row.initials,
-        userId: row.user_id,
-        isActive: row.is_active,
-        role: (row as any).role || 'colaborador',
-        isCentralOnly: (row as any).is_central_only || false,
-        photoUrl: (row as any).photo_url || null,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }));
-
-      // AuthContext exposes only collaborators visible in the main Painel
-      // (central-only collaborators appear in the Central de Entregas via useCollaborators)
-      const painelCollabs = mapped.filter(c => !c.isCentralOnly);
-      setCollaborators(painelCollabs);
-
-      // Check if there's a saved user in localStorage
+      const mapped = (data ?? []).map((row) =>
+        mapCollaborator(row as Record<string, unknown>),
+      );
+      const visibleCollaborators = mapped.filter(
+        (collaborator) => !collaborator.isCentralOnly,
+      );
       const savedUserName = localStorage.getItem(STORAGE_KEY);
-      if (savedUserName) {
-        const savedUser = mapped.find(c => c.name === savedUserName);
-        if (savedUser) {
-          setCurrentUser(savedUser);
-        }
-      }
+
+      setCollaborators(visibleCollaborators);
+      setCurrentUser((previous) => {
+        const preferredName = previous?.name ?? savedUserName;
+        return mapped.find((collaborator) => collaborator.name === preferredName) ?? null;
+      });
     } catch (error) {
-      console.error('Error fetching collaborators:', error);
+      console.error("Error fetching collaborators:", error);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchCollaborators();
+    void fetchCollaborators();
 
-    // Subscribe to realtime changes on collaborators table
     const channel = supabase
-      .channel('collaborators-changes')
+      .channel("collaborators-changes")
       .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'collaborators' },
-        () => {
-          fetchCollaborators();
-        }
+        "postgres_changes",
+        { event: "*", schema: "public", table: "collaborators" },
+        () => void fetchCollaborators(),
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [fetchCollaborators]);
 
@@ -98,26 +102,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  return (
-    <AuthContext.Provider value={{
+  const value = useMemo<AuthContextType>(() => {
+    const normalizedName = currentUser?.name.toLocaleLowerCase("pt-BR") ?? "";
+    return {
       currentUser,
       collaborators,
       loading,
+      isAdmin: currentUser?.role === "admin" || normalizedName.includes("patrick"),
       selectUser,
       clearUser,
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+    };
+  }, [clearUser, collaborators, currentUser, loading, selectUser]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 }
 
-// Helper function for getting current user name (for activity logs, etc.)
-export const getCurrentUserName = () => localStorage.getItem(STORAGE_KEY) || 'Sistema';
+export function getCurrentUserName() {
+  return localStorage.getItem(STORAGE_KEY) || "Sistema";
+}

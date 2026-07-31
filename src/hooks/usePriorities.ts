@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Priority, PriorityFormData, PriorityStatus } from '@/types/priority';
 import { toast } from 'sonner';
-
-const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
+import { useAuth } from '@/contexts/AuthContext';
+import { actorName } from '@/lib/auth';
 
 const dbRowToPriority = (row: any): Priority => ({
   id: row.id,
@@ -22,10 +22,15 @@ const dbRowToPriority = (row: any): Priority => ({
 });
 
 export function usePriorities() {
+  const { currentUser } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase
         .from('priorities')
@@ -35,6 +40,7 @@ export function usePriorities() {
       setPriorities((data || []).map(dbRowToPriority));
     } catch (e) {
       console.error(e);
+      setError('Não foi possível carregar as prioridades.');
       toast.error('Erro ao carregar prioridades');
     } finally {
       setIsLoading(false);
@@ -63,7 +69,7 @@ export function usePriorities() {
         status: data.status || 'aberta',
         weight: data.weight ?? 3,
         category: data.category || null,
-        created_by: getCurrentUserName(),
+        created_by: currentUserName,
       }).select().single();
       if (error) throw error;
       await fetch();
@@ -74,7 +80,7 @@ export function usePriorities() {
       toast.error('Erro ao criar prioridade');
       return null;
     }
-  }, [fetch]);
+  }, [currentUserName, fetch]);
 
   const updatePriority = useCallback(async (id: string, data: Partial<PriorityFormData>) => {
     try {
@@ -121,5 +127,5 @@ export function usePriorities() {
     }
   }, [addPriority]);
 
-  return { priorities, isLoading, addPriority, updatePriority, deletePriority, promoteTaskToPriority, refetch: fetch };
+  return { priorities, isLoading, error, addPriority, updatePriority, deletePriority, promoteTaskToPriority, refetch: fetch };
 }

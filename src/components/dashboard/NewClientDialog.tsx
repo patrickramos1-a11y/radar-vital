@@ -2,16 +2,17 @@ import { useState, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useClients } from "@/contexts/ClientContext";
 import { useMunicipalities } from "@/hooks/useMunicipalities";
-import { Client, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from "@/types/client";
-import { Landmark, Briefcase, Star, Upload, X, Search, Check, Loader2 } from "lucide-react";
+import { ClientType, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from "@/types/client";
+import { Landmark, Briefcase, Globe2, Star, Upload, X, Search, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface NewClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultClientType?: ClientType;
 }
 
-export function NewClientDialog({ open, onOpenChange }: NewClientDialogProps) {
+export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }: NewClientDialogProps) {
   const { addClient, clients } = useClients();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
@@ -19,7 +20,7 @@ export function NewClientDialog({ open, onOpenChange }: NewClientDialogProps) {
   const [name, setName] = useState("");
   const [initials, setInitials] = useState("");
   const [logoUrl, setLogoUrl] = useState<string>("");
-  const [clientType, setClientType] = useState<"AC" | "AV">("AC");
+  const [clientType, setClientType] = useState<ClientType>(defaultClientType);
   const [isPriority, setIsPriority] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [municipios, setMunicipios] = useState<string[]>([]);
@@ -29,7 +30,7 @@ export function NewClientDialog({ open, onOpenChange }: NewClientDialogProps) {
     setName("");
     setInitials("");
     setLogoUrl("");
-    setClientType("AC");
+    setClientType(defaultClientType);
     setIsPriority(false);
     setIsActive(true);
     setMunicipios([]);
@@ -47,7 +48,9 @@ export function NewClientDialog({ open, onOpenChange }: NewClientDialogProps) {
   const handleSave = async () => {
     const errs: typeof errors = {};
     if (!name.trim()) errs.name = "Nome é obrigatório";
-    if (municipios.length === 0) errs.municipios = "Selecione ao menos um município";
+    if (clientType !== "UNIVERSO_RAMOS" && municipios.length === 0) {
+      errs.municipios = "Selecione ao menos um município";
+    }
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
@@ -93,7 +96,7 @@ export function NewClientDialog({ open, onOpenChange }: NewClientDialogProps) {
           {/* Type AC/AV */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1.5 block uppercase tracking-wider">Tipo de Cliente *</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setClientType("AC")}
@@ -118,6 +121,19 @@ export function NewClientDialog({ open, onOpenChange }: NewClientDialogProps) {
                 <div className="text-left">
                   <div className="font-bold text-sm">AV</div>
                   <div className="text-[10px] uppercase tracking-wider">Avulso</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setClientType("UNIVERSO_RAMOS")}
+                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                  clientType === "UNIVERSO_RAMOS" ? "border-cyan-500 bg-cyan-500/10 text-cyan-700" : "border-border bg-card text-muted-foreground hover:border-cyan-500/50"
+                }`}
+              >
+                <Globe2 className="w-4 h-4" />
+                <div className="text-left">
+                  <div className="font-bold text-sm">Universo Ramos</div>
+                  <div className="text-[10px] uppercase tracking-wider">Interno</div>
                 </div>
               </button>
             </div>
@@ -187,12 +203,13 @@ export function NewClientDialog({ open, onOpenChange }: NewClientDialogProps) {
             </div>
           </div>
 
-          {/* Municípios */}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Municípios *</label>
-            <MunicipiosSelect value={municipios} onChange={setMunicipios} />
-            {errors.municipios && <p className="text-xs text-destructive mt-1">{errors.municipios}</p>}
-          </div>
+          {clientType !== "UNIVERSO_RAMOS" && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Municípios *</label>
+              <MunicipiosSelect value={municipios} onChange={setMunicipios} />
+              {errors.municipios && <p className="text-xs text-destructive mt-1">{errors.municipios}</p>}
+            </div>
+          )}
 
           {/* Toggles */}
           <div className="flex items-center gap-6 pt-2">
@@ -203,7 +220,7 @@ export function NewClientDialog({ open, onOpenChange }: NewClientDialogProps) {
             </label>
             <label className="flex items-center gap-2 cursor-pointer text-sm">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4" />
-              Ativo no Painel
+              Ativo na respectiva visão
             </label>
           </div>
 

@@ -17,6 +17,7 @@ export type Database = {
       activity_logs: {
         Row: {
           action_type: string
+          actor_user_id: string | null
           client_name: string | null
           created_at: string
           description: string
@@ -24,12 +25,14 @@ export type Database = {
           entity_name: string | null
           entity_type: string
           id: string
+          metadata: Json
           new_value: string | null
           old_value: string | null
           user_name: string
         }
         Insert: {
           action_type: string
+          actor_user_id?: string | null
           client_name?: string | null
           created_at?: string
           description: string
@@ -37,12 +40,14 @@ export type Database = {
           entity_name?: string | null
           entity_type: string
           id?: string
+          metadata?: Json
           new_value?: string | null
           old_value?: string | null
           user_name: string
         }
         Update: {
           action_type?: string
+          actor_user_id?: string | null
           client_name?: string | null
           created_at?: string
           description?: string
@@ -50,9 +55,328 @@ export type Database = {
           entity_name?: string | null
           entity_type?: string
           id?: string
+          metadata?: Json
           new_value?: string | null
           old_value?: string | null
           user_name?: string
+        }
+        Relationships: []
+      }
+      audit_client_items: {
+        Row: {
+          assignee_id: string | null
+          audit_id: string
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          assignee_id?: string | null
+          audit_id: string
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          assignee_id?: string | null
+          audit_id?: string
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: []
+      }
+      audit_client_results: {
+        Row: {
+          audit_client_item_id: string
+          audit_criterion_id: string
+          created_at: string
+          evaluated_at: string | null
+          evaluated_by: string | null
+          evidence_url: string | null
+          id: string
+          notes: string | null
+          result: string
+          updated_at: string
+        }
+        Insert: {
+          audit_client_item_id: string
+          audit_criterion_id: string
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          result?: string
+          updated_at?: string
+        }
+        Update: {
+          audit_client_item_id?: string
+          audit_criterion_id?: string
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          result?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      audit_criteria: {
+        Row: {
+          audit_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          title: string
+        }
+        Insert: {
+          audit_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title: string
+        }
+        Update: {
+          audit_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      audit_events: {
+        Row: {
+          action_type: string
+          actor_user_id: string
+          after_data: Json | null
+          audit_client_item_id: string | null
+          audit_id: string
+          before_data: Json | null
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action_type: string
+          actor_user_id: string
+          after_data?: Json | null
+          audit_client_item_id?: string | null
+          audit_id: string
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action_type?: string
+          actor_user_id?: string
+          after_data?: Json | null
+          audit_client_item_id?: string | null
+          audit_id?: string
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      audits: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string | null
+          id: string
+          objective: string | null
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+          validated_by: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          objective?: string | null
+          starts_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+          validated_by?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          objective?: string | null
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          validated_by?: string | null
+        }
+        Relationships: []
+      }
+      challenge_events: {
+        Row: {
+          action_type: string
+          actor_user_id: string
+          after_data: Json | null
+          before_data: Json | null
+          challenge_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action_type: string
+          actor_user_id: string
+          after_data?: Json | null
+          before_data?: Json | null
+          challenge_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action_type?: string
+          actor_user_id?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          challenge_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      challenge_items: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+        }
+        Relationships: []
+      }
+      challenge_participants: {
+        Row: {
+          challenge_id: string
+          collaborator_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          challenge_id: string
+          collaborator_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          challenge_id?: string
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      challenges: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string
+          id: string
+          penalty_stars: number
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          reward_superstars: number
+          status: string
+          success_criteria: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_at: string
+          id?: string
+          penalty_stars?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reward_superstars?: number
+          status?: string
+          success_criteria: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string
+          id?: string
+          penalty_stars?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reward_superstars?: number
+          status?: string
+          success_criteria?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -925,6 +1249,30 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string[]
@@ -1000,12 +1348,184 @@ export type Database = {
         }
         Relationships: []
       }
+      star_settlements: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          period_end: string | null
+          period_start: string | null
+          star_to_brl: number | null
+          total_brl: number
+          total_stars: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          star_to_brl?: number | null
+          total_brl?: number
+          total_stars?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          star_to_brl?: number | null
+          total_brl?: number
+          total_stars?: number
+        }
+        Relationships: []
+      }
+      star_transactions: {
+        Row: {
+          amount: number
+          collaborator_id: string
+          created_at: string
+          created_by: string
+          id: string
+          idempotency_key: string
+          metadata: Json
+          reason: string
+          reverses_transaction_id: string | null
+          settlement_id: string | null
+          source_id: string | null
+          source_type: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          collaborator_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          idempotency_key: string
+          metadata?: Json
+          reason: string
+          reverses_transaction_id?: string | null
+          settlement_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          collaborator_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          idempotency_key?: string
+          metadata?: Json
+          reason?: string
+          reverses_transaction_id?: string | null
+          settlement_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          transaction_type?: string
+        }
+        Relationships: []
+      }
+      star_settlement_items: {
+        Row: {
+          amount_brl: number
+          balance_before: number
+          collaborator_id: string
+          created_at: string
+          id: string
+          settlement_id: string
+          settlement_transaction_id: string | null
+          stars_settled: number
+        }
+        Insert: {
+          amount_brl?: number
+          balance_before: number
+          collaborator_id: string
+          created_at?: string
+          id?: string
+          settlement_id: string
+          settlement_transaction_id?: string | null
+          stars_settled: number
+        }
+        Update: {
+          amount_brl?: number
+          balance_before?: number
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+          settlement_id?: string
+          settlement_transaction_id?: string | null
+          stars_settled?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      collaborator_star_balances: {
+        Row: {
+          balance: number | null
+          collaborator_color: string | null
+          collaborator_id: string | null
+          collaborator_name: string | null
+          credits: number | null
+          debits: number | null
+          photo_url: string | null
+        }
+        Relationships: []
+      }
+      star_treasury_summary: {
+        Row: {
+          collective_balance: number | null
+          total_credits: number | null
+          total_debits: number | null
+          transaction_count: number | null
+        }
+        Relationships: []
+      }
+      collaborator_performance_all_time: {
+        Row: {
+          audits_assigned: number | null
+          audits_completed: number | null
+          challenges_active: number | null
+          challenges_won: number | null
+          clients_linked: number | null
+          collaborator_color: string | null
+          collaborator_id: string | null
+          collaborator_name: string | null
+          comments_authored: number | null
+          deliverables_completed: number | null
+          deliverables_total: number | null
+          official_star_balance: number | null
+          photo_url: string | null
+          priorities_completed: number | null
+          priorities_total: number | null
+          tasks_completed: number | null
+          tasks_overdue: number | null
+          tasks_total: number | null
+        }
+        Relationships: []
+      }
+      collaborator_performance_monthly: {
+        Row: {
+          collaborator_id: string | null
+          comments_authored: number | null
+          month_start: string | null
+          stars_delta: number | null
+          tasks_completed: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      bootstrap_current_profile: { Args: never; Returns: string | null }
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
+      current_collaborator_id: { Args: never; Returns: string | null }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1013,8 +1533,139 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: never; Returns: boolean }
+      is_auth_enforced: { Args: never; Returns: boolean }
+      create_challenge: {
+        Args: {
+          p_actor_name?: string
+          p_client_id?: string | null
+          p_description?: string | null
+          p_due_at?: string | null
+          p_items?: Json
+          p_participant_ids?: string[]
+          p_penalty_stars?: number
+          p_reward_superstars?: number
+          p_success_criteria: string
+          p_title: string
+        }
+        Returns: string
+      }
+      open_audit: {
+        Args: {
+          p_actor_name?: string
+          p_criteria?: string[]
+          p_description?: string | null
+          p_due_at?: string | null
+          p_objective?: string | null
+          p_starts_at?: string
+          p_title: string
+        }
+        Returns: string
+      }
+      refresh_overdue_challenges: {
+        Args: { p_actor_name?: string }
+        Returns: number
+      }
+      backfill_star_sources: {
+        Args: { p_actor_name?: string }
+        Returns: Json
+      }
+      grant_manual_stars: {
+        Args: {
+          p_amount: number
+          p_actor_name?: string
+          p_collaborator_id: string
+          p_is_penalty?: boolean
+          p_reason: string
+          p_request_id?: string
+        }
+        Returns: string | null
+      }
+      grant_opening_stars: {
+        Args: {
+          p_amount?: number
+          p_actor_name?: string
+          p_batch_id?: string
+          p_collaborator_ids: string[]
+          p_reason?: string
+        }
+        Returns: number
+      }
+      remove_deliverable_rating: {
+        Args: {
+          p_actor_name?: string
+          p_deliverable_id: string
+          p_rater_name: string
+        }
+        Returns: undefined
+      }
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
+        Returns: undefined
+      }
+      set_auth_enforced: {
+        Args: { enabled: boolean }
+        Returns: undefined
+      }
+      resolve_challenge: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_id: string
+          p_outcome: string
+          p_resolution_notes?: string | null
+        }
+        Returns: string
+      }
+      reverse_star_transaction: {
+        Args: {
+          p_actor_name?: string
+          p_reason: string
+          p_transaction_id: string
+        }
+        Returns: string | null
+      }
+      set_deliverable_rating: {
+        Args: {
+          p_actor_name?: string
+          p_deliverable_id: string
+          p_rater_name: string
+          p_rating_type: string
+          p_value?: number
+        }
+        Returns: string
+      }
+      settle_star_balances: {
+        Args: {
+          p_actor_name?: string
+          p_collaborator_ids: string[]
+          p_notes?: string | null
+          p_period_end?: string | null
+          p_period_start?: string | null
+          p_star_to_brl?: number | null
+        }
+        Returns: string
+      }
+      close_audit: {
+        Args: { p_actor_name?: string; p_audit_id: string }
+        Returns: undefined
+      }
+      update_audit_client_item: {
+        Args: {
+          p_actor_name?: string
+          p_item_id: string
+          p_notes?: string | null
+          p_status: string
+        }
+        Returns: undefined
+      }
+      update_audit_client_result: {
+        Args: {
+          p_actor_name?: string
+          p_evidence_url?: string | null
+          p_notes?: string | null
+          p_result: string
+          p_result_id: string
+        }
         Returns: undefined
       }
     }

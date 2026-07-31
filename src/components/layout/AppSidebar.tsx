@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, Target } from "lucide-react";
+import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, Target, Globe2, ShieldCheck, Landmark } from "lucide-react";
 import logoSisRamos from "@/assets/logo-sisramos.png";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 
@@ -13,9 +13,12 @@ interface NavItem {
 
 const navigationItems: NavItem[] = [
   { title: "Painel AC", icon: LayoutDashboard, href: "/" },
+  { title: "Universo Ramos", icon: Globe2, href: "/universo-ramos" },
   { title: "Dashboard", icon: BarChart3, href: "/dashboard" },
   { title: "Tarefas", icon: Box, href: "/jackbox-unificado" },
   { title: "Central de Entregas", icon: Target, href: "/central-entregas" },
+  { title: "Auditorias", icon: ShieldCheck, href: "/auditorias" },
+  { title: "Tesouro", icon: Landmark, href: "/tesouro" },
   { title: "Comentários", icon: MessageSquare, href: "/comentarios" },
   { title: "Relatórios PDF", icon: FileUp, href: "/relatorios-pdf" },
 ];

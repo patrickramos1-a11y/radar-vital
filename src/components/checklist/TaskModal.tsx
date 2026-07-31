@@ -1,13 +1,18 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Check, Trash2, User, Search, Flag } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ClientWorkList } from '@/components/client-work/ClientWorkList';
 import { assigneeMatches, findCollaboratorColor } from '@/lib/taskAssignee';
 import { Task, TaskFormData, TaskPriority, PRIORITY_CONFIG } from '@/types/task';
 import { Client } from '@/types/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useClientWorkItems } from '@/hooks/useClientWorkItems';
+import type { WorkItem, WorkItemFilter } from '@/types/workItem';
 
-interface TaskModalProps {
+export interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   client: Client;
@@ -28,7 +33,15 @@ export function TaskModal({
   onUpdateTask,
   onDeleteTask,
 }: TaskModalProps) {
+  const navigate = useNavigate();
   const { collaborators } = useAuth();
+  const {
+    items: workItems,
+    isLoading: workItemsLoading,
+    error: workItemsError,
+    refetch: refetchWorkItems,
+  } = useClientWorkItems(client.id, tasks);
+  const [activeView, setActiveView] = useState<WorkItemFilter>('all');
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
@@ -43,6 +56,17 @@ export function TaskModal({
     .filter(t => !t.completed)
     .sort((a, b) => (PRIORITY_CONFIG[a.priority]?.order ?? 9) - (PRIORITY_CONFIG[b.priority]?.order ?? 9));
   const completedTasks = tasks.filter(t => t.completed);
+  const filteredWorkItems =
+    activeView === 'all'
+      ? workItems
+      : workItems.filter(item => item.kind === activeView);
+
+  const handleOpenSource = (item: WorkItem) => {
+    if (!item.sourcePath) return;
+    const separator = item.sourcePath.includes('?') ? '&' : '?';
+    onClose();
+    navigate(`${item.sourcePath}${separator}clientId=${client.id}`);
+  };
 
   const handleAddTask = async () => {
     if (!newTaskTitle.trim()) return;
@@ -101,107 +125,150 @@ export function TaskModal({
                 {client.initials}
               </div>
             )}
-            <span className="truncate">Checklist - {client.name}</span>
+            <div className="min-w-0">
+              <span className="block truncate">Central do Cliente - {client.name}</span>
+              <span className="block text-xs font-normal text-muted-foreground">
+                {workItems.length} itens vinculados
+              </span>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 space-y-4 overflow-auto px-5 pb-5">
-          {/* Add new task */}
-          <div className="sticky top-0 z-10 rounded-b-lg border bg-background/95 py-3 backdrop-blur">
-            <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
-              <input
-                type="text"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Nova tarefa..."
-                className="h-10 min-w-0 rounded-md border bg-background px-3 text-sm"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                maxLength={100}
-              />
-              <NewTaskAssigneeDropdown
-                collaborators={collaborators}
-                selected={newTaskAssignees}
-                onChange={setNewTaskAssignees}
-              />
-              <PrioritySelector value={newTaskPriority} onChange={setNewTaskPriority} />
-              <div className="flex h-10 items-center gap-2 rounded-md border bg-background px-3">
-                <span className="text-xs font-medium text-muted-foreground">Prazo</span>
-                <input
-                  type="date"
-                  value={newTaskDueDate}
-                  onChange={(e) => setNewTaskDueDate(e.target.value)}
-                  className="h-8 bg-transparent text-sm outline-none"
-                />
-              </div>
-              <button
-                onClick={handleAddTask}
-                disabled={!newTaskTitle.trim()}
-                className="flex h-10 items-center justify-center rounded-md bg-primary px-4 text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 md:w-12"
-              >
-                <Plus className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-          {/* Active tasks */}
-          <div className="space-y-1.5">
-            <h4 className="text-sm font-medium text-muted-foreground">
-              Tarefas Ativas ({activeTasks.length})
-            </h4>
-            {activeTasks.length === 0 ? (
-              <p className="text-sm text-muted-foreground/50 py-2">Nenhuma tarefa ativa</p>
-            ) : (
-              <div className="space-y-1.5">
-                {activeTasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    isEditing={editingTaskId === task.id}
-                    editingTitle={editingTitle}
-                    setEditingTitle={setEditingTitle}
-                    onToggle={() => onToggleComplete(task.id)}
-                    onStartEdit={() => handleStartEdit(task)}
-                    onSaveEdit={() => handleSaveEdit(task.id)}
-                    onCancelEdit={() => setEditingTaskId(null)}
-                    onAssigneeChange={(a) => handleAssigneeChange(task.id, a)}
-                    onPriorityChange={(p) => handlePriorityChange(task.id, p)}
-                    onDelete={() => onDeleteTask(task.id)}
-                    collaborators={collaborators}
-                    collaboratorColorMap={collaboratorColorMap}
-                  />
-                ))}
-              </div>
-            )}
+        <Tabs
+          value={activeView}
+          onValueChange={(value) => setActiveView(value as WorkItemFilter)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="overflow-x-auto border-b px-5">
+            <TabsList className="h-11 w-max justify-start rounded-none bg-transparent p-0">
+              <TabsTrigger value="all">Tudo ({workItems.length})</TabsTrigger>
+              <TabsTrigger value="task">Tarefas ({tasks.length})</TabsTrigger>
+              <TabsTrigger value="priority">
+                Prioridades ({workItems.filter(item => item.kind === 'priority').length})
+              </TabsTrigger>
+              <TabsTrigger value="deliverable">
+                Entregáveis ({workItems.filter(item => item.kind === 'deliverable').length})
+              </TabsTrigger>
+            </TabsList>
           </div>
 
-          {/* Completed tasks */}
-          {completedTasks.length > 0 && (
-            <div className="space-y-1.5">
-              <h4 className="text-sm font-medium text-muted-foreground">
-                Concluídas ({completedTasks.length})
-              </h4>
-              <div className="space-y-1 opacity-70">
-                {completedTasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    isEditing={false}
-                    editingTitle=""
-                    setEditingTitle={() => {}}
-                    onToggle={() => onToggleComplete(task.id)}
-                    onStartEdit={() => {}}
-                    onSaveEdit={() => {}}
-                    onCancelEdit={() => {}}
-                    onAssigneeChange={() => {}}
-                    onPriorityChange={() => {}}
-                    onDelete={() => onDeleteTask(task.id)}
-                    collaborators={collaborators}
-                    collaboratorColorMap={collaboratorColorMap}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+          <div className="flex-1 space-y-4 overflow-auto px-5 pb-5 pt-3">
+            {activeView !== 'task' ? (
+              <ClientWorkList
+                items={filteredWorkItems}
+                isLoading={workItemsLoading}
+                error={workItemsError}
+                emptyMessage={
+                  activeView === 'all'
+                    ? 'Nenhum item vinculado a este cliente.'
+                    : `Nenhum item desta categoria vinculado ao cliente.`
+                }
+                onOpenSource={handleOpenSource}
+                onRetry={() => void refetchWorkItems()}
+              />
+            ) : (
+              <>
+                {/* Add new task */}
+                <div className="sticky top-0 z-10 rounded-b-lg border bg-background/95 py-3 backdrop-blur">
+                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
+                    <input
+                      type="text"
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      placeholder="Nova tarefa..."
+                      className="h-10 min-w-0 rounded-md border bg-background px-3 text-sm"
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+                      maxLength={100}
+                    />
+                    <NewTaskAssigneeDropdown
+                      collaborators={collaborators}
+                      selected={newTaskAssignees}
+                      onChange={setNewTaskAssignees}
+                    />
+                    <PrioritySelector value={newTaskPriority} onChange={setNewTaskPriority} />
+                    <div className="flex h-10 items-center gap-2 rounded-md border bg-background px-3">
+                      <span className="text-xs font-medium text-muted-foreground">Prazo</span>
+                      <input
+                        type="date"
+                        value={newTaskDueDate}
+                        onChange={(e) => setNewTaskDueDate(e.target.value)}
+                        className="h-8 bg-transparent text-sm outline-none"
+                      />
+                    </div>
+                    <button
+                      onClick={handleAddTask}
+                      disabled={!newTaskTitle.trim()}
+                      className="flex h-10 items-center justify-center rounded-md bg-primary px-4 text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 md:w-12"
+                      title="Adicionar tarefa"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Active tasks */}
+                <div className="space-y-1.5">
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Tarefas Ativas ({activeTasks.length})
+                  </h4>
+                  {activeTasks.length === 0 ? (
+                    <p className="py-2 text-sm text-muted-foreground/50">Nenhuma tarefa ativa</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {activeTasks.map((task) => (
+                        <TaskItem
+                          key={task.id}
+                          task={task}
+                          isEditing={editingTaskId === task.id}
+                          editingTitle={editingTitle}
+                          setEditingTitle={setEditingTitle}
+                          onToggle={() => onToggleComplete(task.id)}
+                          onStartEdit={() => handleStartEdit(task)}
+                          onSaveEdit={() => handleSaveEdit(task.id)}
+                          onCancelEdit={() => setEditingTaskId(null)}
+                          onAssigneeChange={(a) => handleAssigneeChange(task.id, a)}
+                          onPriorityChange={(p) => handlePriorityChange(task.id, p)}
+                          onDelete={() => onDeleteTask(task.id)}
+                          collaborators={collaborators}
+                          collaboratorColorMap={collaboratorColorMap}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Completed tasks */}
+                {completedTasks.length > 0 && (
+                  <div className="space-y-1.5">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      Concluídas ({completedTasks.length})
+                    </h4>
+                    <div className="space-y-1 opacity-70">
+                      {completedTasks.map((task) => (
+                        <TaskItem
+                          key={task.id}
+                          task={task}
+                          isEditing={false}
+                          editingTitle=""
+                          setEditingTitle={() => {}}
+                          onToggle={() => onToggleComplete(task.id)}
+                          onStartEdit={() => {}}
+                          onSaveEdit={() => {}}
+                          onCancelEdit={() => {}}
+                          onAssigneeChange={() => {}}
+                          onPriorityChange={() => {}}
+                          onDelete={() => onDeleteTask(task.id)}
+                          collaborators={collaborators}
+                          collaboratorColorMap={collaboratorColorMap}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

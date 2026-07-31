@@ -4,8 +4,8 @@ import { ClientComment, CommentFormData, ReadStatusName, CommentType, READ_STATU
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
 import { autoArchiveIfFullyRead } from '@/lib/autoArchiveComment';
-
-const getCurrentUserName = () => localStorage.getItem('painel_ac_user') || 'Sistema';
+import { useAuth } from '@/contexts/AuthContext';
+import { actorName } from '@/lib/auth';
 
 // Global refresh callback — must be declared before hooks that use it
 let globalRefreshCallback: (() => void) | null = null;
@@ -45,6 +45,8 @@ function mapRow(row: any): ClientComment {
 }
 
 export function useClientComments(clientId: string) {
+  const { currentUser } = useAuth();
+  const currentUserName = actorName(currentUser);
   const [comments, setComments] = useState<ClientComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -73,7 +75,7 @@ export function useClientComments(clientId: string) {
   const addComment = useCallback(async (data: CommentFormData, clientName?: string) => {
     try {
       const { data: userData } = await supabase.auth.getUser();
-      const authorName = data.authorName || getCurrentUserName();
+      const authorName = data.authorName || currentUserName;
       
       const insertData: any = {
         client_id: clientId,
@@ -93,12 +95,12 @@ export function useClientComments(clientId: string) {
 
       await fetchComments();
       toast.success('Comentário adicionado');
-      ActivityLogger.createComment(getCurrentUserName(), clientName || 'Cliente', clientId, data.commentText);
+      ActivityLogger.createComment(currentUserName, clientName || 'Cliente', clientId, data.commentText);
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Erro ao adicionar comentário');
     }
-  }, [clientId, fetchComments]);
+  }, [clientId, currentUserName, fetchComments]);
 
   const editComment = useCallback(async (id: string, newText: string) => {
     try {
@@ -188,7 +190,7 @@ export function useClientComments(clientId: string) {
   const confirmReading = useCallback(async (commentId: string) => {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return;
-    const userName = getCurrentUserName();
+    const userName = currentUserName;
     const newTimestamps = { ...comment.readTimestamps, [userName]: new Date().toISOString() };
     try {
       const { error } = await supabase
@@ -216,10 +218,10 @@ export function useClientComments(clientId: string) {
       console.error('Error confirming reading:', error);
       toast.error('Erro ao confirmar ciência');
     }
-  }, [comments]);
+  }, [comments, currentUserName]);
 
   const closeComment = useCallback(async (commentId: string) => {
-    const userName = getCurrentUserName();
+    const userName = currentUserName;
     try {
       const { error } = await supabase
         .from('client_comments')
@@ -234,7 +236,7 @@ export function useClientComments(clientId: string) {
       console.error('Error closing comment:', error);
       toast.error('Erro ao encerrar comentário');
     }
-  }, []);
+  }, [currentUserName]);
 
   const reopenComment = useCallback(async (commentId: string) => {
     try {
@@ -271,7 +273,7 @@ export function useClientComments(clientId: string) {
   }, []);
 
   const archiveComment = useCallback(async (commentId: string) => {
-    const userName = getCurrentUserName();
+    const userName = currentUserName;
     try {
       const { error } = await supabase
         .from('client_comments')
@@ -287,7 +289,7 @@ export function useClientComments(clientId: string) {
       console.error('Error archiving comment:', error);
       toast.error('Erro ao arquivar comentário');
     }
-  }, []);
+  }, [currentUserName]);
 
   const unarchiveComment = useCallback(async (commentId: string) => {
     try {

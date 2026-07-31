@@ -3,7 +3,7 @@ import { useMunicipalities } from "@/hooks/useMunicipalities";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientGrid } from "@/components/dashboard/ClientGrid";
 import { FilterBar, SortOption, SortDirection, FilterFlags, ClientTypeFilter, ViewMode, GridSize } from "@/components/dashboard/FilterBar";
-import { TaskModal } from "@/components/checklist/TaskModal";
+import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { CommentsModal } from "@/components/comments/CommentsModal";
 import { useClients } from "@/contexts/ClientContext";
 import { useTasks } from "@/hooks/useTasks";
@@ -22,12 +22,14 @@ import { MobileCompactFilters } from "@/components/mobile/MobileCompactFilters";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
+import { useAudits } from "@/hooks/useAudits";
+import type { AuditSummary } from "@/types/audit";
 const Index = () => {
   const isMobile = useIsMobile();
   const { currentUser, collaborators: allCollaborators } = useAuth();
   const { getAssignedCollaboratorIds, toggleAssignment, getClientsWithAnyAssignment } = useClientAssignments();
   
-  const { 
+  const {
     activeClients, 
     highlightedClients, 
     toggleHighlight, 
@@ -49,6 +51,7 @@ const Index = () => {
     deleteTask,
     toggleComplete,
   } = useTasks();
+  const auditsSource = useAudits();
 
   const commentSnippetsMap = useAllClientsCommentSnippets();
   const getCommentSnippetsForClient = useCallback(
@@ -72,6 +75,32 @@ const Index = () => {
   const [gridSize, setGridSize] = useState<GridSize>(null);
   const [fitAllLocked, setFitAllLocked] = useState(false);
   const [newClientOpen, setNewClientOpen] = useState(false);
+  const [selectedAuditId, setSelectedAuditId] = useState<string>('');
+  const selectedAudit = useMemo(
+    () =>
+      auditsSource.audits.find(
+        audit => audit.id === selectedAuditId,
+      ),
+    [auditsSource.audits, selectedAuditId],
+  );
+  const selectedAuditItems = useMemo(
+    () =>
+      selectedAudit
+        ? auditsSource.items.filter(item => item.auditId === selectedAudit.id)
+        : [],
+    [auditsSource.items, selectedAudit],
+  );
+  const auditItemByClientId = useMemo(
+    () => new Map(selectedAuditItems.map(item => [item.clientId, item])),
+    [selectedAuditItems],
+  );
+  const selectedAuditClientIds = useMemo(
+    () => new Set(selectedAuditItems.map(item => item.clientId)),
+    [selectedAuditItems],
+  );
+  const selectedAuditSummary = selectedAudit
+    ? auditsSource.getSummary(selectedAudit.id)
+    : null;
 
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
@@ -163,6 +192,7 @@ const Index = () => {
     setClientTypeFilter('all');
     setSearchQuery('');
     setAlertFilter('all');
+    setSelectedAuditId('');
   };
 
   const handleMunicipioFilterToggle = (municipio: string) => {
@@ -183,6 +213,10 @@ const Index = () => {
 
   const filteredClients = useMemo(() => {
     let result = [...activeClients];
+
+    if (selectedAuditId) {
+      result = result.filter(client => selectedAuditClientIds.has(client.id));
+    }
 
     // Apply search filter first
     if (searchQuery.trim()) {
@@ -299,7 +333,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, filterFlags, collaboratorFilters, clientTypeFilter, alertFilter, municipioFilters, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery, isClienteDeBoa]);
+  }, [activeClients, selectedAuditId, selectedAuditClientIds, filterFlags, collaboratorFilters, clientTypeFilter, alertFilter, municipioFilters, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery, isClienteDeBoa]);
 
   const totalClients = activeClients.length;
 
@@ -341,6 +375,7 @@ const Index = () => {
     clientTypeFilter !== 'all' ||
     alertFilter !== 'all' ||
     municipioFilters.length > 0 ||
+    selectedAuditId !== '' ||
     searchQuery.trim() !== '';
 
   // Mobile View
@@ -375,6 +410,14 @@ const Index = () => {
             onFilterFlagToggle={(flag) => handleFilterFlagToggle(flag)}
             onCollaboratorFilterToggle={handleCollaboratorFilterToggle}
             onAlertFilterChange={setAlertFilter}
+          />
+
+          <AuditPanelSelector
+            audits={auditsSource.audits}
+            selectedAuditId={selectedAuditId}
+            summary={selectedAuditSummary}
+            onChange={setSelectedAuditId}
+            compact
           />
 
           {/* Filters: sort, search, type */}
@@ -415,6 +458,9 @@ const Index = () => {
                 getActiveTaskCount={getActiveTaskCount}
                 getCommentCount={getCommentCount}
                 onClientTap={setMobileDetailClientId}
+                getAuditStatus={(clientId) =>
+                  auditItemByClientId.get(clientId)?.status
+                }
               />
             )}
           </div>
@@ -450,7 +496,7 @@ const Index = () => {
 
           {/* Jackbox modal - opened from card action */}
           {mobileJackboxClient && (
-            <TaskModal
+            <ClientWorkDialog
               isOpen={!!mobileJackboxClientId}
               onClose={() => setMobileJackboxClientId(null)}
               client={mobileJackboxClient}
@@ -532,6 +578,13 @@ const Index = () => {
           {/* Panel Navigation Bar */}
           <PanelNavigationBar />
 
+          <AuditPanelSelector
+            audits={auditsSource.audits}
+            selectedAuditId={selectedAuditId}
+            summary={selectedAuditSummary}
+            onChange={setSelectedAuditId}
+          />
+
           <FilterBar
             sortBy={sortBy}
             sortDirection={sortDirection}
@@ -599,12 +652,15 @@ const Index = () => {
                 cardContentMode={sortBy === 'jackbox' ? 'tasks' : sortBy === 'comments' ? 'comments' : 'logo'}
                 getActiveTasksForClient={getActiveTasksForClient}
                 getCommentSnippetsForClient={getCommentSnippetsForClient}
+                getAuditStatus={(clientId) =>
+                  auditItemByClientId.get(clientId)?.status
+                }
               />
             )}
           </div>
 
           {checklistClient && (
-            <TaskModal
+            <ClientWorkDialog
               isOpen={!!checklistClientId}
               onClose={() => setChecklistClientId(null)}
               client={checklistClient}
@@ -622,6 +678,75 @@ const Index = () => {
     </AppLayout>
   );
 };
+
+function AuditPanelSelector({
+  audits,
+  selectedAuditId,
+  summary,
+  onChange,
+  compact = false,
+}: {
+  audits: ReturnType<typeof useAudits>["audits"];
+  selectedAuditId: string;
+  summary: AuditSummary | null;
+  onChange: (auditId: string) => void;
+  compact?: boolean;
+}) {
+  if (audits.length === 0) return null;
+
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-2 border bg-card/80 ${
+        compact ? 'mx-2 px-2 py-1.5' : 'px-3 py-2'
+      }`}
+    >
+      <ShieldCheck className="h-4 w-4 text-primary" />
+      <label className="text-[10px] font-semibold uppercase text-muted-foreground">
+        Auditoria
+      </label>
+      <select
+        value={selectedAuditId}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8 min-w-48 flex-1 border bg-background px-2 text-xs sm:flex-none"
+      >
+        <option value="">Visão normal do painel</option>
+        {audits.map((audit) => (
+          <option key={audit.id} value={audit.id}>
+            {audit.title} {audit.status === 'active' ? '(em andamento)' : ''}
+          </option>
+        ))}
+      </select>
+
+      {summary && (
+        <div className="flex flex-wrap items-center gap-2 text-[10px]">
+          <span className="border bg-background px-2 py-1">
+            {summary.total} empresas
+          </span>
+          <span className="border bg-amber-50 px-2 py-1 text-amber-800">
+            {summary.pending + summary.inProgress} faltam
+          </span>
+          <span className="border bg-emerald-50 px-2 py-1 text-emerald-800">
+            {summary.validated} validadas
+          </span>
+          <span className="font-semibold text-primary">
+            {summary.progress}%
+          </span>
+        </div>
+      )}
+
+      <Link
+        to={
+          selectedAuditId
+            ? `/auditorias?auditId=${selectedAuditId}`
+            : '/auditorias'
+        }
+        className="ml-auto text-xs font-medium text-primary hover:underline"
+      >
+        Ver auditorias
+      </Link>
+    </div>
+  );
+}
 
 function StatCardMini({ icon, value, label, variant = 'default' }: { icon?: React.ReactNode; value: number; label: string; variant?: 'default' | 'success' | 'warning' }) {
   const accentColor = {

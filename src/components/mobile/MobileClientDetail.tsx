@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
-import { TaskModal } from "@/components/checklist/TaskModal";
+import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { CommentsModal } from "@/components/comments/CommentsModal";
 import { MarkerReasonDialog } from "@/components/dashboard/MarkerReasonDialog";
 import { Task, TaskFormData } from "@/types/task";
@@ -193,7 +193,7 @@ export function MobileClientDetail({
 
       {/* Task Modal */}
       {showTaskModal && client && (
-        <TaskModal
+        <ClientWorkDialog
           isOpen={showTaskModal}
           onClose={() => setShowTaskModal(false)}
           client={client}
