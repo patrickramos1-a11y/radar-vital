@@ -77,6 +77,276 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_client_items: {
+        Row: {
+          assignee_id: string | null
+          audit_id: string
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          assignee_id?: string | null
+          audit_id: string
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          assignee_id?: string | null
+          audit_id?: string
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_client_items_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_client_items_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audit_campaign_summary"
+            referencedColumns: ["audit_id"]
+          },
+          {
+            foreignKeyName: "audit_client_items_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_client_items_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_client_results: {
+        Row: {
+          audit_client_item_id: string
+          audit_criterion_id: string
+          created_at: string
+          evaluated_at: string | null
+          evaluated_by: string | null
+          evidence_url: string | null
+          id: string
+          notes: string | null
+          result: string
+          updated_at: string
+        }
+        Insert: {
+          audit_client_item_id: string
+          audit_criterion_id: string
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          result?: string
+          updated_at?: string
+        }
+        Update: {
+          audit_client_item_id?: string
+          audit_criterion_id?: string
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          result?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_client_results_audit_client_item_id_fkey"
+            columns: ["audit_client_item_id"]
+            isOneToOne: false
+            referencedRelation: "audit_client_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_client_results_audit_criterion_id_fkey"
+            columns: ["audit_criterion_id"]
+            isOneToOne: false
+            referencedRelation: "audit_criteria"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_criteria: {
+        Row: {
+          audit_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          title: string
+        }
+        Insert: {
+          audit_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title: string
+        }
+        Update: {
+          audit_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_criteria_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audit_campaign_summary"
+            referencedColumns: ["audit_id"]
+          },
+          {
+            foreignKeyName: "audit_criteria_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_events: {
+        Row: {
+          action_type: string
+          actor_user_id: string
+          after_data: Json | null
+          audit_client_item_id: string | null
+          audit_id: string
+          before_data: Json | null
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action_type: string
+          actor_user_id?: string
+          after_data?: Json | null
+          audit_client_item_id?: string | null
+          audit_id: string
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action_type?: string
+          actor_user_id?: string
+          after_data?: Json | null
+          audit_client_item_id?: string | null
+          audit_id?: string
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_audit_client_item_id_fkey"
+            columns: ["audit_client_item_id"]
+            isOneToOne: false
+            referencedRelation: "audit_client_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_events_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audit_campaign_summary"
+            referencedColumns: ["audit_id"]
+          },
+          {
+            foreignKeyName: "audit_events_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audits: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string | null
+          id: string
+          objective: string | null
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+          validated_by: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          objective?: string | null
+          starts_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+          validated_by?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          objective?: string | null
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          validated_by?: string | null
+        }
+        Relationships: []
+      }
       client_collaborator_assignments: {
         Row: {
           client_id: string
@@ -1002,10 +1272,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      audit_campaign_summary: {
+        Row: {
+          audit_id: string | null
+          completed: number | null
+          in_progress: number | null
+          pending: number | null
+          progress: number | null
+          total_clients: number | null
+          validated: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
+      close_audit: {
+        Args: { p_actor_name?: string; p_audit_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1013,8 +1298,39 @@ export type Database = {
         }
         Returns: boolean
       }
+      open_audit: {
+        Args: {
+          p_actor_name?: string
+          p_criteria?: string[]
+          p_description?: string
+          p_due_at?: string
+          p_objective?: string
+          p_starts_at?: string
+          p_title: string
+        }
+        Returns: string
+      }
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
+        Returns: undefined
+      }
+      update_audit_client_item: {
+        Args: {
+          p_actor_name?: string
+          p_item_id: string
+          p_notes?: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      update_audit_client_result: {
+        Args: {
+          p_actor_name?: string
+          p_evidence_url?: string
+          p_notes?: string
+          p_result: string
+          p_result_id: string
+        }
         Returns: undefined
       }
     }
