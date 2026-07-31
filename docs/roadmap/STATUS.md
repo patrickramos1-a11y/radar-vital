@@ -4,7 +4,7 @@ Atualizado em: 2026-07-30
 
 ## Estrategia ativa
 
-- Modelo: desenvolvimento faseado com publicacao unica.
+- Modelo: desenvolvimento faseado com publicacao unica e acesso atual preservado.
 - Producao: deve permanecer inalterada durante as Fases 0 a 6.
 - Codigo: sera desenvolvido em branch de integracao.
 - Banco de desenvolvimento: Supabase local ou projeto de teste.
@@ -22,12 +22,12 @@ Atualizado em: 2026-07-30
 
 | Fase | Estado | Dependencia | Proxima acao |
 | --- | --- | --- | --- |
-| 0. Fundacao e seguranca | EM ANDAMENTO | Supabase de teste | Aplicar migrations e provar RLS |
+| 0. Fundacao de compatibilidade | EM ANDAMENTO | Revisao de migrations | Remover dependencias de login das migrations de lancamento |
 | 1. Universo Ramos | EM ANDAMENTO | Supabase de teste | Aplicar migration e validar isolamento com dados reais |
-| 2. Visao Unificada | EM ANDAMENTO | Login de teste | Validar a Central do Cliente com dados autenticados |
-| 3. Auditorias | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
-| 4. Desafios | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
-| 5. Tesouro | EM ANDAMENTO | Supabase de teste | Validar livro, RPCs, RLS e liquidacao com usuarios autenticados |
+| 2. Visao Unificada | EM ANDAMENTO | Dados de teste | Validar a Central do Cliente no fluxo atual |
+| 3. Auditorias | EM ANDAMENTO | Revisao de compatibilidade | Adaptar migration e validar o fluxo atual |
+| 4. Desafios | EM ANDAMENTO | Revisao de compatibilidade | Adaptar migration e validar o fluxo atual |
+| 5. Tesouro | EM ANDAMENTO | Revisao de compatibilidade | Adaptar migration e validar o fluxo atual |
 | 6. Performance | EM ANDAMENTO | Supabase de teste | Validar agregados, periodos e conciliacao com dados reais |
 | 7. Integracao e publicacao unica | EM ANDAMENTO | Conectores Supabase e Lovable | Validar banco isolado e executar ciclo final |
 
@@ -64,14 +64,19 @@ Atualizado em: 2026-07-30
 
 ## Proxima entrega recomendada
 
-Conectar o Supabase e o Lovable nesta sessao. Depois, criar ou selecionar um
-ambiente Supabase isolado, aplicar as migrations, regenerar os tipos, executar
-as matrizes de RLS e os fluxos autenticados acumulados. Somente entao executar
-o backup, a revisao de migrations e a publicacao unica da Fase 7.
+Revisar as migrations e o frontend preparados para autenticacao, para que o
+lancamento preserve exatamente o acesso atual do painel. Depois, aplicar em
+Supabase isolado somente as migrations compativeis, validar os fluxos
+operacionais e preparar a publicacao unica da Fase 7.
 
 ## Registro de execucao
 
 ```text
+2026-07-30 - Replanejamento de acesso
+Resumo: autenticacao, login, senha, convite por e-mail e corte de RLS foram adiados por decisao funcional.
+Resultado: o lancamento deve preservar o mesmo acesso da versao publicada; os artefatos locais de Auth nao devem ser enviados ao Lovable.
+Pendencias: revisar ou substituir todas as migrations do roadmap que dependem de auth.users, auth.uid() ou politicas exclusivas para authenticated.
+
 2026-07-30 - Fase 0
 Resumo: branch de integracao criada e portao de producao preservado.
 Arquivos: documentacao do roadmap.

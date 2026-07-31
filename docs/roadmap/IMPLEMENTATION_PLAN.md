@@ -22,16 +22,16 @@ Cada fase deve resultar em uma entrega utilizavel, testada e documentada.
 - Migrations precisam ser aditivas para permitir banco novo com frontend antigo
   durante a janela final de lancamento.
 
-## Fase 0 - Fundacao tecnica e seguranca
+## Fase 0 - Fundacao tecnica de compatibilidade
 
 ### Objetivo
 
-Garantir identidade real do usuario e integridade antes de movimentar estrelas
-com valor financeiro.
+Preservar o acesso atual do painel e preparar as novas estruturas sem impor
+login, senha, convite por e-mail ou cadastro de conta.
 
 ### Pontos atuais
 
-- `src/contexts/AuthContext.tsx` usa `localStorage` como identidade.
+- A versao publicada usa o fluxo atual de selecao operacional de usuario.
 - `src/hooks/useDeliverableRatings.ts` identifica Patrick pelo nome.
 - Existem politicas publicas em tabelas operacionais.
 - Os tipos gerados do Supabase estao defasados em relacao a migrations.
@@ -43,20 +43,19 @@ com valor financeiro.
 - [x] Registrar uma baseline segura do schema e das migrations de producao.
 - [ ] Preparar dados de teste sem alterar a base de producao.
 - [x] Mapear tabelas e politicas RLS atuais.
-- [x] Preparar Supabase Auth no frontend e nas migrations.
-- [x] Criar ou adaptar perfis com `user_id` e papel.
-- [x] Migrar a autorizacao administrativa do frontend para o papel autenticado.
+- [ ] Revisar migrations que dependem de `auth.users`, `auth.uid()` ou RLS autenticada.
+- [ ] Garantir que a versao publicada mantenha o acesso atual, sem `AuthGate` ou tela de login.
+- [ ] Adaptar autoria e a identificacao administrativa para o modelo operacional atual.
 - [ ] Regenerar `src/integrations/supabase/types.ts` a partir do banco aplicado.
-- [x] Remover a identidade operacional mantida em `localStorage`.
-- [x] Criar helper unico de autorizacao na aplicacao.
+- [ ] Manter a identidade operacional atual ate uma futura decisao de autenticacao.
 - [x] Criar base de testes com Vitest e React Testing Library.
-- [x] Documentar o fluxo de login, recuperacao e corte de RLS.
+- [x] Documentar o adiamento de login e do corte de RLS.
 
 ### Criterios de aceite
 
-- F0-AC1: trocar o nome local nao concede privilegio administrativo.
-- F0-AC2: usuario sem papel admin nao altera dados protegidos pela API.
-- F0-AC3: tipos TypeScript refletem o schema atual.
+- F0-AC1: o painel publicado abre com o mesmo acesso atual, sem login obrigatorio.
+- F0-AC2: nenhuma migration publicada exige sessao autenticada para os fluxos atuais.
+- F0-AC3: tipos TypeScript refletem o schema aplicado.
 - F0-AC4: build e testes passam.
 - F0-AC5: nenhuma alteracao foi aplicada no ambiente de producao.
 
@@ -130,7 +129,7 @@ com valor financeiro.
 
 - [x] Criar tabelas descritas em `DATA_MODEL.md`.
 - [x] Criar RPC atomica de abertura.
-- [x] Criar RLS administrativa para validacao e encerramento.
+- [ ] Revisar a autorizacao de auditorias para compatibilidade com o acesso atual.
 - [x] Criar consultas agregadas por campanha.
 - [x] Criar log de alteracoes.
 
@@ -251,7 +250,7 @@ regra deve ser removida. Cada participante recebe a avaliacao integral.
 - [ ] Joinha igual a zero.
 - [ ] Penalidade aceita saldo negativo.
 - [ ] Liquidacao preserva historico.
-- [ ] Usuario nao autorizado nao altera valores.
+- [ ] Fluxos administrativos respeitam o usuario operacional selecionado.
 - [ ] Visao Unificada nao duplica registros.
 
 ### Entregas
@@ -262,7 +261,7 @@ regra deve ser removida. Cada participante recebe a avaliacao integral.
 - [ ] Validar acessibilidade e responsividade.
 - [ ] Validar em desktop, mobile e TV.
 - [x] Executar build, lint e testes.
-- [ ] Revisar migrations e politicas RLS.
+- [ ] Revisar migrations e politicas de acesso para compatibilidade com o painel atual.
 - [ ] Atualizar documentacao final.
 - [ ] Congelar novas funcionalidades durante a validacao final.
 - [ ] Gerar backup do Supabase de producao.
@@ -301,7 +300,7 @@ regra deve ser removida. Cada participante recebe a avaliacao integral.
 Uma fase so esta pronta quando:
 
 1. migrations foram aplicadas e documentadas;
-2. RLS foi testada;
+2. o comportamento de acesso compativel com a versao publicada foi testado;
 3. interface possui carregamento, erro e estado vazio;
 4. criterios de aceite possuem evidencia;
 5. build passa;

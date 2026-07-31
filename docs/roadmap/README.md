@@ -70,7 +70,7 @@ flowchart LR
 
 ## Ordem obrigatoria
 
-1. Fundacao tecnica e seguranca.
+1. Fundacao tecnica de compatibilidade.
 2. Universo Ramos.
 3. Visao Unificada do Cliente.
 4. Auditorias.
@@ -80,7 +80,8 @@ flowchart LR
 8. Qualidade, seguranca e publicacao.
 
 Auditorias podem comecar depois da Visao Unificada. Desafios e Tesouro nao
-devem entrar em producao antes da fundacao de autenticacao e seguranca.
+devem entrar em producao antes da revisao de compatibilidade de dados e das
+regras administrativas usadas pelo painel atual.
 
 ## Estrategia de lancamento
 
@@ -114,8 +115,10 @@ lancamento.
 
 - A interface atual deve evoluir sem perder os fluxos existentes.
 - A fonte de verdade e o Supabase, nao `localStorage`, para dados compartilhados.
-- Nomes podem ser exibidos, mas UUIDs devem identificar usuarios e
-  colaboradores em novos relacionamentos.
+- Nesta versao, o acesso continua com o mesmo fluxo atual do painel: sem tela
+  obrigatoria de login, senha, convite ou cadastro de e-mail.
+- Nomes podem ser exibidos; UUIDs de colaboradores continuam preferiveis nos
+  novos relacionamentos, mas nao havera `auth.users` como dependencia de uso.
 - Pontuacao com valor financeiro exige historico imutavel.
 - Correcao financeira e feita por estorno, nunca por exclusao.
 - Atraso nao aplica penalidade automaticamente.
@@ -123,6 +126,8 @@ lancamento.
 - Universo Ramos fica isolado por padrao, mas usa os mesmos recursos internos.
 - Nenhuma fase parcial deve alterar a producao.
 - Migrations devem ser aditivas e compativeis com a versao publicada atual.
+- Autenticacao por Supabase Auth e RLS restritiva ficam fora deste lancamento e
+  so poderao voltar em um roadmap futuro, com decisao explicita.
 
 ## Como executar uma fase
 

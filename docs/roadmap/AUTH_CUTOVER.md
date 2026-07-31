@@ -1,7 +1,13 @@
-# Runbook de Autenticacao e Corte de RLS
+# Autenticacao e Corte de RLS - Adiado
 
-Este runbook sera executado primeiro no Supabase de teste e, depois da validacao
-integrada, na janela unica de lancamento.
+Este documento registra uma proposta tecnica futura. Ele **nao faz parte do
+lancamento atual** e nao deve ser executado nesta rodada.
+
+O Radar Vital continuara com o mesmo acesso da versao atualmente publicada:
+sem login obrigatorio, senha, link magico, convite ou cadastro de e-mail.
+
+Os comandos abaixo foram preservados apenas como referencia para um futuro
+roadmap de autenticacao, caso essa decisao seja retomada formalmente.
 
 ## Pre-condicoes
 

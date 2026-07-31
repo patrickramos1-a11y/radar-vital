@@ -1,6 +1,9 @@
-# Auditoria Tecnica da Fase 0
+# Auditoria Tecnica da Fase 0 - Referencia de autenticacao adiada
 
 Atualizado em: 2026-07-30
+
+> Status: nao executar nesta rodada. O lancamento atual preserva o acesso sem
+> login da versao publicada.
 
 ## Escopo auditado
 
@@ -53,7 +56,7 @@ com `supabase gen types` continua pendente ate existir um banco isolado aplicado
 Por isso, migrations e RLS podem ser revisadas estaticamente, mas nao podem ser
 consideradas validadas em banco nesta maquina.
 
-## Solucao preparada
+## Solucao preparada para futuro roadmap
 
 1. `AuthProvider` usa sessao real do Supabase.
 2. O usuario autenticado e vinculado a um colaborador por `user_id` ou e-mail.
@@ -92,4 +95,3 @@ uma publicacao parcial.
 - testar RLS com sessao anonima, comum e administrativa;
 - validar recuperacao por link magico;
 - registrar as evidencias no `STATUS.md`.
-

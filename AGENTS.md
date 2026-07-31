@@ -39,6 +39,9 @@ Antes de alterar codigo relacionado ao roadmap:
   desenvolvimento.
 - O lancamento final deve aplicar primeiro as migrations aditivas e compativeis,
   depois integrar o codigo em `main` e somente entao publicar no Lovable.
+- O lancamento atual preserva o acesso sem login da versao publicada. Nao
+  publicar `AuthGate`, tela de login, convite por e-mail, Edge Function de
+  convite ou migrations dependentes de `auth.users` sem nova decisao formal.
 
 ## Verificacao minima
 

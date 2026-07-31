@@ -233,7 +233,7 @@ Expandir o log para suportar:
 
 - `entity_type`;
 - `entity_id`;
-- `actor_user_id`;
+- `actor_collaborator_id`;
 - `action_type`;
 - `before_data`;
 - `after_data`;
@@ -242,3 +242,6 @@ Expandir o log para suportar:
 
 Transacoes financeiras nao devem ser editadas ou excluidas diretamente.
 
+Enquanto o login estiver adiado, a autoria usa o colaborador operacional
+selecionado no painel. Uma futura autenticacao podera acrescentar
+`actor_user_id` sem substituir o historico existente.

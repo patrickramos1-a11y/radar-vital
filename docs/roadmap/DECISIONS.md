@@ -106,7 +106,7 @@ separada e consolidada de:
 - empresas atendidas;
 - tempo medio e atrasos.
 
-## D-012 - Identidade administrativa
+## D-012 - Governanca administrativa na versao atual
 
 Patrick e o unico administrador autorizado a:
 
@@ -116,7 +116,10 @@ Patrick e o unico administrador autorizado a:
 - realizar liquidacoes;
 - corrigir movimentacoes financeiras.
 
-Essa regra deve ser garantida no banco e no servidor, nao apenas pela interface.
+Nesta versao, o painel permanece com o fluxo atual de acesso, sem login
+obrigatorio. Portanto, essa regra sera operacional e de interface, seguindo o
+usuario selecionado no painel. Ela nao constitui uma fronteira de seguranca no
+banco enquanto a autenticacao estiver adiada.
 
 ## D-013 - Publicacao unica
 
@@ -142,26 +145,35 @@ No ciclo final:
 
 1. gerar backup do banco de producao;
 2. revisar o `dry-run` das migrations;
-3. aplicar migrations aditivas com `auth_enforced = false`;
+3. aplicar somente migrations compativeis com o acesso atual;
 4. confirmar que a versao antiga continua funcional;
-5. provisionar e conferir os usuarios;
-6. mesclar a branch de integracao em `main`;
-7. confirmar a sincronizacao do Lovable;
-8. publicar a atualizacao;
-9. validar o frontend autenticado;
-10. ativar `auth_enforced`;
-11. executar smoke tests autenticados.
+5. mesclar a branch de integracao em `main`;
+6. confirmar a sincronizacao do Lovable;
+7. publicar a atualizacao;
+8. executar smoke tests operacionais.
 
 O banco entra primeiro porque o novo frontend dependera das novas estruturas.
 As migrations precisam manter compatibilidade temporaria com o frontend antigo.
 
-## D-016 - Corte de autenticacao em duas etapas
+## D-016 - Autenticacao adiada
 
-A autenticacao e as politicas RLS serao instaladas em modo de compatibilidade.
-O bloqueio de acesso anonimo sera ativado somente depois que o frontend
-autenticado estiver publicado e validado na mesma janela final.
+O lancamento atual nao tera login, senha, link magico, convite por e-mail nem
+cadastro de contas. O painel continuara com o mesmo acesso e seletor de usuario
+existentes na versao publicada.
 
-O procedimento e o retorno estao definidos em `AUTH_CUTOVER.md`.
+Os artefatos locais de Supabase Auth, `AuthGate`, pagina de login, convite por
+e-mail e corte de RLS nao devem ser publicados nesta rodada. Eles permanecem
+apenas como estudo tecnico e poderao ser retomados em um roadmap futuro.
+
+## D-017 - Compatibilidade das migrations atuais
+
+As migrations locais de fundacao, auditorias, desafios, Tesouro e Performance
+foram inicialmente escritas assumindo `auth.users`, `auth.uid()` e politicas
+RLS para usuarios autenticados. Antes do lancamento atual, elas devem ser
+revisadas ou substituidas por migrations compativeis com o acesso vigente.
+
+Nenhuma migration que exija login pode ser aplicada no banco de producao nesta
+rodada sem nova decisao registrada.
 
 ## Decisoes pendentes
 
