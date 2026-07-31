@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks } from "lucide-react";
+import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, ShieldCheck } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { AuditClientStatus } from "@/types/audit";
 
 export type CardContentMode = 'logo' | 'tasks' | 'comments';
 
@@ -34,6 +35,7 @@ interface ClientCardProps {
   cardContentMode?: CardContentMode;
   activeTasks?: Task[];
   commentSnippets?: CommentSnippet[];
+  auditStatus?: AuditClientStatus;
 }
 
 function getCollaboratorGradient(assignedCollaborators: Collaborator[]): string {
@@ -123,6 +125,7 @@ export function ClientCard({
   cardContentMode = 'logo',
   activeTasks = [],
   commentSnippets = [],
+  auditStatus,
 }: ClientCardProps) {
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
@@ -169,6 +172,30 @@ export function ClientCard({
       >
         {/* Top right icons */}
         <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
+          {auditStatus && (
+            <span
+              className={`flex h-5 w-5 items-center justify-center ${
+                auditStatus === 'validated'
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : auditStatus === 'completed'
+                    ? 'bg-sky-100 text-sky-700'
+                    : auditStatus === 'in_progress'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-slate-100 text-slate-500'
+              }`}
+              title={
+                auditStatus === 'validated'
+                  ? 'Auditoria validada'
+                  : auditStatus === 'completed'
+                    ? 'Auditoria concluída, aguardando validação'
+                    : auditStatus === 'in_progress'
+                      ? 'Em auditoria'
+                      : 'Auditoria pendente'
+              }
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+            </span>
+          )}
           <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
           <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />
           <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>

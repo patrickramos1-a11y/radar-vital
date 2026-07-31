@@ -128,23 +128,24 @@ com valor financeiro.
 
 ### Entregas de banco
 
-- [ ] Criar tabelas descritas em `DATA_MODEL.md`.
-- [ ] Criar RPC atomica de abertura.
-- [ ] Criar RLS administrativa para validacao e encerramento.
-- [ ] Criar consultas agregadas por campanha.
-- [ ] Criar log de alteracoes.
+- [x] Criar tabelas descritas em `DATA_MODEL.md`.
+- [x] Criar RPC atomica de abertura.
+- [x] Criar RLS administrativa para validacao e encerramento.
+- [x] Criar consultas agregadas por campanha.
+- [x] Criar log de alteracoes.
 
 ### Entregas de interface
 
-- [ ] Criar rota e pagina `/auditorias`.
-- [ ] Criar lista de auditorias simultaneas.
-- [ ] Criar formulario de abertura.
-- [ ] Criar detalhes com clientes, criterios e tempo.
-- [ ] Adicionar seletor de auditoria no Painel AC.
-- [ ] Exibir KPIs da auditoria selecionada.
-- [ ] Adicionar modo `audit` ao card do cliente.
-- [ ] Adicionar auditorias a Visao Unificada.
-- [ ] Criar validacao e encerramento exclusivos do admin.
+- [x] Criar rota e pagina `/auditorias`.
+- [x] Criar lista de auditorias simultaneas.
+- [x] Criar formulario de abertura.
+- [x] Criar detalhes com clientes, criterios e tempo.
+- [x] Adicionar seletor de auditoria no Painel AC.
+- [x] Exibir KPIs da auditoria selecionada.
+- [x] Adicionar modo `audit` ao card do cliente.
+- [x] Adicionar auditorias a Visao Unificada.
+- [x] Criar validacao e encerramento exclusivos do admin.
+- [!] Aplicar a migration e validar os fluxos com usuarios autenticados em Supabase isolado.
 
 ### Criterios de aceite
 

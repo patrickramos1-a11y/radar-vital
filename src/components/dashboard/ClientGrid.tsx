@@ -5,6 +5,7 @@ import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
 import { CommentSnippet } from "@/hooks/useAllClientsCommentSnippets";
 import { ViewMode, GridSize } from "./FilterBar";
+import type { AuditClientStatus } from "@/types/audit";
 
 interface ClientGridProps {
   clients: Client[];
@@ -25,6 +26,7 @@ interface ClientGridProps {
   cardContentMode?: CardContentMode;
   getActiveTasksForClient?: (clientId: string) => Task[];
   getCommentSnippetsForClient?: (clientId: string) => CommentSnippet[];
+  getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
 }
 
 export function ClientGrid({ 
@@ -46,6 +48,7 @@ export function ClientGrid({
   cardContentMode = 'logo',
   getActiveTasksForClient,
   getCommentSnippetsForClient,
+  getAuditStatus,
 }: ClientGridProps) {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
@@ -164,6 +167,7 @@ export function ClientGrid({
           cardContentMode={cardContentMode}
           activeTasks={getActiveTasksForClient ? getActiveTasksForClient(client.id) : []}
           commentSnippets={getCommentSnippetsForClient ? getCommentSnippetsForClient(client.id) : []}
+          auditStatus={getAuditStatus?.(client.id)}
         />
       ))}
     </div>

@@ -1,5 +1,6 @@
-import { Star, MessageCircle, ListChecks } from "lucide-react";
+import { Star, MessageCircle, ListChecks, ShieldCheck } from "lucide-react";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import type { AuditClientStatus } from "@/types/audit";
 
 interface MobileCompactGridProps {
   clients: Client[];
@@ -7,6 +8,7 @@ interface MobileCompactGridProps {
   getActiveTaskCount: (clientId: string) => number;
   getCommentCount: (clientId: string) => number;
   onClientTap: (id: string) => void;
+  getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
 }
 
 export function MobileCompactGrid({
@@ -15,6 +17,7 @@ export function MobileCompactGrid({
   getActiveTaskCount,
   getCommentCount,
   onClientTap,
+  getAuditStatus,
 }: MobileCompactGridProps) {
   const getGridColumns = () => {
     const count = clients.length;
@@ -42,6 +45,7 @@ export function MobileCompactGrid({
             activeTaskCount={getActiveTaskCount(client.id)}
             commentCount={getCommentCount(client.id)}
             onTap={onClientTap}
+            auditStatus={getAuditStatus?.(client.id)}
           />
         ))}
       </div>
@@ -55,6 +59,7 @@ interface CompactCardProps {
   activeTaskCount: number;
   commentCount: number;
   onTap: (id: string) => void;
+  auditStatus?: AuditClientStatus;
 }
 
 function CompactCard({
@@ -63,6 +68,7 @@ function CompactCard({
   activeTaskCount,
   commentCount,
   onTap,
+  auditStatus,
 }: CompactCardProps) {
   const activeCollaborators = COLLABORATOR_NAMES.filter(name => client.collaborators[name]);
   const primaryColor = activeCollaborators.length > 0 
@@ -86,6 +92,19 @@ function CompactCard({
     >
       {/* Status indicators top-right */}
       <div className="absolute top-0.5 right-0.5 flex items-center gap-0.5">
+        {auditStatus && (
+          <ShieldCheck
+            className={`h-2.5 w-2.5 ${
+              auditStatus === 'validated'
+                ? 'text-emerald-600'
+                : auditStatus === 'completed'
+                  ? 'text-sky-600'
+                  : auditStatus === 'in_progress'
+                    ? 'text-amber-600'
+                    : 'text-slate-400'
+            }`}
+          />
+        )}
         {client.isPriority && (
           <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
         )}

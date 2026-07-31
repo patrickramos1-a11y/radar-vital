@@ -62,6 +62,195 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_client_items: {
+        Row: {
+          assignee_id: string | null
+          audit_id: string
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          assignee_id?: string | null
+          audit_id: string
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          assignee_id?: string | null
+          audit_id?: string
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: []
+      }
+      audit_client_results: {
+        Row: {
+          audit_client_item_id: string
+          audit_criterion_id: string
+          created_at: string
+          evaluated_at: string | null
+          evaluated_by: string | null
+          evidence_url: string | null
+          id: string
+          notes: string | null
+          result: string
+          updated_at: string
+        }
+        Insert: {
+          audit_client_item_id: string
+          audit_criterion_id: string
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          result?: string
+          updated_at?: string
+        }
+        Update: {
+          audit_client_item_id?: string
+          audit_criterion_id?: string
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          result?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      audit_criteria: {
+        Row: {
+          audit_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          title: string
+        }
+        Insert: {
+          audit_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title: string
+        }
+        Update: {
+          audit_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      audit_events: {
+        Row: {
+          action_type: string
+          actor_user_id: string
+          after_data: Json | null
+          audit_client_item_id: string | null
+          audit_id: string
+          before_data: Json | null
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action_type: string
+          actor_user_id: string
+          after_data?: Json | null
+          audit_client_item_id?: string | null
+          audit_id: string
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action_type?: string
+          actor_user_id?: string
+          after_data?: Json | null
+          audit_client_item_id?: string | null
+          audit_id?: string
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      audits: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string | null
+          id: string
+          objective: string | null
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+          validated_by: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          objective?: string | null
+          starts_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+          validated_by?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          objective?: string | null
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          validated_by?: string | null
+        }
+        Relationships: []
+      }
       app_users: {
         Row: {
           created_at: string
@@ -1047,12 +1236,44 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_auth_enforced: { Args: never; Returns: boolean }
+      open_audit: {
+        Args: {
+          p_criteria?: string[]
+          p_description?: string | null
+          p_due_at?: string | null
+          p_objective?: string | null
+          p_starts_at?: string
+          p_title: string
+        }
+        Returns: string
+      }
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
         Returns: undefined
       }
       set_auth_enforced: {
         Args: { enabled: boolean }
+        Returns: undefined
+      }
+      close_audit: {
+        Args: { p_audit_id: string }
+        Returns: undefined
+      }
+      update_audit_client_item: {
+        Args: {
+          p_item_id: string
+          p_notes?: string | null
+          p_status: string
+        }
+        Returns: undefined
+      }
+      update_audit_client_result: {
+        Args: {
+          p_evidence_url?: string | null
+          p_notes?: string | null
+          p_result: string
+          p_result_id: string
+        }
         Returns: undefined
       }
     }

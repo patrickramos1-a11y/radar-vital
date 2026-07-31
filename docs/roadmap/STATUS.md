@@ -25,7 +25,7 @@ Atualizado em: 2026-07-30
 | 0. Fundacao e seguranca | EM ANDAMENTO | Supabase de teste | Aplicar migrations e provar RLS |
 | 1. Universo Ramos | EM ANDAMENTO | Supabase de teste | Aplicar migration e validar isolamento com dados reais |
 | 2. Visao Unificada | EM ANDAMENTO | Login de teste | Validar a Central do Cliente com dados autenticados |
-| 3. Auditorias | NAO INICIADA | Fases 0 e 2 locais | Criar migration e RPC de abertura |
+| 3. Auditorias | EM ANDAMENTO | Supabase de teste | Validar migration, RPCs e RLS com usuarios autenticados |
 | 4. Desafios | NAO INICIADA | Fases 0 e 2 | Criar modelo e fluxo de validacao |
 | 5. Tesouro | NAO INICIADA | Fases 0 e 4 | Criar livro de transacoes |
 | 6. Performance | NAO INICIADA | Fases 3, 4 e 5 | Criar consultas agregadas |
@@ -64,10 +64,9 @@ Atualizado em: 2026-07-30
 
 ## Proxima entrega recomendada
 
-Implementar as Auditorias da Fase 3 sobre os adaptadores da Visao Unificada,
-mantendo migrations sem aplicacao em producao. Quando o ambiente isolado estiver
+Validar as Auditorias da Fase 3 em Supabase isolado. Quando o ambiente estiver
 disponivel, aplicar as migrations em ordem, regenerar os tipos e executar as
-matrizes de RLS e os fluxos autenticados acumulados.
+matrizes de RLS e os fluxos autenticados acumulados antes de iniciar a Fase 4.
 
 ## Registro de execucao
 
@@ -103,6 +102,14 @@ Migrations: nenhuma.
 Testes: Vitest 10 testes aprovados; build de producao aprovado; lint permaneceu em 94 erros e 22 avisos preexistentes.
 Resultado: implementacao local aprovada; filtros e navegacao para o modulo de origem disponiveis; adaptadores de auditoria e desafio preparados.
 Pendencias: validar visualmente com sessao autenticada e dados de teste; login local foi exibido corretamente, sem contornar a autenticacao.
+
+2026-07-30 - Fase 3
+Resumo: auditorias simultaneas implementadas como campanhas com snapshot dos clientes AC ativos, criterios por empresa, validacao administrativa e trilha de eventos imutavel.
+Arquivos: migration 20260730140000_audits.sql, tipos e adaptadores de auditoria, hook useAudits, pagina Auditorias, seletor no Painel AC e indicadores nos cards desktop e mobile.
+Migrations: 20260730140000_audits.sql, ainda nao aplicada.
+Testes: Vitest 12 testes aprovados; build de producao aprovado; lint dos arquivos da fase sem erros (1 aviso preexistente em Index.tsx).
+Resultado: implementacao local aprovada; producao e Lovable preservados.
+Pendencias: aplicar em Supabase isolado, regenerar tipos, executar matriz RLS admin/nao admin e validar o fluxo autenticado em desktop, mobile e TV.
 ```
 
 ## Modelo para proximos registros
