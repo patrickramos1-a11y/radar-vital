@@ -10,6 +10,7 @@ Atualizado em: 2026-07-30
 - Banco de desenvolvimento: Supabase local ou projeto de teste.
 - Banco de producao: migrations somente no ciclo final.
 - Lovable: uma unica publicacao depois da Fase 7.
+- Universo Ramos: extensao em andamento na branch `feat/universo-ramos-categorias`.
 
 ## Legenda
 
@@ -70,6 +71,14 @@ atual, validar os fluxos operacionais e preparar a publicacao unica da Fase 7.
 ## Registro de execucao
 
 ```text
+2026-07-31 - Universo Ramos, UR-1 concluida
+Resumo: o dominio challenges foi ampliado para origem interna, desafio aberto
+sem participante, prazo opcional, criterios, entregavel e evidencias.
+Resultado: migration aditiva `20260731230000_universe_ramos_challenges.sql`,
+tipos e mapeadores atualizados; build e testes locais aprovados.
+Bloqueio externo: a integracao Supabase desta sessao nao possui permissao para
+aplicar migrations. Nenhuma alteracao foi enviada para producao.
+
 2026-07-30 - Replanejamento de acesso
 Resumo: autenticacao, login, senha, convite por e-mail e corte de RLS foram adiados por decisao funcional.
 Resultado: o lancamento deve preservar o mesmo acesso da versao publicada; os artefatos locais de Auth nao devem ser enviados ao Lovable.
