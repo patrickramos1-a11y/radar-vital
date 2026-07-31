@@ -347,6 +347,195 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_events: {
+        Row: {
+          action_type: string
+          actor_user_id: string
+          after_data: Json | null
+          before_data: Json | null
+          challenge_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action_type: string
+          actor_user_id?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          challenge_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action_type?: string
+          actor_user_id?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          challenge_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_events_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_summary"
+            referencedColumns: ["challenge_id"]
+          },
+          {
+            foreignKeyName: "challenge_events_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_items: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_items_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_summary"
+            referencedColumns: ["challenge_id"]
+          },
+          {
+            foreignKeyName: "challenge_items_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_participants: {
+        Row: {
+          challenge_id: string
+          collaborator_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          challenge_id: string
+          collaborator_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          challenge_id?: string
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_summary"
+            referencedColumns: ["challenge_id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string
+          id: string
+          penalty_stars: number
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          reward_superstars: number
+          status: string
+          success_criteria: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at: string
+          id?: string
+          penalty_stars?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reward_superstars?: number
+          status?: string
+          success_criteria: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string
+          id?: string
+          penalty_stars?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reward_superstars?: number
+          status?: string
+          success_criteria?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_collaborator_assignments: {
         Row: {
           client_id: string
@@ -1284,12 +1473,36 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_summary: {
+        Row: {
+          challenge_id: string | null
+          effective_status: string | null
+          linked_item_count: number | null
+          participant_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
       close_audit: {
         Args: { p_actor_name?: string; p_audit_id: string }
         Returns: undefined
+      }
+      create_challenge: {
+        Args: {
+          p_actor_name?: string
+          p_client_id?: string
+          p_description: string
+          p_due_at?: string
+          p_items?: Json
+          p_participant_ids?: string[]
+          p_penalty_stars?: number
+          p_reward_superstars?: number
+          p_success_criteria: string
+          p_title: string
+        }
+        Returns: string
       }
       has_role: {
         Args: {
@@ -1313,6 +1526,19 @@ export type Database = {
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
         Returns: undefined
+      }
+      refresh_overdue_challenges: {
+        Args: { p_actor_name?: string }
+        Returns: number
+      }
+      resolve_challenge: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_id: string
+          p_outcome: string
+          p_resolution_notes?: string
+        }
+        Returns: string
       }
       update_audit_client_item: {
         Args: {
