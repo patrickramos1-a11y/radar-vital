@@ -29,6 +29,7 @@ interface ClientGridProps {
   getActiveTasksForClient?: (clientId: string) => Task[];
   getCommentSnippetsForClient?: (clientId: string) => CommentSnippet[];
   getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
+  useUnitProfileAction?: boolean;
 }
 
 export function ClientGrid({ 
@@ -53,6 +54,7 @@ export function ClientGrid({
   getActiveTasksForClient,
   getCommentSnippetsForClient,
   getAuditStatus,
+  useUnitProfileAction = false,
 }: ClientGridProps) {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
@@ -174,6 +176,7 @@ export function ClientGrid({
           activeTasks={getActiveTasksForClient ? getActiveTasksForClient(client.id) : []}
           commentSnippets={getCommentSnippetsForClient ? getCommentSnippetsForClient(client.id) : []}
           auditStatus={getAuditStatus?.(client.id)}
+          useUnitProfileAction={useUnitProfileAction}
         />
       ))}
     </div>

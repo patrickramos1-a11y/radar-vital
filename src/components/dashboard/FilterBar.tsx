@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { GridSizePicker } from "./GridSizePicker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Municipality } from "@/hooks/useMunicipalities";
+import type { Collaborator } from "@/types/collaborator";
 
 export type SortOption = 'order' | 'name' | 'priority' | 'jackbox' | 'comments';
 export type SortDirection = 'asc' | 'desc';
@@ -66,6 +67,7 @@ interface FilterBarProps {
   showMunicipalityFilter?: boolean;
   tvPath?: string;
   extraControls?: ReactNode;
+  availableCollaborators?: Collaborator[];
 }
 
 export function FilterBar({
@@ -102,8 +104,10 @@ export function FilterBar({
   showMunicipalityFilter = true,
   tvPath = "/tv",
   extraControls,
+  availableCollaborators,
 }: FilterBarProps) {
-  const { collaborators: allCollaborators } = useAuth();
+  const { collaborators: authCollaborators } = useAuth();
+  const allCollaborators = availableCollaborators ?? authCollaborators;
   const handleSortClick = (sort: SortOption) => {
     if (sortBy === sort) {
       onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc');

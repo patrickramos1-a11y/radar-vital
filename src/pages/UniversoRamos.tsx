@@ -94,7 +94,7 @@ export default function UniversoRamos() {
   const [taskClientId, setTaskClientId] = useState<string | null>(null);
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [universeCategories, setUniverseCategories] = useState<UniversoRamosCategory[]>([]);
+  const [universeCategories, setUniverseCategories] = useState<Array<UniversoRamosCategory | "SEM_CATEGORIA">>([]);
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
   const [openChallengesOpen, setOpenChallengesOpen] = useState(false);
   const [challengeUnitId, setChallengeUnitId] = useState<string | null>(null);
@@ -175,7 +175,8 @@ export default function UniversoRamos() {
         client.initials.toLocaleLowerCase("pt-BR").includes(query) ||
         assignedNames.some((name) => name.includes(query));
       if (!matchesSearch) return false;
-      if (universeCategories.length > 0 && !universeCategories.includes(client.universeCategory as UniversoRamosCategory)) return false;
+      const category = client.universeCategory ?? "SEM_CATEGORIA";
+      if (universeCategories.length > 0 && !universeCategories.includes(category)) return false;
 
       const activeFilters = [
         filterFlags.priority,
@@ -291,7 +292,7 @@ export default function UniversoRamos() {
   );
   const openUniverseChallenges = universeChallenges.filter((challenge) => challenge.status === "open" && challenge.rewardStatus === "configured");
 
-  const toggleUniverseCategory = (category: UniversoRamosCategory) => {
+  const toggleUniverseCategory = (category: UniversoRamosCategory | "SEM_CATEGORIA") => {
     setUniverseCategories((current) => current.includes(category)
       ? current.filter((item) => item !== category)
       : [...current, category]);
@@ -332,7 +333,7 @@ export default function UniversoRamos() {
               </Button>
               <Button size="sm" onClick={() => setNewClientOpen(true)}>
                 <UserPlus className="h-4 w-4" />
-                Novo cliente
+                Cadastro
               </Button>
               <Button variant="outline" size="sm" onClick={() => { setChallengeUnitId(null); setChallengeDialogOpen(true); }}>
                 <Sparkles className="h-4 w-4" />
@@ -400,6 +401,7 @@ export default function UniversoRamos() {
           showMunicipalityFilter={false}
           tvPath="/tv?scope=UNIVERSO_RAMOS"
           extraControls={<UniverseCategoryControl selected={universeCategories} onToggle={toggleUniverseCategory} />}
+          availableCollaborators={centralCollaborators}
         />}
 
         <main className="min-h-0 flex-1 overflow-auto p-3 sm:p-4">
@@ -407,6 +409,7 @@ export default function UniversoRamos() {
             <UniverseChallengesManager
               challenges={universeChallenges}
               valueRequests={valueRequests.filter((request) => universeChallenges.some((challenge) => challenge.id === request.challengeId))}
+              participantsByChallenge={participantsByChallenge}
               units={universeClients}
               collaborators={centralCollaborators}
               currentUser={currentUser}
@@ -480,7 +483,7 @@ export default function UniversoRamos() {
               highlightedClients={highlightedClients}
               getActiveTaskCount={getActiveTaskCount}
               getCommentCount={getCommentCount}
-              allCollaborators={collaborators}
+              allCollaborators={centralCollaborators}
               getAssignedCollaboratorIds={getAssignedCollaboratorIds}
               onSelectClient={(id) =>
                 setSelectedClientId(id)
@@ -491,6 +494,7 @@ export default function UniversoRamos() {
               onOpenChecklist={setSelectedClientId}
               onEditClient={setEditingClient}
               showHighlight={false}
+              useUnitProfileAction
               viewMode={viewMode}
               gridSize={gridSize}
               fitAllLocked={fitAllLocked}
@@ -542,14 +546,16 @@ export default function UniversoRamos() {
         onOpenChange={(open) => !open && setSelectedClientId(null)}
         challenges={universeChallenges}
         participantsByChallenge={participantsByChallenge}
-        collaborators={collaborators}
+        collaborators={centralCollaborators}
         commentCount={selectedClient ? getCommentCount(selectedClient.id) : 0}
         taskCount={selectedClient ? getActiveTaskCount(selectedClient.id) : 0}
+        tasks={selectedClient ? getTasksForClient(selectedClient.id) : []}
         canManage={isAdmin}
         onNewChallenge={() => { setChallengeUnitId(selectedClient?.id ?? null); setChallengeDialogOpen(true); }}
         onResolve={(challengeId, outcome) => void resolveChallenge(challengeId, outcome)}
         onUpdate={updateUniverseChallenge}
         onDelete={deleteUniverseChallenges}
+        onOpenTasks={() => selectedClient && setTaskClientId(selectedClient.id)}
       />
       <OpenChallengesDialog
         open={openChallengesOpen}
@@ -585,12 +591,13 @@ function Summary({
   );
 }
 
-function UniverseCategoryControl({ selected, onToggle }: { selected: UniversoRamosCategory[]; onToggle: (category: UniversoRamosCategory) => void }) {
-  const categories: { value: UniversoRamosCategory; label: string }[] = [
+function UniverseCategoryControl({ selected, onToggle }: { selected: Array<UniversoRamosCategory | "SEM_CATEGORIA">; onToggle: (category: UniversoRamosCategory | "SEM_CATEGORIA") => void }) {
+  const categories: { value: UniversoRamosCategory | "SEM_CATEGORIA"; label: string }[] = [
     { value: "EMPRESA", label: "Empresas" },
     { value: "SETOR", label: "Setores" },
     { value: "COLABORADOR", label: "Colaboradores" },
     { value: "PROJETO", label: "Projetos" },
+    { value: "SEM_CATEGORIA", label: "Sem categoria" },
   ];
   return <div className="flex items-center gap-1 border-l pl-2">{categories.map((category) => <button key={category.value} type="button" onClick={() => onToggle(category.value)} className={`h-7 px-2 text-[10px] font-medium ${selected.includes(category.value) ? "bg-cyan-700 text-white" : "bg-cyan-50 text-cyan-800 hover:bg-cyan-100"}`}>{category.label}</button>)}</div>;
 }

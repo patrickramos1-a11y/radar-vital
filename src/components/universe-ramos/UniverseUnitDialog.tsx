@@ -3,12 +3,14 @@ import { CalendarClock, CheckCircle2, CircleAlert, ClipboardList, MessageCircle,
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { CommentButton } from "@/components/comments/CommentButton";
 import { UniverseChallengeEditDialog } from "@/components/universe-ramos/UniverseChallengeDialogs";
 import { cn } from "@/lib/utils";
 import { getChallengeElapsedDays, getEffectiveChallengeStatus } from "@/lib/challenge";
 import { CHALLENGE_STATUS_CONFIG, type Challenge, type ChallengeEditData, type ChallengeParticipant } from "@/types/challenge";
 import type { Client } from "@/types/client";
 import type { Collaborator } from "@/types/collaborator";
+import type { Task } from "@/types/task";
 
 interface Props {
   client: Client | null;
@@ -19,15 +21,18 @@ interface Props {
   collaborators: Collaborator[];
   commentCount: number;
   taskCount: number;
+  tasks: Task[];
   canManage: boolean;
   onNewChallenge: () => void;
   onResolve: (challengeId: string, outcome: "won" | "lost") => void;
   onUpdate: (challengeId: string, data: ChallengeEditData) => Promise<boolean>;
   onDelete: (challengeIds: string[]) => Promise<boolean>;
+  onOpenTasks: () => void;
 }
 
-export function UniverseUnitDialog({ client, open, onOpenChange, challenges, participantsByChallenge, collaborators, commentCount, taskCount, canManage, onNewChallenge, onResolve, onUpdate, onDelete }: Props) {
+export function UniverseUnitDialog({ client, open, onOpenChange, challenges, participantsByChallenge, collaborators, commentCount, taskCount, tasks, canManage, onNewChallenge, onResolve, onUpdate, onDelete, onOpenTasks }: Props) {
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
+  const [tab, setTab] = useState("overview");
   if (!client) return null;
   const unitChallenges = challenges.filter((challenge) => challenge.clientId === client.id);
   const active = unitChallenges.filter((challenge) => ["open", "accepted", "in_progress", "active"].includes(getEffectiveChallengeStatus(challenge))).length;
@@ -36,13 +41,14 @@ export function UniverseUnitDialog({ client, open, onOpenChange, challenges, par
   const people = new Map(collaborators.map((person) => [person.id, person]));
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
-      <DialogHeader><div className="flex flex-wrap items-start justify-between gap-3 pr-6"><div><DialogTitle>{client.name}</DialogTitle><p className="mt-1 text-sm text-muted-foreground">Central da unidade interna</p></div><Button size="sm" onClick={onNewChallenge}><Sparkles className="mr-1 h-4 w-4" /> Novo desafio</Button></div></DialogHeader>
-      <Tabs defaultValue="overview">
-        <TabsList className="h-auto max-w-full flex-wrap justify-start"><TabsTrigger value="overview">Visão geral</TabsTrigger><TabsTrigger value="challenges">Desafios</TabsTrigger><TabsTrigger value="planning">Planejamento</TabsTrigger><TabsTrigger value="comments">Comentários</TabsTrigger><TabsTrigger value="history">Histórico</TabsTrigger></TabsList>
+      <DialogHeader><div className="flex flex-wrap items-start justify-between gap-3 pr-6"><div><DialogTitle>{client.name}</DialogTitle><p className="mt-1 text-sm text-muted-foreground">Central da unidade interna</p></div>{["challenges", "planning"].includes(tab) ? <Button size="sm" onClick={onNewChallenge}><Sparkles className="mr-1 h-4 w-4" /> Novo desafio</Button> : tab === "tasks" ? <Button size="sm" onClick={onOpenTasks}><ClipboardList className="mr-1 h-4 w-4" /> Nova tarefa</Button> : tab === "comments" ? <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} label="Novo comentário" /> : null}</div></DialogHeader>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="h-auto max-w-full flex-wrap justify-start"><TabsTrigger value="overview">Visão geral</TabsTrigger><TabsTrigger value="challenges">Desafios</TabsTrigger><TabsTrigger value="planning">Planejamento</TabsTrigger><TabsTrigger value="tasks">Tarefas</TabsTrigger><TabsTrigger value="comments">Comentários</TabsTrigger><TabsTrigger value="history">Histórico</TabsTrigger></TabsList>
         <TabsContent value="overview"><div className="grid grid-cols-2 gap-2 md:grid-cols-4"><Metric icon={Sparkles} label="Ativos" value={active} /><Metric icon={CircleAlert} label="Para validar" value={waiting} /><Metric icon={CalendarClock} label="Em atraso" value={overdue} tone="red" /><Metric icon={ClipboardList} label="Tarefas" value={taskCount} /></div><section className="mt-4 border bg-muted/20 p-4"><h3 className="font-medium">Contexto da unidade</h3><p className="mt-1 text-sm text-muted-foreground">Acompanhe os desafios, tarefas e decisões desta unidade sem misturar os indicadores AC/AV.</p></section></TabsContent>
         <TabsContent value="challenges"><ChallengeList challenges={unitChallenges} participantsByChallenge={participantsByChallenge} people={people} empty="Nenhum desafio foi cadastrado para esta unidade." canManage={canManage} onResolve={onResolve} onEdit={setEditingChallenge} onDelete={onDelete} /></TabsContent>
         <TabsContent value="planning"><ChallengeList challenges={unitChallenges.filter((challenge) => challenge.status === "draft")} participantsByChallenge={participantsByChallenge} people={people} empty="Nenhum desafio em planejamento." /></TabsContent>
-        <TabsContent value="comments"><div className="border bg-muted/20 p-5 text-sm"><div className="flex items-center gap-2 font-medium"><MessageCircle className="h-4 w-4 text-cyan-700" /> {commentCount} comentários registrados</div><p className="mt-2 text-muted-foreground">Os comentários já cadastrados continuam disponíveis pelo card. Esta aba será a visão consolidada das decisões e do contexto da unidade.</p></div></TabsContent>
+        <TabsContent value="tasks"><div className="space-y-3 border bg-muted/20 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="font-medium">Tarefas da unidade</h3><p className="text-sm text-muted-foreground">Crie, conclua e acompanhe as tarefas vinculadas a este quadrado.</p></div><Button size="sm" onClick={onOpenTasks}><ClipboardList className="mr-1 h-4 w-4" /> Nova tarefa</Button></div>{tasks.length ? <div className="divide-y border bg-card">{tasks.map((task) => <div key={task.id} className="flex items-center justify-between gap-3 p-3 text-sm"><span className={task.completed ? "text-muted-foreground line-through" : "font-medium"}>{task.title}</span><span className={task.completed ? "text-emerald-700" : "text-amber-700"}>{task.completed ? "Concluída" : "Em aberto"}</span></div>)}</div> : <p className="py-3 text-sm text-muted-foreground">Nenhuma tarefa cadastrada para esta unidade.</p>}</div></TabsContent>
+        <TabsContent value="comments"><div className="border bg-muted/20 p-5 text-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2 font-medium"><MessageCircle className="h-4 w-4 text-cyan-700" /> {commentCount} comentários registrados</div><p className="mt-2 text-muted-foreground">Registre decisões e contexto diretamente neste quadrado.</p></div><CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} label="Novo comentário" /></div></div></TabsContent>
         <TabsContent value="history"><div className="border bg-muted/20 p-5 text-sm text-muted-foreground">A criação, aceite, envio de evidência, validação e alterações dos desafios aparecem no histórico de auditoria. A leitura detalhada será alimentada pelos eventos de cada desafio.</div></TabsContent>
       </Tabs>
       <UniverseChallengeEditDialog challenge={editingChallenge} open={Boolean(editingChallenge)} onOpenChange={(isOpen) => !isOpen && setEditingChallenge(null)} units={[client]} onSave={onUpdate} />

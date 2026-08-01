@@ -38,6 +38,8 @@ interface ClientCardProps {
   activeTasks?: Task[];
   commentSnippets?: CommentSnippet[];
   auditStatus?: AuditClientStatus;
+  useUnitProfileAction?: boolean;
+  unitProfileActionLabel?: string;
 }
 
 function getCollaboratorGradient(assignedCollaborators: Collaborator[]): string {
@@ -130,6 +132,8 @@ export function ClientCard({
   activeTasks = [],
   commentSnippets = [],
   auditStatus,
+  useUnitProfileAction = false,
+  unitProfileActionLabel = "Abrir visão geral da unidade",
 }: ClientCardProps) {
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
@@ -201,7 +205,11 @@ export function ClientCard({
             </span>
           )}
           <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
-          <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />
+          {useUnitProfileAction ? (
+            <button onClick={handleChecklistClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={unitProfileActionLabel}>
+              <Building2 className="w-3.5 h-3.5 text-cyan-700" />
+            </button>
+          ) : <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />}
           {showHighlight && (
             <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
               <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
