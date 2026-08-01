@@ -482,6 +482,11 @@ export default function UniversoRamos() {
         open={Boolean(editingClient)}
         onOpenChange={(open) => !open && setEditingClient(null)}
         onSave={async (client, data) => updateClient(client.id, data)}
+        collaborators={collaborators}
+        linkedCollaboratorIds={universeClients
+          .filter((client) => client.id !== editingClient?.id)
+          .map((client) => client.universeCollaboratorId)
+          .filter((id): id is string => Boolean(id))}
       />
       <UniverseChallengeDialog
         open={challengeDialogOpen}

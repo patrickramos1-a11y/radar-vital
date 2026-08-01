@@ -45,6 +45,7 @@ const CLIENT_LIST_COLUMNS = [
   'is_highlighted',
   'client_type',
   'universe_category',
+  'universe_collaborator_id',
   'display_order',
   'proc_total_count',
   'proc_deferido_count',
