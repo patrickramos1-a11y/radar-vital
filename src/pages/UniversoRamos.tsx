@@ -289,7 +289,7 @@ export default function UniversoRamos() {
   const universeChallenges = useMemo(
     () => challenges.filter((challenge) =>
       (challenge.clientId && universeClients.some((client) => client.id === challenge.clientId)) ||
-      (!challenge.clientId && challenge.kind === "company_general"),
+      (!challenge.clientId && ["company_general", "individual_goal"].includes(challenge.kind)),
     ),
     [challenges, universeClients],
   );

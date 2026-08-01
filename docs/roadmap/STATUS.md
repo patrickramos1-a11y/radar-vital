@@ -70,16 +70,24 @@ atual, validar os fluxos operacionais e preparar a publicacao unica da Fase 7.
 
 ## Importacao controlada do Universo Ramos
 
-- Estado: `PRONTA PARA VALIDACAO LOCAL`.
+- Estado: `CARGA-PILOTO EXECUTADA`.
 - Fonte: `BANCO_MESTRE_UNIVERSO_RAMOS.xlsx`, aba `Banco Mestre`.
 - Primeiro lote separado: 19 itens de Treinamentos, marcados como `Pronto para rascunho` e ainda `Nao enviado`.
 - Regra: a interface importa somente rascunhos; responsaveis finais, prazo, valores, penalidades e publicacao continuam sendo decisao administrativa posterior.
-- Publicacao: tela de importacao publicada no Vercel em 2026-08-01; nenhuma
-  importacao foi executada no banco nesta etapa.
+- Publicacao: tela de importacao publicada no Vercel em 2026-08-01; a carga
+  piloto de Treinamentos foi executada manualmente no mesmo dia.
 
 ## Registro de execucao
 
 ```text
+2026-08-01 - Carga-piloto de Treinamentos executada
+Resumo: 19 itens elegiveis do Banco Mestre foram importados para o Universo
+Ramos como desafios em rascunho.
+Resultado: todos permanecem sem valor, prazo, recompensa, penalidade e
+publicacao no mural. O desafio previamente configurado continua preservado.
+Proxima acao: revisar a qualidade textual dos rascunhos e configurar somente
+os desafios que fizerem sentido para publicacao.
+
 2026-08-01 - Tela de importacao controlada publicada
 Resumo: o commit `658425d` foi enviado a `main` e o Vercel concluiu o deploy
 de producao com sucesso para `radar-vital.vercel.app`.
