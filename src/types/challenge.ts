@@ -59,6 +59,17 @@ export interface ChallengeRewardConfig {
   note?: string;
 }
 
+export interface ChallengeEditData {
+  title: string;
+  description?: string;
+  successCriteria: string;
+  expectedDeliverable?: string;
+  evidenceRequirements?: string;
+  clientId?: string | null;
+  kind?: ChallengeKind;
+  dueAt?: string | null;
+}
+
 export interface ChallengeParticipant {
   id: string;
   challengeId: string;

@@ -109,6 +109,8 @@ export default function UniversoRamos() {
     requestChallengeValue,
     configureChallengeReward,
     reviewChallengeValueRequest,
+    updateUniverseChallenge,
+    deleteUniverseChallenges,
   } = useChallenges();
 
   const getCommentCount = useCallback(
@@ -413,6 +415,8 @@ export default function UniversoRamos() {
               onConfigureReward={configureChallengeReward}
               onReviewRequest={reviewChallengeValueRequest}
               onAccept={acceptUniverseChallenge}
+              onUpdate={updateUniverseChallenge}
+              onDelete={deleteUniverseChallenges}
             />
           ) : isLoading ? (
             <div className="grid h-full place-items-center text-sm text-muted-foreground">
@@ -484,7 +488,7 @@ export default function UniversoRamos() {
               onHighlightClient={toggleHighlight}
               onTogglePriority={togglePriority}
               onToggleCollaboratorAssignment={toggleAssignment}
-              onOpenChecklist={setTaskClientId}
+              onOpenChecklist={setSelectedClientId}
               onEditClient={setEditingClient}
               showHighlight={false}
               viewMode={viewMode}
@@ -544,6 +548,8 @@ export default function UniversoRamos() {
         canManage={isAdmin}
         onNewChallenge={() => { setChallengeUnitId(selectedClient?.id ?? null); setChallengeDialogOpen(true); }}
         onResolve={(challengeId, outcome) => void resolveChallenge(challengeId, outcome)}
+        onUpdate={updateUniverseChallenge}
+        onDelete={deleteUniverseChallenges}
       />
       <OpenChallengesDialog
         open={openChallengesOpen}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, ShieldCheck, Pencil } from "lucide-react";
+import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, ShieldCheck } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
@@ -232,7 +232,6 @@ export function ClientCard({
         >
           {client.name}
         </button>
-        {onEdit && <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
       </div>
 
       {/* Collaborator Row */}

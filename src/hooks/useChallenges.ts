@@ -14,6 +14,7 @@ import type {
   ChallengeItem,
   ChallengeParticipant,
   ChallengeRewardConfig,
+  ChallengeEditData,
   ChallengeValueRequest,
   ChallengeValueRequestStatus,
 } from "@/types/challenge";
@@ -308,6 +309,49 @@ export function useChallenges() {
     [currentUserName, refetch],
   );
 
+  const updateUniverseChallenge = useCallback(
+    async (challengeId: string, data: ChallengeEditData): Promise<boolean> => {
+      const { error: updateError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
+        ("update_universe_challenge", {
+          p_challenge_id: challengeId,
+          p_title: data.title,
+          p_description: data.description ?? null,
+          p_success_criteria: data.successCriteria,
+          p_expected_deliverable: data.expectedDeliverable ?? null,
+          p_evidence_requirements: data.evidenceRequirements ?? null,
+          p_client_id: data.clientId ?? null,
+          p_challenge_kind: data.kind ?? null,
+          p_due_at: data.dueAt ?? null,
+          p_actor_name: currentUserName,
+        });
+      if (updateError) {
+        toast.error("Não foi possível editar o desafio.");
+        console.error("Error updating challenge:", updateError);
+        return false;
+      }
+      await refetch();
+      toast.success("Desafio atualizado.");
+      return true;
+    },
+    [currentUserName, refetch],
+  );
+
+  const deleteUniverseChallenges = useCallback(
+    async (challengeIds: string[]): Promise<boolean> => {
+      const { error: deleteError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
+        ("delete_universe_challenges", { p_challenge_ids: challengeIds, p_actor_name: currentUserName });
+      if (deleteError) {
+        toast.error("Não foi possível excluir os desafios selecionados.");
+        console.error("Error deleting challenges:", deleteError);
+        return false;
+      }
+      await refetch();
+      toast.success(challengeIds.length === 1 ? "Desafio excluído." : "Desafios excluídos.");
+      return true;
+    },
+    [currentUserName, refetch],
+  );
+
   const participantsByChallenge = useMemo(() => {
     const result = new Map<string, ChallengeParticipant[]>();
     participants.forEach((participant) => {
@@ -345,5 +389,7 @@ export function useChallenges() {
     requestChallengeValue,
     configureChallengeReward,
     reviewChallengeValueRequest,
+    updateUniverseChallenge,
+    deleteUniverseChallenges,
   };
 }
