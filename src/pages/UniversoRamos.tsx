@@ -499,6 +499,7 @@ export default function UniversoRamos() {
               onEditClient={setEditingClient}
               showHighlight={false}
               useUnitProfileAction
+              onCreateChallenge={(clientId) => { setChallengeUnitId(clientId); setChallengeDialogOpen(true); }}
               viewMode={viewMode}
               gridSize={gridSize}
               fitAllLocked={fitAllLocked}
@@ -561,6 +562,7 @@ export default function UniversoRamos() {
         onUpdate={updateUniverseChallenge}
         onDelete={deleteUniverseChallenges}
         onOpenTasks={() => selectedClient && setTaskClientId(selectedClient.id)}
+        onToggleTask={(taskId) => toggleComplete(taskId)}
         onToggleCondition={(conditionId, completed) => void setChallengeCompletionCondition(conditionId, completed)}
       />
       <OpenChallengesDialog

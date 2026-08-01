@@ -34,6 +34,7 @@ export function ClientQuickEditDialog({
   const [logoUrl, setLogoUrl] = useState<string | undefined>();
   const [category, setCategory] = useState<UniversoRamosCategory | "">("");
   const [collaboratorId, setCollaboratorId] = useState("");
+  const [destinationType, setDestinationType] = useState<Client["clientType"]>("UNIVERSO_RAMOS");
   const [saving, setSaving] = useState(false);
 
   const availableCollaborators = useMemo(
@@ -52,6 +53,7 @@ export function ClientQuickEditDialog({
     setLogoUrl(client.logoUrl);
     setCategory(client.universeCategory ?? "");
     setCollaboratorId(client.universeCollaboratorId ?? "");
+    setDestinationType(client.clientType);
   }, [client]);
 
   const handleFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,10 +76,11 @@ export function ClientQuickEditDialog({
         name: selectedCollaborator?.name ?? name.trim(),
         initials: selectedCollaborator?.initials ?? (initials.trim() || generateInitials(name.trim())),
         logoUrl: selectedCollaborator?.photoUrl ?? logoUrl,
-        universeCategory: client.clientType === "UNIVERSO_RAMOS"
+        clientType: destinationType,
+        universeCategory: destinationType === "UNIVERSO_RAMOS"
           ? category || null
           : null,
-        universeCollaboratorId: isCollaboratorCard ? collaboratorId : null,
+        universeCollaboratorId: destinationType === "UNIVERSO_RAMOS" && isCollaboratorCard ? collaboratorId : null,
       });
       toast.success("Cadastro atualizado");
       onOpenChange(false);
@@ -113,6 +116,17 @@ export function ClientQuickEditDialog({
               </div>
             )}
           </div>
+          {client?.clientType === "UNIVERSO_RAMOS" && client.universeCategory === "EMPRESA" && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Destino do cadastro</label>
+              <select value={destinationType} onChange={(event) => setDestinationType(event.target.value as Client["clientType"])} className="w-full border bg-background px-3 py-2 text-sm">
+                <option value="UNIVERSO_RAMOS">Manter no Universo Ramos</option>
+                <option value="AC">Mover para Acompanhamento Ambiental (AC)</option>
+                <option value="AV">Mover para Acompanhamento de Vistoria (AV)</option>
+              </select>
+              {destinationType !== "UNIVERSO_RAMOS" && <p className="mt-1 text-xs text-amber-700">Ao salvar, este cadastro sai do Universo Ramos e passa a aparecer somente no painel {destinationType}.</p>}
+            </div>
+          )}
           {isCollaboratorCard && (
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Perfil do colaborador</label>

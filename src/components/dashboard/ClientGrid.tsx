@@ -30,6 +30,7 @@ interface ClientGridProps {
   getCommentSnippetsForClient?: (clientId: string) => CommentSnippet[];
   getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
   useUnitProfileAction?: boolean;
+  onCreateChallenge?: (clientId: string) => void;
 }
 
 export function ClientGrid({ 
@@ -55,6 +56,7 @@ export function ClientGrid({
   getCommentSnippetsForClient,
   getAuditStatus,
   useUnitProfileAction = false,
+  onCreateChallenge,
 }: ClientGridProps) {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
@@ -177,6 +179,7 @@ export function ClientGrid({
           commentSnippets={getCommentSnippetsForClient ? getCommentSnippetsForClient(client.id) : []}
           auditStatus={getAuditStatus?.(client.id)}
           useUnitProfileAction={useUnitProfileAction}
+          onCreateChallenge={onCreateChallenge}
         />
       ))}
     </div>

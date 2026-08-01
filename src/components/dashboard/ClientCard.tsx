@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, ShieldCheck } from "lucide-react";
+import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
@@ -40,6 +40,28 @@ interface ClientCardProps {
   auditStatus?: AuditClientStatus;
   useUnitProfileAction?: boolean;
   unitProfileActionLabel?: string;
+  onCreateChallenge?: (clientId: string) => void;
+}
+
+const universeSectorColors: Record<string, string> = {
+  MARKETING: "#EF4444",
+  "ADMINISTRAÇÃO": "#2563EB",
+  "MANUTENÇÃO": "#F97316",
+  "SETOR DE PROJETOS": "#2563EB",
+  "LICENCIAMENTO E PROCESSOS": "#06B6D4",
+  "GESTÃO E PLANEJAMENTO": "#8B5CF6",
+  "SUPRIMENTOS E COMPRAS": "#F97316",
+  "PESSOAS E CULTURA": "#EC4899",
+  TREINAMENTOS: "#06B6D4",
+  "IA E AUTOMAÇÃO": "#6366F1",
+};
+
+function getUniverseAccentColor(client: Client, collaborators: Collaborator[]) {
+  if (client.clientType !== "UNIVERSO_RAMOS") return null;
+  if (client.universeCategory === "COLABORADOR") {
+    return collaborators.find((item) => item.id === client.universeCollaboratorId)?.color ?? "#0F766E";
+  }
+  return client.universeCategory === "SETOR" ? universeSectorColors[client.name.trim().toLocaleUpperCase("pt-BR")] ?? "#0F766E" : null;
 }
 
 function getCollaboratorGradient(assignedCollaborators: Collaborator[]): string {
@@ -134,6 +156,7 @@ export function ClientCard({
   auditStatus,
   useUnitProfileAction = false,
   unitProfileActionLabel = "Abrir visão geral da unidade",
+  onCreateChallenge,
 }: ClientCardProps) {
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
@@ -143,6 +166,7 @@ export function ClientCard({
   const fontStyle = getOptimalFontSize(client.name, clientCount);
   const logoMaxHeight = getLogoMaxHeight(clientCount);
   const headerSizes = getHeaderSizes(clientCount);
+  const universeAccentColor = getUniverseAccentColor(client, allCollaborators);
 
   const handleHighlightClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -172,11 +196,17 @@ export function ClientCard({
     onOpenChecklist(client.id);
   };
 
+  const handleCreateChallenge = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onCreateChallenge?.(client.id);
+  };
+
   return (
     <>
       <div
         className={`client-card-compact h-full min-h-0 min-w-0 ${isSelected ? 'selected' : ''} ${isHighlighted ? 'highlighted' : ''}`}
         onClick={() => onSelect(client.id)}
+        style={universeAccentColor ? { borderColor: universeAccentColor, boxShadow: `0 2px 8px -2px ${universeAccentColor}40` } : undefined}
       >
         {/* Top right icons */}
         <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
@@ -205,6 +235,7 @@ export function ClientCard({
             </span>
           )}
           <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
+          {onCreateChallenge && <button onClick={handleCreateChallenge} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Criar desafio para esta unidade"><Sparkles className="w-3.5 h-3.5 text-violet-600" /></button>}
           {useUnitProfileAction ? (
             <button onClick={handleChecklistClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={unitProfileActionLabel}>
               <Building2 className="w-3.5 h-3.5 text-cyan-700" />
@@ -221,7 +252,7 @@ export function ClientCard({
         </div>
 
       {/* Header */}
-      <div className={`flex items-center gap-1.5 ${headerSizes.headerPadding} bg-card-elevated/80 border-b border-border/50`}>
+      <div className={`flex items-center gap-1.5 ${headerSizes.headerPadding} bg-card-elevated/80 border-b border-border/50`} style={universeAccentColor ? { borderBottomColor: universeAccentColor, backgroundColor: `${universeAccentColor}14` } : undefined}>
         <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded-md bg-primary/90 text-primary-foreground font-bold shrink-0`}>
           {displayNumber.toString().padStart(2, '0')}
         </div>
@@ -235,7 +266,8 @@ export function ClientCard({
         <button
           type="button"
           onClick={(event) => { event.stopPropagation(); onEdit?.(client); }}
-          className={`${headerSizes.nameSize} min-w-0 flex-1 truncate text-left font-medium text-foreground hover:text-primary`}
+          className={`${headerSizes.nameSize} min-w-0 flex-1 truncate text-left font-medium hover:text-primary`}
+          style={universeAccentColor ? { color: universeAccentColor } : undefined}
           title={onEdit ? `Editar ${client.name}` : client.name}
         >
           {client.name}
