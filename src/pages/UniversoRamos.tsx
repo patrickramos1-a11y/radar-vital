@@ -38,12 +38,14 @@ import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTasks } from "@/hooks/useTasks";
 import { useChallenges } from "@/hooks/useChallenges";
+import { useCollaborators } from "@/hooks/useCollaborators";
 import { Client, UniversoRamosCategory } from "@/types/client";
 
 export default function UniversoRamos() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { currentUser, collaborators, isAdmin } = useAuth();
+  const { collaborators: centralCollaborators } = useCollaborators();
   const {
     universeClients,
     highlightedClients,
@@ -218,7 +220,7 @@ export default function UniversoRamos() {
     });
     return result.map((client) => {
       if (client.universeCategory !== "COLABORADOR") return client;
-      const collaborator = collaborators.find((person) =>
+      const collaborator = centralCollaborators.find((person) =>
         person.id === client.universeCollaboratorId ||
         person.name.localeCompare(client.name, "pt-BR", { sensitivity: "base" }) === 0,
       );
@@ -228,6 +230,7 @@ export default function UniversoRamos() {
     });
   }, [
     collaborators,
+    centralCollaborators,
     collaboratorFilters,
     filterFlags,
     getActiveTaskCount,
@@ -482,7 +485,7 @@ export default function UniversoRamos() {
         open={Boolean(editingClient)}
         onOpenChange={(open) => !open && setEditingClient(null)}
         onSave={async (client, data) => updateClient(client.id, data)}
-        collaborators={collaborators}
+        collaborators={centralCollaborators}
         linkedCollaboratorIds={universeClients
           .filter((client) => client.id !== editingClient?.id)
           .map((client) => client.universeCollaboratorId)
