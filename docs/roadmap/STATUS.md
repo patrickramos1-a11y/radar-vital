@@ -74,11 +74,18 @@ atual, validar os fluxos operacionais e preparar a publicacao unica da Fase 7.
 - Fonte: `BANCO_MESTRE_UNIVERSO_RAMOS.xlsx`, aba `Banco Mestre`.
 - Primeiro lote separado: 19 itens de Treinamentos, marcados como `Pronto para rascunho` e ainda `Nao enviado`.
 - Regra: a interface importa somente rascunhos; responsaveis finais, prazo, valores, penalidades e publicacao continuam sendo decisao administrativa posterior.
-- Publicacao: nenhuma importacao foi executada no banco nem publicada nesta etapa.
+- Publicacao: tela de importacao publicada no Vercel em 2026-08-01; nenhuma
+  importacao foi executada no banco nesta etapa.
 
 ## Registro de execucao
 
 ```text
+2026-08-01 - Tela de importacao controlada publicada
+Resumo: o commit `658425d` foi enviado a `main` e o Vercel concluiu o deploy
+de producao com sucesso para `radar-vital.vercel.app`.
+Resultado: a funcionalidade esta disponivel no Banco de oportunidades, mas os
+19 desafios de Treinamentos ainda aguardam a confirmacao manual da carga-piloto.
+
 2026-08-01 - Processo de importacao controlada do Universo Ramos preparado
 Resumo: a tela de Desafios e oportunidades agora aceita o Banco Mestre em XLSX,
 XLS ou CSV, le somente as linhas prontas para rascunho e mostra uma previa por
