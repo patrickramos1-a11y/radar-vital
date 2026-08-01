@@ -113,6 +113,10 @@ export function TaskModal({
     await onUpdateTask(taskId, { priority });
   };
 
+  const handleDueDateChange = async (taskId: string, dueDate: string) => {
+    await onUpdateTask(taskId, { due_date: dueDate || undefined });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex max-h-[86vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-3 overflow-hidden p-0 sm:rounded-xl">
@@ -228,6 +232,7 @@ export function TaskModal({
                           onCancelEdit={() => setEditingTaskId(null)}
                           onAssigneeChange={(a) => handleAssigneeChange(task.id, a)}
                           onPriorityChange={(p) => handlePriorityChange(task.id, p)}
+                          onDueDateChange={(dueDate) => handleDueDateChange(task.id, dueDate)}
                           onDelete={() => onDeleteTask(task.id)}
                           collaborators={collaborators}
                           collaboratorColorMap={collaboratorColorMap}
@@ -257,6 +262,7 @@ export function TaskModal({
                           onCancelEdit={() => {}}
                           onAssigneeChange={() => {}}
                           onPriorityChange={() => {}}
+                          onDueDateChange={() => {}}
                           onDelete={() => onDeleteTask(task.id)}
                           collaborators={collaborators}
                           collaboratorColorMap={collaboratorColorMap}
@@ -285,6 +291,7 @@ interface TaskItemProps {
   onCancelEdit: () => void;
   onAssigneeChange: (collaboratorName: string) => void;
   onPriorityChange: (priority: TaskPriority) => void;
+  onDueDateChange: (dueDate: string) => void;
   onDelete: () => void;
   collaborators: { id: string; name: string; color: string; initials: string }[];
   collaboratorColorMap: Record<string, string>;
@@ -301,6 +308,7 @@ function TaskItem({
   onCancelEdit,
   onAssigneeChange,
   onPriorityChange,
+  onDueDateChange,
   onDelete,
   collaborators,
   collaboratorColorMap,
@@ -352,10 +360,21 @@ function TaskItem({
               {task.title}
             </span>
           </div>
-          {task.due_date && !task.completed && (
-            <span className={`text-xs ${new Date(task.due_date) < new Date(new Date().toDateString()) ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
-              📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
-            </span>
+          {!task.completed && (
+            <label className="mt-1 flex w-fit items-center gap-1 text-xs text-muted-foreground">
+              <span>Prazo</span>
+              <input
+                type="date"
+                value={task.due_date ?? ''}
+                onChange={(event) => onDueDateChange(event.target.value)}
+                className={`h-6 rounded border bg-background px-1 text-xs outline-none ${
+                  task.due_date && new Date(task.due_date) < new Date(new Date().toDateString())
+                    ? 'border-destructive text-destructive font-bold'
+                    : 'border-border'
+                }`}
+                aria-label={`Prazo da tarefa ${task.title}`}
+              />
+            </label>
           )}
         </div>
       )}
