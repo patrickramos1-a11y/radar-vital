@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, CircleDollarSign, Pencil, Search, Settings2, Star, Trash2, UserPlus } from "lucide-react";
+import { Check, CircleDollarSign, Pencil, Search, Settings2, Star, Trash2, Upload, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import type { Collaborator } from "@/types/collaborator";
 import type { Client } from "@/types/client";
 import type { Challenge, ChallengeEditData, ChallengeParticipant, ChallengeRewardConfig, ChallengeValueRequest } from "@/types/challenge";
 import type { ChallengeCompletionCondition } from "@/types/challenge";
+import type { ChallengeDraftImportInput } from "@/types/challenge";
+import { UniverseChallengeImportDialog } from "@/components/universe-ramos/UniverseChallengeImportDialog";
 
 type RewardFilter = "all" | Challenge["rewardStatus"];
 type StatusFilter = "all" | Challenge["status"];
@@ -31,6 +33,7 @@ interface Props {
   onUpdate: (challengeId: string, data: ChallengeEditData) => Promise<boolean>;
   onDelete: (challengeIds: string[]) => Promise<boolean>;
   onToggleCondition: (conditionId: string, completed: boolean) => Promise<boolean>;
+  onImportDrafts: (drafts: ChallengeDraftImportInput[]) => Promise<Array<{ importKey: string; challengeId?: string; error?: string }>>;
 }
 
 const rewardLabels: Record<Challenge["rewardStatus"], string> = {
@@ -47,7 +50,7 @@ const rewardClasses: Record<Challenge["rewardStatus"], string> = {
   non_rewarded: "bg-zinc-100 text-zinc-700",
 };
 
-export function UniverseChallengesManager({ challenges, valueRequests, participantsByChallenge, conditionsByChallenge, units, collaborators, currentUser, canManage, onRequestValue, onConfigureReward, onReviewRequest, onAccept, onUpdate, onDelete, onToggleCondition }: Props) {
+export function UniverseChallengesManager({ challenges, valueRequests, participantsByChallenge, conditionsByChallenge, units, collaborators, currentUser, canManage, onRequestValue, onConfigureReward, onReviewRequest, onAccept, onUpdate, onDelete, onToggleCondition, onImportDrafts }: Props) {
   const [view, setView] = useState<"library" | "requests">("library");
   const [query, setQuery] = useState("");
   const [rewardFilter, setRewardFilter] = useState<RewardFilter>("all");
@@ -68,6 +71,7 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
   const [detailChallenge, setDetailChallenge] = useState<Challenge | null>(null);
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
   const [columnsOpen, setColumnsOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("universe-challenges-columns") ?? '["created","age","responsible","requester"]'); } catch { return ["created", "age", "responsible", "requester"]; }
   });
@@ -139,9 +143,12 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
         <h2 className="font-semibold">Banco de oportunidades</h2>
         <p className="text-xs text-muted-foreground">Biblioteca de desafios internos, solicitações de valor e recompensas.</p>
       </div>
-      <div className="flex gap-1 border p-1">
-        <button type="button" onClick={() => setView("library")} className={`h-8 px-3 text-xs font-medium ${view === "library" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Biblioteca</button>
-        <button type="button" onClick={() => setView("requests")} className={`h-8 px-3 text-xs font-medium ${view === "requests" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Solicitações {pendingRequests.length > 0 && <span className="ml-1 rounded bg-amber-400 px-1.5 text-[10px] text-amber-950">{pendingRequests.length}</span>}</button>
+      <div className="flex flex-wrap gap-1">
+        <div className="flex gap-1 border p-1">
+          <button type="button" onClick={() => setView("library")} className={`h-8 px-3 text-xs font-medium ${view === "library" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Biblioteca</button>
+          <button type="button" onClick={() => setView("requests")} className={`h-8 px-3 text-xs font-medium ${view === "requests" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Solicitações {pendingRequests.length > 0 && <span className="ml-1 rounded bg-amber-400 px-1.5 text-[10px] text-amber-950">{pendingRequests.length}</span>}</button>
+        </div>
+        {canManage && <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4" />Importar rascunhos</Button>}
       </div>
     </div>
 
@@ -157,7 +164,7 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
       <div className="flex flex-wrap items-center gap-2 border bg-card p-2">
         <div className="relative min-w-[230px] flex-1"><Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-8" placeholder="Buscar desafio, contexto ou condição..." /></div>
         <select value={rewardFilter} onChange={(event) => setRewardFilter(event.target.value as RewardFilter)} className="h-9 border bg-background px-2 text-xs"><option value="all">Todos os valores</option>{Object.entries(rewardLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} className="h-9 border bg-background px-2 text-xs"><option value="all">Todos os status</option><option value="open">Aberto</option><option value="accepted">Aceito</option><option value="in_progress">Em execução</option><option value="awaiting_validation">Aguardando validação</option><option value="won">Concluído</option></select>
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} className="h-9 border bg-background px-2 text-xs"><option value="all">Todos os status</option><option value="draft">Rascunho</option><option value="open">Aberto</option><option value="accepted">Aceito</option><option value="in_progress">Em execução</option><option value="awaiting_validation">Aguardando validação</option><option value="won">Concluído</option></select>
         <select value={unitFilter} onChange={(event) => setUnitFilter(event.target.value)} className="h-9 border bg-background px-2 text-xs"><option value="all">Todos os setores</option><option value="general">Geral da empresa</option>{sectorUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select>
         <select value={responsibleFilter} onChange={(event) => setResponsibleFilter(event.target.value)} className="h-9 border bg-background px-2 text-xs"><option value="all">Todos os responsáveis</option><option value="unassigned">Sem responsável</option>{collaborators.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select>
         <select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="h-9 border bg-background px-2 text-xs"><option value="recent">Mais recentes</option><option value="deadline">Prazo</option><option value="reward_desc">Maior valor</option><option value="reward_asc">Menor valor</option><option value="requests">Com solicitações</option></select>
@@ -172,6 +179,7 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
     <Dialog open={columnsOpen} onOpenChange={setColumnsOpen}><DialogContent><DialogHeader><DialogTitle>Configurar colunas</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">Escolha as informações complementares da tabela. Esta preferência ficará salva neste navegador.</p><div className="grid gap-2">{[{ value: "created", label: "Data de criação" }, { value: "age", label: "Tempo desde a criação" }, { value: "responsible", label: "Responsável" }, { value: "requester", label: "Pessoa que solicitou valor" }].map((column) => <label key={column.value} className="flex items-center gap-2 border p-3 text-sm"><input type="checkbox" checked={hasColumn(column.value)} onChange={() => toggleColumn(column.value)} />{column.label}</label>)}</div><DialogFooter><Button variant="outline" onClick={() => setColumnsOpen(false)}>Cancelar</Button><Button onClick={saveColumns}>Salvar colunas</Button></DialogFooter></DialogContent></Dialog>
     <UniverseChallengeDetailDialog challenge={detailChallenge} open={Boolean(detailChallenge)} onOpenChange={(open) => !open && setDetailChallenge(null)} units={units} collaborators={collaborators} conditions={detailChallenge ? conditionsByChallenge.get(detailChallenge.id) ?? [] : []} onToggleCondition={(id, completed) => void onToggleCondition(id, completed)} canManage={canManage} onEdit={() => { setEditingChallenge(detailChallenge); setDetailChallenge(null); }} onDelete={() => detailChallenge && void removeChallenges([detailChallenge.id])} />
     <UniverseChallengeEditDialog challenge={editingChallenge} open={Boolean(editingChallenge)} onOpenChange={(open) => !open && setEditingChallenge(null)} units={units} conditions={editingChallenge ? conditionsByChallenge.get(editingChallenge.id) ?? [] : []} onSave={onUpdate} />
+    <UniverseChallengeImportDialog open={importOpen} onOpenChange={setImportOpen} units={units} collaborators={collaborators} onImport={onImportDrafts} />
   </section>;
 }
 

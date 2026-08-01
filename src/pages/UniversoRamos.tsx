@@ -104,6 +104,7 @@ export default function UniversoRamos() {
     participantsByChallenge,
     valueRequests,
     createUniverseChallenge,
+    importUniverseChallengeDrafts,
     acceptUniverseChallenge,
     resolveChallenge,
     requestChallengeValue,
@@ -424,6 +425,7 @@ export default function UniversoRamos() {
               onUpdate={updateUniverseChallenge}
               onDelete={deleteUniverseChallenges}
               onToggleCondition={setChallengeCompletionCondition}
+              onImportDrafts={importUniverseChallengeDrafts}
             />
           ) : isLoading ? (
             <div className="grid h-full place-items-center text-sm text-muted-foreground">

@@ -19,6 +19,7 @@ import type {
   ChallengeValueRequest,
   ChallengeValueRequestStatus,
   ChallengeCompletionCondition,
+  ChallengeDraftImportInput,
 } from "@/types/challenge";
 
 export function useChallenges() {
@@ -263,6 +264,53 @@ export function useChallenges() {
     [currentUserName, refetch],
   );
 
+  const importUniverseChallengeDrafts = useCallback(
+    async (drafts: ChallengeDraftImportInput[]) => {
+      const results: Array<{ importKey: string; challengeId?: string; error?: string }> = [];
+
+      for (const draft of drafts) {
+        const { data: challengeId, error: importError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ data: string | null; error: { message?: string } | null }>)
+          ("import_universe_challenge", {
+            p_import_key: draft.importKey,
+            p_title: draft.title,
+            p_description: draft.description,
+            p_success_criteria: draft.successCriteria,
+            p_client_id: draft.clientId,
+            p_challenge_kind: draft.kind,
+            p_expected_deliverable: draft.expectedDeliverable,
+            p_evidence_requirements: draft.evidenceRequirements,
+            p_due_at: null,
+            p_reward_superstars: 0,
+            p_penalty_stars: 0,
+            p_participant_ids: draft.participantIds,
+            p_status: "draft",
+            p_actor_name: currentUserName,
+          });
+
+        if (importError || !challengeId) {
+          results.push({ importKey: draft.importKey, error: importError?.message ?? "Não foi possível criar o rascunho." });
+          continue;
+        }
+
+        const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
+          p_challenge_id: challengeId,
+          p_conditions: draft.conditions,
+          p_actor_name: currentUserName,
+        });
+        if (conditionsError) {
+          results.push({ importKey: draft.importKey, challengeId, error: "Rascunho criado, mas as condições não foram salvas." });
+          continue;
+        }
+
+        results.push({ importKey: draft.importKey, challengeId });
+      }
+
+      await refetch();
+      return results;
+    },
+    [currentUserName, refetch],
+  );
+
   const requestChallengeValue = useCallback(
     async (challengeId: string, justification: string): Promise<boolean> => {
       if (!currentUser) {
@@ -451,6 +499,7 @@ export function useChallenges() {
     refetch,
     createChallenge,
     createUniverseChallenge,
+    importUniverseChallengeDrafts,
     acceptUniverseChallenge,
     resolveChallenge,
     requestChallengeValue,

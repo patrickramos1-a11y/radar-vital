@@ -1,6 +1,6 @@
 # Estado de Execucao
 
-Atualizado em: 2026-07-31
+Atualizado em: 2026-08-01
 
 ## Estrategia ativa
 
@@ -68,9 +68,27 @@ Atualizado em: 2026-07-31
 Aplicar em Supabase isolado somente as migrations compativeis com o acesso
 atual, validar os fluxos operacionais e preparar a publicacao unica da Fase 7.
 
+## Importacao controlada do Universo Ramos
+
+- Estado: `PRONTA PARA VALIDACAO LOCAL`.
+- Fonte: `BANCO_MESTRE_UNIVERSO_RAMOS.xlsx`, aba `Banco Mestre`.
+- Primeiro lote separado: 19 itens de Treinamentos, marcados como `Pronto para rascunho` e ainda `Nao enviado`.
+- Regra: a interface importa somente rascunhos; responsaveis finais, prazo, valores, penalidades e publicacao continuam sendo decisao administrativa posterior.
+- Publicacao: nenhuma importacao foi executada no banco nem publicada nesta etapa.
+
 ## Registro de execucao
 
 ```text
+2026-08-01 - Processo de importacao controlada do Universo Ramos preparado
+Resumo: a tela de Desafios e oportunidades agora aceita o Banco Mestre em XLSX,
+XLS ou CSV, le somente as linhas prontas para rascunho e mostra uma previa por
+ID mestre com origem, responsavel, tipo e erros de validacao.
+Resultado: cada linha valida usa uma chave idempotente, entra como `draft`, sem
+prazo, recompensa, super estrelas ou penalidade; as condicoes viram checklist.
+O retorno da importacao informa cada linha criada/atualizada ou bloqueada.
+Pendencia: validar a interface e executar a primeira carga somente apos
+confirmacao administrativa; nenhum desafio foi criado automaticamente.
+
 2026-07-31 - Universo Ramos, UR-1 concluida
 Resumo: o dominio challenges foi ampliado para origem interna, desafio aberto
 sem participante, prazo opcional, criterios, entregavel e evidencias.

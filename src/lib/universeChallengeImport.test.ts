@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseUniverseChallengeCsv } from "./universeChallengeImport";
+import { isReadyForDraft, parseMasterRows, parseUniverseChallengeCsv, prepareChallengeImport, splitCompletionConditions } from "./universeChallengeImport";
 
 const units = [{ id: "marketing", name: "Marketing", universeCategory: "SETOR" }] as any;
 const collaborators = [{ id: "ana", name: "Ana Silva" }] as any;
@@ -18,5 +18,41 @@ describe("parseUniverseChallengeCsv", () => {
     expect(rows[0].errors).toContain("Origem inexistente");
     expect(rows[0].errors).toContain("Colaborador não encontrado");
     expect(rows[0].errors).toContain("Prazo inválido");
+  });
+});
+
+describe("Banco Mestre", () => {
+  const masterRecord = {
+    "ID mestre": "UR-090",
+    "Unidade/Setor": "Marketing",
+    "Responsável sugerido": "",
+    "Título": "Criar a Biblioteca de Treinamentos",
+    "Descrição": "Organizar os materiais internos.",
+    "Condições de conclusão": "Mapear materiais; Organizar conteúdos",
+    "Entregável esperado": "Biblioteca publicada",
+    "Evidências necessárias": "Link e registro de validação",
+    "Tipo de desafio": "Aberto",
+    "Estado de maturidade": "Pronto para rascunho",
+    "Status no aplicativo": "Não enviado",
+    "Recompensa em estrelas": "",
+    "Penalidade em estrelas": "",
+  };
+
+  it("prepara uma linha elegível como rascunho com condições em checklist", () => {
+    const [row] = parseMasterRows([masterRecord]);
+    const prepared = prepareChallengeImport(row, units, collaborators);
+    expect(isReadyForDraft(row)).toBe(true);
+    expect(prepared.issues).toEqual([]);
+    expect(prepared.kind).toBe("sector");
+    expect(prepared.conditions).toEqual([
+      { title: "Mapear materiais", isRequired: true },
+      { title: "Organizar conteúdos", isRequired: true },
+    ]);
+  });
+
+  it("bloqueia linhas com recompensa preenchida na primeira carga", () => {
+    const [row] = parseMasterRows([{ ...masterRecord, "Recompensa em estrelas": "5" }]);
+    expect(prepareChallengeImport(row, units, collaborators).issues.map((issue) => issue.field)).toContain("Valores");
+    expect(splitCompletionConditions("A; B")).toHaveLength(2);
   });
 });

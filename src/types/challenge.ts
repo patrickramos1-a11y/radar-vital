@@ -120,6 +120,19 @@ export interface ChallengeFormData {
   conditions?: ChallengeCompletionConditionInput[];
 }
 
+export interface ChallengeDraftImportInput {
+  importKey: string;
+  title: string;
+  description: string;
+  successCriteria: string;
+  clientId: string | null;
+  kind: ChallengeKind;
+  expectedDeliverable: string;
+  evidenceRequirements: string;
+  participantIds: string[];
+  conditions: ChallengeCompletionConditionInput[];
+}
+
 export const CHALLENGE_STATUS_CONFIG: Record<
   ChallengeStatus,
   { label: string; className: string }
