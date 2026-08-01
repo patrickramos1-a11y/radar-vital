@@ -6,6 +6,7 @@ import { actorName } from "@/lib/auth";
 import {
   mapChallenge,
   mapChallengeItem,
+  mapChallengeCompletionCondition,
   mapChallengeParticipant,
 } from "@/lib/challenge";
 import type {
@@ -17,6 +18,7 @@ import type {
   ChallengeEditData,
   ChallengeValueRequest,
   ChallengeValueRequestStatus,
+  ChallengeCompletionCondition,
 } from "@/types/challenge";
 
 export function useChallenges() {
@@ -26,6 +28,7 @@ export function useChallenges() {
   const [participants, setParticipants] = useState<ChallengeParticipant[]>([]);
   const [items, setItems] = useState<ChallengeItem[]>([]);
   const [valueRequests, setValueRequests] = useState<ChallengeValueRequest[]>([]);
+  const [completionConditions, setCompletionConditions] = useState<ChallengeCompletionCondition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,17 +41,19 @@ export function useChallenges() {
       });
       if (refreshResult.error) throw refreshResult.error;
 
-      const [challengeResult, participantResult, itemResult, requestResult] = await Promise.all([
+      const [challengeResult, participantResult, itemResult, requestResult, conditionResult] = await Promise.all([
         supabase.from("challenges").select("*").order("due_at"),
         supabase.from("challenge_participants").select("*"),
         supabase.from("challenge_items").select("*"),
         supabase.from("challenge_value_requests").select("*").order("requested_at", { ascending: false }),
+        supabase.from("challenge_completion_conditions").select("*").order("sort_order"),
       ]);
 
       if (challengeResult.error) throw challengeResult.error;
       if (participantResult.error) throw participantResult.error;
       if (itemResult.error) throw itemResult.error;
       if (requestResult.error) throw requestResult.error;
+      if (conditionResult.error) throw conditionResult.error;
 
       setChallenges((challengeResult.data ?? []).map(mapChallenge));
       setParticipants((participantResult.data ?? []).map(mapChallengeParticipant));
@@ -64,6 +69,7 @@ export function useChallenges() {
         reviewedAt: request.reviewed_at,
         reviewedBy: request.reviewed_by,
       })));
+      setCompletionConditions((conditionResult.data ?? []).map(mapChallengeCompletionCondition));
     } catch (caught) {
       console.error("Error fetching challenges:", caught);
       setError("Não foi possível carregar os desafios.");
@@ -94,6 +100,11 @@ export function useChallenges() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "challenge_value_requests" },
+        () => void refetch(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "challenge_completion_conditions" },
         () => void refetch(),
       )
       .subscribe();
@@ -131,6 +142,18 @@ export function useChallenges() {
       }
 
       await refetch();
+      if (challengeId && data.conditions?.length) {
+        const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
+          p_challenge_id: challengeId,
+          p_conditions: data.conditions,
+          p_actor_name: currentUserName,
+        });
+        if (conditionsError) {
+          toast.error("O desafio foi criado, mas as condições não puderam ser salvas.");
+          return challengeId;
+        }
+        await refetch();
+      }
       toast.success("Desafio criado e aguardando a entrega da equipe.");
       return challengeId;
     },
@@ -166,6 +189,18 @@ export function useChallenges() {
       }
 
       await refetch();
+      if (challengeId && data.conditions?.length) {
+        const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
+          p_challenge_id: challengeId,
+          p_conditions: data.conditions,
+          p_actor_name: currentUserName,
+        });
+        if (conditionsError) {
+          toast.error("O desafio foi criado, mas as condições não puderam ser salvas.");
+          return challengeId;
+        }
+        await refetch();
+      }
       toast.success(
         data.participantIds.length === 0
           ? "Desafio aberto publicado para a equipe."
@@ -329,12 +364,32 @@ export function useChallenges() {
         console.error("Error updating challenge:", updateError);
         return false;
       }
+      const nextConditions = data.conditions?.filter((condition) => condition.title.trim()).map((condition) => ({ title: condition.title.trim(), isRequired: condition.isRequired !== false })) ?? [];
+      const currentConditions = completionConditions.filter((condition) => condition.challengeId === challengeId).map((condition) => ({ title: condition.title, isRequired: condition.isRequired }));
+      if (nextConditions.length && JSON.stringify(nextConditions) !== JSON.stringify(currentConditions)) {
+        const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
+          p_challenge_id: challengeId,
+          p_conditions: nextConditions,
+          p_actor_name: currentUserName,
+        });
+        if (conditionsError) {
+          toast.error("Desafio atualizado, mas não foi possível salvar as condições.");
+          return false;
+        }
+      }
       await refetch();
       toast.success("Desafio atualizado.");
       return true;
     },
-    [currentUserName, refetch],
+    [completionConditions, currentUserName, refetch],
   );
+
+  const setChallengeCompletionCondition = useCallback(async (conditionId: string, completed: boolean): Promise<boolean> => {
+    const { error: updateError } = await supabase.rpc("set_challenge_completion_condition", { p_condition_id: conditionId, p_completed: completed, p_actor_name: currentUserName });
+    if (updateError) { toast.error("Não foi possível atualizar a condição."); return false; }
+    await refetch();
+    return true;
+  }, [currentUserName, refetch]);
 
   const deleteUniverseChallenges = useCallback(
     async (challengeIds: string[]): Promise<boolean> => {
@@ -372,13 +427,25 @@ export function useChallenges() {
     return result;
   }, [items]);
 
+  const conditionsByChallenge = useMemo(() => {
+    const result = new Map<string, ChallengeCompletionCondition[]>();
+    completionConditions.forEach((condition) => {
+      const current = result.get(condition.challengeId) ?? [];
+      current.push(condition);
+      result.set(condition.challengeId, current);
+    });
+    return result;
+  }, [completionConditions]);
+
   return {
     challenges,
     participants,
     items,
+    completionConditions,
     valueRequests,
     participantsByChallenge,
     itemsByChallenge,
+    conditionsByChallenge,
     isLoading,
     error,
     refetch,
@@ -391,5 +458,6 @@ export function useChallenges() {
     reviewChallengeValueRequest,
     updateUniverseChallenge,
     deleteUniverseChallenges,
+    setChallengeCompletionCondition,
   };
 }

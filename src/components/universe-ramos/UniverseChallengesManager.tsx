@@ -10,6 +10,7 @@ import { UniverseChallengeDetailDialog, UniverseChallengeEditDialog } from "@/co
 import type { Collaborator } from "@/types/collaborator";
 import type { Client } from "@/types/client";
 import type { Challenge, ChallengeEditData, ChallengeParticipant, ChallengeRewardConfig, ChallengeValueRequest } from "@/types/challenge";
+import type { ChallengeCompletionCondition } from "@/types/challenge";
 
 type RewardFilter = "all" | Challenge["rewardStatus"];
 type StatusFilter = "all" | Challenge["status"];
@@ -18,6 +19,7 @@ interface Props {
   challenges: Challenge[];
   valueRequests: ChallengeValueRequest[];
   participantsByChallenge: Map<string, ChallengeParticipant[]>;
+  conditionsByChallenge: Map<string, ChallengeCompletionCondition[]>;
   units: Client[];
   collaborators: Collaborator[];
   currentUser: Collaborator | null;
@@ -28,6 +30,7 @@ interface Props {
   onAccept: (challengeId: string, collaboratorId: string) => Promise<boolean>;
   onUpdate: (challengeId: string, data: ChallengeEditData) => Promise<boolean>;
   onDelete: (challengeIds: string[]) => Promise<boolean>;
+  onToggleCondition: (conditionId: string, completed: boolean) => Promise<boolean>;
 }
 
 const rewardLabels: Record<Challenge["rewardStatus"], string> = {
@@ -44,7 +47,7 @@ const rewardClasses: Record<Challenge["rewardStatus"], string> = {
   non_rewarded: "bg-zinc-100 text-zinc-700",
 };
 
-export function UniverseChallengesManager({ challenges, valueRequests, participantsByChallenge, units, collaborators, currentUser, canManage, onRequestValue, onConfigureReward, onReviewRequest, onAccept, onUpdate, onDelete }: Props) {
+export function UniverseChallengesManager({ challenges, valueRequests, participantsByChallenge, conditionsByChallenge, units, collaborators, currentUser, canManage, onRequestValue, onConfigureReward, onReviewRequest, onAccept, onUpdate, onDelete, onToggleCondition }: Props) {
   const [view, setView] = useState<"library" | "requests">("library");
   const [query, setQuery] = useState("");
   const [rewardFilter, setRewardFilter] = useState<RewardFilter>("all");
@@ -167,8 +170,8 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
     <Dialog open={Boolean(requestChallenge)} onOpenChange={(open) => !open && setRequestChallenge(null)}><DialogContent><DialogHeader><DialogTitle>Solicitar valor do desafio</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">Explique por que este desafio merece recompensa. A solicitação seguirá para a fila do administrador.</p><Label className="grid gap-1.5">Justificativa<Textarea value={requestText} onChange={(event) => setRequestText(event.target.value)} placeholder="Explique o escopo, esforço, impacto e entrega esperada." /></Label><DialogFooter><Button variant="outline" onClick={() => setRequestChallenge(null)}>Cancelar</Button><Button disabled={!requestText.trim() || saving} onClick={() => void submitRequest()}>{saving ? "Enviando..." : "Enviar solicitação"}</Button></DialogFooter></DialogContent></Dialog>
     <Dialog open={configIds.length > 0} onOpenChange={(open) => !open && setConfigIds([])}><DialogContent><DialogHeader><DialogTitle>{configIds.length > 1 ? `Configurar ${configIds.length} desafios` : "Configurar valor do desafio"}</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">O valor é integral para cada participante quando o desafio for coletivo. Deixe como não remunerado quando a oportunidade não gerar estrelas.</p><div className="grid gap-4 sm:grid-cols-3"><Label className="grid gap-1.5">Estrelas<Input type="number" min={0} disabled={nonRewarded} value={rewardStars} onChange={(event) => setRewardStars(Number(event.target.value))} /></Label><Label className="grid gap-1.5">Super Estrelas<Input type="number" min={0} disabled={nonRewarded} value={superstars} onChange={(event) => setSuperstars(Number(event.target.value))} /></Label><Label className="grid gap-1.5">Penalidade em estrelas<Input type="number" min={0} disabled={nonRewarded} value={penalty} onChange={(event) => setPenalty(Number(event.target.value))} /></Label></div><label className="flex items-center gap-2 border p-3 text-sm"><input type="checkbox" checked={nonRewarded} onChange={(event) => setNonRewarded(event.target.checked)} /> Marcar como oportunidade não remunerada</label><Label className="grid gap-1.5">Nota administrativa (opcional)<Textarea value={adminNote} onChange={(event) => setAdminNote(event.target.value)} placeholder="Critério, observação ou retorno para quem solicitou." /></Label><DialogFooter><Button variant="outline" onClick={() => setConfigIds([])}>Cancelar</Button><Button disabled={saving} onClick={() => void submitConfig()}><Check className="h-4 w-4" />{saving ? "Salvando..." : "Salvar configuração"}</Button></DialogFooter></DialogContent></Dialog>
     <Dialog open={columnsOpen} onOpenChange={setColumnsOpen}><DialogContent><DialogHeader><DialogTitle>Configurar colunas</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">Escolha as informações complementares da tabela. Esta preferência ficará salva neste navegador.</p><div className="grid gap-2">{[{ value: "created", label: "Data de criação" }, { value: "age", label: "Tempo desde a criação" }, { value: "responsible", label: "Responsável" }, { value: "requester", label: "Pessoa que solicitou valor" }].map((column) => <label key={column.value} className="flex items-center gap-2 border p-3 text-sm"><input type="checkbox" checked={hasColumn(column.value)} onChange={() => toggleColumn(column.value)} />{column.label}</label>)}</div><DialogFooter><Button variant="outline" onClick={() => setColumnsOpen(false)}>Cancelar</Button><Button onClick={saveColumns}>Salvar colunas</Button></DialogFooter></DialogContent></Dialog>
-    <UniverseChallengeDetailDialog challenge={detailChallenge} open={Boolean(detailChallenge)} onOpenChange={(open) => !open && setDetailChallenge(null)} units={units} collaborators={collaborators} canManage={canManage} onEdit={() => { setEditingChallenge(detailChallenge); setDetailChallenge(null); }} onDelete={() => detailChallenge && void removeChallenges([detailChallenge.id])} />
-    <UniverseChallengeEditDialog challenge={editingChallenge} open={Boolean(editingChallenge)} onOpenChange={(open) => !open && setEditingChallenge(null)} units={units} onSave={onUpdate} />
+    <UniverseChallengeDetailDialog challenge={detailChallenge} open={Boolean(detailChallenge)} onOpenChange={(open) => !open && setDetailChallenge(null)} units={units} collaborators={collaborators} conditions={detailChallenge ? conditionsByChallenge.get(detailChallenge.id) ?? [] : []} onToggleCondition={(id, completed) => void onToggleCondition(id, completed)} canManage={canManage} onEdit={() => { setEditingChallenge(detailChallenge); setDetailChallenge(null); }} onDelete={() => detailChallenge && void removeChallenges([detailChallenge.id])} />
+    <UniverseChallengeEditDialog challenge={editingChallenge} open={Boolean(editingChallenge)} onOpenChange={(open) => !open && setEditingChallenge(null)} units={units} conditions={editingChallenge ? conditionsByChallenge.get(editingChallenge.id) ?? [] : []} onSave={onUpdate} />
   </section>;
 }
 

@@ -3,6 +3,7 @@ import type {
   Challenge,
   ChallengeItem,
   ChallengeParticipant,
+  ChallengeCompletionCondition,
   ChallengeStatus,
 } from "@/types/challenge";
 
@@ -11,6 +12,8 @@ type ChallengeItemRow =
   Database["public"]["Tables"]["challenge_items"]["Row"];
 type ChallengeParticipantRow =
   Database["public"]["Tables"]["challenge_participants"]["Row"];
+
+type ChallengeCompletionConditionRow = Database["public"]["Tables"]["challenge_completion_conditions"]["Row"];
 
 export function mapChallenge(row: ChallengeRow): Challenge {
   return {
@@ -79,6 +82,10 @@ export function getChallengeRewardStars(
   challenge: Pick<Challenge, "rewardStars" | "rewardSuperstars">,
 ): number {
   return challenge.rewardStars + challenge.rewardSuperstars * 10;
+}
+
+export function mapChallengeCompletionCondition(row: ChallengeCompletionConditionRow): ChallengeCompletionCondition {
+  return { id: row.id, challengeId: row.challenge_id, title: row.title, sortOrder: row.sort_order, isRequired: row.is_required, completedAt: row.completed_at, completedBy: row.completed_by, createdAt: row.created_at, updatedAt: row.updated_at };
 }
 
 export function getChallengeElapsedDays(

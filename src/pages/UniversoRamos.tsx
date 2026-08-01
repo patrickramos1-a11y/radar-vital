@@ -111,6 +111,8 @@ export default function UniversoRamos() {
     reviewChallengeValueRequest,
     updateUniverseChallenge,
     deleteUniverseChallenges,
+    conditionsByChallenge,
+    setChallengeCompletionCondition,
   } = useChallenges();
 
   const getCommentCount = useCallback(
@@ -410,6 +412,7 @@ export default function UniversoRamos() {
               challenges={universeChallenges}
               valueRequests={valueRequests.filter((request) => universeChallenges.some((challenge) => challenge.id === request.challengeId))}
               participantsByChallenge={participantsByChallenge}
+              conditionsByChallenge={conditionsByChallenge}
               units={universeClients}
               collaborators={centralCollaborators}
               currentUser={currentUser}
@@ -420,6 +423,7 @@ export default function UniversoRamos() {
               onAccept={acceptUniverseChallenge}
               onUpdate={updateUniverseChallenge}
               onDelete={deleteUniverseChallenges}
+              onToggleCondition={setChallengeCompletionCondition}
             />
           ) : isLoading ? (
             <div className="grid h-full place-items-center text-sm text-muted-foreground">
@@ -546,6 +550,7 @@ export default function UniversoRamos() {
         onOpenChange={(open) => !open && setSelectedClientId(null)}
         challenges={universeChallenges}
         participantsByChallenge={participantsByChallenge}
+        conditionsByChallenge={conditionsByChallenge}
         collaborators={centralCollaborators}
         commentCount={selectedClient ? getCommentCount(selectedClient.id) : 0}
         taskCount={selectedClient ? getActiveTaskCount(selectedClient.id) : 0}
@@ -556,6 +561,7 @@ export default function UniversoRamos() {
         onUpdate={updateUniverseChallenge}
         onDelete={deleteUniverseChallenges}
         onOpenTasks={() => selectedClient && setTaskClientId(selectedClient.id)}
+        onToggleCondition={(conditionId, completed) => void setChallengeCompletionCondition(conditionId, completed)}
       />
       <OpenChallengesDialog
         open={openChallengesOpen}

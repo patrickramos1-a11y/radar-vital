@@ -11,6 +11,12 @@ desafio; ela pode ser aberta, direcionada ou coletiva.
 - deixe `responsavel_inicial` e `participantes` vazios para publicar como desafio aberto;
 - use `participantes` separados por `;` para um desafio coletivo;
 - `prazo` e opcional, no formato `AAAA-MM-DD`;
+- `descricao` deve conter contexto, orientacoes e detalhes que nao precisam
+  ser marcados como concluidos;
+- `condicoes_conclusao` deve conter somente checks verificaveis, separados por
+  `;`. Cada item sera importado como uma condicao individual de progresso;
+- todos os desafios iniciais devem entrar sem recompensa e sem penalidade. A
+  gestao de valores sera feita depois na Biblioteca de Oportunidades;
 - recompensas e penalidades sao inteiros. A recompensa de Super Estrelas e
   integral para cada participante; penalidade so pode ser aplicada por Patrick
   depois da validacao;
@@ -27,6 +33,6 @@ O importador deve rejeitar, antes de gravar qualquer linha:
 5. colaborador inexistente;
 6. valores negativos.
 
-O arquivo ainda nao e importado automaticamente porque a migration UR-1 nao
-foi aplicada no projeto Supabase desta sessao. O modelo e versionado para a
-carga idempotente da UR-6 assim que houver ambiente de validacao disponivel.
+O arquivo ainda nao deve ser importado automaticamente. A estrutura de checks
+ja existe no banco; a proxima etapa e revisar os dados para separar contexto
+de condicoes verificaveis e manter todos os valores inicialmente zerados.

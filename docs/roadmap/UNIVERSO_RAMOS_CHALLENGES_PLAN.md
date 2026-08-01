@@ -74,7 +74,7 @@ Todo desafio deve conter, no minimo:
 | Origem | Setor, projeto, empresa ou colaborador. |
 | Tipo | Setor, projeto, empresa, meta individual ou geral da empresa. |
 | Descricao | Contexto, motivo e resultado esperado. |
-| Condicoes de conclusao | Criterios verificaveis para validar a entrega. |
+| Condicoes de conclusao | Checklist de criterios verificaveis para validar a entrega e acompanhar o progresso. Contexto livre fica na descricao. |
 | Entregavel esperado | Documento, treinamento, compra, material, organizacao, registro ou outro resultado concreto. |
 | Evidencia | Foto, arquivo, link, comentario, checklist ou combinacao deles. |
 | Responsavel | Vazio para desafio aberto; um ou mais colaboradores para desafio direcionado/coletivo. |
@@ -178,7 +178,7 @@ origem_nome
 origem_categoria
 tipo
 descricao
-condicoes_conclusao
+condicoes_conclusao (itens separados por `;`)
 entregavel_esperado
 evidencia_necessaria
 responsavel_inicial
@@ -192,7 +192,8 @@ observacoes_administrador
 ```
 
 O arquivo e apenas fonte de carga. A fonte de verdade apos a importacao sera o
-Supabase.
+Supabase. Na carga inicial, recompensas e penalidades ficam zeradas e sao
+definidas posteriormente na Biblioteca de Oportunidades.
 
 ## Fases de implementacao
 

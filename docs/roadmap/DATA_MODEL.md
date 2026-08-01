@@ -110,7 +110,7 @@ Criar uma RPC que:
 | `id` | uuid PK | |
 | `title` | text | |
 | `description` | text nullable | |
-| `success_criteria` | text | Condicao verificavel |
+| `success_criteria` | text | Resumo de compatibilidade das condicoes verificaveis |
 | `client_id` | uuid nullable | Desafio pode ser interno |
 | `status` | text | draft, active, awaiting_validation, won, lost, cancelled |
 | `due_at` | timestamptz | |
@@ -120,6 +120,21 @@ Criar uma RPC que:
 | `resolved_by` | uuid nullable | Admin |
 | `resolved_at` | timestamptz nullable | |
 | `resolution_notes` | text nullable | |
+
+### `challenge_completion_conditions`
+
+Cada desafio possui uma ou mais condicoes verificaveis, usadas como checklist
+de progresso. O contexto que nao for um check pertence a `challenges.description`.
+
+| Campo | Tipo | Observacao |
+| --- | --- | --- |
+| `id` | uuid PK | |
+| `challenge_id` | uuid FK | Desafio ao qual pertence |
+| `title` | text | Condicao verificavel |
+| `sort_order` | integer | Ordem de exibicao |
+| `is_required` | boolean | Entra no percentual de progresso |
+| `completed_at` | timestamptz nullable | Momento do check |
+| `completed_by` | text nullable | Pessoa que marcou |
 
 ### `challenge_participants`
 

@@ -445,6 +445,50 @@ export type Database = {
           },
         ]
       }
+      challenge_completion_conditions: {
+        Row: {
+          challenge_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_required: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_completion_conditions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_participants: {
         Row: {
           challenge_id: string
@@ -1974,6 +2018,10 @@ export type Database = {
         Args: { p_actor_name?: string; p_challenge_id: string }
         Returns: undefined
       }
+      replace_challenge_completion_conditions: {
+        Args: { p_actor_name?: string; p_challenge_id: string; p_conditions: Json }
+        Returns: undefined
+      }
       refresh_overdue_challenges: {
         Args: { p_actor_name?: string }
         Returns: number
@@ -2016,6 +2064,10 @@ export type Database = {
           p_value?: number
         }
         Returns: string
+      }
+      set_challenge_completion_condition: {
+        Args: { p_actor_name?: string; p_completed: boolean; p_condition_id: string }
+        Returns: undefined
       }
       settle_star_balances: {
         Args: {

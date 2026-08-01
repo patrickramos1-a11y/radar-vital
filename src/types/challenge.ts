@@ -68,6 +68,7 @@ export interface ChallengeEditData {
   clientId?: string | null;
   kind?: ChallengeKind;
   dueAt?: string | null;
+  conditions?: ChallengeCompletionConditionInput[];
 }
 
 export interface ChallengeParticipant {
@@ -75,6 +76,23 @@ export interface ChallengeParticipant {
   challengeId: string;
   collaboratorId: string;
   createdAt: string;
+}
+
+export interface ChallengeCompletionCondition {
+  id: string;
+  challengeId: string;
+  title: string;
+  sortOrder: number;
+  isRequired: boolean;
+  completedAt: string | null;
+  completedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChallengeCompletionConditionInput {
+  title: string;
+  isRequired?: boolean;
 }
 
 export interface ChallengeItem {
@@ -99,6 +117,7 @@ export interface ChallengeFormData {
   penaltyStars: number;
   participantIds: string[];
   items: Array<{ itemType: ChallengeItemType; itemId: string }>;
+  conditions?: ChallengeCompletionConditionInput[];
 }
 
 export const CHALLENGE_STATUS_CONFIG: Record<
