@@ -11,6 +11,8 @@ export type ChallengeStatus =
 
 export type ChallengeItemType = "task" | "priority" | "deliverable";
 export type ChallengeKind = "sector" | "project" | "company" | "individual_goal" | "company_general";
+export type ChallengeRewardStatus = "unpriced" | "requested" | "configured" | "non_rewarded";
+export type ChallengeValueRequestStatus = "pending" | "reviewed" | "declined";
 
 export interface Challenge {
   id: string;
@@ -23,7 +25,11 @@ export interface Challenge {
   clientId: string | null;
   status: ChallengeStatus;
   dueAt: string | null;
+  rewardStars: number;
   rewardSuperstars: number;
+  rewardStatus: ChallengeRewardStatus;
+  rewardConfiguredAt: string | null;
+  rewardConfiguredBy: string | null;
   penaltyStars: number;
   createdBy: string;
   resolvedBy: string | null;
@@ -31,6 +37,26 @@ export interface Challenge {
   resolutionNotes: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ChallengeValueRequest {
+  id: string;
+  challengeId: string;
+  collaboratorId: string;
+  justification: string;
+  status: ChallengeValueRequestStatus;
+  adminNote: string | null;
+  requestedAt: string;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+}
+
+export interface ChallengeRewardConfig {
+  rewardStars: number;
+  rewardSuperstars: number;
+  penaltyStars: number;
+  rewardStatus: Extract<ChallengeRewardStatus, "configured" | "non_rewarded">;
+  note?: string;
 }
 
 export interface ChallengeParticipant {
@@ -58,6 +84,7 @@ export interface ChallengeFormData {
   expectedDeliverable?: string;
   evidenceRequirements?: string;
   rewardSuperstars: number;
+  rewardStars?: number;
   penaltyStars: number;
   participantIds: string[];
   items: Array<{ itemType: ChallengeItemType; itemId: string }>;

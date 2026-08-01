@@ -514,6 +514,10 @@ export type Database = {
           expected_deliverable: string | null
           id: string
           penalty_stars: number
+          reward_configured_at: string | null
+          reward_configured_by: string | null
+          reward_stars: number
+          reward_status: string
           resolution_notes: string | null
           resolved_at: string | null
           resolved_by: string | null
@@ -534,6 +538,10 @@ export type Database = {
           expected_deliverable?: string | null
           id?: string
           penalty_stars?: number
+          reward_configured_at?: string | null
+          reward_configured_by?: string | null
+          reward_stars?: number
+          reward_status?: string
           resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -554,6 +562,10 @@ export type Database = {
           expected_deliverable?: string | null
           id?: string
           penalty_stars?: number
+          reward_configured_at?: string | null
+          reward_configured_by?: string | null
+          reward_stars?: number
+          reward_status?: string
           resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -569,6 +581,57 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_value_requests: {
+        Row: {
+          admin_note: string | null
+          challenge_id: string
+          collaborator_id: string
+          id: string
+          justification: string
+          requested_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          challenge_id: string
+          collaborator_id: string
+          id?: string
+          justification: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          challenge_id?: string
+          collaborator_id?: string
+          id?: string
+          justification?: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_value_requests_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_value_requests_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
             referencedColumns: ["id"]
           },
         ]

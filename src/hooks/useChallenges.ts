@@ -13,6 +13,9 @@ import type {
   ChallengeFormData,
   ChallengeItem,
   ChallengeParticipant,
+  ChallengeRewardConfig,
+  ChallengeValueRequest,
+  ChallengeValueRequestStatus,
 } from "@/types/challenge";
 
 export function useChallenges() {
@@ -21,6 +24,7 @@ export function useChallenges() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [participants, setParticipants] = useState<ChallengeParticipant[]>([]);
   const [items, setItems] = useState<ChallengeItem[]>([]);
+  const [valueRequests, setValueRequests] = useState<ChallengeValueRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,19 +37,32 @@ export function useChallenges() {
       });
       if (refreshResult.error) throw refreshResult.error;
 
-      const [challengeResult, participantResult, itemResult] = await Promise.all([
+      const [challengeResult, participantResult, itemResult, requestResult] = await Promise.all([
         supabase.from("challenges").select("*").order("due_at"),
         supabase.from("challenge_participants").select("*"),
         supabase.from("challenge_items").select("*"),
+        supabase.from("challenge_value_requests").select("*").order("requested_at", { ascending: false }),
       ]);
 
       if (challengeResult.error) throw challengeResult.error;
       if (participantResult.error) throw participantResult.error;
       if (itemResult.error) throw itemResult.error;
+      if (requestResult.error) throw requestResult.error;
 
       setChallenges((challengeResult.data ?? []).map(mapChallenge));
       setParticipants((participantResult.data ?? []).map(mapChallengeParticipant));
       setItems((itemResult.data ?? []).map(mapChallengeItem));
+      setValueRequests((requestResult.data ?? []).map((request) => ({
+        id: request.id,
+        challengeId: request.challenge_id,
+        collaboratorId: request.collaborator_id,
+        justification: request.justification,
+        status: request.status as ChallengeValueRequestStatus,
+        adminNote: request.admin_note,
+        requestedAt: request.requested_at,
+        reviewedAt: request.reviewed_at,
+        reviewedBy: request.reviewed_by,
+      })));
     } catch (caught) {
       console.error("Error fetching challenges:", caught);
       setError("Não foi possível carregar os desafios.");
@@ -71,6 +88,11 @@ export function useChallenges() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "challenge_items" },
+        () => void refetch(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "challenge_value_requests" },
         () => void refetch(),
       )
       .subscribe();
@@ -205,6 +227,87 @@ export function useChallenges() {
     [currentUserName, refetch],
   );
 
+  const requestChallengeValue = useCallback(
+    async (challengeId: string, justification: string): Promise<boolean> => {
+      if (!currentUser) {
+        toast.error("Selecione seu usuário para solicitar um valor.");
+        return false;
+      }
+
+      const { error: requestError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
+        ("request_challenge_value", {
+          p_challenge_id: challengeId,
+          p_collaborator_id: currentUser.id,
+          p_justification: justification,
+          p_actor_name: currentUserName,
+        });
+
+      if (requestError) {
+        toast.error("Não foi possível enviar a solicitação de valor.");
+        console.error("Error requesting challenge value:", requestError);
+        return false;
+      }
+
+      await refetch();
+      toast.success("Solicitação enviada para avaliação administrativa.");
+      return true;
+    },
+    [currentUser, currentUserName, refetch],
+  );
+
+  const configureChallengeReward = useCallback(
+    async (challengeIds: string[], config: ChallengeRewardConfig): Promise<boolean> => {
+      const { error: configureError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
+        ("configure_challenge_reward", {
+          p_challenge_ids: challengeIds,
+          p_reward_stars: config.rewardStars,
+          p_reward_superstars: config.rewardSuperstars,
+          p_penalty_stars: config.penaltyStars,
+          p_reward_status: config.rewardStatus,
+          p_note: config.note ?? null,
+          p_actor_name: currentUserName,
+        });
+
+      if (configureError) {
+        toast.error("Não foi possível configurar os valores selecionados.");
+        console.error("Error configuring challenge reward:", configureError);
+        return false;
+      }
+
+      await refetch();
+      toast.success(challengeIds.length === 1 ? "Valor do desafio configurado." : "Valores configurados em massa.");
+      return true;
+    },
+    [currentUserName, refetch],
+  );
+
+  const reviewChallengeValueRequest = useCallback(
+    async (
+      requestId: string,
+      status: Extract<ChallengeValueRequestStatus, "reviewed" | "declined">,
+      note?: string,
+    ): Promise<boolean> => {
+      const { error: reviewError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
+        ("review_challenge_value_request", {
+          p_request_id: requestId,
+          p_status: status,
+          p_admin_note: note ?? null,
+          p_actor_name: currentUserName,
+        });
+
+      if (reviewError) {
+        toast.error("Não foi possível atualizar a solicitação.");
+        console.error("Error reviewing challenge value request:", reviewError);
+        return false;
+      }
+
+      await refetch();
+      toast.success(status === "declined" ? "Solicitação recusada." : "Solicitação atualizada.");
+      return true;
+    },
+    [currentUserName, refetch],
+  );
+
   const participantsByChallenge = useMemo(() => {
     const result = new Map<string, ChallengeParticipant[]>();
     participants.forEach((participant) => {
@@ -229,6 +332,7 @@ export function useChallenges() {
     challenges,
     participants,
     items,
+    valueRequests,
     participantsByChallenge,
     itemsByChallenge,
     isLoading,
@@ -238,5 +342,8 @@ export function useChallenges() {
     createUniverseChallenge,
     acceptUniverseChallenge,
     resolveChallenge,
+    requestChallengeValue,
+    configureChallengeReward,
+    reviewChallengeValueRequest,
   };
 }

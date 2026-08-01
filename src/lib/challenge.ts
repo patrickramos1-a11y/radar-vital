@@ -24,7 +24,11 @@ export function mapChallenge(row: ChallengeRow): Challenge {
     clientId: row.client_id,
     status: row.status as ChallengeStatus,
     dueAt: row.due_at,
+    rewardStars: row.reward_stars ?? 0,
     rewardSuperstars: row.reward_superstars,
+    rewardStatus: (row.reward_status ?? "unpriced") as Challenge["rewardStatus"],
+    rewardConfiguredAt: row.reward_configured_at ?? null,
+    rewardConfiguredBy: row.reward_configured_by ?? null,
     penaltyStars: row.penalty_stars,
     createdBy: row.created_by,
     resolvedBy: row.resolved_by,
@@ -72,9 +76,9 @@ export function getEffectiveChallengeStatus(
 }
 
 export function getChallengeRewardStars(
-  challenge: Pick<Challenge, "rewardSuperstars">,
+  challenge: Pick<Challenge, "rewardStars" | "rewardSuperstars">,
 ): number {
-  return challenge.rewardSuperstars * 10;
+  return challenge.rewardStars + challenge.rewardSuperstars * 10;
 }
 
 export function getChallengeElapsedDays(

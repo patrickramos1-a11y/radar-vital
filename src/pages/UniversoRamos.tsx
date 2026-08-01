@@ -27,6 +27,7 @@ import { ClientQuickEditDialog } from "@/components/dashboard/ClientQuickEditDia
 import { UniverseChallengeDialog } from "@/components/universe-ramos/UniverseChallengeDialog";
 import { UniverseUnitDialog } from "@/components/universe-ramos/UniverseUnitDialog";
 import { OpenChallengesDialog } from "@/components/universe-ramos/OpenChallengesDialog";
+import { UniverseChallengesManager } from "@/components/universe-ramos/UniverseChallengesManager";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
 import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
@@ -97,7 +98,18 @@ export default function UniversoRamos() {
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
   const [openChallengesOpen, setOpenChallengesOpen] = useState(false);
   const [challengeUnitId, setChallengeUnitId] = useState<string | null>(null);
-  const { challenges, participantsByChallenge, createUniverseChallenge, acceptUniverseChallenge, resolveChallenge } = useChallenges();
+  const [workspace, setWorkspace] = useState<"units" | "challenges">("units");
+  const {
+    challenges,
+    participantsByChallenge,
+    valueRequests,
+    createUniverseChallenge,
+    acceptUniverseChallenge,
+    resolveChallenge,
+    requestChallengeValue,
+    configureChallengeReward,
+    reviewChallengeValueRequest,
+  } = useChallenges();
 
   const getCommentCount = useCallback(
     (clientId: string) => commentCounts.get(clientId) ?? 0,
@@ -269,10 +281,13 @@ export default function UniversoRamos() {
   );
 
   const universeChallenges = useMemo(
-    () => challenges.filter((challenge) => challenge.clientId && universeClients.some((client) => client.id === challenge.clientId)),
+    () => challenges.filter((challenge) =>
+      (challenge.clientId && universeClients.some((client) => client.id === challenge.clientId)) ||
+      (!challenge.clientId && challenge.kind === "company_general"),
+    ),
     [challenges, universeClients],
   );
-  const openUniverseChallenges = universeChallenges.filter((challenge) => challenge.status === "open");
+  const openUniverseChallenges = universeChallenges.filter((challenge) => challenge.status === "open" && challenge.rewardStatus === "configured");
 
   const toggleUniverseCategory = (category: UniversoRamosCategory) => {
     setUniverseCategories((current) => current.includes(category)
@@ -336,11 +351,16 @@ export default function UniversoRamos() {
             />
             <Summary label="Prioridades" value={stats.priority} icon={Star} onClick={() => handleFilterFlagToggle("priority")} active={filterFlags.priority} />
             <Summary label="Com responsáveis" value={stats.assigned} icon={Users} onClick={() => handleFilterFlagToggle("hasCollaborators")} active={filterFlags.hasCollaborators} />
-            <Summary label="Desafios abertos" value={openUniverseChallenges.length} icon={Sparkles} onClick={() => setOpenChallengesOpen(true)} />
+            <Summary label="Desafios" value={universeChallenges.length} icon={Sparkles} onClick={() => setWorkspace("challenges")} active={workspace === "challenges"} />
+          </div>
+
+          <div className="mt-3 flex w-fit gap-1 border p-1">
+            <button type="button" onClick={() => setWorkspace("units")} className={`h-8 px-3 text-xs font-medium ${workspace === "units" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Unidades internas</button>
+            <button type="button" onClick={() => setWorkspace("challenges")} className={`h-8 px-3 text-xs font-medium ${workspace === "challenges" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Desafios e oportunidades</button>
           </div>
         </header>
 
-        <FilterBar
+        {workspace === "units" && <FilterBar
           sortBy={sortBy}
           sortDirection={sortDirection}
           filterFlags={filterFlags}
@@ -378,10 +398,23 @@ export default function UniversoRamos() {
           showMunicipalityFilter={false}
           tvPath="/tv?scope=UNIVERSO_RAMOS"
           extraControls={<UniverseCategoryControl selected={universeCategories} onToggle={toggleUniverseCategory} />}
-        />
+        />}
 
         <main className="min-h-0 flex-1 overflow-auto p-3 sm:p-4">
-          {isLoading ? (
+          {workspace === "challenges" ? (
+            <UniverseChallengesManager
+              challenges={universeChallenges}
+              valueRequests={valueRequests.filter((request) => universeChallenges.some((challenge) => challenge.id === request.challengeId))}
+              units={universeClients}
+              collaborators={centralCollaborators}
+              currentUser={currentUser}
+              canManage={isAdmin}
+              onRequestValue={requestChallengeValue}
+              onConfigureReward={configureChallengeReward}
+              onReviewRequest={reviewChallengeValueRequest}
+              onAccept={acceptUniverseChallenge}
+            />
+          ) : isLoading ? (
             <div className="grid h-full place-items-center text-sm text-muted-foreground">
               Carregando Universo Ramos...
             </div>
@@ -495,7 +528,7 @@ export default function UniversoRamos() {
         open={challengeDialogOpen}
         onOpenChange={setChallengeDialogOpen}
         units={universeClients}
-        collaborators={collaborators}
+        collaborators={centralCollaborators}
         defaultUnitId={challengeUnitId}
         onCreate={createUniverseChallenge}
       />
