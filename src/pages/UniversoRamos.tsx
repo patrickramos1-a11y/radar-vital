@@ -30,7 +30,7 @@ import { OpenChallengesDialog } from "@/components/universe-ramos/OpenChallenges
 import { UniverseChallengesManager } from "@/components/universe-ramos/UniverseChallengesManager";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
-import { getUniverseAccentColor } from "@/lib/universeColors";
+import { getUniverseAccentColor, getUniverseNameColor } from "@/lib/universeColors";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -463,6 +463,7 @@ export default function UniversoRamos() {
               getCommentCount={getCommentCount}
               getChallengeCount={getUnitChallengeCount}
               getAccentColor={(client) => getUniverseAccentColor(client, centralCollaborators)}
+              getNameColor={(client) => getUniverseNameColor(client, centralCollaborators)}
               onClientTap={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
               onCardAction={(id, action) => {
                 setUnitTab(action === "comments" ? "comments" : action === "challenges" ? "challenges" : "tasks");

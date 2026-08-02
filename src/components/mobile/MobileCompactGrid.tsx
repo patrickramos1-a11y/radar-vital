@@ -14,6 +14,8 @@ interface MobileCompactGridProps {
   onCardAction?: (id: string, action: MobileCardAction) => void;
   /** Universo Ramos accent color per card (sector color or collaborator color). */
   getAccentColor?: (client: Client) => string | null;
+  /** Personal collaborator color, used only by the visible name. */
+  getNameColor?: (client: Client) => string | null;
   getChallengeCount?: (clientId: string) => number;
 }
 
@@ -26,6 +28,7 @@ export function MobileCompactGrid({
   getAuditStatus,
   onCardAction,
   getAccentColor,
+  getNameColor,
   getChallengeCount,
 }: MobileCompactGridProps) {
   const getGridColumns = () => {
@@ -57,6 +60,7 @@ export function MobileCompactGrid({
             commentCount={getCommentCount(client.id)}
             challengeCount={getChallengeCount?.(client.id) ?? 0}
             accentColor={getAccentColor?.(client) ?? null}
+            nameColor={getNameColor?.(client) ?? null}
             onTap={onClientTap}
             auditStatus={getAuditStatus?.(client.id)}
             onCardAction={onCardAction}
@@ -76,6 +80,7 @@ interface CompactCardProps {
   commentCount: number;
   challengeCount: number;
   accentColor: string | null;
+  nameColor: string | null;
   onTap: (id: string) => void;
   auditStatus?: AuditClientStatus;
   onCardAction?: (id: string, action: MobileCardAction) => void;
@@ -89,6 +94,7 @@ function CompactCard({
   commentCount,
   challengeCount,
   accentColor,
+  nameColor,
   onTap,
   auditStatus,
   onCardAction,
@@ -100,9 +106,9 @@ function CompactCard({
 
   // Universo Ramos layout: compact header with counters + large logo/photo area.
   if (onCardAction) {
-    const isCollaborator = client.universeCategory === "COLABORADOR";
-    // Collaborator cards keep the institutional base; only text/details are tinted.
-    const surfaceAccent = accentColor && !isCollaborator ? accentColor : null;
+    // The card structure is always driven by its category color. For
+    // collaborators this is the Ramos green; only the name uses profile color.
+    const surfaceAccent = accentColor;
 
     return (
       <div
@@ -127,7 +133,7 @@ function CompactCard({
             type="button"
             onClick={() => onTap(client.id)}
             className="min-w-0 flex-1 truncate text-left text-[11px] font-semibold leading-tight"
-            style={accentColor ? { color: accentColor } : undefined}
+            style={nameColor ? { color: nameColor } : accentColor ? { color: accentColor } : undefined}
             title={client.name}
           >
             {client.name}

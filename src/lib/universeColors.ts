@@ -1,6 +1,9 @@
 import type { Client } from "@/types/client";
 import type { Collaborator } from "@/types/collaborator";
 
+/** Institutional structure used by every Universo Ramos collaborator card. */
+export const RAMOS_COLLABORATOR_CARD_COLOR = "#0DD375";
+
 /** Sector colors used across desktop and mobile Universo Ramos cards. */
 export const universeSectorColors: Record<string, string> = {
   MARKETING: "#EF4444",
@@ -17,18 +20,24 @@ export const universeSectorColors: Record<string, string> = {
 
 /**
  * Sector cards use their own color everywhere (border, header, name).
- * Collaborator cards stay institutional, using the profile color only for
- * the name and small accents. Empresa/Projeto stay neutral.
+ * Collaborator cards always use the Ramos institutional green in their
+ * structure. Their profile color is reserved for the name only.
  */
 export function getUniverseAccentColor(client: Client, collaborators: Collaborator[]): string | null {
   if (client.clientType !== "UNIVERSO_RAMOS") return null;
   if (client.universeCategory === "COLABORADOR") {
-    return collaborators.find((item) => item.id === client.universeCollaboratorId)?.color ?? "#0F766E";
+    return RAMOS_COLLABORATOR_CARD_COLOR;
   }
   if (client.universeCategory === "SETOR") {
     return universeSectorColors[client.name.trim().toLocaleUpperCase("pt-BR")] ?? "#0F766E";
   }
   return null;
+}
+
+/** Personal color is intentionally limited to the collaborator name. */
+export function getUniverseNameColor(client: Client, collaborators: Collaborator[]): string | null {
+  if (client.clientType !== "UNIVERSO_RAMOS" || client.universeCategory !== "COLABORADOR") return null;
+  return collaborators.find((item) => item.id === client.universeCollaboratorId)?.color ?? null;
 }
 
 /** True when the accent color should only tint text/small details. */

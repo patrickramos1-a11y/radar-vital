@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { AuditClientStatus } from "@/types/audit";
-import { getUniverseAccentColor } from "@/lib/universeColors";
+import { getUniverseAccentColor, getUniverseNameColor } from "@/lib/universeColors";
 
 
 export type CardContentMode = 'logo' | 'tasks' | 'comments';
@@ -155,6 +155,7 @@ export function ClientCard({
   const logoMaxHeight = getLogoMaxHeight(clientCount);
   const headerSizes = getHeaderSizes(clientCount);
   const universeAccentColor = getUniverseAccentColor(client, allCollaborators);
+  const universeNameColor = getUniverseNameColor(client, allCollaborators);
 
   const handleHighlightClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -247,7 +248,10 @@ export function ClientCard({
 
       {/* Header */}
       <div className={`flex items-center gap-1.5 ${headerSizes.headerPadding} bg-card-elevated/80 border-b border-border/50`} style={universeAccentColor ? { borderBottomColor: universeAccentColor, backgroundColor: `${universeAccentColor}14` } : undefined}>
-        <div className={`flex items-center justify-center ${headerSizes.numberSize} rounded-md bg-primary/90 text-primary-foreground font-bold shrink-0`}>
+          <div
+            className={`flex items-center justify-center ${headerSizes.numberSize} rounded-md bg-primary/90 text-primary-foreground font-bold shrink-0`}
+            style={universeAccentColor ? { backgroundColor: universeAccentColor } : undefined}
+          >
           {displayNumber.toString().padStart(2, '0')}
         </div>
         {cardContentMode !== 'logo' && client.logoUrl && (
@@ -261,7 +265,7 @@ export function ClientCard({
           type="button"
           onClick={(event) => { event.stopPropagation(); onEdit?.(client); }}
           className={`${headerSizes.nameSize} min-w-0 flex-1 truncate text-left font-medium hover:text-primary`}
-          style={universeAccentColor ? { color: universeAccentColor } : undefined}
+            style={universeNameColor ? { color: universeNameColor } : universeAccentColor ? { color: universeAccentColor } : undefined}
           title={onEdit ? `Editar ${client.name}` : client.name}
         >
           {client.name}
