@@ -222,13 +222,7 @@ export function ClientCard({
               <ShieldCheck className="h-3.5 w-3.5" />
             </span>
           )}
-          {onOpenTab ? (
-            <>
-              <TabCounter label="Comentários" count={commentCount} onClick={() => onOpenTab(client.id, 'comments')} icon={<MessageCircle className="w-3.5 h-3.5 text-indigo-600" />} />
-              <TabCounter label="Desafios" count={challengeCount} onClick={() => onOpenTab(client.id, 'challenges')} icon={<Sparkles className="w-3.5 h-3.5 text-violet-600" />} />
-              <TabCounter label="Tarefas" count={activeTaskCount} onClick={() => onOpenTab(client.id, 'tasks')} icon={<ListChecks className="w-3.5 h-3.5 text-amber-600" />} />
-            </>
-          ) : (
+          {!onOpenTab && (
             <>
               <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
               {onCreateChallenge && <button onClick={handleCreateChallenge} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Criar desafio para esta unidade"><Sparkles className="w-3.5 h-3.5 text-violet-600" /></button>}
@@ -239,6 +233,7 @@ export function ClientCard({
               ) : <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />}
             </>
           )}
+
 
           {showHighlight && (
             <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
