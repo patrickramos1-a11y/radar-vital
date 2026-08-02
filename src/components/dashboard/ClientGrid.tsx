@@ -60,7 +60,10 @@ export function ClientGrid({
   getAuditStatus,
   useUnitProfileAction = false,
   onCreateChallenge,
+  onOpenTab,
+  getChallengeCount,
 }: ClientGridProps) {
+
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
