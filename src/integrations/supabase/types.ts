@@ -671,6 +671,7 @@ export type Database = {
         Row: {
           challenge_kind: string
           client_id: string | null
+          completion_mode: string
           created_at: string
           created_by: string
           description: string | null
@@ -696,6 +697,7 @@ export type Database = {
         Insert: {
           challenge_kind?: string
           client_id?: string | null
+          completion_mode?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -721,6 +723,7 @@ export type Database = {
         Update: {
           challenge_kind?: string
           client_id?: string | null
+          completion_mode?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -2013,6 +2016,10 @@ export type Database = {
       }
       backfill_star_sources: { Args: { p_actor_name?: string }; Returns: Json }
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
+      clear_challenge_completion_conditions: {
+        Args: { p_actor_name?: string; p_challenge_id: string }
+        Returns: number
+      }
       close_audit: {
         Args: { p_actor_name?: string; p_audit_id: string }
         Returns: undefined
@@ -2049,6 +2056,7 @@ export type Database = {
           p_actor_name?: string
           p_challenge_kind?: string
           p_client_id?: string
+          p_completion_mode?: string
           p_description?: string
           p_due_at?: string
           p_evidence_requirements?: string
@@ -2102,6 +2110,7 @@ export type Database = {
           p_actor_name?: string
           p_challenge_kind?: string
           p_client_id?: string
+          p_completion_mode?: string
           p_description?: string
           p_due_at?: string
           p_evidence_requirements?: string
@@ -2219,6 +2228,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_challenge_completion_mode: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_id: string
+          p_completion_mode: string
+        }
+        Returns: undefined
+      }
       set_deliverable_rating: {
         Args: {
           p_actor_name?: string
@@ -2265,6 +2282,7 @@ export type Database = {
           p_challenge_id: string
           p_challenge_kind?: string
           p_client_id?: string
+          p_completion_mode?: string
           p_description?: string
           p_due_at?: string
           p_evidence_requirements?: string
