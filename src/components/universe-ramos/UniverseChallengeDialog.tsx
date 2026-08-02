@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChallengeConditionsEditor } from "@/components/universe-ramos/ChallengeConditions";
 import type { Client } from "@/types/client";
 import type { Collaborator } from "@/types/collaborator";
-import type { ChallengeCompletionConditionInput, ChallengeFormData, ChallengeKind } from "@/types/challenge";
+import { CHALLENGE_COMPLETION_MODE_LABELS, type ChallengeCompletionConditionInput, type ChallengeCompletionMode, type ChallengeFormData, type ChallengeKind } from "@/types/challenge";
 
 interface Props {
   open: boolean;
@@ -21,6 +21,8 @@ interface Props {
 export function UniverseChallengeDialog({ open, onOpenChange, units, collaborators, defaultUnitId, onCreate }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [completionMode, setCompletionMode] = useState<ChallengeCompletionMode>("guidance");
+  const [guidance, setGuidance] = useState("");
   const [conditions, setConditions] = useState<ChallengeCompletionConditionInput[]>([]);
   const [deliverable, setDeliverable] = useState("");
   const [evidence, setEvidence] = useState("");
@@ -33,19 +35,24 @@ export function UniverseChallengeDialog({ open, onOpenChange, units, collaborato
   const [saving, setSaving] = useState(false);
 
   const togglePerson = (id: string) => setParticipantIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const showGuidance = completionMode !== "checklist";
+  const showChecklist = completionMode !== "guidance";
+  const isValid = Boolean(title.trim()) && (!showGuidance || Boolean(guidance.trim())) && (!showChecklist || conditions.some((condition) => condition.title.trim()));
   const submit = async () => {
-    const validConditions = conditions.filter((condition) => condition.title.trim());
-    if (!title.trim() || !validConditions.length) return;
+    const validConditions = showChecklist ? conditions.filter((condition) => condition.title.trim()) : [];
+    if (!isValid) return;
     setSaving(true);
     const created = await onCreate({
-      title: title.trim(), description: description.trim() || undefined, successCriteria: validConditions.map((condition) => condition.title.trim()).join("\n"), conditions: validConditions,
+      title: title.trim(), description: description.trim() || undefined,
+      successCriteria: showGuidance ? guidance.trim() : validConditions.map((condition) => condition.title.trim()).join("\n"),
+      completionMode, conditions: validConditions,
       expectedDeliverable: deliverable.trim() || undefined, evidenceRequirements: evidence.trim() || undefined,
       clientId: unitId || null, kind, dueAt: dueAt ? new Date(dueAt).toISOString() : null,
       rewardSuperstars: Math.max(0, reward), penaltyStars: Math.max(0, penalty), participantIds, items: [],
     });
     setSaving(false);
     if (!created) return;
-    setTitle(""); setDescription(""); setConditions([]); setDeliverable(""); setEvidence("");
+    setTitle(""); setDescription(""); setCompletionMode("guidance"); setGuidance(""); setConditions([]); setDeliverable(""); setEvidence("");
     setUnitId(defaultUnitId ?? ""); setKind("company_general"); setDueAt(""); setReward(0); setPenalty(0); setParticipantIds([]);
     onOpenChange(false);
   };
@@ -61,7 +68,9 @@ export function UniverseChallengeDialog({ open, onOpenChange, units, collaborato
           <Field label="Tipo"><select className="h-10 w-full border bg-background px-3 text-sm" value={kind} onChange={(event) => setKind(event.target.value as ChallengeKind)}><option value="company_general">Geral da empresa</option><option value="sector">Setor</option><option value="project">Projeto/Painel</option><option value="company">Empresa</option><option value="individual_goal">Meta individual</option></select></Field>
         </div>
         <Field label="Descrição e contexto"><Textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Por que isto precisa ser feito e qual problema resolve?" /></Field>
-        <Field label="Condições de conclusão"><ChallengeConditionsEditor conditions={conditions} onChange={setConditions} /></Field>
+        <Field label="Forma de conclusão"><select className="h-10 w-full border bg-background px-3 text-sm" value={completionMode} onChange={(event) => setCompletionMode(event.target.value as ChallengeCompletionMode)}>{Object.entries(CHALLENGE_COMPLETION_MODE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+        {showGuidance && <Field label="Orientações de conclusão"><Textarea className="min-h-32" value={guidance} onChange={(event) => setGuidance(event.target.value)} placeholder="Descreva como o desafio deve ser conduzido e validado. Este texto não vira checklist." /></Field>}
+        {showChecklist && <Field label="Checklist de etapas"><ChallengeConditionsEditor conditions={conditions} onChange={setConditions} /></Field>}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Entregável esperado"><Textarea value={deliverable} onChange={(event) => setDeliverable(event.target.value)} placeholder="Material, compra, treinamento, registro..." /></Field>
           <Field label="Evidência necessária"><Textarea value={evidence} onChange={(event) => setEvidence(event.target.value)} placeholder="Foto, arquivo, link, comentário ou checklist." /></Field>
@@ -73,7 +82,7 @@ export function UniverseChallengeDialog({ open, onOpenChange, units, collaborato
         </div>
         <div className="grid gap-2"><Label>Responsáveis (opcional)</Label><div className="flex flex-wrap gap-2">{collaborators.filter((person) => person.isActive).map((person) => <button key={person.id} type="button" onClick={() => togglePerson(person.id)} className={`border px-3 py-1.5 text-xs font-medium ${participantIds.includes(person.id) ? "text-white" : "bg-background"}`} style={participantIds.includes(person.id) ? { backgroundColor: person.color, borderColor: person.color } : undefined}>{person.name}</button>)}</div></div>
       </div>
-      <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button disabled={!title.trim() || !conditions.some((condition) => condition.title.trim()) || saving} onClick={() => void submit()}>{saving ? "Publicando..." : participantIds.length ? "Criar desafio direcionado" : "Publicar desafio aberto"}</Button></DialogFooter>
+      <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button disabled={!isValid || saving} onClick={() => void submit()}>{saving ? "Publicando..." : participantIds.length ? "Criar desafio direcionado" : "Publicar desafio aberto"}</Button></DialogFooter>
     </DialogContent>
   </Dialog>;
 }
