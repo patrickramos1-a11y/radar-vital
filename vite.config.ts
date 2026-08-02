@@ -17,11 +17,12 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
   build: {
-    target: "esnext",
+    // Keep the production bundle compatible with Safari on the field team's phones.
+    target: "es2020",
   },
   optimizeDeps: {
     esbuildOptions: {
-      target: "esnext",
+      target: "es2020",
     },
   },
 }));
