@@ -142,7 +142,10 @@ export function ClientCard({
   useUnitProfileAction = false,
   unitProfileActionLabel = "Abrir visão geral da unidade",
   onCreateChallenge,
+  onOpenTab,
+  challengeCount = 0,
 }: ClientCardProps) {
+
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
   const hasCollaborators = assignedCollaborators.length > 0;
