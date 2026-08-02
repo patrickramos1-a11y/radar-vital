@@ -144,8 +144,8 @@ function CompactCard({
 
       {/* Client name */}
       <div className="px-1 pb-0.5">
-        <p className="text-[7px] font-medium text-center text-muted-foreground truncate leading-tight">
-          {client.name.length > 14 ? client.name.slice(0, 12) + '…' : client.name}
+        <p className={`font-medium text-center text-muted-foreground truncate leading-tight ${onCardAction ? "text-[11px]" : "text-[7px]"}`}>
+          {onCardAction ? client.name : client.name.length > 14 ? client.name.slice(0, 12) + '…' : client.name}
         </p>
       </div>
 
@@ -178,6 +178,29 @@ function CompactCard({
           )}
         </div>
       </div>
-    </button>
+
+      {onCardAction && (
+        <div className="grid grid-cols-3 gap-px border-t border-border bg-border">
+          <CardActionButton
+            label="Comentários"
+            count={commentCount}
+            onClick={(event) => { event.stopPropagation(); onCardAction(client.id, "comments"); }}
+            icon={<MessageCircle className="h-4 w-4 text-indigo-600" />}
+          />
+          <CardActionButton
+            label="Desafios"
+            onClick={(event) => { event.stopPropagation(); onCardAction(client.id, "challenges"); }}
+            icon={<Sparkles className="h-4 w-4 text-violet-600" />}
+          />
+          <CardActionButton
+            label="Tarefas"
+            count={activeTaskCount}
+            onClick={(event) => { event.stopPropagation(); onCardAction(client.id, "tasks"); }}
+            icon={<ListChecks className="h-4 w-4 text-amber-600" />}
+          />
+        </div>
+      )}
+    </div>
+
   );
 }
