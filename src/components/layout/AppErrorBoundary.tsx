@@ -7,6 +7,7 @@ interface AppErrorBoundaryProps {
 
 interface AppErrorBoundaryState {
   hasError: boolean;
+  message: string | null;
 }
 
 const AUTO_RECOVERY_KEY = "radar-vital:asset-recovery-attempted";
@@ -19,10 +20,10 @@ function isStaleAssetError(error: Error) {
 
 /** Prevents a client render failure from becoming a blank screen, especially on mobile. */
 export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
-  state: AppErrorBoundaryState = { hasError: false };
+  state: AppErrorBoundaryState = { hasError: false, message: null };
 
-  static getDerivedStateFromError(): AppErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): AppErrorBoundaryState {
+    return { hasError: true, message: error.message || "Erro de inicialização desconhecido." };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -50,7 +51,7 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
         <section className="max-w-sm space-y-3">
           <h1 className="text-lg font-semibold text-foreground">Não foi possível abrir o painel</h1>
           <p className="text-sm text-muted-foreground">
-            Atualize para baixar a versão mais recente do Radar Vital.
+            O aplicativo encontrou uma falha ao iniciar. Tente atualizar uma vez.
           </p>
           <button
             type="button"
@@ -60,6 +61,11 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
             <RefreshCw className="h-4 w-4" />
             Atualizar aplicativo
           </button>
+          {this.state.message && (
+            <p className="pt-2 text-xs text-muted-foreground" role="status">
+              Diagnóstico: {this.state.message}
+            </p>
+          )}
         </section>
       </main>
     );
