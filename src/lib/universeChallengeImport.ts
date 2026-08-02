@@ -194,10 +194,10 @@ export function parseUniverseChallengeCsv(csv: string, units: Client[], collabor
   const lines = csv.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
   if (lines.length < 2) return [];
   const columns = csvLine(lines[0]).map(normalize);
-  if (!csvHeaders.every((header) => columns.includes(header))) {
+  if (!csvHeaders.every((header) => columns.includes(normalize(header)))) {
     return [{ rowNumber: 1, title: "", originName: "", originCategory: "", kind: "", description: "", successCriteria: "", expectedDeliverable: "", evidenceRequirements: "", participantNames: [], dueAt: null, rewardSuperstars: 0, penaltyStars: 0, status: "", errors: ["Cabeçalho inválido. Use o arquivo-modelo de desafios."], clientId: null, participantIds: [], importKey: "" }];
   }
-  const valueFor = (cells: string[], header: string) => cells[columns.indexOf(header)] ?? "";
+  const valueFor = (cells: string[], header: string) => cells[columns.indexOf(normalize(header))] ?? "";
   return lines.slice(1).map((line, offset) => {
     const cells = csvLine(line);
     const title = valueFor(cells, "titulo");
