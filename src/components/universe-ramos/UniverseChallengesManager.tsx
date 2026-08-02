@@ -176,20 +176,29 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
         {filteredChallenges.map((challenge) => {
           const participants = participantsByChallenge.get(challenge.id) ?? [];
           const responsibleNames = participants.map((item) => collaboratorNames.get(item.collaboratorId)).filter((name): name is string => Boolean(name));
-          const hasReward = challenge.rewardStatus === "configured";
-          const rewardBadge = hasReward ? `${getChallengeRewardStars(challenge)} estrelas` : rewardLabels[challenge.rewardStatus];
+          const hasReward = challenge.rewardSuperstars > 0 || challenge.rewardStars > 0;
           const origin = challenge.clientId ? unitNames.get(challenge.clientId) ?? "Unidade interna" : "Geral da empresa";
+          const contextPreview = challenge.description?.trim();
           const deliverablePreview = challenge.expectedDeliverable?.trim();
           return <article key={challenge.id} className="space-y-2 border bg-card p-3">
             <div className="flex items-start gap-2">
               {canManage && <input aria-label={`Selecionar ${challenge.title}`} type="checkbox" className="mt-1 h-4 w-4" checked={selectedIds.includes(challenge.id)} onChange={() => toggleSelected(challenge.id)} />}
               <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug">{challenge.title}</h3>
               <div className="flex shrink-0 flex-col items-end gap-1">
-                <span className="bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-sky-800">{CHALLENGE_STATUS_CONFIG[challenge.status].label}</span>
-                <span className={`px-1.5 py-0.5 text-[10px] font-semibold ${rewardClasses[challenge.rewardStatus]}`}>{rewardBadge}</span>
+                <span className={`px-1.5 py-0.5 text-[10px] font-semibold uppercase ${CHALLENGE_STATUS_CONFIG[challenge.status].className}`}>{statusLabel(challenge.status)}</span>
+                <span className={`px-1.5 py-0.5 text-[10px] font-semibold ${rewardClasses[challenge.rewardStatus]}`}>{rewardBadgeText(challenge)}</span>
               </div>
             </div>
-            <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">{deliverablePreview || "Entregável esperado não definido"}</p>
+            <div className="space-y-1.5">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/70">Contexto e objetivo</p>
+                <p className="line-clamp-3 text-xs leading-snug">{contextPreview || "Não informado"}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/70">Entregável esperado</p>
+                <p className="line-clamp-3 text-xs leading-snug">{deliverablePreview || "Não definido"}</p>
+              </div>
+            </div>
             <p className="truncate text-[11px] text-muted-foreground">
               {origin} · {responsibleNames.length ? responsibleNames.join(", ") : "Em aberto"} · {challenge.dueAt ? new Date(challenge.dueAt).toLocaleDateString("pt-BR") : "Sem prazo"} · {challenge.createdBy || "Sistema"}
             </p>
@@ -198,12 +207,13 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
               {challenge.status === "open" && challenge.rewardStatus === "configured" && currentUser && <Button size="sm" className="flex-1" onClick={() => void onAccept(challenge.id, currentUser.id)}><UserPlus className="h-4 w-4" /> Aceitar</Button>}
               {!canManage && challenge.rewardStatus === "unpriced" && currentUser && <Button size="sm" variant="outline" className="flex-1" disabled={hasOwnPendingRequest(challenge.id)} onClick={() => setRequestChallenge(challenge)}>{hasOwnPendingRequest(challenge.id) ? "Solicitado" : "Solicitar valor"}</Button>}
               {canManage && <>
-                <Button size="sm" className="flex-1" onClick={() => openConfig([challenge.id])}>{hasReward ? "Adicionar estrelas" : "Adicionar valor"}</Button>
+                <Button size="sm" className="flex-1" onClick={() => openSuperstarDialog(challenge)}>{hasReward ? "Ajustar Super Estrelas" : "Definir Super Estrelas"}</Button>
                 <Button size="sm" variant="outline" title="Editar desafio" onClick={() => setEditingChallenge(challenge)}><Pencil className="h-4 w-4" /></Button>
                 <Button size="sm" variant="outline" title="Excluir desafio" onClick={() => void removeChallenges([challenge.id])}><Trash2 className="h-4 w-4" /></Button>
               </>}
             </div>
           </article>;
+
         })}
         {filteredChallenges.length === 0 && <div className="border bg-card p-10 text-center text-sm text-muted-foreground">Nenhum desafio encontrado com estes filtros.</div>}
       </div>
