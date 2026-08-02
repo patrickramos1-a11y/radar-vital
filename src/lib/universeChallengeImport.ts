@@ -129,8 +129,9 @@ export function prepareChallengeImport(row: MasterChallengeRow, units: Client[],
   if (completionMode !== "guidance" && !conditions.length) issues.push({ field: "Itens do checklist", message: "Modo checklist ou misto exige itens do checklist preenchidos." });
   if (!row.expectedDeliverable) issues.push({ field: "Entregável esperado", message: "Informe o entregável esperado." });
   if (!row.evidenceRequirements) issues.push({ field: "Evidências necessárias", message: "Informe a evidência necessária." });
-  // "Responsável sugerido" is only a hint for the reviewer: it never binds a collaborator to the draft.
-  if (row.suggestedResponsible && !collaborator) issues.push({ field: "Responsável sugerido", message: `Não encontrei o colaborador “${row.suggestedResponsible}”. A sugestão ficará apenas como texto na revisão.`, });
+  // "Responsável sugerido" is only a hint for the reviewer: it never binds a collaborator to the draft,
+  // so an unknown name must not block the import.
+
 
   if ([row.rewardStars, row.penaltyStars].some((value) => value && Number(value) !== 0)) {
     issues.push({ field: "Valores", message: "A primeira carga deve entrar sem recompensa ou penalidade; configure valores depois no rascunho." });
