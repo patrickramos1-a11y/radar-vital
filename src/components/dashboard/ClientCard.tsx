@@ -266,7 +266,15 @@ export function ClientCard({
         >
           {client.name}
         </button>
+        {onOpenTab && (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <TabCounter label="Comentários" count={commentCount} onClick={() => onOpenTab(client.id, 'comments')} icon={<MessageCircle className="w-3.5 h-3.5 text-indigo-600" />} />
+            <TabCounter label="Desafios" count={challengeCount} onClick={() => onOpenTab(client.id, 'challenges')} icon={<Sparkles className="w-3.5 h-3.5 text-violet-600" />} />
+            <TabCounter label="Tarefas" count={activeTaskCount} onClick={() => onOpenTab(client.id, 'tasks')} icon={<ListChecks className="w-3.5 h-3.5 text-amber-600" />} />
+          </div>
+        )}
       </div>
+
 
       {/* Collaborator Row */}
       <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-muted/20 border-b border-border/30">
