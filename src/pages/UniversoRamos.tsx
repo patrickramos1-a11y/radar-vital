@@ -30,6 +30,8 @@ import { OpenChallengesDialog } from "@/components/universe-ramos/OpenChallenges
 import { UniverseChallengesManager } from "@/components/universe-ramos/UniverseChallengesManager";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
+import { getUniverseAccentColor } from "@/lib/universeColors";
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClients } from "@/contexts/ClientContext";
