@@ -1,6 +1,6 @@
 import type { Collaborator } from "@/types/collaborator";
 import type { Client } from "@/types/client";
-import type { ChallengeCompletionConditionInput, ChallengeKind } from "@/types/challenge";
+import type { ChallengeCompletionConditionInput, ChallengeCompletionMode, ChallengeKind } from "@/types/challenge";
 
 export interface MasterChallengeRow {
   masterId: string;
@@ -16,6 +16,8 @@ export interface MasterChallengeRow {
   applicationStatus: string;
   rewardStars: string;
   penaltyStars: string;
+  completionMode: string;
+  checklistItems: string;
 }
 
 export interface ImportIssue {
@@ -28,6 +30,7 @@ export interface PreparedChallengeImport {
   unit: Client | null;
   collaborator: Collaborator | null;
   kind: ChallengeKind;
+  completionMode: ChallengeCompletionMode;
   conditions: ChallengeCompletionConditionInput[];
   issues: ImportIssue[];
 }
@@ -56,6 +59,8 @@ export function parseMasterRows(records: Array<Record<string, unknown>>): Master
     applicationStatus: valueAt(record, "Status no aplicativo"),
     rewardStars: valueAt(record, "Recompensa em estrelas"),
     penaltyStars: valueAt(record, "Penalidade em estrelas"),
+    completionMode: valueAt(record, "Modo de conclusão") || valueAt(record, "Modo de conclusao"),
+    checklistItems: valueAt(record, "Itens do checklist"),
   }));
 }
 
@@ -65,6 +70,15 @@ export function splitCompletionConditions(value: string): ChallengeCompletionCon
     .map((item) => item.replace(/^[\-•\d.\s]+/, "").trim())
     .filter(Boolean)
     .map((title) => ({ title, isRequired: true }));
+}
+
+// The Master Bank keeps long technical guidance under "Condições de conclusão".
+// It must never become a checklist unless the sheet explicitly asks for it.
+export function resolveCompletionMode(value: string): ChallengeCompletionMode {
+  const normalized = normalize(value);
+  if (normalized === "checklist") return "checklist";
+  if (normalized === "misto" || normalized === "mixed") return "mixed";
+  return "guidance";
 }
 
 function findUnit(units: Client[], name: string): Client | null {
@@ -104,13 +118,15 @@ export function prepareChallengeImport(row: MasterChallengeRow, units: Client[],
   const issues: ImportIssue[] = [];
   const unit = findUnit(units, row.unitName);
   const collaborator = findCollaborator(collaborators, row.suggestedResponsible);
-  const conditions = splitCompletionConditions(row.successCriteria);
+  const completionMode = resolveCompletionMode(row.completionMode);
+  const conditions = completionMode === "guidance" ? [] : splitCompletionConditions(row.checklistItems);
 
   if (!row.masterId) issues.push({ field: "ID mestre", message: "Informe o identificador mestre para impedir duplicidade." });
   if (!row.title) issues.push({ field: "Título", message: "Informe o título do desafio." });
   if (!row.description) issues.push({ field: "Descrição", message: "Informe o contexto do desafio." });
   if (!row.unitName || !unit) issues.push({ field: "Unidade/Setor", message: `Não foi possível relacionar “${row.unitName || "vazio"}” a um card do Universo Ramos.` });
-  if (!conditions.length) issues.push({ field: "Condições de conclusão", message: "Informe ao menos uma condição para o checklist." });
+  if (!row.successCriteria) issues.push({ field: "Condições de conclusão", message: "Informe as orientações de conclusão do desafio." });
+  if (completionMode !== "guidance" && !conditions.length) issues.push({ field: "Itens do checklist", message: "Modo checklist ou misto exige itens do checklist preenchidos." });
   if (!row.expectedDeliverable) issues.push({ field: "Entregável esperado", message: "Informe o entregável esperado." });
   if (!row.evidenceRequirements) issues.push({ field: "Evidências necessárias", message: "Informe a evidência necessária." });
   if (row.suggestedResponsible && !collaborator) issues.push({ field: "Responsável sugerido", message: `Não encontrei o colaborador “${row.suggestedResponsible}”.` });
@@ -119,7 +135,7 @@ export function prepareChallengeImport(row: MasterChallengeRow, units: Client[],
     issues.push({ field: "Valores", message: "A primeira carga deve entrar sem recompensa ou penalidade; configure valores depois no rascunho." });
   }
 
-  return { row, unit, collaborator, kind: kindFor(unit, row.challengeType), conditions, issues };
+  return { row, unit, collaborator, kind: kindFor(unit, row.challengeType), completionMode, conditions, issues };
 }
 
 export function isReadyForDraft(row: MasterChallengeRow): boolean {
