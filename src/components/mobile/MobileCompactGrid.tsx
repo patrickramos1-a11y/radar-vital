@@ -1,6 +1,8 @@
-import { Star, MessageCircle, ListChecks, ShieldCheck } from "lucide-react";
+import { Star, MessageCircle, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import type { AuditClientStatus } from "@/types/audit";
+
+export type MobileCardAction = "comments" | "challenges" | "tasks";
 
 interface MobileCompactGridProps {
   clients: Client[];
@@ -9,6 +11,7 @@ interface MobileCompactGridProps {
   getCommentCount: (clientId: string) => number;
   onClientTap: (id: string) => void;
   getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
+  onCardAction?: (id: string, action: MobileCardAction) => void;
 }
 
 export function MobileCompactGrid({
@@ -18,9 +21,11 @@ export function MobileCompactGrid({
   getCommentCount,
   onClientTap,
   getAuditStatus,
+  onCardAction,
 }: MobileCompactGridProps) {
   const getGridColumns = () => {
     const count = clients.length;
+    if (onCardAction) return 2;
     if (count <= 8) return 2;
     if (count <= 15) return 3;
     if (count <= 25) return 4;
@@ -46,12 +51,14 @@ export function MobileCompactGrid({
             commentCount={getCommentCount(client.id)}
             onTap={onClientTap}
             auditStatus={getAuditStatus?.(client.id)}
+            onCardAction={onCardAction}
           />
         ))}
       </div>
     </div>
   );
 }
+
 
 interface CompactCardProps {
   client: Client;
@@ -60,6 +67,7 @@ interface CompactCardProps {
   commentCount: number;
   onTap: (id: string) => void;
   auditStatus?: AuditClientStatus;
+  onCardAction?: (id: string, action: MobileCardAction) => void;
 }
 
 function CompactCard({
@@ -69,17 +77,25 @@ function CompactCard({
   commentCount,
   onTap,
   auditStatus,
+  onCardAction,
 }: CompactCardProps) {
   const activeCollaborators = COLLABORATOR_NAMES.filter(name => client.collaborators[name]);
   const primaryColor = activeCollaborators.length > 0 
     ? COLLABORATOR_COLORS[activeCollaborators[0]] 
     : undefined;
 
-  const hasAlerts = client.isPriority || activeTaskCount > 0 || commentCount > 0;
-
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onTap(client.id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onTap(client.id);
+        }
+      }}
+      aria-label={`Abrir ${client.name}`}
       className={`relative flex flex-col rounded-lg overflow-hidden transition-all active:scale-[0.97] ${
         isHighlighted 
           ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/30' 
@@ -90,6 +106,7 @@ function CompactCard({
         borderLeftColor: primaryColor,
       }}
     >
+
       {/* Status indicators top-right */}
       <div className="absolute top-0.5 right-0.5 flex items-center gap-0.5">
         {auditStatus && (
@@ -127,8 +144,8 @@ function CompactCard({
 
       {/* Client name */}
       <div className="px-1 pb-0.5">
-        <p className="text-[7px] font-medium text-center text-muted-foreground truncate leading-tight">
-          {client.name.length > 14 ? client.name.slice(0, 12) + '…' : client.name}
+        <p className={`font-medium text-center text-muted-foreground truncate leading-tight ${onCardAction ? "text-[11px]" : "text-[7px]"}`}>
+          {onCardAction ? client.name : client.name.length > 14 ? client.name.slice(0, 12) + '…' : client.name}
         </p>
       </div>
 
@@ -161,6 +178,54 @@ function CompactCard({
           )}
         </div>
       </div>
+
+      {onCardAction && (
+        <div className="grid grid-cols-3 gap-px border-t border-border bg-border">
+          <CardActionButton
+            label="Comentários"
+            count={commentCount}
+            onClick={(event) => { event.stopPropagation(); onCardAction(client.id, "comments"); }}
+            icon={<MessageCircle className="h-4 w-4 text-indigo-600" />}
+          />
+          <CardActionButton
+            label="Desafios"
+            onClick={(event) => { event.stopPropagation(); onCardAction(client.id, "challenges"); }}
+            icon={<Sparkles className="h-4 w-4 text-violet-600" />}
+          />
+          <CardActionButton
+            label="Tarefas"
+            count={activeTaskCount}
+            onClick={(event) => { event.stopPropagation(); onCardAction(client.id, "tasks"); }}
+            icon={<ListChecks className="h-4 w-4 text-amber-600" />}
+          />
+        </div>
+      )}
+    </div>
+
+  );
+}
+
+function CardActionButton({
+  label,
+  icon,
+  count,
+  onClick,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  count?: number;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className="flex h-10 items-center justify-center gap-1 bg-card text-[10px] font-medium text-muted-foreground active:bg-muted"
+    >
+      {icon}
+      {count ? <span>{count}</span> : null}
     </button>
   );
 }
