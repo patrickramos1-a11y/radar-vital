@@ -1,5 +1,5 @@
 import { Star, MessageCircle, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
-import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES } from "@/types/client";
 import type { AuditClientStatus } from "@/types/audit";
 
 export type MobileCardAction = "comments" | "challenges" | "tasks";
@@ -12,6 +12,9 @@ interface MobileCompactGridProps {
   onClientTap: (id: string) => void;
   getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
   onCardAction?: (id: string, action: MobileCardAction) => void;
+  /** Universo Ramos accent color per card (sector color or collaborator color). */
+  getAccentColor?: (client: Client) => string | null;
+  getChallengeCount?: (clientId: string) => number;
 }
 
 export function MobileCompactGrid({
@@ -22,6 +25,8 @@ export function MobileCompactGrid({
   onClientTap,
   getAuditStatus,
   onCardAction,
+  getAccentColor,
+  getChallengeCount,
 }: MobileCompactGridProps) {
   const getGridColumns = () => {
     const count = clients.length;
@@ -36,19 +41,22 @@ export function MobileCompactGrid({
 
   return (
     <div className="h-full overflow-y-auto p-2">
-      <div 
-        className="grid gap-1.5"
-        style={{ 
+      <div
+        className={onCardAction ? "grid gap-2" : "grid gap-1.5"}
+        style={{
           gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
         }}
       >
-        {clients.map((client) => (
+        {clients.map((client, index) => (
           <CompactCard
             key={client.id}
             client={client}
+            displayNumber={index + 1}
             isHighlighted={highlightedClients.has(client.id)}
             activeTaskCount={getActiveTaskCount(client.id)}
             commentCount={getCommentCount(client.id)}
+            challengeCount={getChallengeCount?.(client.id) ?? 0}
+            accentColor={getAccentColor?.(client) ?? null}
             onTap={onClientTap}
             auditStatus={getAuditStatus?.(client.id)}
             onCardAction={onCardAction}
@@ -62,9 +70,12 @@ export function MobileCompactGrid({
 
 interface CompactCardProps {
   client: Client;
+  displayNumber: number;
   isHighlighted: boolean;
   activeTaskCount: number;
   commentCount: number;
+  challengeCount: number;
+  accentColor: string | null;
   onTap: (id: string) => void;
   auditStatus?: AuditClientStatus;
   onCardAction?: (id: string, action: MobileCardAction) => void;
@@ -72,17 +83,107 @@ interface CompactCardProps {
 
 function CompactCard({
   client,
+  displayNumber,
   isHighlighted,
   activeTaskCount,
   commentCount,
+  challengeCount,
+  accentColor,
   onTap,
   auditStatus,
   onCardAction,
 }: CompactCardProps) {
   const activeCollaborators = COLLABORATOR_NAMES.filter(name => client.collaborators[name]);
-  const primaryColor = activeCollaborators.length > 0 
-    ? COLLABORATOR_COLORS[activeCollaborators[0]] 
+  const primaryColor = activeCollaborators.length > 0
+    ? COLLABORATOR_COLORS[activeCollaborators[0]]
     : undefined;
+
+  // Universo Ramos layout: compact header with counters + large logo/photo area.
+  if (onCardAction) {
+    const isCollaborator = client.universeCategory === "COLABORADOR";
+    // Collaborator cards keep the institutional base; only text/details are tinted.
+    const surfaceAccent = accentColor && !isCollaborator ? accentColor : null;
+
+    return (
+      <div
+        className={`flex flex-col overflow-hidden rounded-xl border bg-card transition-all ${
+          isHighlighted ? "ring-2 ring-blue-500" : ""
+        }`}
+        style={surfaceAccent
+          ? { borderColor: surfaceAccent, boxShadow: `0 2px 10px -6px ${surfaceAccent}` }
+          : undefined}
+      >
+        <div
+          className="flex items-center gap-1 border-b border-border/60 px-1.5 py-1"
+          style={surfaceAccent ? { backgroundColor: `${surfaceAccent}14`, borderBottomColor: surfaceAccent } : undefined}
+        >
+          <span
+            className="flex h-4 min-w-[1rem] items-center justify-center rounded px-1 text-[9px] font-bold text-white"
+            style={{ backgroundColor: accentColor ?? "hsl(var(--primary))" }}
+          >
+            {displayNumber.toString().padStart(2, "0")}
+          </span>
+          <button
+            type="button"
+            onClick={() => onTap(client.id)}
+            className="min-w-0 flex-1 truncate text-left text-[11px] font-semibold leading-tight"
+            style={accentColor ? { color: accentColor } : undefined}
+            title={client.name}
+          >
+            {client.name}
+          </button>
+          {auditStatus && <ShieldCheck className="h-3 w-3 shrink-0 text-emerald-600" />}
+          {client.isPriority && <Star className="h-3 w-3 shrink-0 fill-amber-500 text-amber-500" />}
+        </div>
+
+        <div className="flex items-center justify-end gap-0.5 px-1 py-0.5">
+          <HeaderCounter
+            label="Comentários"
+            count={commentCount}
+            icon={<MessageCircle className="h-3.5 w-3.5 text-indigo-600" />}
+            onClick={() => onCardAction(client.id, "comments")}
+          />
+          <HeaderCounter
+            label="Desafios"
+            count={challengeCount}
+            icon={<Sparkles className="h-3.5 w-3.5 text-violet-600" />}
+            onClick={() => onCardAction(client.id, "challenges")}
+          />
+          <HeaderCounter
+            label="Tarefas"
+            count={activeTaskCount}
+            icon={<ListChecks className="h-3.5 w-3.5 text-amber-600" />}
+            onClick={() => onCardAction(client.id, "tasks")}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onTap(client.id)}
+          aria-label={`Abrir Central de ${client.name}`}
+          className="flex min-h-[104px] flex-1 items-center justify-center p-2 active:scale-[0.98]"
+          style={surfaceAccent ? { backgroundColor: `${surfaceAccent}0D` } : undefined}
+        >
+          {client.logoUrl ? (
+            <img
+              src={client.logoUrl}
+              alt={client.name}
+              className={isCollaborator
+                ? "h-20 w-20 rounded-full object-cover"
+                : "max-h-20 w-full object-contain"}
+            />
+          ) : (
+            <span
+              className="text-2xl font-bold"
+              style={{ color: accentColor ?? "hsl(var(--primary))" }}
+            >
+              {client.initials}
+            </span>
+          )}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -144,8 +245,8 @@ function CompactCard({
 
       {/* Client name */}
       <div className="px-1 pb-0.5">
-        <p className={`font-medium text-center text-muted-foreground truncate leading-tight ${onCardAction ? "text-[11px]" : "text-[7px]"}`}>
-          {onCardAction ? client.name : client.name.length > 14 ? client.name.slice(0, 12) + '…' : client.name}
+        <p className="font-medium text-center text-muted-foreground truncate leading-tight text-[7px]">
+          {client.name.length > 14 ? client.name.slice(0, 12) + '…' : client.name}
         </p>
       </div>
 
@@ -178,34 +279,12 @@ function CompactCard({
           )}
         </div>
       </div>
-
-      {onCardAction && (
-        <div className="grid grid-cols-3 gap-px border-t border-border bg-border">
-          <CardActionButton
-            label="Comentários"
-            count={commentCount}
-            onClick={(event) => { event.stopPropagation(); onCardAction(client.id, "comments"); }}
-            icon={<MessageCircle className="h-4 w-4 text-indigo-600" />}
-          />
-          <CardActionButton
-            label="Desafios"
-            onClick={(event) => { event.stopPropagation(); onCardAction(client.id, "challenges"); }}
-            icon={<Sparkles className="h-4 w-4 text-violet-600" />}
-          />
-          <CardActionButton
-            label="Tarefas"
-            count={activeTaskCount}
-            onClick={(event) => { event.stopPropagation(); onCardAction(client.id, "tasks"); }}
-            icon={<ListChecks className="h-4 w-4 text-amber-600" />}
-          />
-        </div>
-      )}
     </div>
 
   );
 }
 
-function CardActionButton({
+function HeaderCounter({
   label,
   icon,
   count,
@@ -213,19 +292,19 @@ function CardActionButton({
 }: {
   label: string;
   icon: React.ReactNode;
-  count?: number;
-  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  count: number;
+  onClick: () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(event) => { event.stopPropagation(); onClick(); }}
       title={label}
       aria-label={label}
-      className="flex h-10 items-center justify-center gap-1 bg-card text-[10px] font-medium text-muted-foreground active:bg-muted"
+      className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold text-muted-foreground active:bg-muted"
     >
       {icon}
-      {count ? <span>{count}</span> : null}
+      {count > 0 ? <span>{count}</span> : null}
     </button>
   );
 }

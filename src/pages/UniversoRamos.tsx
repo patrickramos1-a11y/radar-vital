@@ -30,6 +30,8 @@ import { OpenChallengesDialog } from "@/components/universe-ramos/OpenChallenges
 import { UniverseChallengesManager } from "@/components/universe-ramos/UniverseChallengesManager";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
+import { getUniverseAccentColor } from "@/lib/universeColors";
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClients } from "@/contexts/ClientContext";
@@ -296,6 +298,11 @@ export default function UniversoRamos() {
     [challenges, universeClients],
   );
   const openUniverseChallenges = universeChallenges.filter((challenge) => challenge.status === "open" && challenge.rewardStatus === "configured");
+  const getUnitChallengeCount = useCallback(
+    (clientId: string) => universeChallenges.filter((challenge) => challenge.clientId === clientId).length,
+    [universeChallenges],
+  );
+
 
   const toggleUniverseCategory = (category: UniversoRamosCategory | "SEM_CATEGORIA") => {
     setUniverseCategories((current) => current.includes(category)
@@ -454,6 +461,8 @@ export default function UniversoRamos() {
               highlightedClients={highlightedClients}
               getActiveTaskCount={getActiveTaskCount}
               getCommentCount={getCommentCount}
+              getChallengeCount={getUnitChallengeCount}
+              getAccentColor={(client) => getUniverseAccentColor(client, centralCollaborators)}
               onClientTap={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
               onCardAction={(id, action) => {
                 setUnitTab(action === "comments" ? "comments" : action === "challenges" ? "challenges" : "tasks");
@@ -468,6 +477,7 @@ export default function UniversoRamos() {
               highlightedClients={highlightedClients}
               getActiveTaskCount={getActiveTaskCount}
               getCommentCount={getCommentCount}
+              getChallengeCount={getUnitChallengeCount}
               allCollaborators={centralCollaborators}
               getAssignedCollaboratorIds={getAssignedCollaboratorIds}
               onSelectClient={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
@@ -475,6 +485,7 @@ export default function UniversoRamos() {
               onTogglePriority={togglePriority}
               onToggleCollaboratorAssignment={toggleAssignment}
               onOpenChecklist={(id) => { setUnitTab("tasks"); setSelectedClientId(id); }}
+              onOpenTab={(id, tab) => { setUnitTab(tab); setSelectedClientId(id); }}
 
               onEditClient={setEditingClient}
               showHighlight={false}
@@ -485,6 +496,7 @@ export default function UniversoRamos() {
               fitAllLocked={fitAllLocked}
             />
           )}
+
         </main>
       </div>
 

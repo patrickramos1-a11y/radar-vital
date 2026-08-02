@@ -31,6 +31,9 @@ interface ClientGridProps {
   getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
   useUnitProfileAction?: boolean;
   onCreateChallenge?: (clientId: string) => void;
+  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks') => void;
+  getChallengeCount?: (clientId: string) => number;
+
 }
 
 export function ClientGrid({ 
@@ -57,7 +60,10 @@ export function ClientGrid({
   getAuditStatus,
   useUnitProfileAction = false,
   onCreateChallenge,
+  onOpenTab,
+  getChallengeCount,
 }: ClientGridProps) {
+
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
@@ -180,6 +186,9 @@ export function ClientGrid({
           auditStatus={getAuditStatus?.(client.id)}
           useUnitProfileAction={useUnitProfileAction}
           onCreateChallenge={onCreateChallenge}
+          onOpenTab={onOpenTab}
+          challengeCount={getChallengeCount?.(client.id) ?? 0}
+
         />
       ))}
     </div>

@@ -13,6 +13,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { AuditClientStatus } from "@/types/audit";
+import { getUniverseAccentColor } from "@/lib/universeColors";
+
 
 export type CardContentMode = 'logo' | 'tasks' | 'comments';
 
@@ -41,28 +43,11 @@ interface ClientCardProps {
   useUnitProfileAction?: boolean;
   unitProfileActionLabel?: string;
   onCreateChallenge?: (clientId: string) => void;
+  /** Universo Ramos: header counters open the unit Central on a given tab. */
+  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks') => void;
+  challengeCount?: number;
 }
 
-const universeSectorColors: Record<string, string> = {
-  MARKETING: "#EF4444",
-  "ADMINISTRAÇÃO": "#2563EB",
-  "MANUTENÇÃO": "#F97316",
-  "SETOR DE PROJETOS": "#2563EB",
-  "LICENCIAMENTO E PROCESSOS": "#06B6D4",
-  "GESTÃO E PLANEJAMENTO": "#8B5CF6",
-  "SUPRIMENTOS E COMPRAS": "#F97316",
-  "PESSOAS E CULTURA": "#EC4899",
-  TREINAMENTOS: "#06B6D4",
-  "IA E AUTOMAÇÃO": "#6366F1",
-};
-
-function getUniverseAccentColor(client: Client, collaborators: Collaborator[]) {
-  if (client.clientType !== "UNIVERSO_RAMOS") return null;
-  if (client.universeCategory === "COLABORADOR") {
-    return collaborators.find((item) => item.id === client.universeCollaboratorId)?.color ?? "#0F766E";
-  }
-  return client.universeCategory === "SETOR" ? universeSectorColors[client.name.trim().toLocaleUpperCase("pt-BR")] ?? "#0F766E" : null;
-}
 
 function getCollaboratorGradient(assignedCollaborators: Collaborator[]): string {
   if (assignedCollaborators.length === 0) return 'transparent';
@@ -157,7 +142,10 @@ export function ClientCard({
   useUnitProfileAction = false,
   unitProfileActionLabel = "Abrir visão geral da unidade",
   onCreateChallenge,
+  onOpenTab,
+  challengeCount = 0,
 }: ClientCardProps) {
+
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
   const hasCollaborators = assignedCollaborators.length > 0;
@@ -234,13 +222,19 @@ export function ClientCard({
               <ShieldCheck className="h-3.5 w-3.5" />
             </span>
           )}
-          <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
-          {onCreateChallenge && <button onClick={handleCreateChallenge} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Criar desafio para esta unidade"><Sparkles className="w-3.5 h-3.5 text-violet-600" /></button>}
-          {useUnitProfileAction ? (
-            <button onClick={handleChecklistClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={unitProfileActionLabel}>
-              <Building2 className="w-3.5 h-3.5 text-cyan-700" />
-            </button>
-          ) : <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />}
+          {!onOpenTab && (
+            <>
+              <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
+              {onCreateChallenge && <button onClick={handleCreateChallenge} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Criar desafio para esta unidade"><Sparkles className="w-3.5 h-3.5 text-violet-600" /></button>}
+              {useUnitProfileAction ? (
+                <button onClick={handleChecklistClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={unitProfileActionLabel}>
+                  <Building2 className="w-3.5 h-3.5 text-cyan-700" />
+                </button>
+              ) : <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />}
+            </>
+          )}
+
+
           {showHighlight && (
             <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
               <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
@@ -272,7 +266,15 @@ export function ClientCard({
         >
           {client.name}
         </button>
+        {onOpenTab && (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <TabCounter label="Comentários" count={commentCount} onClick={() => onOpenTab(client.id, 'comments')} icon={<MessageCircle className="w-3.5 h-3.5 text-indigo-600" />} />
+            <TabCounter label="Desafios" count={challengeCount} onClick={() => onOpenTab(client.id, 'challenges')} icon={<Sparkles className="w-3.5 h-3.5 text-violet-600" />} />
+            <TabCounter label="Tarefas" count={activeTaskCount} onClick={() => onOpenTab(client.id, 'tasks')} icon={<ListChecks className="w-3.5 h-3.5 text-amber-600" />} />
+          </div>
+        )}
       </div>
+
 
       {/* Collaborator Row */}
       <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-muted/20 border-b border-border/30">
@@ -469,5 +471,20 @@ function CollaboratorAddButton({ allCollaborators, assignedCollaboratorIds, onTo
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function TabCounter({ label, icon, count, onClick }: { label: string; icon: React.ReactNode; count: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => { event.stopPropagation(); onClick(); }}
+      title={label}
+      aria-label={label}
+      className="flex items-center gap-0.5 rounded px-0.5 py-0.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:bg-muted/50"
+    >
+      {icon}
+      {count > 0 ? <span>{count}</span> : null}
+    </button>
   );
 }
