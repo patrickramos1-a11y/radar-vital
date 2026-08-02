@@ -3,6 +3,8 @@ import type { Collaborator } from "@/types/collaborator";
 
 /** Institutional structure used by every Universo Ramos collaborator card. */
 export const RAMOS_COLLABORATOR_CARD_COLOR = "#0DD375";
+/** Shared structural color for every Projeto/Painel card in Universo Ramos. */
+export const SISRAMOS_PROJECT_CARD_COLOR = "#2B4226";
 
 /** Sector colors used across desktop and mobile Universo Ramos cards. */
 export const universeSectorColors: Record<string, string> = {
@@ -30,6 +32,9 @@ export function getUniverseAccentColor(client: Client, collaborators: Collaborat
   }
   if (client.universeCategory === "SETOR") {
     return universeSectorColors[client.name.trim().toLocaleUpperCase("pt-BR")] ?? "#0F766E";
+  }
+  if (client.universeCategory === "PROJETO") {
+    return SISRAMOS_PROJECT_CARD_COLOR;
   }
   return null;
 }

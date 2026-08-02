@@ -171,6 +171,13 @@ export default function UniversoRamos() {
   const visibleClients = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase("pt-BR");
     const multiplier = sortDirection === "desc" ? 1 : -1;
+    const categoryOrder: Record<UniversoRamosCategory | "SEM_CATEGORIA", number> = {
+      COLABORADOR: 0,
+      SETOR: 1,
+      PROJETO: 2,
+      EMPRESA: 3,
+      SEM_CATEGORIA: 4,
+    };
     let result = universeClients.filter((client) => {
       const assignedIds = getAssignedCollaboratorIds(client.id);
       const assignedNames = collaborators
@@ -224,6 +231,13 @@ export default function UniversoRamos() {
     });
 
     result.sort((left, right) => {
+      // Universo Ramos is always presented in operational groups. The
+      // selected sort only changes the order inside each category.
+      const categoryDifference =
+        categoryOrder[left.universeCategory ?? "SEM_CATEGORIA"] -
+        categoryOrder[right.universeCategory ?? "SEM_CATEGORIA"];
+      if (categoryDifference !== 0) return categoryDifference;
+
       if (sortBy === "priority") {
         return (Number(right.isPriority) - Number(left.isPriority)) * multiplier;
       }
