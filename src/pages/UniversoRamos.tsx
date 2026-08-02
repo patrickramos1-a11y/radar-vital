@@ -110,6 +110,7 @@ export default function UniversoRamos() {
     resolveChallenge,
     requestChallengeValue,
     configureChallengeReward,
+    approveChallengeAsUnrewarded,
     reviewChallengeValueRequest,
     updateUniverseChallenge,
     deleteUniverseChallenges,
@@ -421,6 +422,7 @@ export default function UniversoRamos() {
               canManage={isAdmin}
               onRequestValue={requestChallengeValue}
               onConfigureReward={configureChallengeReward}
+              onApproveUnrewarded={approveChallengeAsUnrewarded}
               onReviewRequest={reviewChallengeValueRequest}
               onAccept={acceptUniverseChallenge}
               onUpdate={updateUniverseChallenge}

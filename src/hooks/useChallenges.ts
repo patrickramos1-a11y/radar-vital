@@ -373,6 +373,29 @@ export function useChallenges() {
     [currentUserName, refetch],
   );
 
+  // Publishes a draft to the board as an opportunity with no reward attached.
+  const approveChallengeAsUnrewarded = useCallback(
+    async (challengeId: string): Promise<boolean> => {
+      const { error: approveError } = await callRpc("approve_challenge_as_unrewarded", {
+        p_challenge_id: challengeId,
+        p_actor_name: currentUserName,
+      });
+
+      if (approveError) {
+        toast.error("Não foi possível aprovar o desafio como oportunidade sem valor.");
+        console.error("Error approving challenge as unrewarded:", approveError);
+        return false;
+      }
+
+      await refetch();
+      toast.success("Desafio ativo no mural como oportunidade sem valor.");
+      return true;
+    },
+    [currentUserName, refetch],
+  );
+
+
+
   const reviewChallengeValueRequest = useCallback(
     async (
       requestId: string,
@@ -510,6 +533,7 @@ export function useChallenges() {
     resolveChallenge,
     requestChallengeValue,
     configureChallengeReward,
+    approveChallengeAsUnrewarded,
     reviewChallengeValueRequest,
     updateUniverseChallenge,
     deleteUniverseChallenges,
