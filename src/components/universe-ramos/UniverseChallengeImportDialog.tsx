@@ -104,8 +104,10 @@ export function UniverseChallengeImportDialog({ open, onOpenChange, units, colla
     <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Importar rascunhos do Banco Mestre</DialogTitle>
-        <p className="text-sm text-muted-foreground">A carga cria somente desafios em rascunho. Ela não publica no mural, não notifica a equipe e não define estrelas, penalidades ou prazos.</p>
+        <p className="text-sm text-muted-foreground">A carga cria <strong>somente desafios em rascunho</strong>. Ela não atribui responsáveis, não define estrelas, valores, penalidades ou prazos, não publica no mural e não notifica a equipe.</p>
+        <p className="text-xs text-muted-foreground">“Responsável sugerido” é apenas uma sugestão da planilha para revisão: nenhum colaborador é vinculado ao desafio na importação. A carga é idempotente pelo ID do Banco Mestre, então reimportar não duplica desafios.</p>
       </DialogHeader>
+
 
       {!prepared.length && !result && <label className="grid min-h-44 cursor-pointer place-items-center border-2 border-dashed border-cyan-200 bg-cyan-50/40 p-6 text-center hover:bg-cyan-50">
         <input className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={(event) => void handleFile(event.target.files?.[0])} />
