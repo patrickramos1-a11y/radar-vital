@@ -99,7 +99,12 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
   const pendingRequests = valueRequests.filter((request) => request.status === "pending");
   const pendingByChallenge = useMemo(() => new Map(pendingRequests.map((request) => [request.challengeId, request])), [pendingRequests]);
   const latestRequestByChallenge = useMemo(() => new Map(valueRequests.map((request) => [request.challengeId, request])), [valueRequests]);
-  const sectorUnits = useMemo(() => units.filter((unit) => unit.universeCategory === "SETOR"), [units]);
+  const sectorUnits = useMemo(
+    () => units
+      .filter((unit) => unit.universeCategory === "SETOR")
+      .sort((left, right) => left.name.localeCompare(right.name, "pt-BR", { sensitivity: "base" })),
+    [units],
+  );
 
   const filteredChallenges = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("pt-BR");

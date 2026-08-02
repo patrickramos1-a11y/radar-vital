@@ -74,7 +74,9 @@ export default function UniversoRamos() {
   const [commentCounts] = useAllClientsCommentCountsWithRefresh(
     currentUser?.name,
   );
-  const [sortBy, setSortBy] = useState<SortOption>("order");
+  // Universo Ramos opens in its institutional order: category group first,
+  // then an alphabetical list inside that group.
+  const [sortBy, setSortBy] = useState<SortOption>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
     priority: false,
@@ -249,10 +251,10 @@ export default function UniversoRamos() {
       if (sortBy === "comments") {
         return (getCommentCount(right.id) - getCommentCount(left.id)) * multiplier;
       }
-      if (sortBy === "name") {
+      if (sortBy === "name" || sortBy === "order") {
         return left.name.localeCompare(right.name) * multiplier;
       }
-      return (left.order - right.order) * multiplier;
+      return left.name.localeCompare(right.name, "pt-BR", { sensitivity: "base" });
     });
     return result.map((client) => {
       if (client.universeCategory !== "COLABORADOR") return client;

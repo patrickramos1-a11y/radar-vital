@@ -78,11 +78,11 @@ adaptador de consulta e apresentacao.
 
 ## D-009 - Valor financeiro
 
-As estrelas futuramente serao convertidas em reais, mas o valor de conversao
-ainda nao foi definido.
-
-O sistema deve armazenar a taxa utilizada em cada liquidacao. A taxa nao pode
-ser codificada como constante definitiva.
+- Uma estrela-base vale R$ 1,00 na vigencia atual.
+- Uma Super Estrela equivale a dez estrelas-base e vale R$ 10,00 na vigencia
+  atual.
+- A taxa pode variar no futuro, mas cada credito, saque e liquidacao deve
+  guardar a taxa aplicada. Valores historicos nao sao recalculados.
 
 ## D-010 - Meta coletiva
 
@@ -174,6 +174,28 @@ revisadas ou substituidas por migrations compativeis com o acesso vigente.
 
 Nenhuma migration que exija login pode ser aplicada no banco de producao nesta
 rodada sem nova decisao registrada.
+
+## D-018 - Perfis de recompensa e adesao ao Tesouro
+
+- Perfil profissional e adesao ao Tesouro sao dados separados.
+- Producao pode solicitar adesao ao Tesouro; apenas membros ativos participam
+  do ranking e do saldo coletivo.
+- Estagiarios e prestadores usam recompensa individual e nao participam do
+  Tesouro ou ranking.
+- Patrick aprova ou encerra adesoes ao Tesouro.
+
+## D-019 - Destino de recompensa de desafios
+
+- Desafio individual de colaborador de producao destina-se obrigatoriamente ao
+  Tesouro.
+- Desafio geral, de setor, projeto ou empresa permite ao membro ativo de
+  producao escolher Tesouro ou saque individual, quando a politica do desafio
+  permitir.
+- Saque individual de producao paga 25% do valor financeiro aprovado e nao
+  registra estrelas nem ranking.
+- Estagiario e prestador recebem 100% do valor individual aprovado.
+- Nenhum credito ocorre no aceite: Patrick valida a conclusao antes de aplicar
+  recompensa ou penalidade.
 
 ## Decisoes pendentes
 

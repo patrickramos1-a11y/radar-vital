@@ -1,6 +1,6 @@
 # Estado de Execucao
 
-Atualizado em: 2026-08-01
+Atualizado em: 2026-08-02
 
 ## Estrategia ativa
 
@@ -65,8 +65,20 @@ Atualizado em: 2026-08-01
 
 ## Proxima entrega recomendada
 
-Aplicar em Supabase isolado somente as migrations compativeis com o acesso
-atual, validar os fluxos operacionais e preparar a publicacao unica da Fase 7.
+Executar a Fase OP-0 do plano de Oportunidades e Tesouro: perfis de recompensa,
+adesao ao Tesouro, taxa versionada, solicitacoes de aceite e livro de
+recompensas individuais. Ver `UNIVERSO_RAMOS_OPPORTUNITIES_TREASURY_PLAN.md`.
+
+## Plano de oportunidades e Tesouro
+
+- Estado: `PLANEJADO`.
+- Escopo: Banco de Oportunidades, Minha Jornada, Tesouro segregado, saques
+  individuais, ranking de producao, novas cores e artes dos setores.
+- Arte setorial: 11 PNGs adicionados em `public/universe-sectors`; a migration
+  `20260802120000_universe_sector_artwork.sql` atualiza as URLs dos cards de
+  setor sem alterar AC/AV.
+- Regra financeira confirmada: estrela-base vale R$ 1,00 e Super Estrela vale
+  10 estrelas-base na vigencia atual; taxa sempre sera versionada.
 
 ## Importacao controlada do Universo Ramos
 
