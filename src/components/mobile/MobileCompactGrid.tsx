@@ -100,6 +100,7 @@ function CompactCard({
   onCardAction,
 }: CompactCardProps) {
   const activeCollaborators = COLLABORATOR_NAMES.filter(name => client.collaborators[name]);
+  const isCollaborator = client.universeCategory === "COLABORADOR";
   const primaryColor = activeCollaborators.length > 0
     ? COLLABORATOR_COLORS[activeCollaborators[0]]
     : undefined;
