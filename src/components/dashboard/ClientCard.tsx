@@ -41,28 +41,11 @@ interface ClientCardProps {
   useUnitProfileAction?: boolean;
   unitProfileActionLabel?: string;
   onCreateChallenge?: (clientId: string) => void;
+  /** Universo Ramos: header counters open the unit Central on a given tab. */
+  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks') => void;
+  challengeCount?: number;
 }
 
-const universeSectorColors: Record<string, string> = {
-  MARKETING: "#EF4444",
-  "ADMINISTRAÇÃO": "#2563EB",
-  "MANUTENÇÃO": "#F97316",
-  "SETOR DE PROJETOS": "#2563EB",
-  "LICENCIAMENTO E PROCESSOS": "#06B6D4",
-  "GESTÃO E PLANEJAMENTO": "#8B5CF6",
-  "SUPRIMENTOS E COMPRAS": "#F97316",
-  "PESSOAS E CULTURA": "#EC4899",
-  TREINAMENTOS: "#06B6D4",
-  "IA E AUTOMAÇÃO": "#6366F1",
-};
-
-function getUniverseAccentColor(client: Client, collaborators: Collaborator[]) {
-  if (client.clientType !== "UNIVERSO_RAMOS") return null;
-  if (client.universeCategory === "COLABORADOR") {
-    return collaborators.find((item) => item.id === client.universeCollaboratorId)?.color ?? "#0F766E";
-  }
-  return client.universeCategory === "SETOR" ? universeSectorColors[client.name.trim().toLocaleUpperCase("pt-BR")] ?? "#0F766E" : null;
-}
 
 function getCollaboratorGradient(assignedCollaborators: Collaborator[]): string {
   if (assignedCollaborators.length === 0) return 'transparent';
