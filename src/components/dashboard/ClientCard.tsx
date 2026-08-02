@@ -13,6 +13,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { AuditClientStatus } from "@/types/audit";
+import { getUniverseAccentColor } from "@/lib/universeColors";
+
 
 export type CardContentMode = 'logo' | 'tasks' | 'comments';
 
