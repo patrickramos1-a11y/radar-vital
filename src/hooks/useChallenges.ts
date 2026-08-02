@@ -273,8 +273,7 @@ export function useChallenges() {
       const results: Array<{ importKey: string; challengeId?: string; error?: string }> = [];
 
       for (const draft of drafts) {
-        const { data: challengeId, error: importError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ data: string | null; error: { message?: string } | null }>)
-          ("import_universe_challenge", {
+        const { data: challengeId, error: importError } = await callRpc<string | null>("import_universe_challenge", {
             p_import_key: draft.importKey,
             p_title: draft.title,
             p_description: draft.description,

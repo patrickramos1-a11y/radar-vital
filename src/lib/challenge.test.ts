@@ -11,6 +11,7 @@ describe("challenge domain rules", () => {
 
   it("keeps the full reward per participant instead of splitting it", () => {
     const rewardPerParticipant = getChallengeRewardStars({
+      rewardStars: 0,
       rewardSuperstars: 2,
     });
 
