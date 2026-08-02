@@ -1,6 +1,6 @@
 import type { Collaborator } from "@/types/collaborator";
 import type { Client } from "@/types/client";
-import type { ChallengeCompletionConditionInput, ChallengeKind } from "@/types/challenge";
+import type { ChallengeCompletionConditionInput, ChallengeCompletionMode, ChallengeKind } from "@/types/challenge";
 
 export interface MasterChallengeRow {
   masterId: string;
@@ -9,6 +9,8 @@ export interface MasterChallengeRow {
   title: string;
   description: string;
   successCriteria: string;
+  checklistItems: string;
+  completionMode: ChallengeCompletionMode;
   expectedDeliverable: string;
   evidenceRequirements: string;
   challengeType: string;
@@ -41,6 +43,13 @@ const normalize = (value: string) => value
 
 const valueAt = (row: Record<string, unknown>, header: string) => String(row[header] ?? "").trim();
 
+function completionModeFor(value: string): ChallengeCompletionMode {
+  const mode = normalize(value);
+  if (["checklist", "lista de verificacao"].includes(mode)) return "checklist";
+  if (["misto", "orientacoes e checklist"].includes(mode)) return "mixed";
+  return "guidance";
+}
+
 export function parseMasterRows(records: Array<Record<string, unknown>>): MasterChallengeRow[] {
   return records.map((record) => ({
     masterId: valueAt(record, "ID mestre"),
@@ -48,7 +57,9 @@ export function parseMasterRows(records: Array<Record<string, unknown>>): Master
     suggestedResponsible: valueAt(record, "Responsável sugerido"),
     title: valueAt(record, "Título"),
     description: valueAt(record, "Descrição"),
-    successCriteria: valueAt(record, "Condições de conclusão"),
+    successCriteria: valueAt(record, "Orientações de conclusão") || valueAt(record, "Condições de conclusão"),
+    checklistItems: valueAt(record, "Itens do checklist"),
+    completionMode: completionModeFor(valueAt(record, "Modo de conclusão")),
     expectedDeliverable: valueAt(record, "Entregável esperado"),
     evidenceRequirements: valueAt(record, "Evidências necessárias"),
     challengeType: valueAt(record, "Tipo de desafio"),
@@ -104,13 +115,14 @@ export function prepareChallengeImport(row: MasterChallengeRow, units: Client[],
   const issues: ImportIssue[] = [];
   const unit = findUnit(units, row.unitName);
   const collaborator = findCollaborator(collaborators, row.suggestedResponsible);
-  const conditions = splitCompletionConditions(row.successCriteria);
+  const conditions = row.completionMode === "guidance" ? [] : splitCompletionConditions(row.checklistItems);
 
   if (!row.masterId) issues.push({ field: "ID mestre", message: "Informe o identificador mestre para impedir duplicidade." });
   if (!row.title) issues.push({ field: "Título", message: "Informe o título do desafio." });
   if (!row.description) issues.push({ field: "Descrição", message: "Informe o contexto do desafio." });
   if (!row.unitName || !unit) issues.push({ field: "Unidade/Setor", message: `Não foi possível relacionar “${row.unitName || "vazio"}” a um card do Universo Ramos.` });
-  if (!conditions.length) issues.push({ field: "Condições de conclusão", message: "Informe ao menos uma condição para o checklist." });
+  if ((row.completionMode === "guidance" || row.completionMode === "mixed") && !row.successCriteria) issues.push({ field: "Orientações de conclusão", message: "Informe a orientação de conclusão do desafio." });
+  if ((row.completionMode === "checklist" || row.completionMode === "mixed") && !conditions.length) issues.push({ field: "Itens do checklist", message: "Informe ao menos um item verificável para o checklist." });
   if (!row.expectedDeliverable) issues.push({ field: "Entregável esperado", message: "Informe o entregável esperado." });
   if (!row.evidenceRequirements) issues.push({ field: "Evidências necessárias", message: "Informe a evidência necessária." });
   if (row.suggestedResponsible && !collaborator) issues.push({ field: "Responsável sugerido", message: `Não encontrei o colaborador “${row.suggestedResponsible}”.` });
@@ -134,6 +146,7 @@ export interface UniverseChallengeImportRow {
   kind: ChallengeKind | "";
   description: string;
   successCriteria: string;
+  completionMode: ChallengeCompletionMode;
   expectedDeliverable: string;
   evidenceRequirements: string;
   participantNames: string[];
@@ -177,7 +190,7 @@ export function parseUniverseChallengeCsv(csv: string, units: Client[], collabor
   if (lines.length < 2) return [];
   const columns = csvLine(lines[0]).map(normalize);
   if (!csvHeaders.every((header) => columns.includes(header))) {
-    return [{ rowNumber: 1, title: "", originName: "", originCategory: "", kind: "", description: "", successCriteria: "", expectedDeliverable: "", evidenceRequirements: "", participantNames: [], dueAt: null, rewardSuperstars: 0, penaltyStars: 0, status: "", errors: ["Cabeçalho inválido. Use o arquivo-modelo de desafios."], clientId: null, participantIds: [], importKey: "" }];
+    return [{ rowNumber: 1, title: "", originName: "", originCategory: "", kind: "", description: "", successCriteria: "", completionMode: "guidance", expectedDeliverable: "", evidenceRequirements: "", participantNames: [], dueAt: null, rewardSuperstars: 0, penaltyStars: 0, status: "", errors: ["Cabeçalho inválido. Use o arquivo-modelo de desafios."], clientId: null, participantIds: [], importKey: "" }];
   }
   const valueFor = (cells: string[], header: string) => cells[columns.indexOf(header)] ?? "";
   return lines.slice(1).map((line, offset) => {
@@ -205,6 +218,6 @@ export function parseUniverseChallengeCsv(csv: string, units: Client[], collabor
     if (participantIds.length !== participantNames.length) errors.push("Colaborador não encontrado");
     const status = valueFor(cells, "status_inicial") as UniverseChallengeImportRow["status"];
     if (status && !["draft", "open", "accepted"].includes(status)) errors.push("Status inicial inválido");
-    return { rowNumber: offset + 2, title, originName, originCategory, kind, description: valueFor(cells, "descricao"), successCriteria: valueFor(cells, "condicoes_conclusao"), expectedDeliverable: valueFor(cells, "entregavel_esperado"), evidenceRequirements: valueFor(cells, "evidencia_necessaria"), participantNames, dueAt: dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.toISOString() : null, rewardSuperstars: Number.isNaN(reward) ? 0 : reward, penaltyStars: Number.isNaN(penalty) ? 0 : penalty, status, errors, clientId: unit?.id ?? null, participantIds, importKey: `${normalize(originName)}:${normalize(title)}` };
+    return { rowNumber: offset + 2, title, originName, originCategory, kind, description: valueFor(cells, "descricao"), successCriteria: valueFor(cells, "condicoes_conclusao"), completionMode: "guidance", expectedDeliverable: valueFor(cells, "entregavel_esperado"), evidenceRequirements: valueFor(cells, "evidencia_necessaria"), participantNames, dueAt: dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.toISOString() : null, rewardSuperstars: Number.isNaN(reward) ? 0 : reward, penaltyStars: Number.isNaN(penalty) ? 0 : penalty, status, errors, clientId: unit?.id ?? null, participantIds, importKey: `${normalize(originName)}:${normalize(title)}` };
   });
 }

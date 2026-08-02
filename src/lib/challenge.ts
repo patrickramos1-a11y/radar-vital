@@ -21,6 +21,7 @@ export function mapChallenge(row: ChallengeRow): Challenge {
     title: row.title,
     description: row.description,
     successCriteria: row.success_criteria,
+    completionMode: (row.completion_mode ?? "guidance") as Challenge["completionMode"],
     kind: (row.challenge_kind ?? "company_general") as Challenge["kind"],
     expectedDeliverable: row.expected_deliverable,
     evidenceRequirements: row.evidence_requirements,

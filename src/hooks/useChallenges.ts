@@ -143,6 +143,9 @@ export function useChallenges() {
       }
 
       await refetch();
+      if (challengeId && data.completionMode && data.completionMode !== "guidance") {
+        await supabase.rpc("set_challenge_completion_mode", { p_challenge_id: challengeId, p_completion_mode: data.completionMode, p_actor_name: currentUserName });
+      }
       if (challengeId && data.conditions?.length) {
         const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
           p_challenge_id: challengeId,
@@ -190,6 +193,9 @@ export function useChallenges() {
       }
 
       await refetch();
+      if (challengeId && data.completionMode && data.completionMode !== "guidance") {
+        await supabase.rpc("set_challenge_completion_mode", { p_challenge_id: challengeId, p_completion_mode: data.completionMode, p_actor_name: currentUserName });
+      }
       if (challengeId && data.conditions?.length) {
         const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
           p_challenge_id: challengeId,
@@ -292,14 +298,28 @@ export function useChallenges() {
           continue;
         }
 
-        const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
-          p_challenge_id: challengeId,
-          p_conditions: draft.conditions,
-          p_actor_name: currentUserName,
-        });
-        if (conditionsError) {
-          results.push({ importKey: draft.importKey, challengeId, error: "Rascunho criado, mas as condições não foram salvas." });
-          continue;
+        if (draft.completionMode !== "guidance") {
+          const { error: modeError } = await supabase.rpc("set_challenge_completion_mode", {
+            p_challenge_id: challengeId,
+            p_completion_mode: draft.completionMode,
+            p_actor_name: currentUserName,
+          });
+          if (modeError) {
+            results.push({ importKey: draft.importKey, challengeId, error: "Rascunho criado, mas o modo de conclusão não foi salvo." });
+            continue;
+          }
+        }
+
+        if (draft.conditions.length) {
+          const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
+            p_challenge_id: challengeId,
+            p_conditions: draft.conditions,
+            p_actor_name: currentUserName,
+          });
+          if (conditionsError) {
+            results.push({ importKey: draft.importKey, challengeId, error: "Rascunho criado, mas as condições não foram salvas." });
+            continue;
+          }
         }
 
         results.push({ importKey: draft.importKey, challengeId });
@@ -414,7 +434,18 @@ export function useChallenges() {
       }
       const nextConditions = data.conditions?.filter((condition) => condition.title.trim()).map((condition) => ({ title: condition.title.trim(), isRequired: condition.isRequired !== false })) ?? [];
       const currentConditions = completionConditions.filter((condition) => condition.challengeId === challengeId).map((condition) => ({ title: condition.title, isRequired: condition.isRequired }));
-      if (nextConditions.length && JSON.stringify(nextConditions) !== JSON.stringify(currentConditions)) {
+      if (data.completionMode) {
+        const { error: modeError } = await supabase.rpc("set_challenge_completion_mode", {
+          p_challenge_id: challengeId,
+          p_completion_mode: data.completionMode,
+          p_actor_name: currentUserName,
+        });
+        if (modeError) { toast.error("Desafio atualizado, mas não foi possível salvar o modo de conclusão."); return false; }
+      }
+      if (data.completionMode === "guidance" && currentConditions.length) {
+        const { error: clearError } = await supabase.rpc("clear_challenge_completion_conditions", { p_challenge_id: challengeId, p_actor_name: currentUserName });
+        if (clearError) { toast.error("Desafio atualizado, mas não foi possível remover o checklist."); return false; }
+      } else if (data.completionMode !== "guidance" && nextConditions.length && JSON.stringify(nextConditions) !== JSON.stringify(currentConditions)) {
         const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
           p_challenge_id: challengeId,
           p_conditions: nextConditions,

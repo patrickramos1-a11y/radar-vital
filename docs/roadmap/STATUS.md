@@ -70,16 +70,28 @@ atual, validar os fluxos operacionais e preparar a publicacao unica da Fase 7.
 
 ## Importacao controlada do Universo Ramos
 
-- Estado: `CARGA-PILOTO EXECUTADA`.
+- Estado: `REVISAO DE FORMATO EM ANDAMENTO`.
 - Fonte: `BANCO_MESTRE_UNIVERSO_RAMOS.xlsx`, aba `Banco Mestre`.
 - Primeiro lote separado: 19 itens de Treinamentos, marcados como `Pronto para rascunho` e ainda `Nao enviado`.
 - Regra: a interface importa somente rascunhos; responsaveis finais, prazo, valores, penalidades e publicacao continuam sendo decisao administrativa posterior.
 - Publicacao: tela de importacao publicada no Vercel em 2026-08-01; a carga
   piloto de Treinamentos foi executada manualmente no mesmo dia.
+- Qualidade: a auditoria identificou que criterios textuais foram indevidamente
+  convertidos em checklist. A proxima carga usara `Orientacoes`, `Checklist` ou
+  `Misto`, conforme a natureza de cada desafio. Ver
+  `docs/roadmap/UNIVERSO_RAMOS_IMPORT_AUDIT.md`.
 
 ## Registro de execucao
 
 ```text
+2026-08-01 - Correcao do contrato de importacao de desafios preparada
+Resumo: o Banco Mestre possui 103 desafios e 1.262 clausulas de conclusao.
+Resultado: criterios tecnicos extensos deixam de virar checks automaticos; o
+novo modelo separa orientacoes, checklist e modo misto, com migration aditiva,
+interface e validacao de importacao preparadas localmente.
+Pendencia: aplicar a migration em ambiente de teste, validar lote pequeno e
+somente depois decidir sobre limpeza e nova carga dos rascunhos existentes.
+
 2026-08-01 - Carga-piloto de Treinamentos executada
 Resumo: 19 itens elegiveis do Banco Mestre foram importados para o Universo
 Ramos como desafios em rascunho.

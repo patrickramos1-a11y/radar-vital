@@ -550,6 +550,7 @@ export type Database = {
         Row: {
           challenge_kind: string
           client_id: string | null
+          completion_mode: string
           created_at: string
           created_by: string
           description: string | null
@@ -574,6 +575,7 @@ export type Database = {
         Insert: {
           challenge_kind?: string
           client_id?: string | null
+          completion_mode?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -598,6 +600,7 @@ export type Database = {
         Update: {
           challenge_kind?: string
           client_id?: string | null
+          completion_mode?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -2022,6 +2025,10 @@ export type Database = {
         Args: { p_actor_name?: string; p_challenge_id: string; p_conditions: Json }
         Returns: undefined
       }
+      clear_challenge_completion_conditions: {
+        Args: { p_actor_name?: string; p_challenge_id: string }
+        Returns: undefined
+      }
       refresh_overdue_challenges: {
         Args: { p_actor_name?: string }
         Returns: number
@@ -2064,6 +2071,10 @@ export type Database = {
           p_value?: number
         }
         Returns: string
+      }
+      set_challenge_completion_mode: {
+        Args: { p_actor_name?: string; p_challenge_id: string; p_completion_mode: string }
+        Returns: undefined
       }
       set_challenge_completion_condition: {
         Args: { p_actor_name?: string; p_completed: boolean; p_condition_id: string }

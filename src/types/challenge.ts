@@ -13,6 +13,7 @@ export type ChallengeItemType = "task" | "priority" | "deliverable";
 export type ChallengeKind = "sector" | "project" | "company" | "individual_goal" | "company_general";
 export type ChallengeRewardStatus = "unpriced" | "requested" | "configured" | "non_rewarded";
 export type ChallengeValueRequestStatus = "pending" | "reviewed" | "declined";
+export type ChallengeCompletionMode = "guidance" | "checklist" | "mixed";
 
 export interface Challenge {
   id: string;
@@ -63,12 +64,15 @@ export interface ChallengeEditData {
   title: string;
   description?: string;
   successCriteria: string;
+  completionMode: ChallengeCompletionMode;
   expectedDeliverable?: string;
   evidenceRequirements?: string;
   clientId?: string | null;
   kind?: ChallengeKind;
   dueAt?: string | null;
+  completionMode?: ChallengeCompletionMode;
   conditions?: ChallengeCompletionConditionInput[];
+  completionMode?: ChallengeCompletionMode;
 }
 
 export interface ChallengeParticipant {
@@ -131,6 +135,7 @@ export interface ChallengeDraftImportInput {
   evidenceRequirements: string;
   participantIds: string[];
   conditions: ChallengeCompletionConditionInput[];
+  completionMode: ChallengeCompletionMode;
 }
 
 export const CHALLENGE_STATUS_CONFIG: Record<

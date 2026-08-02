@@ -38,16 +38,20 @@ describe("Banco Mestre", () => {
     "Penalidade em estrelas": "",
   };
 
-  it("prepara uma linha elegível como rascunho com condições em checklist", () => {
+  it("traz critérios legados como orientações, sem criar checklist artificial", () => {
     const [row] = parseMasterRows([masterRecord]);
     const prepared = prepareChallengeImport(row, units, collaborators);
     expect(isReadyForDraft(row)).toBe(true);
     expect(prepared.issues).toEqual([]);
     expect(prepared.kind).toBe("sector");
-    expect(prepared.conditions).toEqual([
-      { title: "Mapear materiais", isRequired: true },
-      { title: "Organizar conteúdos", isRequired: true },
-    ]);
+    expect(prepared.row.completionMode).toBe("guidance");
+    expect(prepared.conditions).toEqual([]);
+  });
+
+  it("aceita checklist somente quando a planilha o declara explicitamente", () => {
+    const [row] = parseMasterRows([{ ...masterRecord, "Modo de conclusão": "Checklist", "Itens do checklist": "Mapear materiais; Organizar conteúdos" }]);
+    const prepared = prepareChallengeImport(row, units, collaborators);
+    expect(prepared.conditions).toEqual([{ title: "Mapear materiais", isRequired: true }, { title: "Organizar conteúdos", isRequired: true }]);
   });
 
   it("bloqueia linhas com recompensa preenchida na primeira carga", () => {
