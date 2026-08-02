@@ -38,16 +38,37 @@ describe("Banco Mestre", () => {
     "Penalidade em estrelas": "",
   };
 
-  it("prepara uma linha elegível como rascunho com condições em checklist", () => {
+  it("prepara uma linha elegível como rascunho em modo orientações", () => {
     const [row] = parseMasterRows([masterRecord]);
     const prepared = prepareChallengeImport(row, units, collaborators);
     expect(isReadyForDraft(row)).toBe(true);
     expect(prepared.issues).toEqual([]);
     expect(prepared.kind).toBe("sector");
+    expect(prepared.completionMode).toBe("guidance");
+    expect(prepared.conditions).toEqual([]);
+  });
+
+  it("cria checklist somente quando a planilha pede explicitamente", () => {
+    const [row] = parseMasterRows([{ ...masterRecord, "Modo de conclusão": "Checklist", "Itens do checklist": "Mapear materiais; Organizar conteúdos" }]);
+    const prepared = prepareChallengeImport(row, units, collaborators);
+    expect(prepared.completionMode).toBe("checklist");
     expect(prepared.conditions).toEqual([
       { title: "Mapear materiais", isRequired: true },
       { title: "Organizar conteúdos", isRequired: true },
     ]);
+    expect(prepared.issues).toEqual([]);
+  });
+
+  it("bloqueia checklist sem itens e mantém o modo misto com orientações", () => {
+    const [semItens] = parseMasterRows([{ ...masterRecord, "Modo de conclusão": "Misto" }]);
+    const preparedSemItens = prepareChallengeImport(semItens, units, collaborators);
+    expect(preparedSemItens.completionMode).toBe("mixed");
+    expect(preparedSemItens.issues.map((issue) => issue.field)).toContain("Itens do checklist");
+
+    const [misto] = parseMasterRows([{ ...masterRecord, "Modo de conclusão": "Misto", "Itens do checklist": "A\nB" }]);
+    const preparedMisto = prepareChallengeImport(misto, units, collaborators);
+    expect(preparedMisto.conditions).toHaveLength(2);
+    expect(preparedMisto.issues).toEqual([]);
   });
 
   it("bloqueia linhas com recompensa preenchida na primeira carga", () => {
@@ -55,4 +76,5 @@ describe("Banco Mestre", () => {
     expect(prepareChallengeImport(row, units, collaborators).issues.map((issue) => issue.field)).toContain("Valores");
     expect(splitCompletionConditions("A; B")).toHaveLength(2);
   });
+
 });
