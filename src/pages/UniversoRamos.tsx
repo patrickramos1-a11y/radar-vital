@@ -468,13 +468,12 @@ export default function UniversoRamos() {
               getCommentCount={getCommentCount}
               allCollaborators={centralCollaborators}
               getAssignedCollaboratorIds={getAssignedCollaboratorIds}
-              onSelectClient={(id) =>
-                setSelectedClientId(id)
-              }
+              onSelectClient={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
               onHighlightClient={toggleHighlight}
               onTogglePriority={togglePriority}
               onToggleCollaboratorAssignment={toggleAssignment}
-              onOpenChecklist={setSelectedClientId}
+              onOpenChecklist={(id) => { setUnitTab("tasks"); setSelectedClientId(id); }}
+
               onEditClient={setEditingClient}
               showHighlight={false}
               useUnitProfileAction
