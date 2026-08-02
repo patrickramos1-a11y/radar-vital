@@ -67,6 +67,7 @@ interface CompactCardProps {
   commentCount: number;
   onTap: (id: string) => void;
   auditStatus?: AuditClientStatus;
+  onCardAction?: (id: string, action: MobileCardAction) => void;
 }
 
 function CompactCard({
@@ -76,17 +77,25 @@ function CompactCard({
   commentCount,
   onTap,
   auditStatus,
+  onCardAction,
 }: CompactCardProps) {
   const activeCollaborators = COLLABORATOR_NAMES.filter(name => client.collaborators[name]);
   const primaryColor = activeCollaborators.length > 0 
     ? COLLABORATOR_COLORS[activeCollaborators[0]] 
     : undefined;
 
-  const hasAlerts = client.isPriority || activeTaskCount > 0 || commentCount > 0;
-
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onTap(client.id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onTap(client.id);
+        }
+      }}
+      aria-label={`Abrir ${client.name}`}
       className={`relative flex flex-col rounded-lg overflow-hidden transition-all active:scale-[0.97] ${
         isHighlighted 
           ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/30' 
@@ -97,6 +106,7 @@ function CompactCard({
         borderLeftColor: primaryColor,
       }}
     >
+
       {/* Status indicators top-right */}
       <div className="absolute top-0.5 right-0.5 flex items-center gap-0.5">
         {auditStatus && (
