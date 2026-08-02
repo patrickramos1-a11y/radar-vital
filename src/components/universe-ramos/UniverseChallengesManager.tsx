@@ -198,7 +198,6 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
         {filteredChallenges.map((challenge) => {
           const participants = participantsByChallenge.get(challenge.id) ?? [];
           const responsibleNames = participants.map((item) => collaboratorNames.get(item.collaboratorId)).filter((name): name is string => Boolean(name));
-          const origin = challenge.clientId ? unitNames.get(challenge.clientId) ?? "Unidade interna" : "Geral da empresa";
           const contextPreview = challenge.description?.trim();
           const deliverablePreview = challenge.expectedDeliverable?.trim();
           return <article key={challenge.id} className="space-y-2 border bg-card p-3">
