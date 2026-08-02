@@ -82,7 +82,7 @@ export function UniverseChallengeImportDialog({ open, onOpenChange, units, colla
       kind: item.kind,
       expectedDeliverable: item.row.expectedDeliverable,
       evidenceRequirements: item.row.evidenceRequirements,
-      participantIds: item.collaborator ? [item.collaborator.id] : [],
+      participantIds: [],
       completionMode: item.completionMode,
       conditions: item.conditions,
     }));
