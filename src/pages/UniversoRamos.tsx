@@ -446,42 +446,18 @@ export default function UniversoRamos() {
               </div>
             </div>
           ) : isMobile ? (
-            <>
-              <MobileCompactGrid
-                clients={visibleClients}
-                highlightedClients={highlightedClients}
-                getActiveTaskCount={getActiveTaskCount}
-                getCommentCount={getCommentCount}
-                onClientTap={setSelectedClientId}
-              />
-              <MobileClientDetail
-                client={selectedClient ?? null}
-                isOpen={Boolean(selectedClient)}
-                onClose={() => setSelectedClientId(null)}
-                isHighlighted={
-                  selectedClient
-                    ? highlightedClients.has(selectedClient.id)
-                    : false
-                }
-                activeTaskCount={
-                  selectedClient ? getActiveTaskCount(selectedClient.id) : 0
-                }
-                commentCount={
-                  selectedClient ? getCommentCount(selectedClient.id) : 0
-                }
-                tasks={
-                  selectedClient ? getTasksForClient(selectedClient.id) : []
-                }
-                onTogglePriority={togglePriority}
-                onToggleHighlight={toggleHighlight}
-                onToggleChecked={toggleChecked}
-                onToggleCollaborator={toggleCollaborator}
-                onAddTask={addTask}
-                onToggleComplete={toggleComplete}
-                onUpdateTask={updateTask}
-                onDeleteTask={deleteTask}
-              />
-            </>
+            <MobileCompactGrid
+              clients={visibleClients}
+              highlightedClients={highlightedClients}
+              getActiveTaskCount={getActiveTaskCount}
+              getCommentCount={getCommentCount}
+              onClientTap={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
+              onCardAction={(id, action) => {
+                setUnitTab(action === "comments" ? "comments" : action === "challenges" ? "challenges" : "tasks");
+                setSelectedClientId(id);
+              }}
+            />
+
           ) : (
             <ClientGrid
               clients={visibleClients}
