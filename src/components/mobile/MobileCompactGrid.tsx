@@ -204,3 +204,28 @@ function CompactCard({
 
   );
 }
+
+function CardActionButton({
+  label,
+  icon,
+  count,
+  onClick,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  count?: number;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className="flex h-10 items-center justify-center gap-1 bg-card text-[10px] font-medium text-muted-foreground active:bg-muted"
+    >
+      {icon}
+      {count ? <span>{count}</span> : null}
+    </button>
+  );
+}
