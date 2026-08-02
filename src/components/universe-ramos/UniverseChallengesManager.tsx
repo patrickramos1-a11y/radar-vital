@@ -176,32 +176,31 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
         {filteredChallenges.map((challenge) => {
           const participants = participantsByChallenge.get(challenge.id) ?? [];
           const responsibleNames = participants.map((item) => collaboratorNames.get(item.collaboratorId)).filter((name): name is string => Boolean(name));
-          return <article key={challenge.id} className="space-y-3 border bg-card p-3">
+          const hasReward = challenge.rewardStatus === "configured";
+          const rewardBadge = hasReward ? `${getChallengeRewardStars(challenge)} estrelas` : rewardLabels[challenge.rewardStatus];
+          const origin = challenge.clientId ? unitNames.get(challenge.clientId) ?? "Unidade interna" : "Geral da empresa";
+          const deliverablePreview = challenge.expectedDeliverable?.trim();
+          return <article key={challenge.id} className="space-y-2 border bg-card p-3">
             <div className="flex items-start gap-2">
               {canManage && <input aria-label={`Selecionar ${challenge.title}`} type="checkbox" className="mt-1 h-4 w-4" checked={selectedIds.includes(challenge.id)} onChange={() => toggleSelected(challenge.id)} />}
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold leading-snug">{challenge.title}</h3>
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{challenge.description || challenge.successCriteria}</p>
+              <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug">{challenge.title}</h3>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-sky-800">{CHALLENGE_STATUS_CONFIG[challenge.status].label}</span>
+                <span className={`px-1.5 py-0.5 text-[10px] font-semibold ${rewardClasses[challenge.rewardStatus]}`}>{rewardBadge}</span>
               </div>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              <span className="bg-sky-100 px-2 py-1 text-[10px] font-semibold uppercase text-sky-800">{CHALLENGE_STATUS_CONFIG[challenge.status].label}</span>
-              <span className={`px-2 py-1 text-[10px] font-semibold ${rewardClasses[challenge.rewardStatus]}`}>{rewardLabels[challenge.rewardStatus]}{challenge.rewardStatus === "configured" ? ` · ${getChallengeRewardStars(challenge)} estrelas` : ""}</span>
-            </div>
-            <dl className="grid grid-cols-2 gap-2 text-xs">
-              <div><dt className="text-[10px] uppercase text-muted-foreground">Origem</dt><dd>{challenge.clientId ? unitNames.get(challenge.clientId) ?? "Unidade interna" : "Geral da empresa"}</dd></div>
-              <div><dt className="text-[10px] uppercase text-muted-foreground">Responsável</dt><dd>{responsibleNames.length ? responsibleNames.join(", ") : <span className="text-violet-700">Em aberto</span>}</dd></div>
-              <div><dt className="text-[10px] uppercase text-muted-foreground">Prazo</dt><dd>{challenge.dueAt ? new Date(challenge.dueAt).toLocaleDateString("pt-BR") : "Sem prazo"}</dd></div>
-              <div><dt className="text-[10px] uppercase text-muted-foreground">Solicitação</dt><dd>{latestRequestByChallenge.get(challenge.id) ? (latestRequestByChallenge.get(challenge.id)!.status === "pending" ? "Valor solicitado" : latestRequestByChallenge.get(challenge.id)!.status === "reviewed" ? "Revisada" : "Recusada") : "Sem solicitação"}</dd></div>
-            </dl>
+            <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">{deliverablePreview || "Entregável esperado não definido"}</p>
+            <p className="truncate text-[11px] text-muted-foreground">
+              {origin} · {responsibleNames.length ? responsibleNames.join(", ") : "Em aberto"} · {challenge.dueAt ? new Date(challenge.dueAt).toLocaleDateString("pt-BR") : "Sem prazo"} · {challenge.createdBy || "Sistema"}
+            </p>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" className="flex-1" onClick={() => setDetailChallenge(challenge)}>Ver detalhes</Button>
               {challenge.status === "open" && challenge.rewardStatus === "configured" && currentUser && <Button size="sm" className="flex-1" onClick={() => void onAccept(challenge.id, currentUser.id)}><UserPlus className="h-4 w-4" /> Aceitar</Button>}
-              {challenge.rewardStatus === "unpriced" && currentUser && <Button size="sm" variant="outline" className="flex-1" disabled={hasOwnPendingRequest(challenge.id)} onClick={() => setRequestChallenge(challenge)}>{hasOwnPendingRequest(challenge.id) ? "Solicitado" : "Solicitar valor"}</Button>}
+              {!canManage && challenge.rewardStatus === "unpriced" && currentUser && <Button size="sm" variant="outline" className="flex-1" disabled={hasOwnPendingRequest(challenge.id)} onClick={() => setRequestChallenge(challenge)}>{hasOwnPendingRequest(challenge.id) ? "Solicitado" : "Solicitar valor"}</Button>}
               {canManage && <>
-                <Button size="sm" className="flex-1" onClick={() => openConfig([challenge.id])}>Configurar</Button>
-                <Button size="sm" variant="outline" onClick={() => setEditingChallenge(challenge)}><Pencil className="h-4 w-4" /></Button>
-                <Button size="sm" variant="outline" onClick={() => void removeChallenges([challenge.id])}><Trash2 className="h-4 w-4" /></Button>
+                <Button size="sm" className="flex-1" onClick={() => openConfig([challenge.id])}>{hasReward ? "Adicionar estrelas" : "Adicionar valor"}</Button>
+                <Button size="sm" variant="outline" title="Editar desafio" onClick={() => setEditingChallenge(challenge)}><Pencil className="h-4 w-4" /></Button>
+                <Button size="sm" variant="outline" title="Excluir desafio" onClick={() => void removeChallenges([challenge.id])}><Trash2 className="h-4 w-4" /></Button>
               </>}
             </div>
           </article>;
