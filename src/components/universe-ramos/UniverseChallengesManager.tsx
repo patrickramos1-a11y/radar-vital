@@ -122,6 +122,31 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
     setConfigIds(ids);
     setRewardStars(0); setSuperstars(0); setPenalty(0); setNonRewarded(false); setAdminNote("");
   };
+  const openSuperstarDialog = (challenge: Challenge) => {
+    setSuperstarChallenge(challenge);
+    setSuperstarValue(challenge.rewardSuperstars > 0 ? String(challenge.rewardSuperstars) : "1");
+    setSuperstarError(null);
+  };
+  const submitSuperstars = async () => {
+    if (!superstarChallenge) return;
+    const amount = Number(superstarValue);
+    if (!Number.isInteger(amount) || amount < 1) {
+      setSuperstarError("Informe um número inteiro maior ou igual a 1.");
+      return;
+    }
+    setSuperstarError(null);
+    setSaving(true);
+    const done = await onConfigureReward([superstarChallenge.id], {
+      rewardStars: superstarChallenge.rewardStars,
+      rewardSuperstars: amount,
+      penaltyStars: superstarChallenge.penaltyStars,
+      rewardStatus: "configured",
+    });
+    setSaving(false);
+    if (done) setSuperstarChallenge(null);
+    else setSuperstarError("Não foi possível salvar. Tente novamente.");
+  };
+
   const submitRequest = async () => {
     if (!requestChallenge || !requestText.trim()) return;
     setSaving(true);
