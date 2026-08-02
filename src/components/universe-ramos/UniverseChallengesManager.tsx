@@ -78,6 +78,10 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
   const [superstars, setSuperstars] = useState(0);
   const [penalty, setPenalty] = useState(0);
   const [nonRewarded, setNonRewarded] = useState(false);
+  const [superstarChallenge, setSuperstarChallenge] = useState<Challenge | null>(null);
+  const [superstarValue, setSuperstarValue] = useState("1");
+  const [superstarError, setSuperstarError] = useState<string | null>(null);
+
   const [adminNote, setAdminNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [detailChallenge, setDetailChallenge] = useState<Challenge | null>(null);
