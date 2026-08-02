@@ -82,7 +82,7 @@ export function UniverseChallengeImportDialog({ open, onOpenChange, units, colla
       kind: item.kind,
       expectedDeliverable: item.row.expectedDeliverable,
       evidenceRequirements: item.row.evidenceRequirements,
-      participantIds: item.collaborator ? [item.collaborator.id] : [],
+      participantIds: [],
       completionMode: item.completionMode,
       conditions: item.conditions,
     }));
@@ -104,8 +104,10 @@ export function UniverseChallengeImportDialog({ open, onOpenChange, units, colla
     <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Importar rascunhos do Banco Mestre</DialogTitle>
-        <p className="text-sm text-muted-foreground">A carga cria somente desafios em rascunho. Ela não publica no mural, não notifica a equipe e não define estrelas, penalidades ou prazos.</p>
+        <p className="text-sm text-muted-foreground">A carga cria <strong>somente desafios em rascunho</strong>. Ela não atribui responsáveis, não define estrelas, valores, penalidades ou prazos, não publica no mural e não notifica a equipe.</p>
+        <p className="text-xs text-muted-foreground">“Responsável sugerido” é apenas uma sugestão da planilha para revisão: nenhum colaborador é vinculado ao desafio na importação. A carga é idempotente pelo ID do Banco Mestre, então reimportar não duplica desafios.</p>
       </DialogHeader>
+
 
       {!prepared.length && !result && <label className="grid min-h-44 cursor-pointer place-items-center border-2 border-dashed border-cyan-200 bg-cyan-50/40 p-6 text-center hover:bg-cyan-50">
         <input className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={(event) => void handleFile(event.target.files?.[0])} />
@@ -121,7 +123,7 @@ export function UniverseChallengeImportDialog({ open, onOpenChange, units, colla
           <div><p className="font-medium">{fileName}</p><p className="text-xs text-muted-foreground">{prepared.length} linha(s) elegíveis na planilha: {eligible.length} pronta(s) e {blocked.length} bloqueada(s) por validação.</p></div>
           <label><input className="sr-only" type="file" accept=".xlsx,.xls,.csv" onChange={(event) => void handleFile(event.target.files?.[0])} /><Button type="button" variant="outline" size="sm" asChild><span><Upload className="h-4 w-4" />Trocar arquivo</span></Button></label>
         </div>
-        <div className="overflow-x-auto border"><table className="w-full min-w-[920px] text-left text-sm"><thead className="bg-muted/40 text-[10px] uppercase text-muted-foreground"><tr><th className="p-3">ID</th><th className="p-3">Desafio</th><th className="p-3">Origem</th><th className="p-3">Responsável</th><th className="p-3">Tipo</th><th className="p-3">Conclusão</th><th className="p-3">Resultado da validação</th></tr></thead><tbody>{prepared.map((item) => <tr key={item.row.masterId} className="border-t align-top"><td className="p-3 font-mono text-xs">{item.row.masterId}</td><td className="p-3 font-medium">{item.row.title}</td><td className="p-3 text-xs">{item.unit?.name ?? item.row.unitName}</td><td className="p-3 text-xs">{item.collaborator?.name ?? (item.row.suggestedResponsible || "Em aberto")}</td><td className="p-3 text-xs">{challengeKindLabels[item.kind]}</td><td className="p-3 text-xs">{CHALLENGE_COMPLETION_MODE_LABELS[item.completionMode]}{item.completionMode !== "guidance" && <span className="block text-[10px] text-muted-foreground">{item.conditions.length} item(ns)</span>}</td><td className="p-3 text-xs">{item.issues.length ? <ul className="space-y-1 text-red-700">{item.issues.map((issue, index) => <li key={`${issue.field}-${index}`}>{issue.message}</li>)}</ul> : <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-4 w-4" />Pronto para criar rascunho</span>}</td></tr>)}</tbody></table></div>
+        <div className="overflow-x-auto border"><table className="w-full min-w-[920px] text-left text-sm"><thead className="bg-muted/40 text-[10px] uppercase text-muted-foreground"><tr><th className="p-3">ID</th><th className="p-3">Desafio</th><th className="p-3">Origem</th><th className="p-3">Responsável sugerido</th><th className="p-3">Tipo</th><th className="p-3">Conclusão</th><th className="p-3">Resultado da validação</th></tr></thead><tbody>{prepared.map((item) => <tr key={item.row.masterId} className="border-t align-top"><td className="p-3 font-mono text-xs">{item.row.masterId}</td><td className="p-3 font-medium">{item.row.title}</td><td className="p-3 text-xs">{item.unit?.name ?? item.row.unitName}</td><td className="p-3 text-xs">{item.row.suggestedResponsible || item.collaborator?.name || "Em aberto"}<span className="block text-[10px] text-muted-foreground">Sugestão: não será vinculado</span></td><td className="p-3 text-xs">{challengeKindLabels[item.kind]}</td><td className="p-3 text-xs">{CHALLENGE_COMPLETION_MODE_LABELS[item.completionMode]}{item.completionMode !== "guidance" && <span className="block text-[10px] text-muted-foreground">{item.conditions.length} item(ns)</span>}</td><td className="p-3 text-xs">{item.issues.length ? <ul className="space-y-1 text-red-700">{item.issues.map((issue, index) => <li key={`${issue.field}-${index}`}>{issue.message}</li>)}</ul> : <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-4 w-4" />Pronto para criar rascunho</span>}</td></tr>)}</tbody></table></div>
       </div>}
 
       {result && <div className="space-y-3">

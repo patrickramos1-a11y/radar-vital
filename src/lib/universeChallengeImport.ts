@@ -129,8 +129,10 @@ export function prepareChallengeImport(row: MasterChallengeRow, units: Client[],
   if (completionMode !== "guidance" && !conditions.length) issues.push({ field: "Itens do checklist", message: "Modo checklist ou misto exige itens do checklist preenchidos." });
   if (!row.expectedDeliverable) issues.push({ field: "Entregável esperado", message: "Informe o entregável esperado." });
   if (!row.evidenceRequirements) issues.push({ field: "Evidências necessárias", message: "Informe a evidência necessária." });
-  if (row.suggestedResponsible && !collaborator) issues.push({ field: "Responsável sugerido", message: `Não encontrei o colaborador “${row.suggestedResponsible}”.` });
-  if (normalize(row.challengeType) === "direcionado" && !collaborator) issues.push({ field: "Responsável sugerido", message: "Desafio direcionado exige um colaborador mapeado." });
+  // "Responsável sugerido" is only a hint for the reviewer: it never binds a collaborator to the draft,
+  // so an unknown name must not block the import.
+
+
   if ([row.rewardStars, row.penaltyStars].some((value) => value && Number(value) !== 0)) {
     issues.push({ field: "Valores", message: "A primeira carga deve entrar sem recompensa ou penalidade; configure valores depois no rascunho." });
   }
@@ -192,10 +194,10 @@ export function parseUniverseChallengeCsv(csv: string, units: Client[], collabor
   const lines = csv.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
   if (lines.length < 2) return [];
   const columns = csvLine(lines[0]).map(normalize);
-  if (!csvHeaders.every((header) => columns.includes(header))) {
+  if (!csvHeaders.every((header) => columns.includes(normalize(header)))) {
     return [{ rowNumber: 1, title: "", originName: "", originCategory: "", kind: "", description: "", successCriteria: "", expectedDeliverable: "", evidenceRequirements: "", participantNames: [], dueAt: null, rewardSuperstars: 0, penaltyStars: 0, status: "", errors: ["Cabeçalho inválido. Use o arquivo-modelo de desafios."], clientId: null, participantIds: [], importKey: "" }];
   }
-  const valueFor = (cells: string[], header: string) => cells[columns.indexOf(header)] ?? "";
+  const valueFor = (cells: string[], header: string) => cells[columns.indexOf(normalize(header))] ?? "";
   return lines.slice(1).map((line, offset) => {
     const cells = csvLine(line);
     const title = valueFor(cells, "titulo");
