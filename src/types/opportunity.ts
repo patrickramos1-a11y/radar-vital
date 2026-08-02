@@ -97,3 +97,13 @@ export interface TreasuryActiveBalance {
   credits: number;
   debits: number;
 }
+
+export interface OpportunityDraft {
+  id: string;
+  title: string;
+  status: string;
+  rewardStatus: string;
+  opportunityVisibility: "internal" | "opportunity";
+  rewardDestinationPolicy: RewardDestinationPolicy;
+  createdAt: string;
+}

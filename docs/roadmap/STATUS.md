@@ -290,6 +290,29 @@ Escopo autorizado: aplicar somente `20260730130000_universo_ramos.sql`, `2026073
 Pendencias: aplicar o pacote, sincronizar o frontend integrado, publicar uma unica vez e executar smoke test no ambiente publicado.
 ```
 
+2026-08-02 - Oportunidades e Tesouro (OP-0 a OP-5, implementacao local)
+Resumo: foi criada a fundacao aditiva para perfis de recompensa, adesao ao
+Tesouro, taxa versionada, aceite de oportunidades, saldo individual imutavel,
+pagamentos e estornos por lancamentos compensatorios. A interface inclui
+mercado de oportunidades, Minha Jornada, fila administrativa, classificacao e
+publicacao em massa, perfis de recompensa, taxa vigente e adesoes ao Tesouro.
+Regras: producao ativa pode escolher Tesouro ou saque quando a politica permite;
+estagiarios e prestadores recebem 100% individual; desafios individuais de
+producao seguem para Tesouro; saque individual de producao usa 25% e nao compoe
+ranking. Nenhum rascunho importado e publicado ou remunerado automaticamente.
+Arquivos: migration `20260802140000_opportunities_treasury.sql`, hook e tipos
+de oportunidades, pagina `Oportunidades`, pagina `Tesouro`, rota/navegacao e
+documentacao de modelo.
+Validacao: build de producao aprovado com Vite. A execucao isolada do Vitest
+continua bloqueada antes dos testes pelo conflito preexistente Vitest 4.1.10 /
+Vite 5.4.21 (`ERR_PACKAGE_PATH_NOT_EXPORTED: vite/module-runner`).
+Bloqueio: o conector Supabase desta sessao nao expoe o projeto configurado do
+Radar Vital (`ixiffabjunvpoizdhwtk`); ele lista somente projetos diferentes.
+Nenhuma migration foi aplicada em projeto incorreto e nenhuma publicacao foi
+simulada. Para OP-6/finalizacao faltam aplicar a migration no projeto correto,
+regenerar os tipos Supabase, executar os testes de banco e o smoke test do link
+oficial Vercel em desktop e celular.
+
 ## Modelo para proximos registros
 
 Adicionar uma entrada a cada etapa relevante:

@@ -245,6 +245,78 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.set_collaborator_reward_profile(
+  p_collaborator_id UUID,
+  p_profile_kind TEXT,
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE actor TEXT := COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema');
+BEGIN
+  IF lower(actor) NOT LIKE '%patrick%' THEN RAISE EXCEPTION 'Only Patrick can set reward profiles'; END IF;
+  IF p_profile_kind NOT IN ('production', 'intern', 'provider', 'admin') THEN RAISE EXCEPTION 'Invalid reward profile'; END IF;
+  INSERT INTO public.collaborator_reward_profiles (collaborator_id, profile_kind, created_by, updated_by)
+  VALUES (p_collaborator_id, p_profile_kind, actor, actor)
+  ON CONFLICT (collaborator_id) DO UPDATE SET profile_kind = EXCLUDED.profile_kind, updated_by = actor, updated_at = now();
+  INSERT INTO public.reward_program_events (collaborator_id, event_type, actor_name, payload)
+  VALUES (p_collaborator_id, 'reward_profile_set', actor, jsonb_build_object('profile_kind', p_profile_kind));
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.set_star_value_rate(
+  p_star_value_brl NUMERIC,
+  p_note TEXT DEFAULT NULL,
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
+RETURNS UUID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE actor TEXT := COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'); new_rate_id UUID;
+BEGIN
+  IF lower(actor) NOT LIKE '%patrick%' THEN RAISE EXCEPTION 'Only Patrick can change the star value rate'; END IF;
+  IF COALESCE(p_star_value_brl, 0) <= 0 THEN RAISE EXCEPTION 'Star value must be positive'; END IF;
+  UPDATE public.star_value_rates SET effective_until = now() WHERE effective_until IS NULL;
+  INSERT INTO public.star_value_rates (star_value_brl, effective_from, created_by, note)
+  VALUES (p_star_value_brl, now(), actor, NULLIF(btrim(COALESCE(p_note, '')), '')) RETURNING id INTO new_rate_id;
+  INSERT INTO public.reward_program_events (event_type, actor_name, payload)
+  VALUES ('star_value_rate_set', actor, jsonb_build_object('star_value_brl', p_star_value_brl, 'rate_id', new_rate_id));
+  RETURN new_rate_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.configure_opportunity_batch(
+  p_challenge_ids UUID[],
+  p_visibility TEXT,
+  p_destination_policy TEXT DEFAULT 'choice_allowed',
+  p_publish BOOLEAN DEFAULT FALSE,
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
+RETURNS INTEGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE actor TEXT := COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'); updated_count INTEGER;
+BEGIN
+  IF lower(actor) NOT LIKE '%patrick%' THEN RAISE EXCEPTION 'Only Patrick can configure opportunities'; END IF;
+  IF COALESCE(array_length(p_challenge_ids, 1), 0) = 0 THEN RAISE EXCEPTION 'Select at least one challenge'; END IF;
+  IF p_visibility NOT IN ('internal', 'opportunity') OR p_destination_policy NOT IN ('treasury_required', 'choice_allowed', 'individual_only') THEN
+    RAISE EXCEPTION 'Invalid opportunity configuration';
+  END IF;
+  UPDATE public.challenges
+  SET opportunity_visibility = p_visibility,
+      reward_destination_policy = p_destination_policy,
+      status = CASE WHEN p_publish THEN 'open' ELSE status END,
+      updated_at = now()
+  WHERE id = ANY(p_challenge_ids);
+  GET DIAGNOSTICS updated_count = ROW_COUNT;
+  INSERT INTO public.challenge_events (challenge_id, actor_user_id, action_type, after_data)
+  SELECT id, actor, 'opportunity_configured', jsonb_build_object('visibility', p_visibility, 'destination_policy', p_destination_policy, 'published', p_publish)
+  FROM public.challenges WHERE id = ANY(p_challenge_ids);
+  RETURN updated_count;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.request_opportunity_acceptance(
   p_challenge_id UUID,
   p_collaborator_id UUID,
@@ -390,6 +462,77 @@ BEGIN
 END;
 $$;
 
+-- The individual ledger is append-only: settling or reversing a reward creates
+-- a compensating row instead of mutating the original credit.
+CREATE OR REPLACE FUNCTION public.settle_individual_reward_transactions(
+  p_transaction_ids UUID[],
+  p_note TEXT DEFAULT NULL,
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
+RETURNS INTEGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE actor TEXT := COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'); settled_count INTEGER;
+BEGIN
+  IF lower(actor) NOT LIKE '%patrick%' THEN RAISE EXCEPTION 'Only Patrick can settle individual rewards'; END IF;
+  IF COALESCE(array_length(p_transaction_ids, 1), 0) = 0 THEN RAISE EXCEPTION 'Select at least one reward'; END IF;
+  INSERT INTO public.individual_reward_transactions (
+    collaborator_id, challenge_id, rate_id, gross_stars, frozen_star_value_brl,
+    payout_fraction, amount_brl, transaction_type, payment_status, reason,
+    created_by, idempotency_key, metadata
+  )
+  SELECT credit.collaborator_id, credit.challenge_id, credit.rate_id,
+    -credit.gross_stars, credit.frozen_star_value_brl, credit.payout_fraction,
+    -credit.amount_brl, 'payment', 'paid',
+    COALESCE(NULLIF(btrim(p_note), ''), 'Pagamento individual liquidado'), actor,
+    format('individual-payment:%s', credit.id),
+    jsonb_build_object('settles_transaction_id', credit.id)
+  FROM public.individual_reward_transactions credit
+  WHERE credit.id = ANY(p_transaction_ids)
+    AND credit.transaction_type = 'credit'
+    AND NOT EXISTS (
+      SELECT 1 FROM public.individual_reward_transactions payment
+      WHERE payment.idempotency_key = format('individual-payment:%s', credit.id)
+    );
+  GET DIAGNOSTICS settled_count = ROW_COUNT;
+  INSERT INTO public.reward_program_events (event_type, actor_name, payload)
+  VALUES ('individual_rewards_settled', actor, jsonb_build_object('transaction_ids', p_transaction_ids, 'count', settled_count));
+  RETURN settled_count;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.reverse_individual_reward_transaction(
+  p_transaction_id UUID,
+  p_reason TEXT,
+  p_actor_name TEXT DEFAULT 'Sistema'
+)
+RETURNS UUID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE actor TEXT := COALESCE(NULLIF(btrim(p_actor_name), ''), 'Sistema'); source_row public.individual_reward_transactions%ROWTYPE; reversal_id UUID;
+BEGIN
+  IF lower(actor) NOT LIKE '%patrick%' THEN RAISE EXCEPTION 'Only Patrick can reverse individual rewards'; END IF;
+  IF NULLIF(btrim(COALESCE(p_reason, '')), '') IS NULL THEN RAISE EXCEPTION 'A reversal reason is required'; END IF;
+  SELECT * INTO source_row FROM public.individual_reward_transactions WHERE id = p_transaction_id FOR UPDATE;
+  IF source_row.id IS NULL OR source_row.transaction_type = 'reversal' THEN RAISE EXCEPTION 'Transaction cannot be reversed'; END IF;
+  INSERT INTO public.individual_reward_transactions (
+    collaborator_id, challenge_id, rate_id, gross_stars, frozen_star_value_brl,
+    payout_fraction, amount_brl, transaction_type, payment_status, reason,
+    created_by, idempotency_key, metadata
+  ) VALUES (
+    source_row.collaborator_id, source_row.challenge_id, source_row.rate_id,
+    -source_row.gross_stars, source_row.frozen_star_value_brl, source_row.payout_fraction,
+    -source_row.amount_brl, 'reversal', 'reversed', p_reason, actor,
+    format('individual-reversal:%s', source_row.id),
+    jsonb_build_object('reverses_transaction_id', source_row.id)
+  ) ON CONFLICT (idempotency_key) DO NOTHING RETURNING id INTO reversal_id;
+  INSERT INTO public.reward_program_events (collaborator_id, event_type, actor_name, payload)
+  VALUES (source_row.collaborator_id, 'individual_reward_reversed', actor,
+    jsonb_build_object('transaction_id', source_row.id, 'reversal_id', reversal_id, 'reason', p_reason));
+  RETURN reversal_id;
+END;
+$$;
+
 -- Keep the legacy resolution entry point, but route newly approved individual
 -- destinations to their own immutable financial ledger. Existing participants
 -- with no destination retain the historical Treasury behavior.
@@ -456,9 +599,12 @@ WHERE c.opportunity_visibility = 'opportunity'
 CREATE OR REPLACE VIEW public.individual_reward_balances
 WITH (security_invoker = TRUE) AS
 SELECT t.collaborator_id, c.name AS collaborator_name, c.color AS collaborator_color, c.photo_url,
-  COALESCE(SUM(t.amount_brl) FILTER (WHERE t.payment_status = 'payable'), 0)::NUMERIC(14,2) AS payable_brl,
-  COALESCE(SUM(t.amount_brl) FILTER (WHERE t.payment_status = 'paid'), 0)::NUMERIC(14,2) AS paid_brl,
-  COUNT(*) FILTER (WHERE t.payment_status = 'payable')::INTEGER AS payable_count
+  COALESCE(SUM(t.amount_brl), 0)::NUMERIC(14,2) AS payable_brl,
+  COALESCE(-SUM(t.amount_brl) FILTER (WHERE t.transaction_type = 'payment'), 0)::NUMERIC(14,2) AS paid_brl,
+  COUNT(*) FILTER (WHERE t.transaction_type = 'credit' AND NOT EXISTS (
+    SELECT 1 FROM public.individual_reward_transactions payment
+    WHERE payment.idempotency_key = format('individual-payment:%s', t.id)
+  ))::INTEGER AS payable_count
 FROM public.collaborators c
 LEFT JOIN public.individual_reward_transactions t ON t.collaborator_id = c.id
 GROUP BY c.id, c.name, c.color, c.photo_url;
@@ -484,8 +630,13 @@ GRANT SELECT ON public.opportunity_catalog, public.individual_reward_balances,
 GRANT EXECUTE ON FUNCTION public.current_star_value_rate() TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.request_treasury_membership(UUID, TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.review_treasury_membership(UUID, BOOLEAN, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.set_collaborator_reward_profile(UUID, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.set_star_value_rate(NUMERIC, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.configure_opportunity_batch(UUID[], TEXT, TEXT, BOOLEAN, TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.request_opportunity_acceptance(UUID, UUID, TIMESTAMPTZ, TEXT, INTEGER, TEXT, TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.review_opportunity_acceptance(UUID, BOOLEAN, TIMESTAMPTZ, INTEGER, TEXT, TEXT, TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.record_opportunity_individual_reward(UUID, UUID, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.settle_individual_reward_transactions(UUID[], TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.reverse_individual_reward_transaction(UUID, TEXT, TEXT) TO anon, authenticated;
 
 COMMIT;

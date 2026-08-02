@@ -12,6 +12,7 @@ import type {
   StarValueRate,
   TreasuryMembership,
   TreasuryActiveBalance,
+  OpportunityDraft,
 } from "@/types/opportunity";
 
 // The database types are regenerated when OP-0 is applied. Keeping the
@@ -66,6 +67,12 @@ const mapTreasuryBalance = (row: Record<string, unknown>): TreasuryActiveBalance
   collaboratorId: String(row.collaborator_id), name: String(row.collaborator_name), color: text(row.collaborator_color),
   photoUrl: text(row.photo_url), balance: number(row.balance), credits: number(row.credits), debits: number(row.debits),
 });
+const mapDraft = (row: Record<string, unknown>): OpportunityDraft => ({
+  id: String(row.id), title: String(row.title), status: String(row.status), rewardStatus: String(row.reward_status),
+  opportunityVisibility: (row.opportunity_visibility ?? "internal") as OpportunityDraft["opportunityVisibility"],
+  rewardDestinationPolicy: (row.reward_destination_policy ?? "choice_allowed") as OpportunityDraft["rewardDestinationPolicy"],
+  createdAt: String(row.created_at),
+});
 
 export function useOpportunityProgram() {
   const { currentUser } = useAuth();
@@ -78,6 +85,7 @@ export function useOpportunityProgram() {
   const [individualTransactions, setIndividualTransactions] = useState<IndividualRewardTransaction[]>([]);
   const [individualBalances, setIndividualBalances] = useState<IndividualRewardBalance[]>([]);
   const [treasuryBalances, setTreasuryBalances] = useState<TreasuryActiveBalance[]>([]);
+  const [drafts, setDrafts] = useState<OpportunityDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [schemaReady, setSchemaReady] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +101,7 @@ export function useOpportunityProgram() {
       database.from("individual_reward_transactions").select("*").order("created_at", { ascending: false }),
       database.from("individual_reward_balances").select("*").order("payable_brl", { ascending: false }),
       database.from("treasury_active_balances").select("*").order("balance", { ascending: false }),
+      database.from("challenges").select("id,title,status,reward_status,opportunity_visibility,reward_destination_policy,created_at").in("status", ["draft", "open", "active"]).order("created_at", { ascending: false }),
     ]);
     const failed = results.find((result) => result.error);
     if (failed?.error) {
@@ -111,6 +120,7 @@ export function useOpportunityProgram() {
     setIndividualTransactions((results[5].data ?? []).map(mapIndividualTransaction));
     setIndividualBalances((results[6].data ?? []).map(mapIndividualBalance));
     setTreasuryBalances((results[7].data ?? []).map(mapTreasuryBalance));
+    setDrafts((results[8].data ?? []).map(mapDraft));
     setLoading(false);
   }, []);
 
@@ -149,13 +159,46 @@ export function useOpportunityProgram() {
     toast.success(approve ? "Solicitação aprovada." : "Solicitação recusada."); await refetch(); return true;
   }, [currentUserName, refetch]);
 
+  const setRewardProfile = useCallback(async (collaboratorId: string, profileKind: RewardProfile["profileKind"]) => {
+    const { error: rpcError } = await database.rpc("set_collaborator_reward_profile", {
+      p_collaborator_id: collaboratorId, p_profile_kind: profileKind, p_actor_name: currentUserName,
+    });
+    if (rpcError) { toast.error(rpcError.message); return false; }
+    toast.success("Perfil de recompensa atualizado."); await refetch(); return true;
+  }, [currentUserName, refetch]);
+
+  const setStarRate = useCallback(async (starValueBrl: number, note?: string) => {
+    const { error: rpcError } = await database.rpc("set_star_value_rate", {
+      p_star_value_brl: starValueBrl, p_note: note ?? null, p_actor_name: currentUserName,
+    });
+    if (rpcError) { toast.error(rpcError.message); return false; }
+    toast.success("Nova taxa de estrela registrada."); await refetch(); return true;
+  }, [currentUserName, refetch]);
+
+  const reviewMembership = useCallback(async (membership: TreasuryMembership, approve: boolean) => {
+    const { error: rpcError } = await database.rpc("review_treasury_membership", {
+      p_collaborator_id: membership.collaboratorId, p_approve: approve, p_actor_name: currentUserName,
+    });
+    if (rpcError) { toast.error(rpcError.message); return false; }
+    toast.success(approve ? "Participação no Tesouro aprovada." : "Participação no Tesouro recusada."); await refetch(); return true;
+  }, [currentUserName, refetch]);
+
+  const configureBatch = useCallback(async (challengeIds: string[], policy: OpportunityDraft["rewardDestinationPolicy"], publish: boolean) => {
+    const { error: rpcError } = await database.rpc("configure_opportunity_batch", {
+      p_challenge_ids: challengeIds, p_visibility: "opportunity", p_destination_policy: policy,
+      p_publish: publish, p_actor_name: currentUserName,
+    });
+    if (rpcError) { toast.error(rpcError.message); return false; }
+    toast.success(publish ? "Oportunidades publicadas." : "Oportunidades classificadas."); await refetch(); return true;
+  }, [currentUserName, refetch]);
+
   const currentProfile = useMemo(() => profiles.find((profile) => profile.collaboratorId === currentUser?.id) ?? null, [currentUser?.id, profiles]);
   const currentMembership = useMemo(() => memberships.find((membership) => membership.collaboratorId === currentUser?.id) ?? null, [currentUser?.id, memberships]);
   const currentRate = rates.find((rate) => !rate.effectiveUntil) ?? rates[0] ?? null;
 
   return {
-    profiles, memberships, rates, acceptanceRequests, opportunities, individualTransactions, individualBalances, treasuryBalances,
+    profiles, memberships, rates, acceptanceRequests, opportunities, individualTransactions, individualBalances, treasuryBalances, drafts,
     currentProfile, currentMembership, currentRate, loading, schemaReady, error, refetch,
-    requestMembership, requestAcceptance, reviewAcceptance,
+    requestMembership, requestAcceptance, reviewAcceptance, reviewMembership, setRewardProfile, setStarRate, configureBatch,
   };
 }
