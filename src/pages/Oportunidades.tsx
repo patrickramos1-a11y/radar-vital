@@ -1,0 +1,90 @@
+import { useMemo, useState } from "react";
+import { CheckCircle2, CircleDollarSign, Clock3, Crown, Search, Send, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
+import { allowedRewardDestinations, currencyBrl, rewardStarsFromChallenge } from "@/lib/opportunityProgram";
+import { useOpportunityProgram } from "@/hooks/useOpportunityProgram";
+import type { OpportunityCatalogItem, RewardDestination } from "@/types/opportunity";
+
+const statusLabel: Record<string, string> = {
+  open: "Disponível", active: "Disponível", accepted: "Em execução", in_progress: "Em execução", awaiting_validation: "Aguardando validação",
+};
+
+function OpportunityCard({ opportunity, onRequest }: { opportunity: OpportunityCatalogItem; onRequest: (item: OpportunityCatalogItem) => void }) {
+  const stars = rewardStarsFromChallenge(opportunity.rewardStars, opportunity.rewardSuperstars);
+  return <article className="flex min-h-[250px] flex-col border bg-card p-4 shadow-sm">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-wide text-primary">{opportunity.originName ?? "Geral da Ramos"}</p><h3 className="mt-1 text-base font-semibold leading-snug">{opportunity.title}</h3></div>
+      <span className="shrink-0 bg-emerald-100 px-2 py-1 text-[10px] font-semibold uppercase text-emerald-800">{statusLabel[opportunity.status] ?? opportunity.status}</span>
+    </div>
+    <div className="mt-3 space-y-3 text-sm">
+      <div><p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Contexto e objetivo</p><p className="line-clamp-3 text-muted-foreground">{opportunity.description || opportunity.successCriteria}</p></div>
+      <div><p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Entregável esperado</p><p className="line-clamp-2 text-muted-foreground">{opportunity.expectedDeliverable || "Será detalhado na solicitação."}</p></div>
+    </div>
+    <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-xs text-muted-foreground">
+      <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" />{opportunity.dueAt ? new Date(opportunity.dueAt).toLocaleDateString("pt-BR") : "Prazo a combinar"}</span>
+      {opportunity.rewardStatus === "configured" ? <span className="inline-flex items-center gap-1 font-semibold text-amber-700"><Sparkles className="h-4 w-4" />{stars} estrelas</span> : <span className="font-semibold text-sky-700">Valor a propor</span>}
+    </div>
+    <Button className="mt-3 w-full" onClick={() => onRequest(opportunity)}><Send className="h-4 w-4" />Solicitar desafio</Button>
+  </article>;
+}
+
+export default function Oportunidades() {
+  const { currentUser, isAdmin, collaborators } = useAuth();
+  const program = useOpportunityProgram();
+  const [query, setQuery] = useState("");
+  const [sector, setSector] = useState("all");
+  const [valueFilter, setValueFilter] = useState("all");
+  const [selected, setSelected] = useState<OpportunityCatalogItem | null>(null);
+  const [dueAt, setDueAt] = useState("");
+  const [destination, setDestination] = useState<RewardDestination>("individual");
+  const [proposedSuperstars, setProposedSuperstars] = useState("1");
+  const [note, setNote] = useState("");
+
+  const filtered = useMemo(() => program.opportunities.filter((item) => {
+    const haystack = [item.title, item.description, item.successCriteria, item.expectedDeliverable, item.originName].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
+    if (query && !haystack.includes(query.toLocaleLowerCase("pt-BR"))) return false;
+    if (sector !== "all" && item.originName !== sector) return false;
+    if (valueFilter === "priced" && item.rewardStatus !== "configured") return false;
+    if (valueFilter === "unpriced" && item.rewardStatus !== "unpriced") return false;
+    return true;
+  }), [program.opportunities, query, sector, valueFilter]);
+  const sectors = useMemo(() => [...new Set(program.opportunities.map((item) => item.originName).filter((name): name is string => Boolean(name)))].sort((a, b) => a.localeCompare(b, "pt-BR")), [program.opportunities]);
+  const destinations = allowedRewardDestinations(program.currentProfile?.profileKind ?? "production", program.currentMembership?.status === "active", selected?.rewardDestinationPolicy ?? "choice_allowed");
+  const myRequests = program.acceptanceRequests.filter((request) => request.collaboratorId === currentUser?.id);
+  const myRewards = program.individualTransactions.filter((transaction) => transaction.collaboratorId === currentUser?.id);
+
+  const openRequest = (item: OpportunityCatalogItem) => {
+    setSelected(item); setDueAt(""); setNote(""); setProposedSuperstars("1");
+    const options = allowedRewardDestinations(program.currentProfile?.profileKind ?? "production", program.currentMembership?.status === "active", item.rewardDestinationPolicy);
+    setDestination(options[0] ?? "individual");
+  };
+  const submit = async () => {
+    if (!selected || !dueAt || !destinations.includes(destination)) return;
+    const done = await program.requestAcceptance({
+      challengeId: selected.id, dueAt: new Date(dueAt).toISOString(), destination,
+      proposedSuperstars: selected.rewardStatus === "unpriced" ? Math.max(0, Number(proposedSuperstars)) : null, note,
+    });
+    if (done) setSelected(null);
+  };
+
+  return <AppLayout><div className="h-full overflow-y-auto bg-muted/20"><section className="mx-auto w-full max-w-7xl space-y-4 p-4 md:p-6">
+    <header className="flex flex-col justify-between gap-3 border-b pb-4 sm:flex-row sm:items-end"><div><p className="text-xs font-semibold uppercase tracking-wide text-primary">Universo Ramos</p><h1 className="text-2xl font-bold">Oportunidades</h1><p className="mt-1 text-sm text-muted-foreground">Desafios publicados para a equipe, com regras e recompensas claras.</p></div><div className="flex items-center gap-2 border bg-card px-3 py-2 text-sm"><Sparkles className="h-4 w-4 text-amber-500" /><span>1 estrela = {currencyBrl(program.currentRate?.starValueBrl ?? 1)}</span></div></header>
+    {!program.schemaReady && <div className="border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"><strong>Banco de Oportunidades em preparação.</strong><br />A migration OP-0 ainda precisa ser aplicada no Supabase do Radar Vital. A interface continuará estável enquanto a integração é concluída.</div>}
+    <Tabs defaultValue="discover" className="space-y-4"><TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none border bg-card p-1"><TabsTrigger value="discover">Explorar oportunidades</TabsTrigger><TabsTrigger value="journey">Minha Jornada</TabsTrigger>{isAdmin && <TabsTrigger value="management">Gestão</TabsTrigger>}<TabsTrigger value="treasury">Tesouro</TabsTrigger></TabsList>
+      <TabsContent value="discover" className="space-y-4"><div className="grid gap-2 border bg-card p-3 md:grid-cols-[1fr_repeat(2,auto)]"><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por desafio, contexto, entregável ou setor" /></div><select className="h-10 border bg-background px-3 text-sm" value={sector} onChange={(event) => setSector(event.target.value)}><option value="all">Todos os setores</option>{sectors.map((item) => <option key={item}>{item}</option>)}</select><select className="h-10 border bg-background px-3 text-sm" value={valueFilter} onChange={(event) => setValueFilter(event.target.value)}><option value="all">Todos os valores</option><option value="priced">Com valor definido</option><option value="unpriced">Valor a propor</option></select></div>
+        {program.loading ? <div className="border bg-card p-10 text-center text-sm text-muted-foreground">Carregando oportunidades...</div> : filtered.length ? <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((item) => <OpportunityCard key={item.id} opportunity={item} onRequest={openRequest} />)}</div> : <div className="border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">Nenhuma oportunidade publicada atende a estes filtros.</div>}</TabsContent>
+      <TabsContent value="journey" className="space-y-4"><div className="grid gap-3 md:grid-cols-3"><Summary label="Solicitações" value={myRequests.length} icon={Send} /><Summary label="Ativas" value={myRequests.filter((item) => item.status === "approved").length} icon={CheckCircle2} /><Summary label="Saldo individual" value={currencyBrl(program.individualBalances.find((item) => item.collaboratorId === currentUser?.id)?.payableBrl ?? 0)} icon={WalletCards} /></div><div className="border bg-card"><div className="border-b p-4"><h2 className="font-semibold">Minhas solicitações</h2></div>{myRequests.length ? myRequests.map((request) => <div key={request.id} className="flex flex-wrap items-center justify-between gap-2 border-b p-4 last:border-0"><div><p className="font-medium">{program.opportunities.find((item) => item.id === request.challengeId)?.title ?? "Desafio"}</p><p className="text-sm text-muted-foreground">Entrega proposta: {new Date(request.proposedDueAt).toLocaleDateString("pt-BR")}</p></div><span className="bg-muted px-2 py-1 text-xs font-semibold uppercase">{request.status}</span></div>) : <p className="p-6 text-sm text-muted-foreground">Você ainda não solicitou oportunidades.</p>}</div><div className="border bg-card"><div className="border-b p-4"><h2 className="font-semibold">Histórico de recompensas individuais</h2></div>{myRewards.length ? myRewards.map((reward) => <div key={reward.id} className="flex justify-between gap-4 border-b p-4 last:border-0"><div><p className="font-medium">{reward.reason}</p><p className="text-sm text-muted-foreground">{new Date(reward.createdAt).toLocaleDateString("pt-BR")}</p></div><strong>{currencyBrl(reward.amountBrl)}</strong></div>) : <p className="p-6 text-sm text-muted-foreground">Nenhuma recompensa individual registrada.</p>}</div></TabsContent>
+      {isAdmin && <TabsContent value="management" className="space-y-4"><div className="grid gap-3 md:grid-cols-3"><Summary label="Solicitações pendentes" value={program.acceptanceRequests.filter((item) => item.status === "pending").length} icon={Clock3} /><Summary label="Membros ativos" value={program.memberships.filter((item) => item.status === "active").length} icon={Crown} /><Summary label="Pagamentos pendentes" value={currencyBrl(program.individualBalances.reduce((total, item) => total + item.payableBrl, 0))} icon={CircleDollarSign} /></div><div className="border bg-card"><div className="border-b p-4"><h2 className="font-semibold">Fila de aceite</h2></div>{program.acceptanceRequests.filter((item) => item.status === "pending").map((request) => <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 border-b p-4"><div><p className="font-medium">{collaborators.find((person) => person.id === request.collaboratorId)?.name ?? "Colaborador"}</p><p className="text-sm text-muted-foreground">{program.opportunities.find((item) => item.id === request.challengeId)?.title ?? "Desafio"} · {request.requestedDestination === "treasury" ? "Tesouro" : "Saque individual"}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => void program.reviewAcceptance(request, false)}>Recusar</Button><Button size="sm" onClick={() => void program.reviewAcceptance(request, true)}>Aprovar</Button></div></div>)}{!program.acceptanceRequests.some((item) => item.status === "pending") && <p className="p-6 text-sm text-muted-foreground">Não há solicitações pendentes.</p>}</div></TabsContent>}
+      <TabsContent value="treasury" className="space-y-4"><div className="border bg-card p-5"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wide text-primary">Participação</p><h2 className="mt-1 text-xl font-semibold">Tesouro da equipe</h2><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Somente colaboradores de produção aprovados por Patrick participam do ranking e do saldo coletivo. Recompensas individuais ficam fora do Tesouro e do ranking.</p></div><ShieldCheck className="h-8 w-8 text-primary" /></div>{program.currentProfile?.profileKind === "production" && program.currentMembership?.status !== "active" && <Button className="mt-4" onClick={() => void program.requestMembership()} disabled={!program.schemaReady || program.currentMembership?.status === "requested"}>{program.currentMembership?.status === "requested" ? "Solicitação enviada" : "Solicitar participação no Tesouro"}</Button>}</div></TabsContent>
+    </Tabs>
+    <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}><DialogContent className="max-h-[90svh] overflow-y-auto"><DialogHeader><DialogTitle>Solicitar desafio</DialogTitle><DialogDescription>{selected?.title}</DialogDescription></DialogHeader>{selected && <div className="space-y-4"><div className="border bg-muted/30 p-3 text-sm"><strong>Entregável:</strong> {selected.expectedDeliverable || "A definir"}</div><div className="space-y-2"><Label htmlFor="delivery-date">Data proposta de entrega</Label><Input id="delivery-date" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} /></div>{selected.rewardStatus === "unpriced" && <div className="space-y-2"><Label htmlFor="superstars">Proposta de Super Estrelas</Label><Input id="superstars" type="number" min="0" inputMode="numeric" value={proposedSuperstars} onChange={(event) => setProposedSuperstars(event.target.value)} /><p className="text-xs text-muted-foreground">Patrick avaliará a proposta antes de aprovar o aceite.</p></div>}<div className="space-y-2"><Label>Destino da recompensa</Label>{destinations.length ? <div className="flex flex-wrap gap-2">{destinations.map((item) => <Button key={item} type="button" variant={destination === item ? "default" : "outline"} onClick={() => setDestination(item)}>{item === "treasury" ? "Tesouro e ranking" : "Saque individual"}</Button>)}</div> : <p className="border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">Você precisa de uma adesão ativa ao Tesouro para aceitar oportunidades como colaborador de produção.</p>}</div><div className="space-y-2"><Label htmlFor="request-note">Observação (opcional)</Label><Input id="request-note" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Explique como pretende realizar a entrega" /></div></div>}<DialogFooter><Button variant="outline" onClick={() => setSelected(null)}>Cancelar</Button><Button onClick={() => void submit()} disabled={!dueAt || !destinations.includes(destination) || !program.schemaReady}>Enviar solicitação</Button></DialogFooter></DialogContent></Dialog>
+  </section></div></AppLayout>;
+}
+
+function Summary({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Send }) { return <div className="border bg-card p-4"><Icon className="h-5 w-5 text-primary" /><p className="mt-4 text-2xl font-bold">{value}</p><p className="text-sm text-muted-foreground">{label}</p></div>; }

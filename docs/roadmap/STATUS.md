@@ -71,7 +71,7 @@ recompensas individuais. Ver `UNIVERSO_RAMOS_OPPORTUNITIES_TREASURY_PLAN.md`.
 
 ## Plano de oportunidades e Tesouro
 
-- Estado: `PLANEJADO`.
+- Estado: `EM ANDAMENTO`.
 - Escopo: Banco de Oportunidades, Minha Jornada, Tesouro segregado, saques
   individuais, ranking de producao, novas cores e artes dos setores.
 - Arte setorial: 11 PNGs adicionados em `public/universe-sectors`; a migration
@@ -96,6 +96,18 @@ recompensas individuais. Ver `UNIVERSO_RAMOS_OPPORTUNITIES_TREASURY_PLAN.md`.
 ## Registro de execucao
 
 ```text
+2026-08-02 - OP-0 a OP-4 implementados localmente na branch feat/oportunidades-tesouro-op
+Resumo: modelo aditivo de perfis de recompensa, adesao ao Tesouro, taxa
+versionada, solicitacoes de aceite, livro de recompensas individuais, rota
+Oportunidades, Minha Jornada, fila administrativa e Tesouro segregado criados.
+Validacao: build de producao aprovado. Os testes Vitest nao iniciam no runtime
+Node empacotado por incompatibilidade preexistente entre Vitest e Vite.
+Ambiente: o conector Supabase desta sessao nao lista o projeto Radar Vital
+(ixiffabjunvpoizdhwtk). A implementacao e a migration seguirao na branch, mas
+nenhum SQL sera aplicado em outro projeto por seguranca. A aplicacao real no
+banco e a publicacao final dependem de o projeto correto ficar disponivel no
+conector ou de acesso administrativo equivalente.
+
 2026-08-01 - Correcao do contrato de importacao de desafios preparada
 Resumo: o Banco Mestre possui 103 desafios e 1.262 clausulas de conclusao.
 Resultado: criterios tecnicos extensos deixam de virar checks automaticos; o

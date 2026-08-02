@@ -158,6 +158,50 @@ A RPC `resolve_challenge` deve:
 
 ## 5. Tesouro de Estrelas
 
+### Oportunidades e recompensas individuais
+
+O Banco de Oportunidades amplia o dominio de desafios sem substituir as
+tabelas financeiras existentes.
+
+#### `collaborator_reward_profiles`
+
+Define o perfil de recompensa independente do cadastro do colaborador:
+`production`, `intern`, `provider` ou `admin`.
+
+#### `treasury_memberships`
+
+Controla a adesao ao Tesouro. Apenas o estado `active` de um perfil
+`production` participa de ranking e de saldo coletivo.
+
+#### `star_value_rates`
+
+Historico de cotacoes por estrela-base. A primeira vigencia e R$ 1,00 por
+estrela; cada Super Estrela representa dez estrelas-base. Nenhum lancamento
+financeiro deve consultar a taxa atual depois de criado: ele guarda a taxa
+congelada da sua propria vigencia.
+
+#### `challenge_acceptance_requests`
+
+Solicitacao de aceite contendo prazo proposto, proposta de Super Estrelas para
+desafios sem valor e destino solicitado (`treasury` ou `individual`). A
+solicitacao nao cria participante ativo, estrelas ou dinheiro ate a decisao de
+Patrick.
+
+#### `individual_reward_transactions`
+
+Livro financeiro imutavel e separado de `star_transactions`. Cada linha guarda
+estrelas brutas, taxa congelada, percentual pago, valor em reais, situacao do
+pagamento e chave de idempotencia. Producao em saque individual recebe 25%;
+estagiarios e prestadores recebem 100%.
+
+#### Destino de recompensa
+
+- Participante de producao ativo no Tesouro: desafios individuais exigem
+  `treasury`; desafios gerais podem permitir escolha.
+- Estagiario e prestador: somente `individual`; nunca entram no ranking.
+- Participantes legados sem destino explicito preservam o comportamento de
+  Tesouro ate que o administrador os reconfigure.
+
 ### `star_transactions`
 
 | Campo | Tipo | Observacao |

@@ -15,6 +15,7 @@ const CentralEntregas = lazy(() => import("./pages/CentralEntregas"));
 const UniversoRamos = lazy(() => import("./pages/UniversoRamos"));
 const Auditorias = lazy(() => import("./pages/Auditorias"));
 const Tesouro = lazy(() => import("./pages/Tesouro"));
+const Oportunidades = lazy(() => import("./pages/Oportunidades"));
 const CommentsPanel = lazy(() => import("./pages/CommentsPanel"));
 const RelatoriosPdf = lazy(() => import("./pages/RelatoriosPdf"));
 const TVMode = lazy(() => import("./pages/TVMode"));
@@ -59,6 +60,7 @@ const App = () => {
                   <Route path="/universo-ramos" element={<UniversoRamos />} />
                   <Route path="/auditorias" element={<Auditorias />} />
                   <Route path="/tesouro" element={<Tesouro />} />
+                  <Route path="/oportunidades" element={<Oportunidades />} />
                   <Route path="/config" element={<Config />} />
                   <Route path="/tv" element={<TVMode />} />
                   <Route path="*" element={<NotFound />} />

@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCollaborators } from "@/hooks/useCollaborators";
 import { useTreasury } from "@/hooks/useTreasury";
+import { useOpportunityProgram } from "@/hooks/useOpportunityProgram";
 import { calculateSettlementPreview } from "@/lib/treasury";
 import { cn } from "@/lib/utils";
 import { STAR_TRANSACTION_LABELS, type StarTransaction } from "@/types/treasury";
@@ -39,15 +40,19 @@ export default function Tesouro() {
   const { isAdmin } = useAuth();
   const { collaborators } = useCollaborators();
   const treasury = useTreasury();
+  const opportunityProgram = useOpportunityProgram();
   const [manualOpen, setManualOpen] = useState(false);
   const [openingOpen, setOpeningOpen] = useState(false);
   const [settlementOpen, setSettlementOpen] = useState(false);
   const [reverseTransaction, setReverseTransaction] = useState<StarTransaction | null>(null);
   const [selectedCollaboratorId, setSelectedCollaboratorId] = useState("all");
 
+  const displayedBalances = opportunityProgram.schemaReady
+    ? opportunityProgram.treasuryBalances
+    : treasury.balances;
   const balancesById = useMemo(
-    () => new Map(treasury.balances.map((balance) => [balance.collaboratorId, balance])),
-    [treasury.balances],
+    () => new Map(displayedBalances.map((balance) => [balance.collaboratorId, balance])),
+    [displayedBalances],
   );
   const activeCollaborators = collaborators.filter((collaborator) => collaborator.isActive);
   const transactions = treasury.transactions.filter(
@@ -92,10 +97,10 @@ export default function Tesouro() {
             <>
               <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <SummaryCard
-                  label="Saldo coletivo"
-                  value={`${starFormat.format(treasury.summary.collectiveBalance)} estrelas`}
+                  label="Saldo do Tesouro"
+                  value={`${starFormat.format(displayedBalances.reduce((total, balance) => total + balance.balance, 0))} estrelas`}
                   icon={WalletCards}
-                  tone={treasury.summary.collectiveBalance < 0 ? "negative" : "primary"}
+                  tone={displayedBalances.reduce((total, balance) => total + balance.balance, 0) < 0 ? "negative" : "primary"}
                 />
                 <SummaryCard
                   label="Créditos acumulados"
@@ -110,9 +115,9 @@ export default function Tesouro() {
                   tone="negative"
                 />
                 <SummaryCard
-                  label="Movimentações"
-                  value={starFormat.format(treasury.summary.transactionCount)}
-                  icon={History}
+                  label="Saque individual pendente"
+                  value={currencyFormat.format(opportunityProgram.individualBalances.reduce((total, item) => total + item.payableBrl, 0))}
+                  icon={CircleDollarSign}
                   tone="muted"
                 />
               </section>
@@ -132,7 +137,7 @@ export default function Tesouro() {
                   )}
                 </div>
                 <div className="grid divide-y md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-3">
-                  {treasury.balances.map((balance) => (
+                  {displayedBalances.map((balance) => (
                     <article key={balance.collaboratorId} className="flex items-center gap-3 p-4">
                       <CollaboratorAvatar name={balance.name} color={balance.color ?? undefined} size={40} />
                       <div className="min-w-0 flex-1">
@@ -152,8 +157,8 @@ export default function Tesouro() {
                       </strong>
                     </article>
                   ))}
-                  {!treasury.isLoading && treasury.balances.length === 0 && (
-                    <p className="p-6 text-sm text-muted-foreground">Nenhum colaborador disponível.</p>
+                  {!treasury.isLoading && displayedBalances.length === 0 && (
+                    <p className="p-6 text-sm text-muted-foreground">Nenhum membro ativo do Tesouro.</p>
                   )}
                 </div>
               </section>
@@ -171,7 +176,7 @@ export default function Tesouro() {
                       className="h-9 border bg-background px-2 text-sm"
                     >
                       <option value="all">Toda a equipe</option>
-                      {treasury.balances.map((balance) => (
+                      {displayedBalances.map((balance) => (
                         <option key={balance.collaboratorId} value={balance.collaboratorId}>
                           {balance.name}
                         </option>
