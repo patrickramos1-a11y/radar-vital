@@ -91,6 +91,8 @@ export default function UniversoRamos() {
   const [gridSize, setGridSize] = useState<GridSize>(null);
   const [fitAllLocked, setFitAllLocked] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [unitTab, setUnitTab] = useState("overview");
+
   const [taskClientId, setTaskClientId] = useState<string | null>(null);
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
