@@ -361,6 +361,57 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_completion_conditions: {
+        Row: {
+          challenge_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_required: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_completion_conditions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_summary"
+            referencedColumns: ["challenge_id"]
+          },
+          {
+            foreignKeyName: "challenge_completion_conditions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_events: {
         Row: {
           action_type: string
@@ -406,6 +457,48 @@ export type Database = {
           },
         ]
       }
+      challenge_evidences: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          url: string | null
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          created_by?: string
+          description: string
+          id?: string
+          url?: string | null
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_evidences_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_summary"
+            referencedColumns: ["challenge_id"]
+          },
+          {
+            foreignKeyName: "challenge_evidences_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_items: {
         Row: {
           challenge_id: string
@@ -438,50 +531,6 @@ export type Database = {
           },
           {
             foreignKeyName: "challenge_items_challenge_id_fkey"
-            columns: ["challenge_id"]
-            isOneToOne: false
-            referencedRelation: "challenges"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      challenge_completion_conditions: {
-        Row: {
-          challenge_id: string
-          completed_at: string | null
-          completed_by: string | null
-          created_at: string
-          id: string
-          is_required: boolean
-          sort_order: number
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          challenge_id: string
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string
-          id?: string
-          is_required?: boolean
-          sort_order?: number
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          challenge_id?: string
-          completed_at?: string | null
-          completed_by?: string | null
-          created_at?: string
-          id?: string
-          is_required?: boolean
-          sort_order?: number
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "challenge_completion_conditions_challenge_id_fkey"
             columns: ["challenge_id"]
             isOneToOne: false
             referencedRelation: "challenges"
@@ -546,92 +595,6 @@ export type Database = {
           },
         ]
       }
-      challenges: {
-        Row: {
-          challenge_kind: string
-          client_id: string | null
-          completion_mode: string
-          created_at: string
-          created_by: string
-          description: string | null
-          due_at: string | null
-          evidence_requirements: string | null
-          expected_deliverable: string | null
-          id: string
-          penalty_stars: number
-          reward_configured_at: string | null
-          reward_configured_by: string | null
-          reward_stars: number
-          reward_status: string
-          resolution_notes: string | null
-          resolved_at: string | null
-          resolved_by: string | null
-          reward_superstars: number
-          status: string
-          success_criteria: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          challenge_kind?: string
-          client_id?: string | null
-          completion_mode?: string
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          due_at?: string | null
-          evidence_requirements?: string | null
-          expected_deliverable?: string | null
-          id?: string
-          penalty_stars?: number
-          reward_configured_at?: string | null
-          reward_configured_by?: string | null
-          reward_stars?: number
-          reward_status?: string
-          resolution_notes?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          reward_superstars?: number
-          status?: string
-          success_criteria: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          challenge_kind?: string
-          client_id?: string | null
-          completion_mode?: string
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          due_at?: string | null
-          evidence_requirements?: string | null
-          expected_deliverable?: string | null
-          id?: string
-          penalty_stars?: number
-          reward_configured_at?: string | null
-          reward_configured_by?: string | null
-          reward_stars?: number
-          reward_status?: string
-          resolution_notes?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          reward_superstars?: number
-          status?: string
-          success_criteria?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "challenges_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       challenge_value_requests: {
         Row: {
           admin_note: string | null
@@ -671,6 +634,13 @@ export type Database = {
             foreignKeyName: "challenge_value_requests_challenge_id_fkey"
             columns: ["challenge_id"]
             isOneToOne: false
+            referencedRelation: "challenge_summary"
+            referencedColumns: ["challenge_id"]
+          },
+          {
+            foreignKeyName: "challenge_value_requests_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
             referencedRelation: "challenges"
             referencedColumns: ["id"]
           },
@@ -678,7 +648,110 @@ export type Database = {
             foreignKeyName: "challenge_value_requests_collaborator_id_fkey"
             columns: ["collaborator_id"]
             isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "challenge_value_requests_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "challenge_value_requests_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
             referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          challenge_kind: string
+          client_id: string | null
+          completion_mode: string
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string | null
+          evidence_requirements: string | null
+          expected_deliverable: string | null
+          id: string
+          import_key: string | null
+          penalty_stars: number
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          reward_configured_at: string | null
+          reward_configured_by: string | null
+          reward_stars: number
+          reward_status: string
+          reward_superstars: number
+          status: string
+          success_criteria: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_kind?: string
+          client_id?: string | null
+          completion_mode?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string | null
+          evidence_requirements?: string | null
+          expected_deliverable?: string | null
+          id?: string
+          import_key?: string | null
+          penalty_stars?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reward_configured_at?: string | null
+          reward_configured_by?: string | null
+          reward_stars?: number
+          reward_status?: string
+          reward_superstars?: number
+          status?: string
+          success_criteria: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_kind?: string
+          client_id?: string | null
+          completion_mode?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string | null
+          evidence_requirements?: string | null
+          expected_deliverable?: string | null
+          id?: string
+          import_key?: string | null
+          penalty_stars?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reward_configured_at?: string | null
+          reward_configured_by?: string | null
+          reward_stars?: number
+          reward_status?: string
+          reward_superstars?: number
+          status?: string
+          success_criteria?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -829,8 +902,6 @@ export type Database = {
       clients: {
         Row: {
           client_type: string
-          universe_category: string | null
-          universe_collaborator_id: string | null
           collaborator_celine: boolean
           collaborator_darley: boolean
           collaborator_gabi: boolean
@@ -877,12 +948,12 @@ export type Database = {
           proc_reprovado_count: number
           proc_total_count: number
           processes: number
+          universe_category: string | null
+          universe_collaborator_id: string | null
           updated_at: string
         }
         Insert: {
           client_type?: string
-          universe_category?: string | null
-          universe_collaborator_id?: string | null
           collaborator_celine?: boolean
           collaborator_darley?: boolean
           collaborator_gabi?: boolean
@@ -929,12 +1000,12 @@ export type Database = {
           proc_reprovado_count?: number
           proc_total_count?: number
           processes?: number
+          universe_category?: string | null
+          universe_collaborator_id?: string | null
           updated_at?: string
         }
         Update: {
           client_type?: string
-          universe_category?: string | null
-          universe_collaborator_id?: string | null
           collaborator_celine?: boolean
           collaborator_darley?: boolean
           collaborator_gabi?: boolean
@@ -981,9 +1052,33 @@ export type Database = {
           proc_reprovado_count?: number
           proc_total_count?: number
           processes?: number
+          universe_category?: string | null
+          universe_collaborator_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_universe_collaborator_id_fkey"
+            columns: ["universe_collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "clients_universe_collaborator_id_fkey"
+            columns: ["universe_collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "clients_universe_collaborator_id_fkey"
+            columns: ["universe_collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       collaborator_comments: {
         Row: {
@@ -1911,11 +2006,35 @@ export type Database = {
       }
     }
     Functions: {
+      accept_universe_challenge: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_id: string
+          p_collaborator_id: string
+        }
+        Returns: undefined
+      }
       backfill_star_sources: { Args: { p_actor_name?: string }; Returns: Json }
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
+      clear_challenge_completion_conditions: {
+        Args: { p_actor_name?: string; p_challenge_id: string }
+        Returns: number
+      }
       close_audit: {
         Args: { p_actor_name?: string; p_audit_id: string }
         Returns: undefined
+      }
+      configure_challenge_reward: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_ids: string[]
+          p_note?: string
+          p_penalty_stars?: number
+          p_reward_stars?: number
+          p_reward_status?: string
+          p_reward_superstars?: number
+        }
+        Returns: number
       }
       create_challenge: {
         Args: {
@@ -1936,26 +2055,27 @@ export type Database = {
         Args: {
           p_actor_name?: string
           p_challenge_kind?: string
-          p_client_id?: string | null
-          p_description?: string | null
-          p_due_at?: string | null
-          p_evidence_requirements?: string | null
-          p_expected_deliverable?: string | null
+          p_client_id?: string
+          p_completion_mode?: string
+          p_description?: string
+          p_due_at?: string
+          p_evidence_requirements?: string
+          p_expected_deliverable?: string
           p_participant_ids?: string[]
           p_penalty_stars?: number
           p_reward_superstars?: number
-          p_success_criteria?: string | null
+          p_success_criteria?: string
           p_title: string
         }
         Returns: string
       }
-      accept_universe_challenge: {
-        Args: { p_actor_name?: string; p_challenge_id: string; p_collaborator_id: string }
-        Returns: undefined
-      }
       credit_deliverable_rating: {
         Args: { p_actor_name?: string; p_rating_id: string; p_version: string }
         Returns: undefined
+      }
+      delete_universe_challenges: {
+        Args: { p_actor_name?: string; p_challenge_ids: string[] }
+        Returns: number
       }
       grant_manual_stars: {
         Args: {
@@ -1984,6 +2104,26 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      import_universe_challenge: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_kind?: string
+          p_client_id?: string
+          p_completion_mode?: string
+          p_description?: string
+          p_due_at?: string
+          p_evidence_requirements?: string
+          p_expected_deliverable?: string
+          p_import_key: string
+          p_participant_ids?: string[]
+          p_penalty_stars?: number
+          p_reward_superstars?: number
+          p_status?: string
+          p_success_criteria?: string
+          p_title: string
+        }
+        Returns: string
       }
       insert_star_transaction: {
         Args: {
@@ -2021,14 +2161,6 @@ export type Database = {
         Args: { p_actor_name?: string; p_challenge_id: string }
         Returns: undefined
       }
-      replace_challenge_completion_conditions: {
-        Args: { p_actor_name?: string; p_challenge_id: string; p_conditions: Json }
-        Returns: undefined
-      }
-      clear_challenge_completion_conditions: {
-        Args: { p_actor_name?: string; p_challenge_id: string }
-        Returns: undefined
-      }
       refresh_overdue_challenges: {
         Args: { p_actor_name?: string }
         Returns: number
@@ -2040,6 +2172,23 @@ export type Database = {
           p_rater_name: string
         }
         Returns: undefined
+      }
+      replace_challenge_completion_conditions: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_id: string
+          p_conditions: Json
+        }
+        Returns: undefined
+      }
+      request_challenge_value: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_id: string
+          p_collaborator_id: string
+          p_justification: string
+        }
+        Returns: string
       }
       resolve_challenge: {
         Args: {
@@ -2062,6 +2211,31 @@ export type Database = {
         }
         Returns: string
       }
+      review_challenge_value_request: {
+        Args: {
+          p_actor_name?: string
+          p_admin_note?: string
+          p_request_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      set_challenge_completion_condition: {
+        Args: {
+          p_actor_name?: string
+          p_completed: boolean
+          p_condition_id: string
+        }
+        Returns: undefined
+      }
+      set_challenge_completion_mode: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_id: string
+          p_completion_mode: string
+        }
+        Returns: undefined
+      }
       set_deliverable_rating: {
         Args: {
           p_actor_name?: string
@@ -2071,14 +2245,6 @@ export type Database = {
           p_value?: number
         }
         Returns: string
-      }
-      set_challenge_completion_mode: {
-        Args: { p_actor_name?: string; p_challenge_id: string; p_completion_mode: string }
-        Returns: undefined
-      }
-      set_challenge_completion_condition: {
-        Args: { p_actor_name?: string; p_completed: boolean; p_condition_id: string }
-        Returns: undefined
       }
       settle_star_balances: {
         Args: {
@@ -2107,6 +2273,22 @@ export type Database = {
           p_notes?: string
           p_result: string
           p_result_id: string
+        }
+        Returns: undefined
+      }
+      update_universe_challenge: {
+        Args: {
+          p_actor_name?: string
+          p_challenge_id: string
+          p_challenge_kind?: string
+          p_client_id?: string
+          p_completion_mode?: string
+          p_description?: string
+          p_due_at?: string
+          p_evidence_requirements?: string
+          p_expected_deliverable?: string
+          p_success_criteria?: string
+          p_title: string
         }
         Returns: undefined
       }

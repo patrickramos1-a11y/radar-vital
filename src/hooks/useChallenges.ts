@@ -22,6 +22,10 @@ import type {
   ChallengeDraftImportInput,
 } from "@/types/challenge";
 
+type RpcResponse<T> = Promise<{ data: T; error: { message?: string } | null }>;
+const callRpc = <T = unknown>(name: string, args: Record<string, unknown>): RpcResponse<T> =>
+  (supabase.rpc as unknown as (fn: string, params: Record<string, unknown>) => RpcResponse<T>)(name, args);
+
 export function useChallenges() {
   const { currentUser } = useAuth();
   const currentUserName = actorName(currentUser);
@@ -143,11 +147,8 @@ export function useChallenges() {
       }
 
       await refetch();
-      if (challengeId && data.completionMode && data.completionMode !== "guidance") {
-        await supabase.rpc("set_challenge_completion_mode", { p_challenge_id: challengeId, p_completion_mode: data.completionMode, p_actor_name: currentUserName });
-      }
-      if (challengeId && data.conditions?.length) {
-        const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
+      if (challengeId && data.conditions?.length && (data.completionMode ?? "guidance") !== "guidance") {
+        const { error: conditionsError } = await callRpc("replace_challenge_completion_conditions", {
           p_challenge_id: challengeId,
           p_conditions: data.conditions,
           p_actor_name: currentUserName,
@@ -183,6 +184,7 @@ export function useChallenges() {
           p_penalty_stars: data.penaltyStars,
           p_participant_ids: data.participantIds,
           p_actor_name: currentUserName,
+          p_completion_mode: data.completionMode ?? "guidance",
         },
       );
 
@@ -193,11 +195,8 @@ export function useChallenges() {
       }
 
       await refetch();
-      if (challengeId && data.completionMode && data.completionMode !== "guidance") {
-        await supabase.rpc("set_challenge_completion_mode", { p_challenge_id: challengeId, p_completion_mode: data.completionMode, p_actor_name: currentUserName });
-      }
-      if (challengeId && data.conditions?.length) {
-        const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
+      if (challengeId && data.conditions?.length && (data.completionMode ?? "guidance") !== "guidance") {
+        const { error: conditionsError } = await callRpc("replace_challenge_completion_conditions", {
           p_challenge_id: challengeId,
           p_conditions: data.conditions,
           p_actor_name: currentUserName,
@@ -275,8 +274,7 @@ export function useChallenges() {
       const results: Array<{ importKey: string; challengeId?: string; error?: string }> = [];
 
       for (const draft of drafts) {
-        const { data: challengeId, error: importError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ data: string | null; error: { message?: string } | null }>)
-          ("import_universe_challenge", {
+        const { data: challengeId, error: importError } = await callRpc<string | null>("import_universe_challenge", {
             p_import_key: draft.importKey,
             p_title: draft.title,
             p_description: draft.description,
@@ -291,6 +289,7 @@ export function useChallenges() {
             p_participant_ids: draft.participantIds,
             p_status: "draft",
             p_actor_name: currentUserName,
+            p_completion_mode: draft.completionMode,
           });
 
         if (importError || !challengeId) {
@@ -298,28 +297,19 @@ export function useChallenges() {
           continue;
         }
 
-        if (draft.completionMode !== "guidance") {
-          const { error: modeError } = await supabase.rpc("set_challenge_completion_mode", {
-            p_challenge_id: challengeId,
-            p_completion_mode: draft.completionMode,
-            p_actor_name: currentUserName,
-          });
-          if (modeError) {
-            results.push({ importKey: draft.importKey, challengeId, error: "Rascunho criado, mas o modo de conclusão não foi salvo." });
-            continue;
-          }
+        if (draft.completionMode === "guidance" || !draft.conditions.length) {
+          results.push({ importKey: draft.importKey, challengeId });
+          continue;
         }
 
-        if (draft.conditions.length) {
-          const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
-            p_challenge_id: challengeId,
-            p_conditions: draft.conditions,
-            p_actor_name: currentUserName,
-          });
-          if (conditionsError) {
-            results.push({ importKey: draft.importKey, challengeId, error: "Rascunho criado, mas as condições não foram salvas." });
-            continue;
-          }
+        const { error: conditionsError } = await callRpc("replace_challenge_completion_conditions", {
+          p_challenge_id: challengeId,
+          p_conditions: draft.conditions,
+          p_actor_name: currentUserName,
+        });
+        if (conditionsError) {
+          results.push({ importKey: draft.importKey, challengeId, error: "Rascunho criado, mas as condições não foram salvas." });
+          continue;
         }
 
         results.push({ importKey: draft.importKey, challengeId });
@@ -338,8 +328,7 @@ export function useChallenges() {
         return false;
       }
 
-      const { error: requestError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
-        ("request_challenge_value", {
+      const { error: requestError } = await callRpc("request_challenge_value", {
           p_challenge_id: challengeId,
           p_collaborator_id: currentUser.id,
           p_justification: justification,
@@ -361,8 +350,7 @@ export function useChallenges() {
 
   const configureChallengeReward = useCallback(
     async (challengeIds: string[], config: ChallengeRewardConfig): Promise<boolean> => {
-      const { error: configureError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
-        ("configure_challenge_reward", {
+      const { error: configureError } = await callRpc("configure_challenge_reward", {
           p_challenge_ids: challengeIds,
           p_reward_stars: config.rewardStars,
           p_reward_superstars: config.rewardSuperstars,
@@ -391,8 +379,7 @@ export function useChallenges() {
       status: Extract<ChallengeValueRequestStatus, "reviewed" | "declined">,
       note?: string,
     ): Promise<boolean> => {
-      const { error: reviewError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
-        ("review_challenge_value_request", {
+      const { error: reviewError } = await callRpc("review_challenge_value_request", {
           p_request_id: requestId,
           p_status: status,
           p_admin_note: note ?? null,
@@ -414,8 +401,7 @@ export function useChallenges() {
 
   const updateUniverseChallenge = useCallback(
     async (challengeId: string, data: ChallengeEditData): Promise<boolean> => {
-      const { error: updateError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
-        ("update_universe_challenge", {
+      const { error: updateError } = await callRpc("update_universe_challenge", {
           p_challenge_id: challengeId,
           p_title: data.title,
           p_description: data.description ?? null,
@@ -426,6 +412,7 @@ export function useChallenges() {
           p_challenge_kind: data.kind ?? null,
           p_due_at: data.dueAt ?? null,
           p_actor_name: currentUserName,
+          p_completion_mode: data.completionMode ?? null,
         });
       if (updateError) {
         toast.error("Não foi possível editar o desafio.");
@@ -434,19 +421,8 @@ export function useChallenges() {
       }
       const nextConditions = data.conditions?.filter((condition) => condition.title.trim()).map((condition) => ({ title: condition.title.trim(), isRequired: condition.isRequired !== false })) ?? [];
       const currentConditions = completionConditions.filter((condition) => condition.challengeId === challengeId).map((condition) => ({ title: condition.title, isRequired: condition.isRequired }));
-      if (data.completionMode) {
-        const { error: modeError } = await supabase.rpc("set_challenge_completion_mode", {
-          p_challenge_id: challengeId,
-          p_completion_mode: data.completionMode,
-          p_actor_name: currentUserName,
-        });
-        if (modeError) { toast.error("Desafio atualizado, mas não foi possível salvar o modo de conclusão."); return false; }
-      }
-      if (data.completionMode === "guidance" && currentConditions.length) {
-        const { error: clearError } = await supabase.rpc("clear_challenge_completion_conditions", { p_challenge_id: challengeId, p_actor_name: currentUserName });
-        if (clearError) { toast.error("Desafio atualizado, mas não foi possível remover o checklist."); return false; }
-      } else if (data.completionMode !== "guidance" && nextConditions.length && JSON.stringify(nextConditions) !== JSON.stringify(currentConditions)) {
-        const { error: conditionsError } = await supabase.rpc("replace_challenge_completion_conditions", {
+      if (data.completionMode !== "guidance" && nextConditions.length && JSON.stringify(nextConditions) !== JSON.stringify(currentConditions)) {
+        const { error: conditionsError } = await callRpc("replace_challenge_completion_conditions", {
           p_challenge_id: challengeId,
           p_conditions: nextConditions,
           p_actor_name: currentUserName,
@@ -472,8 +448,7 @@ export function useChallenges() {
 
   const deleteUniverseChallenges = useCallback(
     async (challengeIds: string[]): Promise<boolean> => {
-      const { error: deleteError } = await (supabase.rpc as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>)
-        ("delete_universe_challenges", { p_challenge_ids: challengeIds, p_actor_name: currentUserName });
+      const { error: deleteError } = await callRpc("delete_universe_challenges", { p_challenge_ids: challengeIds, p_actor_name: currentUserName });
       if (deleteError) {
         toast.error("Não foi possível excluir os desafios selecionados.");
         console.error("Error deleting challenges:", deleteError);

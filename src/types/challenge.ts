@@ -11,15 +11,22 @@ export type ChallengeStatus =
 
 export type ChallengeItemType = "task" | "priority" | "deliverable";
 export type ChallengeKind = "sector" | "project" | "company" | "individual_goal" | "company_general";
+export type ChallengeCompletionMode = "guidance" | "checklist" | "mixed";
+export const CHALLENGE_COMPLETION_MODE_LABELS: Record<ChallengeCompletionMode, string> = {
+  guidance: "Orientações e validação",
+  checklist: "Checklist de etapas",
+  mixed: "Orientações + checklist",
+};
+
 export type ChallengeRewardStatus = "unpriced" | "requested" | "configured" | "non_rewarded";
 export type ChallengeValueRequestStatus = "pending" | "reviewed" | "declined";
-export type ChallengeCompletionMode = "guidance" | "checklist" | "mixed";
 
 export interface Challenge {
   id: string;
   title: string;
   description: string | null;
   successCriteria: string;
+  completionMode: ChallengeCompletionMode;
   kind: ChallengeKind;
   expectedDeliverable: string | null;
   evidenceRequirements: string | null;
@@ -64,15 +71,13 @@ export interface ChallengeEditData {
   title: string;
   description?: string;
   successCriteria: string;
-  completionMode: ChallengeCompletionMode;
+  completionMode?: ChallengeCompletionMode;
   expectedDeliverable?: string;
   evidenceRequirements?: string;
   clientId?: string | null;
   kind?: ChallengeKind;
   dueAt?: string | null;
-  completionMode?: ChallengeCompletionMode;
   conditions?: ChallengeCompletionConditionInput[];
-  completionMode?: ChallengeCompletionMode;
 }
 
 export interface ChallengeParticipant {
@@ -111,6 +116,7 @@ export interface ChallengeFormData {
   title: string;
   description?: string;
   successCriteria: string;
+  completionMode?: ChallengeCompletionMode;
   clientId?: string | null;
   dueAt?: string | null;
   kind?: ChallengeKind;
@@ -129,13 +135,13 @@ export interface ChallengeDraftImportInput {
   title: string;
   description: string;
   successCriteria: string;
+  completionMode: ChallengeCompletionMode;
   clientId: string | null;
   kind: ChallengeKind;
   expectedDeliverable: string;
   evidenceRequirements: string;
   participantIds: string[];
   conditions: ChallengeCompletionConditionInput[];
-  completionMode: ChallengeCompletionMode;
 }
 
 export const CHALLENGE_STATUS_CONFIG: Record<

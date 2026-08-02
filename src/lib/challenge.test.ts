@@ -6,11 +6,12 @@ import {
 
 describe("challenge domain rules", () => {
   it("converts every Super Estrela to ten base stars", () => {
-    expect(getChallengeRewardStars({ rewardSuperstars: 3 })).toBe(30);
+    expect(getChallengeRewardStars({ rewardStars: 0, rewardSuperstars: 3 })).toBe(30);
   });
 
   it("keeps the full reward per participant instead of splitting it", () => {
     const rewardPerParticipant = getChallengeRewardStars({
+      rewardStars: 0,
       rewardSuperstars: 2,
     });
 

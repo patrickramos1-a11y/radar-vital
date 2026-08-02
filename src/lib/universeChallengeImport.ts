@@ -9,8 +9,6 @@ export interface MasterChallengeRow {
   title: string;
   description: string;
   successCriteria: string;
-  checklistItems: string;
-  completionMode: ChallengeCompletionMode;
   expectedDeliverable: string;
   evidenceRequirements: string;
   challengeType: string;
@@ -18,6 +16,8 @@ export interface MasterChallengeRow {
   applicationStatus: string;
   rewardStars: string;
   penaltyStars: string;
+  completionMode: string;
+  checklistItems: string;
 }
 
 export interface ImportIssue {
@@ -30,6 +30,7 @@ export interface PreparedChallengeImport {
   unit: Client | null;
   collaborator: Collaborator | null;
   kind: ChallengeKind;
+  completionMode: ChallengeCompletionMode;
   conditions: ChallengeCompletionConditionInput[];
   issues: ImportIssue[];
 }
@@ -43,13 +44,6 @@ const normalize = (value: string) => value
 
 const valueAt = (row: Record<string, unknown>, header: string) => String(row[header] ?? "").trim();
 
-function completionModeFor(value: string): ChallengeCompletionMode {
-  const mode = normalize(value);
-  if (["checklist", "lista de verificacao"].includes(mode)) return "checklist";
-  if (["misto", "orientacoes e checklist"].includes(mode)) return "mixed";
-  return "guidance";
-}
-
 export function parseMasterRows(records: Array<Record<string, unknown>>): MasterChallengeRow[] {
   return records.map((record) => ({
     masterId: valueAt(record, "ID mestre"),
@@ -57,9 +51,7 @@ export function parseMasterRows(records: Array<Record<string, unknown>>): Master
     suggestedResponsible: valueAt(record, "Responsável sugerido"),
     title: valueAt(record, "Título"),
     description: valueAt(record, "Descrição"),
-    successCriteria: valueAt(record, "Orientações de conclusão") || valueAt(record, "Condições de conclusão"),
-    checklistItems: valueAt(record, "Itens do checklist"),
-    completionMode: completionModeFor(valueAt(record, "Modo de conclusão")),
+    successCriteria: valueAt(record, "Condições de conclusão"),
     expectedDeliverable: valueAt(record, "Entregável esperado"),
     evidenceRequirements: valueAt(record, "Evidências necessárias"),
     challengeType: valueAt(record, "Tipo de desafio"),
@@ -67,6 +59,8 @@ export function parseMasterRows(records: Array<Record<string, unknown>>): Master
     applicationStatus: valueAt(record, "Status no aplicativo"),
     rewardStars: valueAt(record, "Recompensa em estrelas"),
     penaltyStars: valueAt(record, "Penalidade em estrelas"),
+    completionMode: valueAt(record, "Modo de conclusão") || valueAt(record, "Modo de conclusao"),
+    checklistItems: valueAt(record, "Itens do checklist"),
   }));
 }
 
@@ -76,6 +70,15 @@ export function splitCompletionConditions(value: string): ChallengeCompletionCon
     .map((item) => item.replace(/^[\-•\d.\s]+/, "").trim())
     .filter(Boolean)
     .map((title) => ({ title, isRequired: true }));
+}
+
+// The Master Bank keeps long technical guidance under "Condições de conclusão".
+// It must never become a checklist unless the sheet explicitly asks for it.
+export function resolveCompletionMode(value: string): ChallengeCompletionMode {
+  const normalized = normalize(value);
+  if (normalized === "checklist") return "checklist";
+  if (normalized === "misto" || normalized === "mixed") return "mixed";
+  return "guidance";
 }
 
 function findUnit(units: Client[], name: string): Client | null {
@@ -115,14 +118,15 @@ export function prepareChallengeImport(row: MasterChallengeRow, units: Client[],
   const issues: ImportIssue[] = [];
   const unit = findUnit(units, row.unitName);
   const collaborator = findCollaborator(collaborators, row.suggestedResponsible);
-  const conditions = row.completionMode === "guidance" ? [] : splitCompletionConditions(row.checklistItems);
+  const completionMode = resolveCompletionMode(row.completionMode);
+  const conditions = completionMode === "guidance" ? [] : splitCompletionConditions(row.checklistItems);
 
   if (!row.masterId) issues.push({ field: "ID mestre", message: "Informe o identificador mestre para impedir duplicidade." });
   if (!row.title) issues.push({ field: "Título", message: "Informe o título do desafio." });
   if (!row.description) issues.push({ field: "Descrição", message: "Informe o contexto do desafio." });
   if (!row.unitName || !unit) issues.push({ field: "Unidade/Setor", message: `Não foi possível relacionar “${row.unitName || "vazio"}” a um card do Universo Ramos.` });
-  if ((row.completionMode === "guidance" || row.completionMode === "mixed") && !row.successCriteria) issues.push({ field: "Orientações de conclusão", message: "Informe a orientação de conclusão do desafio." });
-  if ((row.completionMode === "checklist" || row.completionMode === "mixed") && !conditions.length) issues.push({ field: "Itens do checklist", message: "Informe ao menos um item verificável para o checklist." });
+  if (!row.successCriteria) issues.push({ field: "Condições de conclusão", message: "Informe as orientações de conclusão do desafio." });
+  if (completionMode !== "guidance" && !conditions.length) issues.push({ field: "Itens do checklist", message: "Modo checklist ou misto exige itens do checklist preenchidos." });
   if (!row.expectedDeliverable) issues.push({ field: "Entregável esperado", message: "Informe o entregável esperado." });
   if (!row.evidenceRequirements) issues.push({ field: "Evidências necessárias", message: "Informe a evidência necessária." });
   if (row.suggestedResponsible && !collaborator) issues.push({ field: "Responsável sugerido", message: `Não encontrei o colaborador “${row.suggestedResponsible}”.` });
@@ -131,7 +135,7 @@ export function prepareChallengeImport(row: MasterChallengeRow, units: Client[],
     issues.push({ field: "Valores", message: "A primeira carga deve entrar sem recompensa ou penalidade; configure valores depois no rascunho." });
   }
 
-  return { row, unit, collaborator, kind: kindFor(unit, row.challengeType), conditions, issues };
+  return { row, unit, collaborator, kind: kindFor(unit, row.challengeType), completionMode, conditions, issues };
 }
 
 export function isReadyForDraft(row: MasterChallengeRow): boolean {
@@ -146,7 +150,6 @@ export interface UniverseChallengeImportRow {
   kind: ChallengeKind | "";
   description: string;
   successCriteria: string;
-  completionMode: ChallengeCompletionMode;
   expectedDeliverable: string;
   evidenceRequirements: string;
   participantNames: string[];
@@ -190,7 +193,7 @@ export function parseUniverseChallengeCsv(csv: string, units: Client[], collabor
   if (lines.length < 2) return [];
   const columns = csvLine(lines[0]).map(normalize);
   if (!csvHeaders.every((header) => columns.includes(header))) {
-    return [{ rowNumber: 1, title: "", originName: "", originCategory: "", kind: "", description: "", successCriteria: "", completionMode: "guidance", expectedDeliverable: "", evidenceRequirements: "", participantNames: [], dueAt: null, rewardSuperstars: 0, penaltyStars: 0, status: "", errors: ["Cabeçalho inválido. Use o arquivo-modelo de desafios."], clientId: null, participantIds: [], importKey: "" }];
+    return [{ rowNumber: 1, title: "", originName: "", originCategory: "", kind: "", description: "", successCriteria: "", expectedDeliverable: "", evidenceRequirements: "", participantNames: [], dueAt: null, rewardSuperstars: 0, penaltyStars: 0, status: "", errors: ["Cabeçalho inválido. Use o arquivo-modelo de desafios."], clientId: null, participantIds: [], importKey: "" }];
   }
   const valueFor = (cells: string[], header: string) => cells[columns.indexOf(header)] ?? "";
   return lines.slice(1).map((line, offset) => {
@@ -218,6 +221,6 @@ export function parseUniverseChallengeCsv(csv: string, units: Client[], collabor
     if (participantIds.length !== participantNames.length) errors.push("Colaborador não encontrado");
     const status = valueFor(cells, "status_inicial") as UniverseChallengeImportRow["status"];
     if (status && !["draft", "open", "accepted"].includes(status)) errors.push("Status inicial inválido");
-    return { rowNumber: offset + 2, title, originName, originCategory, kind, description: valueFor(cells, "descricao"), successCriteria: valueFor(cells, "condicoes_conclusao"), completionMode: "guidance", expectedDeliverable: valueFor(cells, "entregavel_esperado"), evidenceRequirements: valueFor(cells, "evidencia_necessaria"), participantNames, dueAt: dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.toISOString() : null, rewardSuperstars: Number.isNaN(reward) ? 0 : reward, penaltyStars: Number.isNaN(penalty) ? 0 : penalty, status, errors, clientId: unit?.id ?? null, participantIds, importKey: `${normalize(originName)}:${normalize(title)}` };
+    return { rowNumber: offset + 2, title, originName, originCategory, kind, description: valueFor(cells, "descricao"), successCriteria: valueFor(cells, "condicoes_conclusao"), expectedDeliverable: valueFor(cells, "entregavel_esperado"), evidenceRequirements: valueFor(cells, "evidencia_necessaria"), participantNames, dueAt: dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.toISOString() : null, rewardSuperstars: Number.isNaN(reward) ? 0 : reward, penaltyStars: Number.isNaN(penalty) ? 0 : penalty, status, errors, clientId: unit?.id ?? null, participantIds, importKey: `${normalize(originName)}:${normalize(title)}` };
   });
 }
