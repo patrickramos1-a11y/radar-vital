@@ -17,13 +17,6 @@ export function ChallengeGuidance({ guidance }: { guidance: string }) {
   return <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">{items.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ol>;
 }
 
-export function ChallengeGuidance({ guidance }: { guidance: string }) {
-  const items = guidance.split(/(?:\r?\n|;)/).map((item) => item.replace(/^[\-•\d.)\s]+/, "").trim()).filter(Boolean);
-  if (!items.length) return <p className="text-sm text-muted-foreground">Sem orientações adicionais.</p>;
-  if (items.length === 1) return <p className="whitespace-pre-wrap text-sm leading-6">{items[0]}</p>;
-  return <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">{items.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ol>;
-}
-
 export function ChallengeConditionsEditor({ conditions, onChange }: { conditions: ChallengeCompletionConditionInput[]; onChange: (conditions: ChallengeCompletionConditionInput[]) => void }) {
   const [bulkText, setBulkText] = useState("");
   const addLines = () => {
