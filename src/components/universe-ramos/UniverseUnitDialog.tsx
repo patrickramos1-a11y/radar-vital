@@ -32,11 +32,15 @@ interface Props {
   onOpenTasks: () => void;
   onToggleCondition: (conditionId: string, completed: boolean) => void;
   onToggleTask: (taskId: string) => Promise<boolean>;
+  initialTab?: string;
 }
 
-export function UniverseUnitDialog({ client, open, onOpenChange, challenges, participantsByChallenge, conditionsByChallenge, collaborators, commentCount, taskCount, tasks, canManage, onNewChallenge, onResolve, onUpdate, onDelete, onOpenTasks, onToggleCondition, onToggleTask }: Props) {
+export function UniverseUnitDialog({ client, open, onOpenChange, challenges, participantsByChallenge, conditionsByChallenge, collaborators, commentCount, taskCount, tasks, canManage, onNewChallenge, onResolve, onUpdate, onDelete, onOpenTasks, onToggleCondition, onToggleTask, initialTab = "overview" }: Props) {
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState(initialTab);
+  useEffect(() => {
+    if (open) setTab(initialTab);
+  }, [open, initialTab, client?.id]);
   if (!client) return null;
   const unitChallenges = challenges.filter((challenge) => challenge.clientId === client.id);
   const active = unitChallenges.filter((challenge) => ["open", "accepted", "in_progress", "active"].includes(getEffectiveChallengeStatus(challenge))).length;
@@ -44,8 +48,9 @@ export function UniverseUnitDialog({ client, open, onOpenChange, challenges, par
   const overdue = unitChallenges.filter((challenge) => challenge.dueAt && new Date(challenge.dueAt).getTime() < Date.now() && ["open", "accepted", "in_progress", "active"].includes(challenge.status)).length;
   const people = new Map(collaborators.map((person) => [person.id, person]));
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
-      <DialogHeader><div className="flex flex-wrap items-start justify-between gap-3 pr-6"><div><DialogTitle>{client.name}</DialogTitle><p className="mt-1 text-sm text-muted-foreground">Central da unidade interna</p></div>{["challenges", "planning"].includes(tab) ? <Button size="sm" onClick={onNewChallenge}><Sparkles className="mr-1 h-4 w-4" /> Novo desafio</Button> : tab === "tasks" ? <Button size="sm" onClick={onOpenTasks}><ClipboardList className="mr-1 h-4 w-4" /> Nova tarefa</Button> : tab === "comments" ? <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} label="Novo comentário" /> : null}</div></DialogHeader>
+    <DialogContent className="max-h-[92vh] w-[96vw] max-w-5xl overflow-y-auto p-4 sm:p-6">
+      <DialogHeader><div className="flex flex-wrap items-start justify-between gap-3 pr-6"><div><DialogTitle>{client.name}</DialogTitle><p className="mt-1 text-sm text-muted-foreground">Central da unidade interna</p></div>{["challenges", "planning"].includes(tab) ? <Button size="sm" className="min-h-10" onClick={onNewChallenge}><Sparkles className="mr-1 h-4 w-4" /> Novo desafio</Button> : tab === "tasks" ? <Button size="sm" className="min-h-10" onClick={onOpenTasks}><ClipboardList className="mr-1 h-4 w-4" /> Nova tarefa</Button> : tab === "comments" ? <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} label="Novo comentário" /> : null}</div></DialogHeader>
+
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="h-auto max-w-full flex-wrap justify-start"><TabsTrigger value="overview">Visão geral</TabsTrigger><TabsTrigger value="challenges">Desafios</TabsTrigger><TabsTrigger value="planning">Planejamento</TabsTrigger><TabsTrigger value="tasks">Tarefas</TabsTrigger><TabsTrigger value="comments">Comentários</TabsTrigger><TabsTrigger value="history">Histórico</TabsTrigger></TabsList>
         <TabsContent value="overview"><div className="grid grid-cols-2 gap-2 md:grid-cols-4"><Metric icon={Sparkles} label="Ativos" value={active} /><Metric icon={CircleAlert} label="Para validar" value={waiting} /><Metric icon={CalendarClock} label="Em atraso" value={overdue} tone="red" /><Metric icon={ClipboardList} label="Tarefas" value={taskCount} /></div><section className="mt-4 border bg-muted/20 p-4"><h3 className="font-medium">Contexto da unidade</h3><p className="mt-1 text-sm text-muted-foreground">Acompanhe os desafios, tarefas e decisões desta unidade sem misturar os indicadores AC/AV.</p></section></TabsContent>
