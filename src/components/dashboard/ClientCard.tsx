@@ -470,3 +470,18 @@ function CollaboratorAddButton({ allCollaborators, assignedCollaboratorIds, onTo
     </Popover>
   );
 }
+
+function TabCounter({ label, icon, count, onClick }: { label: string; icon: React.ReactNode; count: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => { event.stopPropagation(); onClick(); }}
+      title={label}
+      aria-label={label}
+      className="flex items-center gap-0.5 rounded px-0.5 py-0.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:bg-muted/50"
+    >
+      {icon}
+      {count > 0 ? <span>{count}</span> : null}
+    </button>
+  );
+}
