@@ -296,6 +296,11 @@ export default function UniversoRamos() {
     [challenges, universeClients],
   );
   const openUniverseChallenges = universeChallenges.filter((challenge) => challenge.status === "open" && challenge.rewardStatus === "configured");
+  const getUnitChallengeCount = useCallback(
+    (clientId: string) => universeChallenges.filter((challenge) => challenge.clientId === clientId).length,
+    [universeChallenges],
+  );
+
 
   const toggleUniverseCategory = (category: UniversoRamosCategory | "SEM_CATEGORIA") => {
     setUniverseCategories((current) => current.includes(category)
