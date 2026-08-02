@@ -147,7 +147,7 @@ export function useChallenges() {
       }
 
       await refetch();
-      if (challengeId && data.conditions?.length) {
+      if (challengeId && data.conditions?.length && (data.completionMode ?? "guidance") !== "guidance") {
         const { error: conditionsError } = await callRpc("replace_challenge_completion_conditions", {
           p_challenge_id: challengeId,
           p_conditions: data.conditions,
@@ -184,6 +184,7 @@ export function useChallenges() {
           p_penalty_stars: data.penaltyStars,
           p_participant_ids: data.participantIds,
           p_actor_name: currentUserName,
+          p_completion_mode: data.completionMode ?? "guidance",
         },
       );
 
@@ -194,7 +195,7 @@ export function useChallenges() {
       }
 
       await refetch();
-      if (challengeId && data.conditions?.length) {
+      if (challengeId && data.conditions?.length && (data.completionMode ?? "guidance") !== "guidance") {
         const { error: conditionsError } = await callRpc("replace_challenge_completion_conditions", {
           p_challenge_id: challengeId,
           p_conditions: data.conditions,
@@ -288,10 +289,16 @@ export function useChallenges() {
             p_participant_ids: draft.participantIds,
             p_status: "draft",
             p_actor_name: currentUserName,
+            p_completion_mode: draft.completionMode,
           });
 
         if (importError || !challengeId) {
           results.push({ importKey: draft.importKey, error: importError?.message ?? "Não foi possível criar o rascunho." });
+          continue;
+        }
+
+        if (draft.completionMode === "guidance" || !draft.conditions.length) {
+          results.push({ importKey: draft.importKey, challengeId });
           continue;
         }
 
@@ -405,6 +412,7 @@ export function useChallenges() {
           p_challenge_kind: data.kind ?? null,
           p_due_at: data.dueAt ?? null,
           p_actor_name: currentUserName,
+          p_completion_mode: data.completionMode ?? null,
         });
       if (updateError) {
         toast.error("Não foi possível editar o desafio.");
@@ -413,7 +421,7 @@ export function useChallenges() {
       }
       const nextConditions = data.conditions?.filter((condition) => condition.title.trim()).map((condition) => ({ title: condition.title.trim(), isRequired: condition.isRequired !== false })) ?? [];
       const currentConditions = completionConditions.filter((condition) => condition.challengeId === challengeId).map((condition) => ({ title: condition.title, isRequired: condition.isRequired }));
-      if (nextConditions.length && JSON.stringify(nextConditions) !== JSON.stringify(currentConditions)) {
+      if (data.completionMode !== "guidance" && nextConditions.length && JSON.stringify(nextConditions) !== JSON.stringify(currentConditions)) {
         const { error: conditionsError } = await callRpc("replace_challenge_completion_conditions", {
           p_challenge_id: challengeId,
           p_conditions: nextConditions,
