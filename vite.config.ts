@@ -18,11 +18,11 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // Keep the production bundle compatible with Safari on the field team's phones.
-    target: "es2020",
+    target: "es2022",
   },
   optimizeDeps: {
     esbuildOptions: {
-      target: "es2020",
+      target: "es2022",
     },
   },
 }));
