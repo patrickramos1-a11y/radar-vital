@@ -186,6 +186,9 @@ export function ClientGrid({
           auditStatus={getAuditStatus?.(client.id)}
           useUnitProfileAction={useUnitProfileAction}
           onCreateChallenge={onCreateChallenge}
+          onOpenTab={onOpenTab}
+          challengeCount={getChallengeCount?.(client.id) ?? 0}
+
         />
       ))}
     </div>
