@@ -527,8 +527,10 @@ export default function UniversoRamos() {
       />
       <UniverseUnitDialog
         client={selectedClient}
-        open={Boolean(selectedClient) && !isMobile}
+        open={Boolean(selectedClient)}
+        initialTab={unitTab}
         onOpenChange={(open) => !open && setSelectedClientId(null)}
+
         challenges={universeChallenges}
         participantsByChallenge={participantsByChallenge}
         conditionsByChallenge={conditionsByChallenge}
