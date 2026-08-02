@@ -50,6 +50,18 @@ const rewardClasses: Record<Challenge["rewardStatus"], string> = {
   non_rewarded: "bg-zinc-100 text-zinc-700",
 };
 
+// "open" means the challenge is published and can be accepted by anyone.
+function statusLabel(status: Challenge["status"]): string {
+  return status === "open" ? "Ativo" : CHALLENGE_STATUS_CONFIG[status].label;
+}
+
+function rewardBadgeText(challenge: Challenge): string {
+  if (challenge.rewardSuperstars > 0) return `${challenge.rewardSuperstars} Super Estrela${challenge.rewardSuperstars > 1 ? "s" : ""}`;
+  if (challenge.rewardStars > 0) return `${challenge.rewardStars} estrela${challenge.rewardStars > 1 ? "s" : ""}`;
+  return rewardLabels[challenge.rewardStatus];
+}
+
+
 export function UniverseChallengesManager({ challenges, valueRequests, participantsByChallenge, conditionsByChallenge, units, collaborators, currentUser, canManage, onRequestValue, onConfigureReward, onReviewRequest, onAccept, onUpdate, onDelete, onToggleCondition, onImportDrafts }: Props) {
   const [view, setView] = useState<"library" | "requests">("library");
   const [query, setQuery] = useState("");
