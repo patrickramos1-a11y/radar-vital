@@ -30,7 +30,6 @@ import { OpenChallengesDialog } from "@/components/universe-ramos/OpenChallenges
 import { UniverseChallengesManager } from "@/components/universe-ramos/UniverseChallengesManager";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { MobileCompactGrid } from "@/components/mobile/MobileCompactGrid";
-import { MobileClientDetail } from "@/components/mobile/MobileClientDetail";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClients } from "@/contexts/ClientContext";
@@ -91,6 +90,8 @@ export default function UniversoRamos() {
   const [gridSize, setGridSize] = useState<GridSize>(null);
   const [fitAllLocked, setFitAllLocked] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [unitTab, setUnitTab] = useState("overview");
+
   const [taskClientId, setTaskClientId] = useState<string | null>(null);
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -446,42 +447,18 @@ export default function UniversoRamos() {
               </div>
             </div>
           ) : isMobile ? (
-            <>
-              <MobileCompactGrid
-                clients={visibleClients}
-                highlightedClients={highlightedClients}
-                getActiveTaskCount={getActiveTaskCount}
-                getCommentCount={getCommentCount}
-                onClientTap={setSelectedClientId}
-              />
-              <MobileClientDetail
-                client={selectedClient ?? null}
-                isOpen={Boolean(selectedClient)}
-                onClose={() => setSelectedClientId(null)}
-                isHighlighted={
-                  selectedClient
-                    ? highlightedClients.has(selectedClient.id)
-                    : false
-                }
-                activeTaskCount={
-                  selectedClient ? getActiveTaskCount(selectedClient.id) : 0
-                }
-                commentCount={
-                  selectedClient ? getCommentCount(selectedClient.id) : 0
-                }
-                tasks={
-                  selectedClient ? getTasksForClient(selectedClient.id) : []
-                }
-                onTogglePriority={togglePriority}
-                onToggleHighlight={toggleHighlight}
-                onToggleChecked={toggleChecked}
-                onToggleCollaborator={toggleCollaborator}
-                onAddTask={addTask}
-                onToggleComplete={toggleComplete}
-                onUpdateTask={updateTask}
-                onDeleteTask={deleteTask}
-              />
-            </>
+            <MobileCompactGrid
+              clients={visibleClients}
+              highlightedClients={highlightedClients}
+              getActiveTaskCount={getActiveTaskCount}
+              getCommentCount={getCommentCount}
+              onClientTap={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
+              onCardAction={(id, action) => {
+                setUnitTab(action === "comments" ? "comments" : action === "challenges" ? "challenges" : "tasks");
+                setSelectedClientId(id);
+              }}
+            />
+
           ) : (
             <ClientGrid
               clients={visibleClients}
@@ -491,13 +468,12 @@ export default function UniversoRamos() {
               getCommentCount={getCommentCount}
               allCollaborators={centralCollaborators}
               getAssignedCollaboratorIds={getAssignedCollaboratorIds}
-              onSelectClient={(id) =>
-                setSelectedClientId(id)
-              }
+              onSelectClient={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
               onHighlightClient={toggleHighlight}
               onTogglePriority={togglePriority}
               onToggleCollaboratorAssignment={toggleAssignment}
-              onOpenChecklist={setSelectedClientId}
+              onOpenChecklist={(id) => { setUnitTab("tasks"); setSelectedClientId(id); }}
+
               onEditClient={setEditingClient}
               showHighlight={false}
               useUnitProfileAction
@@ -549,8 +525,10 @@ export default function UniversoRamos() {
       />
       <UniverseUnitDialog
         client={selectedClient}
-        open={Boolean(selectedClient) && !isMobile}
+        open={Boolean(selectedClient)}
+        initialTab={unitTab}
         onOpenChange={(open) => !open && setSelectedClientId(null)}
+
         challenges={universeChallenges}
         participantsByChallenge={participantsByChallenge}
         conditionsByChallenge={conditionsByChallenge}
