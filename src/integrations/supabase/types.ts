@@ -2014,6 +2014,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      approve_challenge_as_unrewarded: {
+        Args: { p_actor_name?: string; p_challenge_id: string }
+        Returns: undefined
+      }
       backfill_star_sources: { Args: { p_actor_name?: string }; Returns: Json }
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
       clear_challenge_completion_conditions: {
