@@ -31,6 +31,9 @@ interface ClientGridProps {
   getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
   useUnitProfileAction?: boolean;
   onCreateChallenge?: (clientId: string) => void;
+  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks') => void;
+  getChallengeCount?: (clientId: string) => number;
+
 }
 
 export function ClientGrid({ 
