@@ -1,6 +1,8 @@
-import { Star, MessageCircle, ListChecks, ShieldCheck } from "lucide-react";
+import { Star, MessageCircle, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
 import type { AuditClientStatus } from "@/types/audit";
+
+export type MobileCardAction = "comments" | "challenges" | "tasks";
 
 interface MobileCompactGridProps {
   clients: Client[];
@@ -9,6 +11,7 @@ interface MobileCompactGridProps {
   getCommentCount: (clientId: string) => number;
   onClientTap: (id: string) => void;
   getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
+  onCardAction?: (id: string, action: MobileCardAction) => void;
 }
 
 export function MobileCompactGrid({
@@ -18,9 +21,11 @@ export function MobileCompactGrid({
   getCommentCount,
   onClientTap,
   getAuditStatus,
+  onCardAction,
 }: MobileCompactGridProps) {
   const getGridColumns = () => {
     const count = clients.length;
+    if (onCardAction) return 2;
     if (count <= 8) return 2;
     if (count <= 15) return 3;
     if (count <= 25) return 4;
@@ -46,12 +51,14 @@ export function MobileCompactGrid({
             commentCount={getCommentCount(client.id)}
             onTap={onClientTap}
             auditStatus={getAuditStatus?.(client.id)}
+            onCardAction={onCardAction}
           />
         ))}
       </div>
     </div>
   );
 }
+
 
 interface CompactCardProps {
   client: Client;
