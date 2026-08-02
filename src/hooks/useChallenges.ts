@@ -533,6 +533,7 @@ export function useChallenges() {
     resolveChallenge,
     requestChallengeValue,
     configureChallengeReward,
+    approveChallengeAsUnrewarded,
     reviewChallengeValueRequest,
     updateUniverseChallenge,
     deleteUniverseChallenges,
