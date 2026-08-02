@@ -454,6 +454,8 @@ export default function UniversoRamos() {
               highlightedClients={highlightedClients}
               getActiveTaskCount={getActiveTaskCount}
               getCommentCount={getCommentCount}
+              getChallengeCount={getUnitChallengeCount}
+              getAccentColor={(client) => getUniverseAccentColor(client, centralCollaborators)}
               onClientTap={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
               onCardAction={(id, action) => {
                 setUnitTab(action === "comments" ? "comments" : action === "challenges" ? "challenges" : "tasks");
@@ -468,6 +470,7 @@ export default function UniversoRamos() {
               highlightedClients={highlightedClients}
               getActiveTaskCount={getActiveTaskCount}
               getCommentCount={getCommentCount}
+              getChallengeCount={getUnitChallengeCount}
               allCollaborators={centralCollaborators}
               getAssignedCollaboratorIds={getAssignedCollaboratorIds}
               onSelectClient={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
@@ -475,6 +478,7 @@ export default function UniversoRamos() {
               onTogglePriority={togglePriority}
               onToggleCollaboratorAssignment={toggleAssignment}
               onOpenChecklist={(id) => { setUnitTab("tasks"); setSelectedClientId(id); }}
+              onOpenTab={(id, tab) => { setUnitTab(tab); setSelectedClientId(id); }}
 
               onEditClient={setEditingClient}
               showHighlight={false}
@@ -485,6 +489,7 @@ export default function UniversoRamos() {
               fitAllLocked={fitAllLocked}
             />
           )}
+
         </main>
       </div>
 
