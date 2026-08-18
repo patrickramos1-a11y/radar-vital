@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { 
   Star, 
   Bomb,
   MessageCircle, 
   ListChecks,
+  ClipboardList,
+  ClipboardCheck,
+  FileCheck2,
+  History,
+  LayoutDashboard,
+  ShieldCheck,
   X
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -12,6 +18,8 @@ import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { CommentsModal } from "@/components/comments/CommentsModal";
 import { MarkerReasonDialog } from "@/components/dashboard/MarkerReasonDialog";
 import { Task, TaskFormData } from "@/types/task";
+import type { WorkItemFilter } from "@/types/workItem";
+import { useClientComments } from "@/hooks/useClientComments";
 
 interface MobileClientDetailProps {
   client: Client | null;
@@ -51,6 +59,34 @@ export function MobileClientDetail({
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
+  const [workView, setWorkView] = useState<WorkItemFilter>('all');
+  const { comments } = useClientComments(client?.id ?? '');
+
+  const recentActivity = useMemo(() => {
+    const taskActivity = tasks.map((task) => ({
+      id: `task-${task.id}`,
+      occurredAt: task.completed_at ?? task.created_at,
+      icon: task.completed ? <ClipboardCheck className="h-4 w-4 text-emerald-600" /> : <ClipboardList className="h-4 w-4 text-amber-600" />,
+      title: task.completed ? 'Tarefa concluída' : 'Tarefa criada',
+      detail: task.title,
+    }));
+    const commentActivity = comments.map((comment) => ({
+      id: `comment-${comment.id}`,
+      occurredAt: comment.createdAt,
+      icon: <MessageCircle className="h-4 w-4 text-indigo-600" />,
+      title: `${comment.authorName} comentou`,
+      detail: comment.commentText,
+    }));
+
+    return [...taskActivity, ...commentActivity]
+      .sort((left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime())
+      .slice(0, 8);
+  }, [comments, tasks]);
+
+  const openWorkView = (view: WorkItemFilter) => {
+    setWorkView(view);
+    setShowTaskModal(true);
+  };
 
   if (!client) return null;
 
@@ -91,7 +127,7 @@ export function MobileClientDetail({
           </SheetHeader>
 
           <div className="p-4 space-y-6 overflow-y-auto h-[calc(85vh-80px)]">
-            {/* Quick actions */}
+            {/* Ações rápidas */}
             <div className="grid grid-cols-4 gap-2">
               <ActionButton
                 icon={<Star className={`w-5 h-5 ${client.isPriority ? 'fill-current' : ''}`} />}
@@ -121,11 +157,28 @@ export function MobileClientDetail({
               />
               <ActionButton
                 icon={<ListChecks className="w-5 h-5" />}
-                label={`Jackbox (${activeTaskCount})`}
+                label={`Tarefas (${activeTaskCount})`}
                 active={activeTaskCount > 0}
                 color="rgb(234, 179, 8)"
-                onClick={() => setShowTaskModal(true)}
+                onClick={() => openWorkView('task')}
               />
+              <ActionButton
+                icon={<MessageCircle className="w-5 h-5" />}
+                label={`Comentários (${commentCount})`}
+                active={commentCount > 0}
+                color="rgb(79, 70, 229)"
+                onClick={() => setShowCommentsModal(true)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-foreground">Gestão do cliente</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <ManagementButton icon={<FileCheck2 className="h-4 w-4" />} label="Entregáveis" onClick={() => openWorkView('deliverable')} />
+                <ManagementButton icon={<ShieldCheck className="h-4 w-4" />} label="Auditorias" onClick={() => openWorkView('audit')} />
+                <ManagementButton icon={<ClipboardCheck className="h-4 w-4" />} label="Prioridades" onClick={() => openWorkView('priority')} />
+                <ManagementButton icon={<LayoutDashboard className="h-4 w-4" />} label="Visão do cliente" onClick={() => openWorkView('all')} />
+              </div>
             </div>
 
 
@@ -169,24 +222,31 @@ export function MobileClientDetail({
               </div>
             </div>
 
-            {/* Comments section */}
-            <button
-              onClick={() => setShowCommentsModal(true)}
-              className="w-full flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-indigo-600" />
-                </div>
-                <div className="text-left">
-                  <h4 className="font-medium text-foreground">Comentários</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {commentCount > 0 ? `${commentCount} comentários` : 'Nenhum comentário'}
-                  </p>
+            <section className="rounded-xl border border-border bg-card">
+              <div className="flex items-center gap-2 border-b px-4 py-3">
+                <History className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">Últimas movimentações</h4>
+                  <p className="text-xs text-muted-foreground">Tarefas e comentários deste cliente</p>
                 </div>
               </div>
-              <span className="text-lg font-bold text-indigo-600">{commentCount}</span>
-            </button>
+              {recentActivity.length ? (
+                <div className="max-h-52 divide-y overflow-y-auto">
+                  {recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex gap-3 px-4 py-3">
+                      <div className="mt-0.5">{activity.icon}</div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                        <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{activity.detail}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">{formatActivityDate(activity.occurredAt)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="px-4 py-6 text-center text-sm text-muted-foreground">Ainda não há movimentações registradas.</p>
+              )}
+            </section>
           </div>
         </SheetContent>
       </Sheet>
@@ -202,6 +262,7 @@ export function MobileClientDetail({
           onToggleComplete={onToggleComplete}
           onUpdateTask={onUpdateTask}
           onDeleteTask={onDeleteTask}
+          initialView={workView}
         />
       )}
 
@@ -243,7 +304,8 @@ function ActionButton({ icon, label, active, color, onClick }: ActionButtonProps
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+      title={label}
+      className={`flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-xl p-2 transition-all ${
         active ? 'text-white' : 'bg-muted text-muted-foreground'
       }`}
       style={{
@@ -254,6 +316,25 @@ function ActionButton({ icon, label, active, color, onClick }: ActionButtonProps
       <span className="text-[10px] font-medium text-center leading-tight">{label}</span>
     </button>
   );
+}
+
+function ManagementButton({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-muted"
+    >
+      <span className="text-primary">{icon}</span>
+      {label}
+    </button>
+  );
+}
+
+function formatActivityDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(date);
 }
 
 interface StatCardProps {

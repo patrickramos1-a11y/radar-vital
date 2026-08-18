@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Check, Trash2, User, Search, Flag } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -21,6 +21,7 @@ export interface TaskModalProps {
   onToggleComplete: (taskId: string) => Promise<boolean>;
   onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
   onDeleteTask: (taskId: string) => Promise<boolean>;
+  initialView?: WorkItemFilter;
 }
 
 export function TaskModal({
@@ -32,6 +33,7 @@ export function TaskModal({
   onToggleComplete,
   onUpdateTask,
   onDeleteTask,
+  initialView = 'all',
 }: TaskModalProps) {
   const navigate = useNavigate();
   const { collaborators } = useAuth();
@@ -41,7 +43,7 @@ export function TaskModal({
     error: workItemsError,
     refetch: refetchWorkItems,
   } = useClientWorkItems(client.id, tasks);
-  const [activeView, setActiveView] = useState<WorkItemFilter>('all');
+  const [activeView, setActiveView] = useState<WorkItemFilter>(initialView);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
@@ -60,6 +62,10 @@ export function TaskModal({
     activeView === 'all'
       ? workItems
       : workItems.filter(item => item.kind === activeView);
+
+  useEffect(() => {
+    if (isOpen) setActiveView(initialView);
+  }, [initialView, isOpen]);
 
   const handleOpenSource = (item: WorkItem) => {
     if (!item.sourcePath) return;
@@ -152,6 +158,9 @@ export function TaskModal({
               </TabsTrigger>
               <TabsTrigger value="deliverable">
                 Entregáveis ({workItems.filter(item => item.kind === 'deliverable').length})
+              </TabsTrigger>
+              <TabsTrigger value="audit">
+                Auditorias ({workItems.filter(item => item.kind === 'audit').length})
               </TabsTrigger>
             </TabsList>
           </div>
