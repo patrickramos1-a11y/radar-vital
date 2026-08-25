@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, ClipboardCheck, FileCheck2, History, Plus, Search, ShieldCheck, Star, Trash2, User } from 'lucide-react';
+import { ArrowLeft, Check, ClipboardCheck, FileCheck2, Flag, History, Plus, Search, ShieldCheck, Star, Trash2, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ClientWorkList } from '@/components/client-work/ClientWorkList';
