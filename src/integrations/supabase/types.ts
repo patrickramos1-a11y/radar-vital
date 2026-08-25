@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -1852,6 +1852,36 @@ export type Database = {
           },
         ]
       }
+      task_priority_policies: {
+        Row: {
+          enabled: boolean
+          id: boolean
+          maximum_weight: number
+          promotion_after_days: number
+          updated_at: string
+          updated_by: string | null
+          weight_step_days: number
+        }
+        Insert: {
+          enabled?: boolean
+          id?: boolean
+          maximum_weight?: number
+          promotion_after_days?: number
+          updated_at?: string
+          updated_by?: string | null
+          weight_step_days?: number
+        }
+        Update: {
+          enabled?: boolean
+          id?: boolean
+          maximum_weight?: number
+          promotion_after_days?: number
+          updated_at?: string
+          updated_by?: string | null
+          weight_step_days?: number
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string[]
@@ -2160,6 +2190,10 @@ export type Database = {
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
         Returns: undefined
+      }
+      reconcile_stale_task_priorities: {
+        Args: { p_actor_name?: string }
+        Returns: Json
       }
       record_challenge_resolution_transactions: {
         Args: { p_actor_name?: string; p_challenge_id: string }
