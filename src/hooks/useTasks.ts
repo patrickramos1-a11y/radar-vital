@@ -9,6 +9,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { actorName } from '@/lib/auth';
 
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
+type TaskPriorityAutomationRpc = (
+  fn: string,
+  args: Record<string, unknown>,
+) => Promise<{ error: { code?: string; message: string } | null }>;
 
 const dbRowToTask = (row: TaskRow): Task => ({
   id: row.id,
@@ -36,11 +40,7 @@ export function useTasks() {
     try {
       // Idempotent: when the policy migration is available, this keeps aged
       // tasks and their automatic priorities in sync before rendering them.
-      const runAutomation = supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ error: { code?: string; message: string } | null }>;
-      const { error: automationError } = await runAutomation(
+      const { error: automationError } = await (supabase.rpc as unknown as TaskPriorityAutomationRpc)(
         'reconcile_stale_task_priorities',
         { p_actor_name: currentUserName || 'Sistema' },
       );
