@@ -107,8 +107,11 @@ editavel (45 dias, peso 1, incremento a cada 15 dias, maximo 5) e uma RPC
 idempotente que registra a promocao e os aumentos de peso em activity_logs.
 Validacao: build Vite de producao aprovado localmente. O lint geral continua
 bloqueado por erros preexistentes fora deste escopo.
-Pendencia: aplicar a migration no Supabase, regenerar os tipos e publicar no
-link oficial depois do smoke test de tarefas e da Central do Cliente.
+Publicacao: frontend publicado no link oficial do Vercel em 2026-08-25; a rota
+`/universo-ramos` respondeu HTTP 200 no smoke test.
+Pendencia: aplicar a migration no Supabase correto e regenerar os tipos. Ate
+isso ocorrer, a regra automatica de 45 dias permanece inativa no banco, sem
+alterar as tarefas existentes.
 
 2026-08-24 - Gestao de Desafios, negociacao e contrapropostas preparada
 Resumo: migration aditiva e interface do Universo Ramos criadas para
