@@ -195,30 +195,25 @@ export function ClientCard({
         onClick={() => onSelect(client.id)}
         style={universeAccentColor ? { borderColor: universeAccentColor, boxShadow: `0 2px 8px -2px ${universeAccentColor}40` } : undefined}
       >
-        {/* Top right icons */}
-        <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
-          {!onOpenTab && (
-            <>
-              <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
-              {onCreateChallenge && <button onClick={handleCreateChallenge} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Criar desafio para esta unidade"><Sparkles className="w-3.5 h-3.5 text-violet-600" /></button>}
-              {useUnitProfileAction ? (
-                <button onClick={handleChecklistClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={unitProfileActionLabel}>
-                  <Building2 className="w-3.5 h-3.5 text-cyan-700" />
-                </button>
-              ) : <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />}
-            </>
-          )}
-
-
-          {showHighlight && (
+        {!onOpenTab && (
+          <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
+            <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
+            {onCreateChallenge && <button onClick={handleCreateChallenge} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Criar desafio para esta unidade"><Sparkles className="w-3.5 h-3.5 text-violet-600" /></button>}
+            {useUnitProfileAction ? (
+              <button onClick={handleChecklistClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={unitProfileActionLabel}>
+                <Building2 className="w-3.5 h-3.5 text-cyan-700" />
+              </button>
+            ) : <ChecklistButton activeCount={activeTaskCount} onClick={handleChecklistClick} />}
+            {showHighlight && (
             <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
               <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
             </button>
-          )}
-          <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? `Prioridade: ${client.priorityReason || 'sem motivo informado'}` : "Marcar como prioritário"}>
-            <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
-          </button>
-        </div>
+            )}
+            <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? `Prioridade: ${client.priorityReason || 'sem motivo informado'}` : "Marcar como prioritário"}>
+              <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
+            </button>
+          </div>
+        )}
 
       {/* Header */}
       <div className={`flex items-center gap-1.5 ${headerSizes.headerPadding} bg-card-elevated/80 border-b border-border/50`} style={universeAccentColor ? { borderBottomColor: universeAccentColor, backgroundColor: `${universeAccentColor}14` } : undefined}>
@@ -247,6 +242,14 @@ export function ClientCard({
         {onOpenTab && (
           <div className="flex shrink-0 items-center gap-0.5">
             <TabCounter label="Comentários" count={commentCount} onClick={() => onOpenTab(client.id, 'comments')} icon={<MessageCircle className="w-3.5 h-3.5 text-indigo-600" />} />
+            {showHighlight && (
+              <button onClick={handleHighlightClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={isHighlighted ? `Pode dar BO: ${client.boReason || 'sem motivo informado'}` : "Marcar como Pode dar BO"}>
+                <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
+              </button>
+            )}
+            <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? `Prioridade: ${client.priorityReason || 'sem motivo informado'}` : "Marcar como prioritário"}>
+              <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
+            </button>
             <TabCounter label="Tarefas" count={activeTaskCount} onClick={() => onOpenTab(client.id, 'tasks')} icon={<ListChecks className="w-3.5 h-3.5 text-amber-600" />} />
           </div>
         )}
