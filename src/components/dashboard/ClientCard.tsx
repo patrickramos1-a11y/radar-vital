@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
+import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, Sparkles } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
@@ -138,12 +138,10 @@ export function ClientCard({
   cardContentMode = 'logo',
   activeTasks = [],
   commentSnippets = [],
-  auditStatus,
   useUnitProfileAction = false,
   unitProfileActionLabel = "Abrir visão geral da unidade",
   onCreateChallenge,
   onOpenTab,
-  challengeCount = 0,
 }: ClientCardProps) {
 
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
@@ -199,30 +197,6 @@ export function ClientCard({
       >
         {/* Top right icons */}
         <div className="absolute top-1 right-1 z-10 flex items-center gap-0.5">
-          {auditStatus && (
-            <span
-              className={`flex h-5 w-5 items-center justify-center ${
-                auditStatus === 'validated'
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : auditStatus === 'completed'
-                    ? 'bg-sky-100 text-sky-700'
-                    : auditStatus === 'in_progress'
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-slate-100 text-slate-500'
-              }`}
-              title={
-                auditStatus === 'validated'
-                  ? 'Auditoria validada'
-                  : auditStatus === 'completed'
-                    ? 'Auditoria concluída, aguardando validação'
-                    : auditStatus === 'in_progress'
-                      ? 'Em auditoria'
-                      : 'Auditoria pendente'
-              }
-            >
-              <ShieldCheck className="h-3.5 w-3.5" />
-            </span>
-          )}
           {!onOpenTab && (
             <>
               <CommentButton clientId={client.id} clientName={client.name} commentCount={commentCount} />
@@ -273,7 +247,6 @@ export function ClientCard({
         {onOpenTab && (
           <div className="flex shrink-0 items-center gap-0.5">
             <TabCounter label="Comentários" count={commentCount} onClick={() => onOpenTab(client.id, 'comments')} icon={<MessageCircle className="w-3.5 h-3.5 text-indigo-600" />} />
-            <TabCounter label="Desafios" count={challengeCount} onClick={() => onOpenTab(client.id, 'challenges')} icon={<Sparkles className="w-3.5 h-3.5 text-violet-600" />} />
             <TabCounter label="Tarefas" count={activeTaskCount} onClick={() => onOpenTab(client.id, 'tasks')} icon={<ListChecks className="w-3.5 h-3.5 text-amber-600" />} />
           </div>
         )}
