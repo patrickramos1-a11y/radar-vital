@@ -174,10 +174,10 @@ export function MobileClientDetail({
             <div className="space-y-2">
               <h4 className="text-sm font-semibold text-foreground">Gestão do cliente</h4>
               <div className="grid grid-cols-2 gap-2">
-                <ManagementButton icon={<FileCheck2 className="h-4 w-4" />} label="Entregáveis" onClick={() => openWorkView('deliverable')} />
-                <ManagementButton icon={<ShieldCheck className="h-4 w-4" />} label="Auditorias" onClick={() => openWorkView('audit')} />
-                <ManagementButton icon={<ClipboardCheck className="h-4 w-4" />} label="Prioridades" onClick={() => openWorkView('priority')} />
-                <ManagementButton icon={<LayoutDashboard className="h-4 w-4" />} label="Visão do cliente" onClick={() => openWorkView('all')} />
+                <ManagementButton color="emerald" icon={<FileCheck2 className="h-4 w-4" />} label="Entregáveis" onClick={() => openWorkView('deliverable')} />
+                <ManagementButton color="violet" icon={<ShieldCheck className="h-4 w-4" />} label="Auditorias" onClick={() => openWorkView('audit')} />
+                <ManagementButton color="amber" icon={<ClipboardCheck className="h-4 w-4" />} label="Prioridades" onClick={() => openWorkView('priority')} />
+                <ManagementButton color="sky" icon={<LayoutDashboard className="h-4 w-4" />} label="Visão do cliente" onClick={() => openWorkView('all')} />
               </div>
             </div>
 
@@ -318,14 +318,21 @@ function ActionButton({ icon, label, active, color, onClick }: ActionButtonProps
   );
 }
 
-function ManagementButton({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+function ManagementButton({ icon, label, color, onClick }: { icon: React.ReactNode; label: string; color: 'emerald' | 'violet' | 'amber' | 'sky'; onClick: () => void }) {
+  const colorClasses = {
+    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100',
+    violet: 'border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100',
+    amber: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100',
+    sky: 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100',
+  };
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-muted"
+      className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 text-left text-sm font-medium transition-colors ${colorClasses[color]}`}
     >
-      <span className="text-primary">{icon}</span>
+      <span>{icon}</span>
       {label}
     </button>
   );

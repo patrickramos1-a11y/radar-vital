@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Check, Trash2, User, Search, Flag } from 'lucide-react';
+import { ArrowLeft, Check, ClipboardCheck, FileCheck2, History, Plus, Search, ShieldCheck, Star, Trash2, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClientWorkList } from '@/components/client-work/ClientWorkList';
 import { assigneeMatches, findCollaboratorColor } from '@/lib/taskAssignee';
 import { Task, TaskFormData, TaskPriority, PRIORITY_CONFIG } from '@/types/task';
@@ -62,6 +61,12 @@ export function TaskModal({
     activeView === 'all'
       ? workItems
       : workItems.filter(item => item.kind === activeView);
+  const overviewItems = [
+    { kind: 'task' as const, label: 'Tarefas', count: tasks.length, icon: ClipboardCheck, className: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' },
+    { kind: 'priority' as const, label: 'Prioridades', count: workItems.filter(item => item.kind === 'priority').length, icon: Star, className: 'border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100' },
+    { kind: 'deliverable' as const, label: 'Entregáveis', count: workItems.filter(item => item.kind === 'deliverable').length, icon: FileCheck2, className: 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100' },
+    { kind: 'audit' as const, label: 'Auditorias', count: workItems.filter(item => item.kind === 'audit').length, icon: ShieldCheck, className: 'border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100' },
+  ];
 
   useEffect(() => {
     if (isOpen) setActiveView(initialView);
@@ -125,9 +130,9 @@ export function TaskModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[86vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-3 overflow-hidden p-0 sm:rounded-xl">
+      <DialogContent showClose={false} className="flex max-h-[86vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-3 overflow-hidden p-0 sm:rounded-xl">
         <DialogHeader className="border-b px-5 py-4">
-          <DialogTitle className="flex min-w-0 items-center gap-3 pr-8">
+          <DialogTitle className="flex min-w-0 items-center gap-3 pr-12">
             {client.logoUrl ? (
               <img src={client.logoUrl} alt="" className="h-8 w-8 flex-shrink-0 rounded object-contain" />
             ) : (
@@ -144,42 +149,59 @@ export function TaskModal({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs
-          value={activeView}
-          onValueChange={(value) => setActiveView(value as WorkItemFilter)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
-          <div className="overflow-x-auto border-b px-5">
-            <TabsList className="h-11 w-max justify-start rounded-none bg-transparent p-0">
-              <TabsTrigger value="all">Tudo ({workItems.length})</TabsTrigger>
-              <TabsTrigger value="task">Tarefas ({tasks.length})</TabsTrigger>
-              <TabsTrigger value="priority">
-                Prioridades ({workItems.filter(item => item.kind === 'priority').length})
-              </TabsTrigger>
-              <TabsTrigger value="deliverable">
-                Entregáveis ({workItems.filter(item => item.kind === 'deliverable').length})
-              </TabsTrigger>
-              <TabsTrigger value="audit">
-                Auditorias ({workItems.filter(item => item.kind === 'audit').length})
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <div className="flex-1 space-y-4 overflow-auto px-5 pb-5 pt-3">
-            {activeView !== 'task' ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          {activeView === 'all' ? (
+            <div className="flex-1 space-y-5 overflow-auto px-5 py-5">
+              <section>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gestão do cliente</p>
+                <h3 className="mt-1 text-base font-semibold">Acompanhe o que está acontecendo neste cliente</h3>
+              </section>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {overviewItems.map(({ kind, label, count, icon: Icon, className }) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    onClick={() => setActiveView(kind)}
+                    className={`flex min-h-28 items-center gap-4 rounded-xl border p-4 text-left transition-colors ${className}`}
+                  >
+                    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-background/80 shadow-sm">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-2xl font-bold leading-none">{count}</span>
+                      <span className="mt-1 block text-sm font-semibold">{label}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <section className="rounded-xl border bg-muted/30 p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold"><History className="h-4 w-4 text-muted-foreground" /> Visão rápida</div>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Escolha um indicador para abrir a área correspondente. Tarefas, prioridades, entregáveis e auditorias continuam separados, sem perder a visão geral do cliente.
+                </p>
+              </section>
+            </div>
+          ) : (
+            <div className="flex-1 space-y-4 overflow-auto px-5 pb-5 pt-3">
+              <button
+                type="button"
+                onClick={() => setActiveView('all')}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" /> Voltar à visão geral
+              </button>
+              {activeView !== 'task' ? (
               <ClientWorkList
                 items={filteredWorkItems}
                 isLoading={workItemsLoading}
                 error={workItemsError}
                 emptyMessage={
-                  activeView === 'all'
-                    ? 'Nenhum item vinculado a este cliente.'
-                    : `Nenhum item desta categoria vinculado ao cliente.`
+                  `Nenhum item desta categoria vinculado ao cliente.`
                 }
                 onOpenSource={handleOpenSource}
                 onRetry={() => void refetchWorkItems()}
               />
-            ) : (
+              ) : (
               <>
                 {/* Add new task */}
                 <div className="sticky top-0 z-10 rounded-b-lg border bg-background/95 py-3 backdrop-blur">
@@ -281,9 +303,10 @@ export function TaskModal({
                   </div>
                 )}
               </>
-            )}
-          </div>
-        </Tabs>
+              )}
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -324,6 +347,7 @@ function TaskItem({
 }: TaskItemProps) {
   const priority = (task.priority || 'normal') as TaskPriority;
   const pConf = PRIORITY_CONFIG[priority];
+  const daysOpen = Math.max(0, Math.floor((Date.now() - new Date(task.created_at).getTime()) / 86_400_000));
   const containerClass = task.completed
     ? 'bg-card border'
     : `${pConf.bgClass} ${pConf.borderClass} border-y border-r`;
@@ -370,8 +394,10 @@ function TaskItem({
             </span>
           </div>
           {!task.completed && (
-            <label className="mt-1 flex w-fit items-center gap-1 text-xs text-muted-foreground">
-              <span>Prazo</span>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>Criada há {daysOpen} {daysOpen === 1 ? 'dia' : 'dias'}</span>
+              <label className="flex w-fit items-center gap-1">
+                <span>Prazo</span>
               <input
                 type="date"
                 value={task.due_date ?? ''}
@@ -383,7 +409,8 @@ function TaskItem({
                 }`}
                 aria-label={`Prazo da tarefa ${task.title}`}
               />
-            </label>
+              </label>
+            </div>
           )}
         </div>
       )}

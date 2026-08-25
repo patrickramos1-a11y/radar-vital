@@ -26,7 +26,7 @@ interface Props {
   priorities: Priority[];
   clients: Client[];
   responsibleList: RespOption[];
-  onPromote: (taskId: string, taskTitle: string, data: PriorityFormData, clientName?: string) => Promise<any>;
+  onPromote: (taskId: string, taskTitle: string, data: PriorityFormData, clientName?: string) => Promise<Priority | null>;
   onToggleComplete: (taskId: string, clientName?: string) => Promise<boolean>;
   onCreateTask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
   getDaysOpen: (t: Task) => number;
@@ -102,7 +102,7 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
                 <tr><td colSpan={isTeamView ? 8 : 7} className="text-center text-muted-foreground py-8">Nenhuma tarefa.</td></tr>
               ) : filtered.map(t => {
                 const days = getDaysOpen(t);
-                const linkedPriority = (t as any).priority_id ? priorityMap.get((t as any).priority_id) : null;
+                const linkedPriority = t.priority_id ? priorityMap.get(t.priority_id) : null;
                 const pcfg = PRIORITY_CONFIG[t.priority];
                 const client = clientById.get(t.client_id);
                 const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -167,8 +167,8 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
                     </td>
                     <td className="px-3 py-2">
                       {linkedPriority ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-red-100 text-red-700 font-medium">
-                          <Star className="w-3 h-3" /> {linkedPriority.title.slice(0, 26)}
+                        <span className="inline-flex max-w-[160px] items-center gap-1 truncate rounded bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700" title={`Prioridade vinculada: ${linkedPriority.title}`}>
+                          <Star className="h-3 w-3 flex-shrink-0" /> Prioridade vinculada
                         </span>
                       ) : (t.completed ? (
                         <span className="text-[10px] text-muted-foreground">—</span>

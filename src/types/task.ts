@@ -10,6 +10,7 @@ export interface Task {
   completed_at: string | null;
   due_date: string | null;
   priority: TaskPriority;
+  priority_id?: string | null;
 }
 
 export type TaskFormData = {

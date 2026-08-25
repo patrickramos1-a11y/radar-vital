@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { Task, TaskFormData } from '@/types/task';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/lib/activityLogger';
@@ -7,7 +8,9 @@ import { assigneeMatches } from '@/lib/taskAssignee';
 import { useAuth } from '@/contexts/AuthContext';
 import { actorName } from '@/lib/auth';
 
-const dbRowToTask = (row: any): Task => ({
+type TaskRow = Database['public']['Tables']['tasks']['Row'];
+
+const dbRowToTask = (row: TaskRow): Task => ({
   id: row.id,
   client_id: row.client_id,
   title: row.title,
@@ -17,6 +20,7 @@ const dbRowToTask = (row: any): Task => ({
   completed_at: row.completed_at,
   due_date: row.due_date || null,
   priority: (row.priority as Task['priority']) || 'normal',
+  priority_id: row.priority_id ?? null,
 });
 
 export function useTasks() {
@@ -30,6 +34,21 @@ export function useTasks() {
     setIsLoading(true);
     setError(null);
     try {
+      // Idempotent: when the policy migration is available, this keeps aged
+      // tasks and their automatic priorities in sync before rendering them.
+      const runAutomation = supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ error: { code?: string; message: string } | null }>;
+      const { error: automationError } = await runAutomation(
+        'reconcile_stale_task_priorities',
+        { p_actor_name: currentUserName || 'Sistema' },
+      );
+
+      if (automationError && automationError.code !== '42883') {
+        console.warn('Task priority automation was not applied:', automationError.message);
+      }
+
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -44,7 +63,7 @@ export function useTasks() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentUserName]);
 
   useEffect(() => {
     fetchTasks();
@@ -74,7 +93,7 @@ export function useTasks() {
 
   const updateTask = useCallback(async (taskId: string, data: Partial<Task>) => {
     try {
-      const updateData: any = { ...data };
+      const updateData: Database['public']['Tables']['tasks']['Update'] = { ...data };
       if (data.completed === true) {
         updateData.completed_at = new Date().toISOString();
       } else if (data.completed === false) {

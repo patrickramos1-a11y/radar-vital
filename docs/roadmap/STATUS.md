@@ -96,6 +96,42 @@ recompensas individuais. Ver `UNIVERSO_RAMOS_OPPORTUNITIES_TREASURY_PLAN.md`.
 ## Registro de execucao
 
 ```text
+2026-08-25 - Central do Cliente visual e automacao de prioridades preparada
+Resumo: a Central do Cliente deixa de abrir em abas e passa a apresentar
+indicadores visuais para Tarefas, Prioridades, Entregaveis e Auditorias. O
+atalho de tarefas segue abrindo diretamente o lancamento e a lista de tarefas
+passa a informar ha quantos dias cada item esta aberto. Tarefas ja vinculadas
+a prioridades agora aparecem como "Prioridade vinculada", sem nova promocao.
+Banco: migration 20260825133000_task_priority_automation.sql adiciona a politica
+editavel (45 dias, peso 1, incremento a cada 15 dias, maximo 5) e uma RPC
+idempotente que registra a promocao e os aumentos de peso em activity_logs.
+Validacao: build Vite de producao aprovado localmente. O lint geral continua
+bloqueado por erros preexistentes fora deste escopo.
+Pendencia: aplicar a migration no Supabase, regenerar os tipos e publicar no
+link oficial depois do smoke test de tarefas e da Central do Cliente.
+
+2026-08-24 - Gestao de Desafios, negociacao e contrapropostas preparada
+Resumo: migration aditiva e interface do Universo Ramos criadas para
+solicitacao de aceite, contraproposta, ajuste de desafio ativo, aceite explicito
+do colaborador, notificacoes internas e linha do tempo de auditoria.
+Arquivos: 20260824130000_challenge_negotiation_management.sql,
+ChallengeManagementPanel, useOpportunityProgram, tipos e plano dedicado.
+Validacao: build Vite de producao aprovado localmente.
+Pendencia: aplicar a migration no projeto Supabase correto, regenerar tipos e
+executar smoke test no link oficial antes de publicar.
+
+2026-08-02 - OP-0 a OP-4 implementados localmente na branch feat/oportunidades-tesouro-op
+Resumo: modelo aditivo de perfis de recompensa, adesao ao Tesouro, taxa
+versionada, solicitacoes de aceite, livro de recompensas individuais, rota
+Oportunidades, Minha Jornada, fila administrativa e Tesouro segregado criados.
+Validacao: build de producao aprovado. Os testes Vitest nao iniciam no runtime
+Node empacotado por incompatibilidade preexistente entre Vitest e Vite.
+Ambiente: o conector Supabase desta sessao nao lista o projeto Radar Vital
+(ixiffabjunvpoizdhwtk). A implementacao e a migration seguirao na branch, mas
+nenhum SQL sera aplicado em outro projeto por seguranca. A aplicacao real no
+banco e a publicacao final dependem de o projeto correto ficar disponivel no
+conector ou de acesso administrativo equivalente.
+
 2026-08-01 - Correcao do contrato de importacao de desafios preparada
 Resumo: o Banco Mestre possui 103 desafios e 1.262 clausulas de conclusao.
 Resultado: criterios tecnicos extensos deixam de virar checks automaticos; o

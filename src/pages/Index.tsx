@@ -25,6 +25,7 @@ import { NewClientDialog } from "@/components/dashboard/NewClientDialog";
 import { ClientQuickEditDialog } from "@/components/dashboard/ClientQuickEditDialog";
 import { useAudits } from "@/hooks/useAudits";
 import type { AuditSummary } from "@/types/audit";
+import type { WorkItemFilter } from "@/types/workItem";
 const Index = () => {
   const isMobile = useIsMobile();
   const { currentUser, collaborators: allCollaborators } = useAuth();
@@ -66,6 +67,7 @@ const Index = () => {
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [checklistClientId, setChecklistClientId] = useState<string | null>(null);
+  const [checklistInitialView, setChecklistInitialView] = useState<WorkItemFilter>('all');
   const [mobileDetailClientId, setMobileDetailClientId] = useState<string | null>(null);
   const [mobileCommentsClientId, setMobileCommentsClientId] = useState<string | null>(null);
   const [mobileJackboxClientId, setMobileJackboxClientId] = useState<string | null>(null);
@@ -336,7 +338,7 @@ const Index = () => {
     }
 
     return result;
-  }, [activeClients, selectedAuditId, selectedAuditClientIds, filterFlags, collaboratorFilters, clientTypeFilter, alertFilter, municipioFilters, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery, isClienteDeBoa]);
+  }, [activeClients, selectedAuditId, selectedAuditClientIds, filterFlags, collaboratorFilters, clientTypeFilter, alertFilter, municipioFilters, sortBy, sortDirection, highlightedClients, getActiveTaskCount, getCommentCount, searchQuery, isClienteDeBoa, allCollaborators, getAssignedCollaboratorIds]);
 
   const totalClients = activeClients.length;
 
@@ -356,7 +358,8 @@ const Index = () => {
     toggleAssignment(clientId, collaboratorId);
   };
 
-  const handleOpenChecklist = (id: string) => {
+  const handleOpenChecklist = (id: string, view: WorkItemFilter = 'all') => {
+    setChecklistInitialView(view);
     setChecklistClientId(id);
   };
 
@@ -650,6 +653,13 @@ const Index = () => {
                 onTogglePriority={togglePriority}
                 onToggleCollaboratorAssignment={handleToggleCollaboratorAssignment}
                 onOpenChecklist={handleOpenChecklist}
+                onOpenTab={(clientId, tab) => {
+                  if (tab === 'tasks') {
+                    handleOpenChecklist(clientId, 'task');
+                    return;
+                  }
+                  handleOpenChecklist(clientId);
+                }}
                 onEditClient={setEditingClient}
                 viewMode={viewMode}
                 gridSize={gridSize}
@@ -674,6 +684,7 @@ const Index = () => {
               onToggleComplete={toggleComplete}
               onUpdateTask={updateTask}
               onDeleteTask={deleteTask}
+              initialView={checklistInitialView}
             />
           )}
 
