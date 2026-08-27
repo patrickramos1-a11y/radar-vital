@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, ClipboardCheck, FileCheck2, Flag, History, Plus, Search, ShieldCheck, Star, Trash2, User } from 'lucide-react';
+import { ArrowLeft, Check, ClipboardCheck, FileCheck2, Flag, History, Plus, Search, ShieldCheck, Star, Trash2, User, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ClientWorkList } from '@/components/client-work/ClientWorkList';
@@ -131,7 +131,7 @@ export function TaskModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent showClose={false} className="flex max-h-[86vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-3 overflow-hidden p-0 sm:rounded-xl">
-        <DialogHeader className="border-b px-5 py-4">
+        <DialogHeader className="relative border-b px-5 py-4">
           <DialogTitle className="flex min-w-0 items-center gap-3 pr-12">
             {client.logoUrl ? (
               <img src={client.logoUrl} alt="" className="h-8 w-8 flex-shrink-0 rounded object-contain" />
@@ -147,6 +147,15 @@ export function TaskModal({
               </span>
             </div>
           </DialogTitle>
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-4 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title="Fechar Central do Cliente"
+            aria-label="Fechar Central do Cliente"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col">
