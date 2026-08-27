@@ -150,7 +150,7 @@ export function TaskModal({
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="absolute right-4 top-1/2 hidden h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:grid"
             title="Fechar Central do Cliente"
             aria-label="Fechar Central do Cliente"
           >

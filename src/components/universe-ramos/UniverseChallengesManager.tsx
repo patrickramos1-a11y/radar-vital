@@ -172,6 +172,10 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
   const hasColumn = (column: string) => visibleColumns.includes(column);
   const toggleColumn = (column: string) => setVisibleColumns((current) => current.includes(column) ? current.filter((item) => item !== column) : [...current, column]);
   const saveColumns = () => { localStorage.setItem("universe-challenges-columns", JSON.stringify(visibleColumns)); setColumnsOpen(false); };
+  const showLibrary = (nextRewardFilter: RewardFilter = "all") => {
+    setView("library");
+    setRewardFilter(nextRewardFilter);
+  };
   const removeChallenges = async (ids: string[]) => {
     if (!window.confirm(ids.length === 1 ? "Excluir este desafio? Esta ação não pode ser desfeita." : `Excluir os ${ids.length} desafios selecionados? Esta ação não pode ser desfeita.`)) return;
     const done = await onDelete(ids);
@@ -194,11 +198,11 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
     </div>
 
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-      <Kpi label="Desafios" value={challenges.length} />
-      <Kpi label="Sem valor" value={challenges.filter((item) => item.rewardStatus === "unpriced").length} tone="slate" />
-      <Kpi label="Solicitações pendentes" value={pendingRequests.length} tone="amber" />
-      <Kpi label="Valores configurados" value={challenges.filter((item) => item.rewardStatus === "configured").length} tone="emerald" />
-      <Kpi label="Não remunerados" value={challenges.filter((item) => item.rewardStatus === "non_rewarded").length} tone="zinc" />
+      <Kpi label="Desafios" value={challenges.length} active={view === "library" && rewardFilter === "all"} onClick={() => showLibrary()} />
+      <Kpi label="Sem valor" value={challenges.filter((item) => item.rewardStatus === "unpriced").length} tone="slate" active={view === "library" && rewardFilter === "unpriced"} onClick={() => showLibrary("unpriced")} />
+      <Kpi label="Solicitações pendentes" value={pendingRequests.length} tone="amber" active={view === "requests"} onClick={() => setView("requests")} />
+      <Kpi label="Valores configurados" value={challenges.filter((item) => item.rewardStatus === "configured").length} tone="emerald" active={view === "library" && rewardFilter === "configured"} onClick={() => showLibrary("configured")} />
+      <Kpi label="Não remunerados" value={challenges.filter((item) => item.rewardStatus === "non_rewarded").length} tone="zinc" active={view === "library" && rewardFilter === "non_rewarded"} onClick={() => showLibrary("non_rewarded")} />
     </div>
 
     {view === "library" ? <>
@@ -273,7 +277,7 @@ export function UniverseChallengesManager({ challenges, valueRequests, participa
 
 function Header({ label, onClick }: { label: string; onClick: () => void }) { return <th className="p-3"><button type="button" onClick={onClick} title={`Ordenar por ${label}`} className="font-semibold hover:text-foreground">{label} <span aria-hidden>↕</span></button></th>; }
 
-function Kpi({ label, value, tone = "cyan" }: { label: string; value: number; tone?: "cyan" | "slate" | "amber" | "emerald" | "zinc" }) {
+function Kpi({ label, value, tone = "cyan", active = false, onClick }: { label: string; value: number; tone?: "cyan" | "slate" | "amber" | "emerald" | "zinc"; active?: boolean; onClick: () => void }) {
   const colors = { cyan: "border-cyan-200 text-cyan-800", slate: "border-slate-200 text-slate-700", amber: "border-amber-200 text-amber-800", emerald: "border-emerald-200 text-emerald-800", zinc: "border-zinc-200 text-zinc-700" };
-  return <div className={`border bg-card p-3 ${colors[tone]}`}><p className="text-2xl font-semibold">{value}</p><p className="text-[10px] font-medium uppercase">{label}</p></div>;
+  return <button type="button" onClick={onClick} aria-pressed={active} className={`border bg-card p-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${colors[tone]} ${active ? "ring-2 ring-current ring-offset-1" : ""}`}><p className="text-2xl font-semibold">{value}</p><p className="text-[10px] font-medium uppercase">{label}</p></button>;
 }
