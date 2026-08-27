@@ -20,7 +20,7 @@ interface Props {
   priorities: Priority[];
   clients: Client[];
   responsibleList: RespOption[];
-  onCreate: (data: PriorityFormData, clientName?: string) => Promise<any>;
+  onCreate: (data: PriorityFormData, clientName?: string) => Promise<Priority | null>;
   onUpdate: (id: string, data: Partial<PriorityFormData>) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
 }
@@ -85,6 +85,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, cli
                   <th className="px-3 py-2 font-medium">Prioridade</th>
                   <th className="px-3 py-2 font-medium">Cliente</th>
                   {isTeamView && <th className="px-3 py-2 font-medium">Responsáveis</th>}
+                  <th className="px-3 py-2 font-medium text-center">Criada há</th>
                   <th className="px-3 py-2 font-medium">Prazo</th>
                   <th className="px-3 py-2 font-medium text-center">Peso</th>
                   <th className="px-3 py-2 font-medium">Status</th>
@@ -96,6 +97,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, cli
                   const cfg = PRIORITY_STATUS_CONFIG[p.status];
                   const today = new Date(); today.setHours(0, 0, 0, 0);
                   const dueDate = p.due_date ? new Date(p.due_date) : null;
+                  const daysSinceCreated = Math.max(0, differenceInCalendarDays(today, new Date(p.created_at)));
                   const overdue = dueDate && dueDate < today && p.status !== 'concluida' && p.status !== 'cancelada';
                   const daysToDue = dueDate ? differenceInCalendarDays(dueDate, today) : null;
                   const done = p.status === 'concluida' || p.status === 'cancelada';
@@ -127,6 +129,11 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, cli
                           </div>
                         </td>
                       )}
+                      <td className="px-3 py-2 text-center">
+                        <span className={cn('text-sm font-bold', !done && daysSinceCreated > 30 ? 'text-red-600' : !done && daysSinceCreated > 14 ? 'text-amber-600' : 'text-muted-foreground')}>
+                          {daysSinceCreated}d
+                        </span>
+                      </td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         {dueDate ? (
                           <div className={cn('text-xs', overdue ? 'text-red-700 font-semibold' : 'text-muted-foreground')}>

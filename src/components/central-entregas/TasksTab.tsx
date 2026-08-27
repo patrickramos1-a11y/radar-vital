@@ -3,7 +3,7 @@ import { Task, TaskFormData, TaskPriority, PRIORITY_CONFIG } from '@/types/task'
 import { Priority, PriorityFormData } from '@/types/priority';
 import { Client } from '@/types/client';
 import { assigneeMatches } from '@/lib/taskAssignee';
-import { Star, CheckCircle2, AlertCircle, Plus, Circle } from 'lucide-react';
+import { Star, CheckCircle2, AlertCircle, ArrowUpDown, Plus, Circle, Search, Users } from 'lucide-react';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { normalizeAssignee } from '@/lib/taskAssignee';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface RespOption { name: string; color: string; initials: string; }
 
@@ -29,12 +30,19 @@ interface Props {
   onPromote: (taskId: string, taskTitle: string, data: PriorityFormData, clientName?: string) => Promise<Priority | null>;
   onToggleComplete: (taskId: string, clientName?: string) => Promise<boolean>;
   onCreateTask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
+  onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
   getDaysOpen: (t: Task) => number;
 }
 
-export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, clients, responsibleList, onPromote, onToggleComplete, onCreateTask, getDaysOpen }: Props) {
+type TaskSortKey = 'title' | 'client' | 'assignees' | 'dueDate' | 'daysOpen' | 'priority';
+
+export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, clients, responsibleList, onPromote, onToggleComplete, onCreateTask, onUpdateTask, getDaysOpen }: Props) {
   const [clientFilter, setClientFilter] = useState<string>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
   const [showDone, setShowDone] = useState(false);
+  const [sortKey, setSortKey] = useState<TaskSortKey>('daysOpen');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [promotingTask, setPromotingTask] = useState<Task | null>(null);
   const [newTaskOpen, setNewTaskOpen] = useState(false);
 
@@ -45,25 +53,42 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
     let list = tasks.filter(t => isTeamView ? true : assigneeMatches(t.assigned_to, collaborator));
     if (!showDone) list = list.filter(t => !t.completed);
     if (clientFilter !== 'all') list = list.filter(t => t.client_id === clientFilter);
-    // Overdue + high priority first, then days open
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (assigneeFilter === 'unassigned') list = list.filter(t => t.assigned_to.length === 0);
+    else if (assigneeFilter !== 'all') list = list.filter(t => assigneeMatches(t.assigned_to, assigneeFilter));
+
+    const query = search.trim().toLocaleLowerCase('pt-BR');
+    if (query) list = list.filter(t => {
+      const clientName = clientById.get(t.client_id)?.name ?? '';
+      return [t.title, clientName, ...t.assigned_to].some(value => value.toLocaleLowerCase('pt-BR').includes(query));
+    });
+
+    const compareText = (a: string, b: string) => a.localeCompare(b, 'pt-BR');
     list.sort((a, b) => {
-      const aOver = a.due_date && !a.completed && new Date(a.due_date) < today ? 1 : 0;
-      const bOver = b.due_date && !b.completed && new Date(b.due_date) < today ? 1 : 0;
-      if (aOver !== bOver) return bOver - aOver;
-      const aP = PRIORITY_CONFIG[a.priority].order;
-      const bP = PRIORITY_CONFIG[b.priority].order;
-      if (aP !== bP) return aP - bP;
-      return getDaysOpen(b) - getDaysOpen(a);
+      const aPriority = a.priority_id ? priorityMap.get(a.priority_id)?.title ?? '' : '';
+      const bPriority = b.priority_id ? priorityMap.get(b.priority_id)?.title ?? '' : '';
+      const values: Record<TaskSortKey, number> = {
+        title: compareText(a.title, b.title),
+        client: compareText(clientById.get(a.client_id)?.name ?? '', clientById.get(b.client_id)?.name ?? ''),
+        assignees: compareText(a.assigned_to.join(', '), b.assigned_to.join(', ')),
+        dueDate: (a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER) - (b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER),
+        daysOpen: getDaysOpen(a) - getDaysOpen(b),
+        priority: compareText(aPriority, bPriority),
+      };
+      return values[sortKey] * (sortDirection === 'asc' ? 1 : -1);
     });
     return list;
-  }, [tasks, collaborator, isTeamView, clientFilter, showDone, getDaysOpen]);
+  }, [tasks, collaborator, isTeamView, clientFilter, assigneeFilter, search, showDone, sortKey, sortDirection, getDaysOpen, clientById, priorityMap]);
 
   const linkedClients = useMemo(() => {
     const ids = new Set<string>();
     tasks.forEach(t => { if (isTeamView || assigneeMatches(t.assigned_to, collaborator)) ids.add(t.client_id); });
     return clients.filter(c => ids.has(c.id)).sort((a, b) => a.name.localeCompare(b.name));
   }, [tasks, clients, collaborator, isTeamView]);
+
+  const toggleSort = (key: TaskSortKey) => {
+    if (key === sortKey) setSortDirection(direction => direction === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDirection(key === 'daysOpen' ? 'desc' : 'asc'); }
+  };
 
   return (
     <div className="space-y-3">
@@ -72,6 +97,15 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
           <option value="all">Todos os clientes</option>
           {linkedClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        <select value={assigneeFilter} onChange={e => setAssigneeFilter(e.target.value)} className="px-2 py-1.5 border rounded-md text-xs bg-background">
+          <option value="all">Todos os responsáveis</option>
+          <option value="unassigned">Sem responsável</option>
+          {responsibleList.map(responsible => <option key={responsible.name} value={responsible.name}>{responsible.name}</option>)}
+        </select>
+        <div className="relative min-w-[180px] flex-1 sm:flex-none">
+          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Filtrar tabela" className="h-8 pl-7 text-xs" />
+        </div>
         <label className="flex items-center gap-1 text-xs text-muted-foreground">
           <input type="checkbox" checked={showDone} onChange={e => setShowDone(e.target.checked)} />
           incluir concluídas
@@ -88,18 +122,18 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
             <thead className="bg-muted/50 sticky top-0 z-10">
               <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground">
                 <th className="px-3 py-2 w-8"></th>
-                <th className="px-3 py-2 font-medium">Tarefa</th>
-                <th className="px-3 py-2 font-medium">Cliente</th>
-                {isTeamView && <th className="px-3 py-2 font-medium">Responsáveis</th>}
-                <th className="px-3 py-2 font-medium">Prazo</th>
-                <th className="px-3 py-2 font-medium text-center">Dias</th>
-                <th className="px-3 py-2 font-medium">Prioridade vinc.</th>
+                <SortHeader label="Tarefa" sortKey="title" activeKey={sortKey} direction={sortDirection} onSort={toggleSort} />
+                <SortHeader label="Cliente" sortKey="client" activeKey={sortKey} direction={sortDirection} onSort={toggleSort} />
+                <SortHeader label="Responsáveis" sortKey="assignees" activeKey={sortKey} direction={sortDirection} onSort={toggleSort} />
+                <SortHeader label="Prazo" sortKey="dueDate" activeKey={sortKey} direction={sortDirection} onSort={toggleSort} />
+                <SortHeader label="Dias" sortKey="daysOpen" activeKey={sortKey} direction={sortDirection} onSort={toggleSort} align="center" />
+                <SortHeader label="Prioridade vinc." sortKey="priority" activeKey={sortKey} direction={sortDirection} onSort={toggleSort} />
                 <th className="px-3 py-2 font-medium text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {filtered.length === 0 ? (
-                <tr><td colSpan={isTeamView ? 8 : 7} className="text-center text-muted-foreground py-8">Nenhuma tarefa.</td></tr>
+                <tr><td colSpan={8} className="text-center text-muted-foreground py-8">Nenhuma tarefa.</td></tr>
               ) : filtered.map(t => {
                 const days = getDaysOpen(t);
                 const linkedPriority = t.priority_id ? priorityMap.get(t.priority_id) : null;
@@ -141,13 +175,9 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
                       </div>
                     </td>
                     <td className="px-3 py-2"><ClientCell client={client} size={22} /></td>
-                    {isTeamView && (
-                      <td className="px-3 py-2">
-                        <div className="flex -space-x-1.5">
-                          {t.assigned_to.slice(0, 4).map(a => <CollaboratorAvatar key={a} name={a} size={22} ring />)}
-                        </div>
-                      </td>
-                    )}
+                    <td className="px-3 py-2">
+                      <TaskAssigneeEditor task={t} responsibleList={responsibleList} onUpdate={onUpdateTask} />
+                    </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs">
                       {dueDate ? (
                         <>
@@ -231,6 +261,68 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
   );
 }
 
+function SortHeader({ label, sortKey, activeKey, direction, onSort, align = 'left' }: {
+  label: string;
+  sortKey: TaskSortKey;
+  activeKey: TaskSortKey;
+  direction: 'asc' | 'desc';
+  onSort: (key: TaskSortKey) => void;
+  align?: 'left' | 'center';
+}) {
+  const active = sortKey === activeKey;
+  return (
+    <th className={`px-3 py-2 font-medium ${align === 'center' ? 'text-center' : ''}`}>
+      <button type="button" onClick={() => onSort(sortKey)} className={`inline-flex items-center gap-1 hover:text-foreground ${align === 'center' ? 'justify-center' : ''}`} title={`Ordenar por ${label}`}>
+        {label}
+        <ArrowUpDown className={`h-3 w-3 ${active ? 'text-foreground' : 'text-muted-foreground/60'}`} />
+        {active && <span className="text-[9px]">{direction === 'asc' ? '↑' : '↓'}</span>}
+      </button>
+    </th>
+  );
+}
+
+function TaskAssigneeEditor({ task, responsibleList, onUpdate }: {
+  task: Task;
+  responsibleList: RespOption[];
+  onUpdate: (taskId: string, data: Partial<Task>) => Promise<boolean>;
+}) {
+  const toggle = (name: string) => {
+    const assigned = task.assigned_to.some(value => normalizeAssignee(value) === normalizeAssignee(name))
+      ? task.assigned_to.filter(value => normalizeAssignee(value) !== normalizeAssignee(name))
+      : [...task.assigned_to, name];
+    void onUpdate(task.id, { assigned_to: assigned });
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" className="flex min-h-7 min-w-8 items-center gap-1 rounded border border-transparent px-1 transition-colors hover:border-border hover:bg-muted" title="Adicionar ou alterar responsáveis">
+          {task.assigned_to.length > 0 ? (
+            <div className="flex -space-x-1.5">
+              {task.assigned_to.slice(0, 4).map(name => <CollaboratorAvatar key={name} name={name} size={22} ring />)}
+            </div>
+          ) : <><Users className="h-4 w-4 text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Sem responsável</span></>}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-56 p-2">
+        <p className="mb-2 text-xs font-medium">Responsáveis</p>
+        <div className="max-h-56 space-y-1 overflow-y-auto">
+          {responsibleList.map(responsible => {
+            const selected = task.assigned_to.some(value => normalizeAssignee(value) === normalizeAssignee(responsible.name));
+            return (
+              <label key={responsible.name} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1.5 text-xs hover:bg-muted">
+                <input type="checkbox" checked={selected} onChange={() => toggle(responsible.name)} />
+                <CollaboratorAvatar name={responsible.name} size={20} />
+                <span>{responsible.name}</span>
+              </label>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function NewTaskDialog({
   open, onOpenChange, color, defaultAssignee, clients, responsibleList, onSubmit
 }: {
@@ -247,12 +339,13 @@ function NewTaskDialog({
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('normal');
 
-  useMemo(() => {
-    if (open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
       setTitle(''); setClientId(''); setDueDate(''); setPriority('normal');
       setAssigned(defaultAssignee ? [defaultAssignee] : []);
     }
-  }, [open, defaultAssignee]);
+    onOpenChange(nextOpen);
+  };
 
   const toggle = (name: string) => setAssigned(prev => prev.some(a => normalizeAssignee(a) === normalizeAssignee(name))
     ? prev.filter(a => normalizeAssignee(a) !== normalizeAssignee(name))
@@ -264,7 +357,7 @@ function NewTaskDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>Nova tarefa</DialogTitle></DialogHeader>
         <div className="space-y-3">

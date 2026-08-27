@@ -62,14 +62,12 @@ export default function CentralEntregas() {
     ? requestedTab!
     : 'priorities';
 
-  useEffect(() => {
+  const requestedClientScope = useMemo<ClientScope | null>(() => {
     const clientId = searchParams.get('clientId');
-    if (!clientId) return;
     const client = clients.find(item => item.id === clientId);
-    if (client?.clientType === 'UNIVERSO_RAMOS') {
-      setClientScope('universe');
-    }
+    return client?.clientType === 'UNIVERSO_RAMOS' ? 'universe' : null;
   }, [clients, searchParams]);
+  const effectiveClientScope = requestedClientScope ?? clientScope;
 
   const responsibleList = useMemo(() => {
     const active = collaborators.filter(c => c.isActive);
@@ -124,8 +122,8 @@ export default function CentralEntregas() {
   }, []);
 
   const scopedClients = useMemo(() => {
-    return filterClientsByScope(clients, clientScope);
-  }, [clientScope, clients]);
+    return filterClientsByScope(clients, effectiveClientScope);
+  }, [effectiveClientScope, clients]);
 
   const scopedClientIds = useMemo(
     () => new Set(scopedClients.map(client => client.id)),
@@ -143,23 +141,23 @@ export default function CentralEntregas() {
   const scopedTasks = useMemo(
     () => tasksHook.tasks.filter(task => {
       if (task.client_id) return scopedClientIds.has(task.client_id);
-      return clientScope !== 'universe';
+      return effectiveClientScope !== 'universe';
     }),
-    [clientScope, scopedClientIds, tasksHook.tasks],
+    [effectiveClientScope, scopedClientIds, tasksHook.tasks],
   );
   const scopedPriorities = useMemo(
     () => prioritiesHook.priorities.filter(priority => {
       if (priority.client_id) return scopedClientIds.has(priority.client_id);
-      return clientScope !== 'universe';
+      return effectiveClientScope !== 'universe';
     }),
-    [clientScope, prioritiesHook.priorities, scopedClientIds],
+    [effectiveClientScope, prioritiesHook.priorities, scopedClientIds],
   );
   const scopedComments = useMemo(
     () => comments.filter(comment => scopedClientIds.has(comment.client_id)),
     [comments, scopedClientIds],
   );
   const scopedDeliverables = useMemo(() => {
-    if (clientScope === 'all') return deliverablesHook.deliverables;
+    if (effectiveClientScope === 'all') return deliverablesHook.deliverables;
 
     const taskById = new Map(
       tasksHook.tasks.map(task => [task.id, task]),
@@ -183,12 +181,12 @@ export default function CentralEntregas() {
       const belongsToUniverse = linkedClientIds.some(clientId =>
         universeClientIds.has(clientId),
       );
-      return clientScope === 'universe'
+      return effectiveClientScope === 'universe'
         ? belongsToUniverse
         : !belongsToUniverse;
     });
   }, [
-    clientScope,
+    effectiveClientScope,
     deliverablesHook.deliverables,
     prioritiesHook.priorities,
     tasksHook.tasks,
@@ -298,7 +296,7 @@ export default function CentralEntregas() {
                     type="button"
                     onClick={() => setClientScope(value)}
                     className={`px-2.5 py-1 text-xs font-medium transition-colors ${
-                      clientScope === value
+                      effectiveClientScope === value
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:bg-muted'
                     }`}
@@ -317,6 +315,26 @@ export default function CentralEntregas() {
 
           {!isMobile && <GlobalSummary {...global} />}
 
+          <Tabs
+            value={activeTab}
+            onValueChange={(tab) => {
+              const next = new URLSearchParams(searchParams);
+              next.set('tab', tab);
+              setSearchParams(next, { replace: true });
+            }}
+            className="w-full"
+          >
+            <TabsList className={isMobile
+              ? "flex w-full overflow-x-auto gap-1 bg-card/60 backdrop-blur-sm border justify-start"
+              : "grid grid-cols-3 md:grid-cols-7 h-auto gap-1 bg-card/60 backdrop-blur-sm border"}>
+              <TabsTrigger value="priorities" className="flex items-center gap-1.5 py-2 shrink-0"><Star className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Prioridades</span></TabsTrigger>
+              <TabsTrigger value="tasks" className="flex items-center gap-1.5 py-2 shrink-0"><CheckSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Tarefas</span></TabsTrigger>
+              <TabsTrigger value="comments" className="flex items-center gap-1.5 py-2 shrink-0"><MessageSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Comentários</span></TabsTrigger>
+              <TabsTrigger value="deliverables" className="flex items-center gap-1.5 py-2 shrink-0"><Package className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Entregáveis</span></TabsTrigger>
+              <TabsTrigger value="challenges" className="flex items-center gap-1.5 py-2 shrink-0"><Sparkles className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Desafios</span></TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-1.5 py-2 shrink-0"><Archive className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Histórico</span></TabsTrigger>
+              <TabsTrigger value="performance" className="flex items-center gap-1.5 py-2 shrink-0"><TrendingUp className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Performance</span></TabsTrigger>
+            </TabsList>
 
           <TeamSelector
             options={responsibleList}
@@ -348,28 +366,6 @@ export default function CentralEntregas() {
             )
           )}
 
-          <Tabs
-            value={activeTab}
-            onValueChange={(tab) => {
-              const next = new URLSearchParams(searchParams);
-              next.set('tab', tab);
-              setSearchParams(next, { replace: true });
-            }}
-            className="w-full"
-          >
-            <TabsList className={isMobile
-              ? "flex w-full overflow-x-auto gap-1 bg-card/60 backdrop-blur-sm border justify-start"
-              : "grid grid-cols-3 md:grid-cols-7 h-auto gap-1 bg-card/60 backdrop-blur-sm border"}>
-              <TabsTrigger value="priorities" className="flex items-center gap-1.5 py-2 shrink-0"><Star className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Prioridades</span></TabsTrigger>
-              <TabsTrigger value="tasks" className="flex items-center gap-1.5 py-2 shrink-0"><CheckSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Tarefas</span></TabsTrigger>
-              <TabsTrigger value="comments" className="flex items-center gap-1.5 py-2 shrink-0"><MessageSquare className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Comentários</span></TabsTrigger>
-              <TabsTrigger value="deliverables" className="flex items-center gap-1.5 py-2 shrink-0"><Package className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Entregáveis</span></TabsTrigger>
-              <TabsTrigger value="challenges" className="flex items-center gap-1.5 py-2 shrink-0"><Sparkles className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Desafios</span></TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-1.5 py-2 shrink-0"><Archive className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Histórico</span></TabsTrigger>
-              <TabsTrigger value="performance" className="flex items-center gap-1.5 py-2 shrink-0"><TrendingUp className="w-4 h-4" /><span className={isMobile ? "text-[11px]" : "hidden sm:inline"}>Performance</span></TabsTrigger>
-            </TabsList>
-
-
             <TabsContent value="priorities" className="mt-4">
               <PrioritiesTab
                 collaborator={selectedInfo.name}
@@ -396,6 +392,7 @@ export default function CentralEntregas() {
                 onPromote={prioritiesHook.promoteTaskToPriority}
                 onToggleComplete={tasksHook.toggleComplete}
                 onCreateTask={tasksHook.addTask}
+                onUpdateTask={tasksHook.updateTask}
                 getDaysOpen={tasksHook.getDaysOpen}
               />
             </TabsContent>
