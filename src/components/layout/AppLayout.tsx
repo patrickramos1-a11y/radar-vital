@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 import { UserSelector } from "./UserSelector";
 import { AppSidebar } from "./AppSidebar";
-import logoSisRamos from "@/assets/logo-sisramos.png";
 import { RefreshCw } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -14,6 +13,8 @@ import {
 interface AppLayoutProps {
   children: ReactNode;
 }
+
+const painelAcIcon = "/icons/ramos-ac-app-icon-192-v3.png";
 
 async function clearTemporaryAppData() {
   try {
@@ -49,8 +50,8 @@ export function AppLayout({ children }: AppLayoutProps) {
               
               {/* Mobile Logo */}
               <div className="flex items-center gap-2 md:hidden">
-                <img src={logoSisRamos} alt="SisRamos" className="w-7 h-7 rounded-lg object-contain" />
-                <span className="text-sm font-bold text-foreground">SisRamos</span>
+                <img src={painelAcIcon} alt="Painel AC" className="w-7 h-7 rounded-lg object-contain" />
+                <span className="text-sm font-bold text-foreground">Painel AC</span>
               </div>
             </div>
 

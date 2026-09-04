@@ -2,7 +2,6 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, Target, Globe2, ShieldCheck, Landmark } from "lucide-react";
-import logoSisRamos from "@/assets/logo-sisramos.png";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 
 interface NavItem {
@@ -27,6 +26,8 @@ const configItems: NavItem[] = [
   { title: "Configurar", icon: Settings, href: "/config" },
 ];
 
+const painelAcIcon = "/icons/ramos-ac-app-icon-192-v3.png";
+
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
@@ -41,13 +42,13 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2.5 px-2 py-2.5">
-          <img src={logoSisRamos} alt="SisRamos" className="w-8 h-8 rounded-lg object-contain shrink-0" />
+          <img src={painelAcIcon} alt="Painel AC" className="w-8 h-8 rounded-lg object-contain shrink-0" />
           {!isCollapsed && (
             <div className="overflow-hidden">
               <h1 className="text-sm font-bold text-foreground tracking-tight leading-none truncate">
                 Painel de Indicadores
               </h1>
-              <p className="text-[10px] text-muted-foreground mt-0.5">SISRAMOS</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Painel AC</p>
             </div>
           )}
         </div>
@@ -109,7 +110,7 @@ export function AppSidebar() {
         <div className="px-2 py-2">
           {!isCollapsed && (
             <p className="text-[10px] text-muted-foreground/40 text-center">
-              © 2024 SISRAMOS
+              © 2024 Painel AC
             </p>
           )}
         </div>
