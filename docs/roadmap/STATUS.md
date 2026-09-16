@@ -315,6 +315,14 @@ Baseline de producao: 70 clientes, 10 colaboradores, 395 tarefas, 45 prioridades
 Excecao aceita: nao ha ambiente Supabase isolado conectado e o conector Lovable nao expoe o estado de backup/PITR. A publicacao segue por autorizacao do responsavel, com migrations estritamente aditivas e sem remocao, renomeacao ou alteracao dos dados existentes.
 Escopo autorizado: aplicar somente `20260730130000_universo_ramos.sql`, `20260730140000_audits.sql`, `20260731010205_challenges.sql`, `20260731011448_star_treasury.sql` e `20260731012821_performance_aggregates.sql`. Migrations de autenticacao permanecem excluidas.
 Pendencias: aplicar o pacote, sincronizar o frontend integrado, publicar uma unica vez e executar smoke test no ambiente publicado.
+
+2026-09-16 - Gestao operacional de tarefas
+Resumo: o Painel de Tarefas recebeu a aba `Gestao de tarefas`, com planilha editavel no desktop e cartoes operacionais no celular.
+Arquivos: `src/pages/JackboxUnified.tsx` e `src/components/tasks/TaskManagementSheet.tsx`.
+Migrations: nenhuma; a implementacao reutiliza os campos e atualizacoes existentes da tabela `tasks`.
+Testes: build de producao aprovado; lint dos arquivos alterados sem erros; verificacao visual local em desktop e mobile aprovada, sem erros de console ou estouro horizontal.
+Resultado: busca, filtros por status/cliente/responsavel/prioridade, ordenacao por coluna e edicao direta de responsavel, prioridade, prazo e conclusao disponiveis na mesma pagina.
+Pendencias: executar smoke test no ambiente oficial depois da publicacao.
 ```
 
 ## Modelo para proximos registros

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Box, User, CheckSquare, Plus, Trash2, Clock, Calendar, Search, Check, Pencil } from "lucide-react";
+import { Box, User, CheckSquare, Plus, Trash2, Clock, Calendar, Search, Check, Pencil, LayoutGrid, Sheet } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
@@ -17,14 +17,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Task } from "@/types/task";
 import { CollaboratorTaskTable } from "@/components/tasks/CollaboratorTaskTable";
 import { TaskAnalytics } from "@/components/tasks/TaskAnalytics";
+import { TaskManagementSheet } from "@/components/tasks/TaskManagementSheet";
 import { Collaborator } from "@/types/collaborator";
 import { assigneeMatches, assigneeMatchesAny, findCollaboratorColor } from "@/lib/taskAssignee";
 
 type StatusFilter = "pendentes" | "concluidas" | "todas";
+type PageView = "panel" | "management";
 
 export default function JackboxUnified() {
   const { collaborators: allCollaborators } = useAuth();
-  const { activeClients, highlightedClients } = useClients();
+  const { clients, activeClients, highlightedClients } = useClients();
   const { 
     tasks, 
     toggleComplete, 
@@ -38,9 +40,12 @@ export default function JackboxUnified() {
     getOldestTask,
     getAverageDaysOpen,
     getOverdueTasks,
+    isLoading,
+    error,
   } = useTasks();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pendentes");
+  const [pageView, setPageView] = useState<PageView>("panel");
 
   const collaboratorNames = useMemo(() => allCollaborators.map(c => c.name), [allCollaborators]);
   const collaboratorColorMap = useMemo(() => {
@@ -208,8 +213,44 @@ export default function JackboxUnified() {
           
         </VisualPanelHeader>
 
-        {/* Analytics Ranking Bar */}
-        <TaskAnalytics tasks={tasks} clients={activeClients} getDaysOpen={getDaysOpen} collaborators={allCollaborators} overdueTasks={getOverdueTasks()} />
+        <div className="flex items-center gap-1 border-b bg-card px-3 py-2 sm:px-6">
+          <Button
+            type="button"
+            variant={pageView === "panel" ? "default" : "ghost"}
+            size="sm"
+            className="h-9 gap-2"
+            onClick={() => setPageView("panel")}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Painel
+          </Button>
+          <Button
+            type="button"
+            variant={pageView === "management" ? "default" : "ghost"}
+            size="sm"
+            className="h-9 gap-2"
+            onClick={() => setPageView("management")}
+          >
+            <Sheet className="h-4 w-4" />
+            Gestão de tarefas
+          </Button>
+        </div>
+
+        {pageView === "management" ? (
+          <TaskManagementSheet
+            tasks={tasks}
+            clients={clients}
+            collaborators={allCollaborators}
+            isLoading={isLoading}
+            error={error}
+            getDaysOpen={getDaysOpen}
+            onToggleComplete={toggleComplete}
+            onUpdateTask={updateTask}
+          />
+        ) : (
+          <>
+            {/* Analytics Ranking Bar */}
+            <TaskAnalytics tasks={tasks} clients={activeClients} getDaysOpen={getDaysOpen} collaborators={allCollaborators} overdueTasks={getOverdueTasks()} />
 
         {/* Status Filter */}
         <div className="flex items-center gap-2 px-6 py-2 bg-muted/30 border-b">
@@ -282,6 +323,8 @@ export default function JackboxUnified() {
             </div>
           </div>
         )}
+          </>
+        )}
       </div>
     </AppLayout>
   );
@@ -352,7 +395,7 @@ function JackboxCardEnhanced({
 
   const handleSaveEdit = async (taskId: string) => {
     if (!editingTitle.trim()) return;
-    await onUpdateTask(taskId, { title: editingTitle.trim(), due_date: editingDueDate || null } as any);
+    await onUpdateTask(taskId, { title: editingTitle.trim(), due_date: editingDueDate || null });
     setEditingId(null);
   };
 
