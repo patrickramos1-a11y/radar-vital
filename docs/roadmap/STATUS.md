@@ -320,9 +320,9 @@ Pendencias: aplicar o pacote, sincronizar o frontend integrado, publicar uma uni
 Resumo: o Painel de Tarefas recebeu a aba `Gestao de tarefas`, com planilha editavel no desktop e cartoes operacionais no celular.
 Arquivos: `src/pages/JackboxUnified.tsx` e `src/components/tasks/TaskManagementSheet.tsx`.
 Migrations: nenhuma; a implementacao reutiliza os campos e atualizacoes existentes da tabela `tasks`.
-Testes: build de producao aprovado; lint dos arquivos alterados sem erros; verificacao visual local em desktop e mobile aprovada, sem erros de console ou estouro horizontal.
+Testes: 23 testes Vitest e build de producao aprovados; lint dos arquivos alterados sem erros; verificacao visual local e oficial em desktop e mobile aprovada, sem erros de console ou estouro horizontal.
 Resultado: busca, filtros por status/cliente/responsavel/prioridade, ordenacao por coluna e edicao direta de responsavel, prioridade, prazo e conclusao disponiveis na mesma pagina.
-Pendencias: executar smoke test no ambiente oficial depois da publicacao.
+Pendencias: nenhuma para esta entrega.
 ```
 
 ## Modelo para proximos registros
