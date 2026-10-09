@@ -138,19 +138,29 @@ export function useAudits() {
       itemId: string,
       status: AuditClientStatus,
       notes?: string | null,
+      assigneeId?: string | null,
     ) => {
-      const result = await supabase.rpc("update_audit_client_item", {
+      const result = await supabase.rpc("update_audit_client_item_v2", {
         p_item_id: itemId,
         p_status: status,
         p_notes: notes || null,
+        p_assignee_id: assigneeId || null,
         p_actor_name: currentUserName,
       });
       if (result.error) {
         console.error("Error updating audit client:", result.error);
-        toast.error("Erro ao atualizar cliente da auditoria");
+        const missingFunction =
+          result.error.code === "PGRST202" ||
+          result.error.message.includes("update_audit_client_item_v2");
+        toast.error(
+          missingFunction
+            ? "Atualização do banco pendente: aplique a função de auditoria v2."
+            : "Erro ao atualizar cliente da auditoria",
+        );
         return false;
       }
       await fetchAudits();
+      toast.success("Empresa da auditoria atualizada");
       return true;
     },
     [currentUserName, fetchAudits],

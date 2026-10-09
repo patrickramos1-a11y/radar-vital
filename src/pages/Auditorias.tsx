@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowUpDown,
   CalendarDays,
   CheckCircle2,
   Clock3,
   ListChecks,
   Plus,
   Save,
-  Search,
   ShieldCheck,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -31,7 +31,17 @@ import type {
   AuditCriterionResultStatus,
   AuditFormData,
 } from "@/types/audit";
+import type { Collaborator } from "@/types/collaborator";
 import { useSearchParams } from "react-router-dom";
+
+type SortColumn =
+  | "client"
+  | "status"
+  | "startedAt"
+  | "completedAt"
+  | "assignee"
+  | "notes";
+type PresenceFilter = "all" | "with" | "without";
 
 const statusConfig: Record<
   AuditClientStatus,
@@ -39,7 +49,7 @@ const statusConfig: Record<
 > = {
   pending: { label: "Pendente", className: "bg-slate-100 text-slate-700" },
   in_progress: {
-    label: "Em auditoria",
+    label: "Em andamento",
     className: "bg-amber-100 text-amber-800",
   },
   completed: {
@@ -54,7 +64,7 @@ const statusConfig: Record<
 
 export default function Auditorias() {
   const [searchParams] = useSearchParams();
-  const { isAdmin } = useAuth();
+  const { collaborators, isAdmin } = useAuth();
   const { clients } = useClients();
   const {
     audits,
@@ -77,6 +87,13 @@ export default function Auditorias() {
     "all",
   );
   const [clientSearch, setClientSearch] = useState("");
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [startedFilter, setStartedFilter] = useState<PresenceFilter>("all");
+  const [completedFilter, setCompletedFilter] =
+    useState<PresenceFilter>("all");
+  const [notesFilter, setNotesFilter] = useState("");
+  const [sortColumn, setSortColumn] = useState<SortColumn>("client");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     const requestedAuditId = searchParams.get("auditId");
@@ -116,19 +133,118 @@ export default function Auditorias() {
     () => new Map(clients.map((client) => [client.id, client])),
     [clients],
   );
+  const collaboratorById = useMemo(
+    () => new Map(collaborators.map((person) => [person.id, person])),
+    [collaborators],
+  );
   const filteredItems = useMemo(() => {
     const normalizedSearch = clientSearch.trim().toLocaleLowerCase("pt-BR");
-    return selectedItems.filter((item) => {
-      if (statusFilter !== "all" && item.status !== statusFilter) return false;
-      if (!normalizedSearch) return true;
-      const clientName = clientById.get(item.clientId)?.name ?? "";
-      return clientName.toLocaleLowerCase("pt-BR").includes(normalizedSearch);
-    });
-  }, [clientById, clientSearch, selectedItems, statusFilter]);
+    const normalizedNotes = notesFilter.trim().toLocaleLowerCase("pt-BR");
+    const presenceMatches = (value: string | null, filter: PresenceFilter) =>
+      filter === "all" || (filter === "with" ? Boolean(value) : !value);
+
+    return selectedItems
+      .filter((item) => {
+        const clientName = clientById.get(item.clientId)?.name ?? "";
+        if (
+          normalizedSearch &&
+          !clientName.toLocaleLowerCase("pt-BR").includes(normalizedSearch)
+        ) {
+          return false;
+        }
+        if (statusFilter !== "all" && item.status !== statusFilter) return false;
+        if (
+          assigneeFilter !== "all" &&
+          (assigneeFilter === "unassigned"
+            ? Boolean(item.assigneeId)
+            : item.assigneeId !== assigneeFilter)
+        ) {
+          return false;
+        }
+        if (!presenceMatches(item.startedAt, startedFilter)) return false;
+        if (
+          !presenceMatches(
+            item.validatedAt ?? item.completedAt,
+            completedFilter,
+          )
+        ) {
+          return false;
+        }
+        return (
+          !normalizedNotes ||
+          (item.notes ?? "")
+            .toLocaleLowerCase("pt-BR")
+            .includes(normalizedNotes)
+        );
+      })
+      .sort((left, right) => {
+        const valueFor = (item: AuditClientItem) => {
+          if (sortColumn === "client") {
+            return clientById.get(item.clientId)?.name ?? "";
+          }
+          if (sortColumn === "status") return item.status;
+          if (sortColumn === "startedAt") return item.startedAt ?? "";
+          if (sortColumn === "completedAt") {
+            return item.validatedAt ?? item.completedAt ?? "";
+          }
+          if (sortColumn === "assignee") {
+            return collaboratorById.get(item.assigneeId ?? "")?.name ?? "";
+          }
+          return item.notes ?? "";
+        };
+        const comparison = valueFor(left).localeCompare(
+          valueFor(right),
+          "pt-BR",
+          { numeric: true },
+        );
+        return sortDirection === "asc" ? comparison : -comparison;
+      });
+  }, [
+    assigneeFilter,
+    clientById,
+    clientSearch,
+    collaboratorById,
+    completedFilter,
+    notesFilter,
+    selectedItems,
+    sortColumn,
+    sortDirection,
+    startedFilter,
+    statusFilter,
+  ]);
+
+  const hasColumnFilters =
+    Boolean(clientSearch || notesFilter) ||
+    statusFilter !== "all" ||
+    assigneeFilter !== "all" ||
+    startedFilter !== "all" ||
+    completedFilter !== "all";
+
+  const toggleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortColumn(column);
+    setSortDirection("asc");
+  };
+
+  const clearColumnFilters = () => {
+    setClientSearch("");
+    setStatusFilter("all");
+    setAssigneeFilter("all");
+    setStartedFilter("all");
+    setCompletedFilter("all");
+    setNotesFilter("");
+  };
 
   useEffect(() => {
     setStatusFilter("all");
     setClientSearch("");
+    setAssigneeFilter("all");
+    setStartedFilter("all");
+    setCompletedFilter("all");
+    setNotesFilter("");
   }, [selectedAuditId]);
 
   return (
@@ -221,7 +337,7 @@ export default function Auditorias() {
                     <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-6">
                       <Metric label="Empresas" value={summary.total} />
                       <Metric label="Pendentes" value={summary.pending} />
-                      <Metric label="Em auditoria" value={summary.inProgress} />
+                      <Metric label="Em andamento" value={summary.inProgress} />
                       <Metric label="Concluídas" value={summary.completed} />
                       <Metric label="Validadas" value={summary.validated} />
                       <Metric
@@ -262,68 +378,59 @@ export default function Auditorias() {
 
                   <div className="border bg-card">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b p-3">
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                        <label className="relative min-w-56 flex-1 sm:max-w-sm">
-                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <input
-                            value={clientSearch}
-                            onChange={(event) =>
-                              setClientSearch(event.target.value)
-                            }
-                            placeholder="Buscar empresa"
-                            className="h-9 w-full border bg-background pl-9 pr-3 text-sm"
-                          />
-                        </label>
-                        <select
-                          value={statusFilter}
-                          onChange={(event) =>
-                            setStatusFilter(
-                              event.target.value as
-                                | AuditClientStatus
-                                | "all",
-                            )
-                          }
-                          className="h-9 min-w-44 border bg-background px-3 text-sm"
-                          aria-label="Filtrar por situação"
-                        >
-                          <option value="all">Todas as situações</option>
-                          {(
-                            Object.keys(statusConfig) as AuditClientStatus[]
-                          ).map((status) => (
-                            <option key={status} value={status}>
-                              {statusConfig[status].label}
-                            </option>
-                          ))}
-                        </select>
-                        {(statusFilter !== "all" || clientSearch) && (
+                      <p className="text-sm font-medium">Empresas da auditoria</p>
+                      <div className="flex items-center gap-2">
+                        {hasColumnFilters && (
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              setStatusFilter("all");
-                              setClientSearch("");
-                            }}
+                            onClick={clearColumnFilters}
                           >
                             Limpar filtros
                           </Button>
                         )}
+                        <span className="text-xs text-muted-foreground">
+                          {filteredItems.length} de {selectedItems.length}{" "}
+                          empresas
+                        </span>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {filteredItems.length} de {selectedItems.length} empresas
-                      </span>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[980px] text-sm">
+                      <table className="w-full min-w-[1120px] text-sm">
                         <thead className="bg-muted/50 text-left text-[10px] uppercase text-muted-foreground">
                           <tr>
-                            <th className="px-3 py-2">Empresa</th>
-                            <th className="px-3 py-2">Situação</th>
-                            <th className="px-3 py-2">Início</th>
-                            <th className="px-3 py-2">Conclusão</th>
-                            <th className="px-3 py-2">Critérios</th>
-                            <th className="px-3 py-2">Observação</th>
+                            <SortableHeader label="Empresa" column="client" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
+                            <SortableHeader label="Situação" column="status" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
+                            <SortableHeader label="Início" column="startedAt" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
+                            <SortableHeader label="Conclusão" column="completedAt" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
+                            <SortableHeader label="Responsável" column="assignee" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
+                            <SortableHeader label="Observação" column="notes" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
                             <th className="px-3 py-2 text-right">Ações</th>
+                          </tr>
+                          <tr className="border-t bg-background normal-case">
+                            <th className="px-2 py-2">
+                              <input value={clientSearch} onChange={(event) => setClientSearch(event.target.value)} placeholder="Filtrar empresa" aria-label="Filtrar empresa" className="h-8 w-full min-w-48 border px-2 text-xs" />
+                            </th>
+                            <th className="px-2 py-2">
+                              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AuditClientStatus | "all")} aria-label="Filtrar por situação" className="h-8 w-full min-w-32 border bg-background px-2 text-xs">
+                                <option value="all">Todas</option>
+                                {(Object.keys(statusConfig) as AuditClientStatus[]).map((status) => <option key={status} value={status}>{statusConfig[status].label}</option>)}
+                              </select>
+                            </th>
+                            <th className="px-2 py-2"><PresenceSelect label="Filtrar início" value={startedFilter} onChange={setStartedFilter} /></th>
+                            <th className="px-2 py-2"><PresenceSelect label="Filtrar conclusão" value={completedFilter} onChange={setCompletedFilter} /></th>
+                            <th className="px-2 py-2">
+                              <select value={assigneeFilter} onChange={(event) => setAssigneeFilter(event.target.value)} aria-label="Filtrar por responsável" className="h-8 w-full min-w-36 border bg-background px-2 text-xs">
+                                <option value="all">Todos</option>
+                                <option value="unassigned">Sem responsável</option>
+                                {collaborators.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+                              </select>
+                            </th>
+                            <th className="px-2 py-2">
+                              <input value={notesFilter} onChange={(event) => setNotesFilter(event.target.value)} placeholder="Filtrar observação" aria-label="Filtrar observação" className="h-8 w-full min-w-48 border px-2 text-xs" />
+                            </th>
+                            <th />
                           </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -338,6 +445,7 @@ export default function Auditorias() {
                               canEdit={
                                 isAdmin && selectedAudit.status === "active"
                               }
+                              collaborators={collaborators}
                               criteriaCount={selectedCriteria.length}
                               evaluatedCriteriaCount={
                                 results.filter(
@@ -409,6 +517,7 @@ function AuditClientRow({
   item,
   clientName,
   canEdit,
+  collaborators,
   criteriaCount,
   evaluatedCriteriaCount,
   onOpenCriteria,
@@ -417,6 +526,7 @@ function AuditClientRow({
   item: AuditClientItem;
   clientName: string;
   canEdit: boolean;
+  collaborators: Collaborator[];
   criteriaCount: number;
   evaluatedCriteriaCount: number;
   onOpenCriteria: () => void;
@@ -424,19 +534,24 @@ function AuditClientRow({
     itemId: string,
     status: AuditClientStatus,
     notes?: string | null,
+    assigneeId?: string | null,
   ) => Promise<boolean>;
 }) {
   const [status, setStatus] = useState<AuditClientStatus>(item.status);
   const [notes, setNotes] = useState(item.notes ?? "");
+  const [assigneeId, setAssigneeId] = useState(item.assigneeId ?? "");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setStatus(item.status);
     setNotes(item.notes ?? "");
+    setAssigneeId(item.assigneeId ?? "");
   }, [item]);
 
   const changed =
-    status !== item.status || notes.trim() !== (item.notes ?? "");
+    status !== item.status ||
+    notes.trim() !== (item.notes ?? "") ||
+    assigneeId !== (item.assigneeId ?? "");
 
   return (
     <tr className="align-top transition-colors hover:bg-muted/20">
@@ -480,18 +595,25 @@ function AuditClientRow({
         {formatDate(item.validatedAt ?? item.completedAt)}
       </td>
       <td className="px-3 py-2">
-        {criteriaCount > 0 ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onOpenCriteria}
+        {canEdit ? (
+          <select
+            value={assigneeId}
+            onChange={(event) => setAssigneeId(event.target.value)}
+            aria-label={`Responsável por ${clientName}`}
+            className="h-8 min-w-36 border bg-background px-2 text-xs"
           >
-            <ListChecks className="mr-1 h-3.5 w-3.5" />
-            {evaluatedCriteriaCount}/{criteriaCount}
-          </Button>
+            <option value="">Sem responsável</option>
+            {collaborators.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}
+              </option>
+            ))}
+          </select>
         ) : (
-          <span className="text-xs text-muted-foreground">Sem critérios</span>
+          <span className="text-xs text-muted-foreground">
+            {collaborators.find((person) => person.id === item.assigneeId)
+              ?.name ?? "Sem responsável"}
+          </span>
         )}
       </td>
       <td className="px-3 py-2">
@@ -503,7 +625,20 @@ function AuditClientRow({
           className="h-8 w-full min-w-48 border bg-background px-2 text-xs disabled:opacity-70"
         />
       </td>
-      <td className="px-3 py-2 text-right">
+      <td className="px-3 py-2">
+        <div className="flex justify-end gap-1">
+        {criteriaCount > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onOpenCriteria}
+            title={`Critérios: ${evaluatedCriteriaCount} de ${criteriaCount} avaliados`}
+          >
+            <ListChecks className="h-3.5 w-3.5" />
+            <span className="sr-only">Abrir critérios de {clientName}</span>
+          </Button>
+        )}
         {canEdit && (
           <Button
             type="button"
@@ -511,7 +646,12 @@ function AuditClientRow({
             disabled={!changed || saving}
             onClick={async () => {
               setSaving(true);
-              await onSave(item.id, status, notes.trim());
+              await onSave(
+                item.id,
+                status,
+                notes.trim(),
+                assigneeId || null,
+              );
               setSaving(false);
             }}
           >
@@ -519,8 +659,70 @@ function AuditClientRow({
             {saving ? "Salvando" : "Salvar"}
           </Button>
         )}
+        </div>
       </td>
     </tr>
+  );
+}
+
+function SortableHeader({
+  label,
+  column,
+  activeColumn,
+  direction,
+  onSort,
+}: {
+  label: string;
+  column: SortColumn;
+  activeColumn: SortColumn;
+  direction: "asc" | "desc";
+  onSort: (column: SortColumn) => void;
+}) {
+  return (
+    <th className="px-2 py-1">
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="flex h-8 w-full items-center gap-1 px-1 text-left font-semibold hover:text-foreground"
+        title={`Ordenar por ${label}`}
+      >
+        <span>{label}</span>
+        <ArrowUpDown
+          className={cn(
+            "h-3.5 w-3.5",
+            activeColumn === column && "text-primary",
+          )}
+        />
+        <span className="sr-only">
+          {activeColumn === column
+            ? `Ordem ${direction === "asc" ? "crescente" : "decrescente"}`
+            : "Ordenar"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
+function PresenceSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: PresenceFilter;
+  onChange: (value: PresenceFilter) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value as PresenceFilter)}
+      aria-label={label}
+      className="h-8 w-full min-w-28 border bg-background px-2 text-xs"
+    >
+      <option value="all">Todos</option>
+      <option value="with">Com data</option>
+      <option value="without">Sem data</option>
+    </select>
   );
 }
 
