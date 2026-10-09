@@ -2314,6 +2314,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      delete_audit: {
+        Args: {
+          p_actor_name?: string
+          p_audit_id: string
+        }
+        Returns: undefined
+      }
       update_audit_client_result: {
         Args: {
           p_actor_name?: string

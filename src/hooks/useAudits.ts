@@ -204,6 +204,39 @@ export function useAudits() {
     [currentUserName, fetchAudits],
   );
 
+  const deleteAudit = useCallback(
+    async (auditId: string) => {
+      const result = await supabase.rpc("delete_audit", {
+        p_audit_id: auditId,
+        p_actor_name: currentUserName,
+      });
+
+      if (result.error) {
+        console.error("Error deleting audit:", result.error);
+        toast.error("Erro ao excluir auditoria");
+        return false;
+      }
+
+      const removedItemIds = new Set(
+        items.filter((item) => item.auditId === auditId).map((item) => item.id),
+      );
+      setAudits((current) => current.filter((audit) => audit.id !== auditId));
+      setItems((current) => current.filter((item) => item.auditId !== auditId));
+      setCriteria((current) =>
+        current.filter((criterion) => criterion.auditId !== auditId),
+      );
+      setResults((current) =>
+        current.filter(
+          (clientResult) =>
+            !removedItemIds.has(clientResult.auditClientItemId),
+        ),
+      );
+      toast.success("Auditoria excluída");
+      return true;
+    },
+    [currentUserName, items],
+  );
+
   const updateClientResult = useCallback(
     async (
       resultId: string,
@@ -250,6 +283,7 @@ export function useAudits() {
     openAudit,
     updateClientItem,
     closeAudit,
+    deleteAudit,
     updateClientResult,
     getItemsForAudit,
     getSummary,

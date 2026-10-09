@@ -8,9 +8,20 @@ import {
   Plus,
   Save,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -75,6 +86,7 @@ export default function Auditorias() {
     openAudit,
     updateClientItem,
     closeAudit,
+    deleteAudit,
     updateClientResult,
     getItemsForAudit,
     getSummary,
@@ -83,6 +95,8 @@ export default function Auditorias() {
   const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [criteriaItemId, setCriteriaItemId] = useState<string | null>(null);
+  const [deleteAuditId, setDeleteAuditId] = useState<string | null>(null);
+  const [deletingAudit, setDeletingAudit] = useState(false);
   const [statusFilter, setStatusFilter] = useState<AuditClientStatus | "all">(
     "all",
   );
@@ -301,6 +315,8 @@ export default function Auditorias() {
                     selected={audit.id === selectedAuditId}
                     summary={getSummary(audit.id)}
                     onClick={() => setSelectedAuditId(audit.id)}
+                    canDelete={isAdmin}
+                    onDelete={() => setDeleteAuditId(audit.id)}
                   />
                 ))}
               </aside>
@@ -492,6 +508,46 @@ export default function Auditorias() {
           }
         }}
       />
+
+      <AlertDialog
+        open={Boolean(deleteAuditId)}
+        onOpenChange={(open) => !open && setDeleteAuditId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir auditoria?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A auditoria
+              {" "}
+              <strong className="text-foreground">
+                {audits.find((audit) => audit.id === deleteAuditId)?.title}
+              </strong>
+              {" "}
+              e todos os seus registros vinculados serão excluídos
+              permanentemente. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingAudit}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deletingAudit || !deleteAuditId}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async (event) => {
+                event.preventDefault();
+                if (!deleteAuditId) return;
+                setDeletingAudit(true);
+                const deleted = await deleteAudit(deleteAuditId);
+                setDeletingAudit(false);
+                if (deleted) setDeleteAuditId(null);
+              }}
+            >
+              {deletingAudit ? "Excluindo..." : "Excluir auditoria"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AuditCriteriaDialog
         open={Boolean(criteriaItem)}
@@ -906,40 +962,55 @@ function AuditSelector({
   selected,
   summary,
   onClick,
+  canDelete,
+  onDelete,
 }: {
   audit: Audit;
   selected: boolean;
   summary: ReturnType<ReturnType<typeof useAudits>["getSummary"]>;
   onClick: () => void;
+  canDelete: boolean;
+  onDelete: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
       className={cn(
-        "w-full border bg-card p-3 text-left transition-colors hover:bg-muted/40",
+        "relative border bg-card transition-colors hover:bg-muted/40",
         selected && "border-primary bg-primary/5",
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="font-semibold">{audit.title}</span>
-        <AuditStatus audit={audit} />
-      </div>
-      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-        <span>{summary.total} empresas</span>
-        <span>{summary.progress}%</span>
-      </div>
-      <div className="mt-1 h-1.5 overflow-hidden bg-muted">
-        <div
-          className="h-full bg-primary"
-          style={{ width: `${summary.progress}%` }}
-        />
-      </div>
-      <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
-        <Clock3 className="h-3 w-3" />
-        {getAuditElapsedDays(audit)} dias
-      </div>
-    </button>
+      <button type="button" onClick={onClick} className="w-full p-3 text-left">
+        <div className="flex items-start justify-between gap-2 pr-7">
+          <span className="font-semibold">{audit.title}</span>
+          <AuditStatus audit={audit} />
+        </div>
+        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+          <span>{summary.total} empresas</span>
+          <span>{summary.progress}%</span>
+        </div>
+        <div className="mt-1 h-1.5 overflow-hidden bg-muted">
+          <div
+            className="h-full bg-primary"
+            style={{ width: `${summary.progress}%` }}
+          />
+        </div>
+        <div className="mt-2 flex items-center gap-1 pr-7 text-[10px] text-muted-foreground">
+          <Clock3 className="h-3 w-3" />
+          {getAuditElapsedDays(audit)} dias
+        </div>
+      </button>
+      {canDelete && (
+        <button
+          type="button"
+          onClick={onDelete}
+          className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          title={`Excluir ${audit.title}`}
+        >
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">Excluir {audit.title}</span>
+        </button>
+      )}
+    </div>
   );
 }
 

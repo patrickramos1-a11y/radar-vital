@@ -8,6 +8,13 @@
       "when": 1791558675665,
       "tag": "0000_create_update_audit_client_item_v2",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791566582000,
+      "tag": "0001_delete_audit",
+      "breakpoints": true
     }
   ]
 }
