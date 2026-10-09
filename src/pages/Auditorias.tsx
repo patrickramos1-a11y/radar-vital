@@ -5,6 +5,8 @@ import {
   Clock3,
   ListChecks,
   Plus,
+  Save,
+  Search,
   ShieldCheck,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -71,6 +73,10 @@ export default function Auditorias() {
   const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [criteriaItemId, setCriteriaItemId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<AuditClientStatus | "all">(
+    "all",
+  );
+  const [clientSearch, setClientSearch] = useState("");
 
   useEffect(() => {
     const requestedAuditId = searchParams.get("auditId");
@@ -96,9 +102,10 @@ export default function Auditorias() {
 
   const selectedAudit =
     audits.find((audit) => audit.id === selectedAuditId) ?? null;
-  const selectedItems = selectedAudit
-    ? getItemsForAudit(selectedAudit.id)
-    : [];
+  const selectedItems = useMemo(
+    () => (selectedAuditId ? getItemsForAudit(selectedAuditId) : []),
+    [getItemsForAudit, selectedAuditId],
+  );
   const summary = selectedAudit ? getSummary(selectedAudit.id) : null;
   const selectedCriteria = selectedAudit
     ? criteria.filter((criterion) => criterion.auditId === selectedAudit.id)
@@ -109,11 +116,25 @@ export default function Auditorias() {
     () => new Map(clients.map((client) => [client.id, client])),
     [clients],
   );
+  const filteredItems = useMemo(() => {
+    const normalizedSearch = clientSearch.trim().toLocaleLowerCase("pt-BR");
+    return selectedItems.filter((item) => {
+      if (statusFilter !== "all" && item.status !== statusFilter) return false;
+      if (!normalizedSearch) return true;
+      const clientName = clientById.get(item.clientId)?.name ?? "";
+      return clientName.toLocaleLowerCase("pt-BR").includes(normalizedSearch);
+    });
+  }, [clientById, clientSearch, selectedItems, statusFilter]);
+
+  useEffect(() => {
+    setStatusFilter("all");
+    setClientSearch("");
+  }, [selectedAuditId]);
 
   return (
     <AppLayout>
       <div className="h-full overflow-auto bg-background">
-        <div className="mx-auto max-w-[1600px] space-y-4 p-4 md:p-6">
+        <div className="w-full space-y-4 p-4 md:p-6">
           <header className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-bold">
@@ -155,8 +176,8 @@ export default function Auditorias() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-[310px_minmax(0,1fr)]">
-              <aside className="space-y-2">
+            <div className="space-y-4">
+              <aside className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {audits.map((audit) => (
                   <AuditSelector
                     key={audit.id}
@@ -239,9 +260,61 @@ export default function Auditorias() {
                     </div>
                   )}
 
-                  <div className="overflow-hidden border bg-card">
+                  <div className="border bg-card">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b p-3">
+                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                        <label className="relative min-w-56 flex-1 sm:max-w-sm">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <input
+                            value={clientSearch}
+                            onChange={(event) =>
+                              setClientSearch(event.target.value)
+                            }
+                            placeholder="Buscar empresa"
+                            className="h-9 w-full border bg-background pl-9 pr-3 text-sm"
+                          />
+                        </label>
+                        <select
+                          value={statusFilter}
+                          onChange={(event) =>
+                            setStatusFilter(
+                              event.target.value as
+                                | AuditClientStatus
+                                | "all",
+                            )
+                          }
+                          className="h-9 min-w-44 border bg-background px-3 text-sm"
+                          aria-label="Filtrar por situação"
+                        >
+                          <option value="all">Todas as situações</option>
+                          {(
+                            Object.keys(statusConfig) as AuditClientStatus[]
+                          ).map((status) => (
+                            <option key={status} value={status}>
+                              {statusConfig[status].label}
+                            </option>
+                          ))}
+                        </select>
+                        {(statusFilter !== "all" || clientSearch) && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setStatusFilter("all");
+                              setClientSearch("");
+                            }}
+                          >
+                            Limpar filtros
+                          </Button>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {filteredItems.length} de {selectedItems.length} empresas
+                      </span>
+                    </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[760px] text-sm">
+                      <table className="w-full min-w-[980px] text-sm">
                         <thead className="bg-muted/50 text-left text-[10px] uppercase text-muted-foreground">
                           <tr>
                             <th className="px-3 py-2">Empresa</th>
@@ -250,114 +323,45 @@ export default function Auditorias() {
                             <th className="px-3 py-2">Conclusão</th>
                             <th className="px-3 py-2">Critérios</th>
                             <th className="px-3 py-2">Observação</th>
+                            <th className="px-3 py-2 text-right">Ações</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y">
-                          {selectedItems.map((item) => {
-                            const client = clientById.get(item.clientId);
-                            return (
-                              <tr key={item.id}>
-                                <td className="px-3 py-2 font-medium">
-                                  {client?.name ?? "Cliente removido"}
-                                </td>
-                                <td className="px-3 py-2">
-                                  {isAdmin &&
-                                  selectedAudit.status === "active" ? (
-                                    <select
-                                      value={item.status}
-                                      onChange={(event) =>
-                                        void updateClientItem(
-                                          item.id,
-                                          event.target
-                                            .value as AuditClientStatus,
-                                          item.notes,
-                                        )
-                                      }
-                                      className={cn(
-                                        "h-8 border px-2 text-xs font-medium",
-                                        statusConfig[item.status].className,
-                                      )}
-                                    >
-                                      {(
-                                        Object.keys(
-                                          statusConfig,
-                                        ) as AuditClientStatus[]
-                                      ).map((status) => (
-                                        <option key={status} value={status}>
-                                          {statusConfig[status].label}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  ) : (
-                                    <span
-                                      className={cn(
-                                        "inline-flex px-2 py-1 text-xs",
-                                        statusConfig[item.status].className,
-                                      )}
-                                    >
-                                      {statusConfig[item.status].label}
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-3 py-2 text-xs text-muted-foreground">
-                                  {formatDate(item.startedAt)}
-                                </td>
-                                <td className="px-3 py-2 text-xs text-muted-foreground">
-                                  {formatDate(
-                                    item.validatedAt ?? item.completedAt,
-                                  )}
-                                </td>
-                                <td className="px-3 py-2">
-                                  {selectedCriteria.length > 0 ? (
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setCriteriaItemId(item.id)}
-                                    >
-                                      <ListChecks className="mr-1 h-3.5 w-3.5" />
-                                      {
-                                        results.filter(
-                                          (result) =>
-                                            result.auditClientItemId ===
-                                              item.id &&
-                                            result.result !== "pending",
-                                        ).length
-                                      }
-                                      /{selectedCriteria.length}
-                                    </Button>
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground">
-                                      Sem critérios
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-3 py-2">
-                                  <input
-                                    defaultValue={item.notes ?? ""}
-                                    disabled={
-                                      !isAdmin ||
-                                      selectedAudit.status !== "active"
-                                    }
-                                    placeholder="Adicionar observação"
-                                    className="h-8 w-full min-w-48 border bg-background px-2 text-xs disabled:opacity-70"
-                                    onBlur={(event) => {
-                                      if (
-                                        event.target.value.trim() !==
-                                        (item.notes ?? "")
-                                      ) {
-                                        void updateClientItem(
-                                          item.id,
-                                          item.status,
-                                          event.target.value,
-                                        );
-                                      }
-                                    }}
-                                  />
-                                </td>
-                              </tr>
-                            );
-                          })}
+                          {filteredItems.map((item) => (
+                            <AuditClientRow
+                              key={item.id}
+                              item={item}
+                              clientName={
+                                clientById.get(item.clientId)?.name ??
+                                "Cliente removido"
+                              }
+                              canEdit={
+                                isAdmin && selectedAudit.status === "active"
+                              }
+                              criteriaCount={selectedCriteria.length}
+                              evaluatedCriteriaCount={
+                                results.filter(
+                                  (result) =>
+                                    result.auditClientItemId === item.id &&
+                                    result.result !== "pending",
+                                ).length
+                              }
+                              onOpenCriteria={() =>
+                                setCriteriaItemId(item.id)
+                              }
+                              onSave={updateClientItem}
+                            />
+                          ))}
+                          {filteredItems.length === 0 && (
+                            <tr>
+                              <td
+                                colSpan={7}
+                                className="px-4 py-10 text-center text-sm text-muted-foreground"
+                              >
+                                Nenhuma empresa corresponde aos filtros.
+                              </td>
+                            </tr>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -398,6 +402,125 @@ export default function Auditorias() {
         onSave={updateClientResult}
       />
     </AppLayout>
+  );
+}
+
+function AuditClientRow({
+  item,
+  clientName,
+  canEdit,
+  criteriaCount,
+  evaluatedCriteriaCount,
+  onOpenCriteria,
+  onSave,
+}: {
+  item: AuditClientItem;
+  clientName: string;
+  canEdit: boolean;
+  criteriaCount: number;
+  evaluatedCriteriaCount: number;
+  onOpenCriteria: () => void;
+  onSave: (
+    itemId: string,
+    status: AuditClientStatus,
+    notes?: string | null,
+  ) => Promise<boolean>;
+}) {
+  const [status, setStatus] = useState<AuditClientStatus>(item.status);
+  const [notes, setNotes] = useState(item.notes ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setStatus(item.status);
+    setNotes(item.notes ?? "");
+  }, [item]);
+
+  const changed =
+    status !== item.status || notes.trim() !== (item.notes ?? "");
+
+  return (
+    <tr className="align-top transition-colors hover:bg-muted/20">
+      <td className="px-3 py-2 font-medium">{clientName}</td>
+      <td className="px-3 py-2">
+        {canEdit ? (
+          <select
+            value={status}
+            onChange={(event) =>
+              setStatus(event.target.value as AuditClientStatus)
+            }
+            className={cn(
+              "h-8 min-w-32 border px-2 text-xs font-medium",
+              statusConfig[status].className,
+            )}
+            aria-label={`Situação de ${clientName}`}
+          >
+            {(Object.keys(statusConfig) as AuditClientStatus[]).map(
+              (statusOption) => (
+                <option key={statusOption} value={statusOption}>
+                  {statusConfig[statusOption].label}
+                </option>
+              ),
+            )}
+          </select>
+        ) : (
+          <span
+            className={cn(
+              "inline-flex px-2 py-1 text-xs",
+              statusConfig[item.status].className,
+            )}
+          >
+            {statusConfig[item.status].label}
+          </span>
+        )}
+      </td>
+      <td className="px-3 py-2 text-xs text-muted-foreground">
+        {formatDate(item.startedAt)}
+      </td>
+      <td className="px-3 py-2 text-xs text-muted-foreground">
+        {formatDate(item.validatedAt ?? item.completedAt)}
+      </td>
+      <td className="px-3 py-2">
+        {criteriaCount > 0 ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onOpenCriteria}
+          >
+            <ListChecks className="mr-1 h-3.5 w-3.5" />
+            {evaluatedCriteriaCount}/{criteriaCount}
+          </Button>
+        ) : (
+          <span className="text-xs text-muted-foreground">Sem critérios</span>
+        )}
+      </td>
+      <td className="px-3 py-2">
+        <input
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          disabled={!canEdit}
+          placeholder="Adicionar observação"
+          className="h-8 w-full min-w-48 border bg-background px-2 text-xs disabled:opacity-70"
+        />
+      </td>
+      <td className="px-3 py-2 text-right">
+        {canEdit && (
+          <Button
+            type="button"
+            size="sm"
+            disabled={!changed || saving}
+            onClick={async () => {
+              setSaving(true);
+              await onSave(item.id, status, notes.trim());
+              setSaving(false);
+            }}
+          >
+            <Save className="mr-1 h-3.5 w-3.5" />
+            {saving ? "Salvando" : "Salvar"}
+          </Button>
+        )}
+      </td>
+    </tr>
   );
 }
 
