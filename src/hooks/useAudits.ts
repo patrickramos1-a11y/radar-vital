@@ -30,8 +30,8 @@ export function useAudits() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAudits = useCallback(async () => {
-    setIsLoading(true);
+  const fetchAudits = useCallback(async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
     setError(null);
     try {
       const [auditResult, itemResult, criteriaResult, resultResult] = await Promise.all([
@@ -59,7 +59,7 @@ export function useAudits() {
       console.error("Error fetching audits:", caught);
       setError("Não foi possível carregar as auditorias.");
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   }, []);
 
@@ -70,22 +70,22 @@ export function useAudits() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "audits" },
-        () => void fetchAudits(),
+        () => void fetchAudits(false),
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "audit_client_items" },
-        () => void fetchAudits(),
+        () => void fetchAudits(false),
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "audit_criteria" },
-        () => void fetchAudits(),
+        () => void fetchAudits(false),
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "audit_client_results" },
-        () => void fetchAudits(),
+        () => void fetchAudits(false),
       )
       .subscribe();
 
@@ -159,11 +159,29 @@ export function useAudits() {
         );
         return false;
       }
-      await fetchAudits();
-      toast.success("Empresa da auditoria atualizada");
+
+      const updatedItemResult = await supabase
+        .from("audit_client_items")
+        .select("*")
+        .eq("id", itemId)
+        .single();
+
+      if (updatedItemResult.error) {
+        console.error(
+          "Error refreshing updated audit client:",
+          updatedItemResult.error,
+        );
+        toast.error("A alteração foi salva, mas a linha não pôde ser atualizada");
+        return false;
+      }
+
+      const updatedItem = mapAuditClientItem(updatedItemResult.data);
+      setItems((current) =>
+        current.map((item) => (item.id === itemId ? updatedItem : item)),
+      );
       return true;
     },
-    [currentUserName, fetchAudits],
+    [currentUserName],
   );
 
   const closeAudit = useCallback(

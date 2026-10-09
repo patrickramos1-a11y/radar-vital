@@ -541,6 +541,7 @@ function AuditClientRow({
   const [notes, setNotes] = useState(item.notes ?? "");
   const [assigneeId, setAssigneeId] = useState(item.assigneeId ?? "");
   const [saving, setSaving] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
 
   useEffect(() => {
     setStatus(item.status);
@@ -548,10 +549,35 @@ function AuditClientRow({
     setAssigneeId(item.assigneeId ?? "");
   }, [item]);
 
-  const changed =
-    status !== item.status ||
-    notes.trim() !== (item.notes ?? "") ||
-    assigneeId !== (item.assigneeId ?? "");
+  const notesChanged = notes.trim() !== (item.notes ?? "");
+
+  const saveStatus = async (nextStatus: AuditClientStatus) => {
+    const previousStatus = status;
+    setStatus(nextStatus);
+    setAutoSaving(true);
+    const saved = await onSave(
+      item.id,
+      nextStatus,
+      notes.trim(),
+      assigneeId || null,
+    );
+    if (!saved) setStatus(previousStatus);
+    setAutoSaving(false);
+  };
+
+  const saveAssignee = async (nextAssigneeId: string) => {
+    const previousAssigneeId = assigneeId;
+    setAssigneeId(nextAssigneeId);
+    setAutoSaving(true);
+    const saved = await onSave(
+      item.id,
+      status,
+      notes.trim(),
+      nextAssigneeId || null,
+    );
+    if (!saved) setAssigneeId(previousAssigneeId);
+    setAutoSaving(false);
+  };
 
   return (
     <tr className="align-top transition-colors hover:bg-muted/20">
@@ -561,8 +587,9 @@ function AuditClientRow({
           <select
             value={status}
             onChange={(event) =>
-              setStatus(event.target.value as AuditClientStatus)
+              void saveStatus(event.target.value as AuditClientStatus)
             }
+            disabled={autoSaving || saving}
             className={cn(
               "h-8 min-w-32 border px-2 text-xs font-medium",
               statusConfig[status].className,
@@ -598,7 +625,8 @@ function AuditClientRow({
         {canEdit ? (
           <select
             value={assigneeId}
-            onChange={(event) => setAssigneeId(event.target.value)}
+            onChange={(event) => void saveAssignee(event.target.value)}
+            disabled={autoSaving || saving}
             aria-label={`Responsável por ${clientName}`}
             className="h-8 min-w-36 border bg-background px-2 text-xs"
           >
@@ -643,7 +671,7 @@ function AuditClientRow({
           <Button
             type="button"
             size="sm"
-            disabled={!changed || saving}
+            disabled={!notesChanged || saving || autoSaving}
             onClick={async () => {
               setSaving(true);
               await onSave(
@@ -656,7 +684,7 @@ function AuditClientRow({
             }}
           >
             <Save className="mr-1 h-3.5 w-3.5" />
-            {saving ? "Salvando" : "Salvar"}
+            {saving ? "Salvando" : "Salvar nota"}
           </Button>
         )}
         </div>
