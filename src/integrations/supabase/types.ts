@@ -2304,6 +2304,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_audit_client_item_v2: {
+        Args: {
+          p_actor_name?: string
+          p_assignee_id?: string
+          p_item_id: string
+          p_notes?: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       update_audit_client_result: {
         Args: {
           p_actor_name?: string
