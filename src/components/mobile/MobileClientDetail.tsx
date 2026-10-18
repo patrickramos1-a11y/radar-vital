@@ -225,12 +225,6 @@ export function MobileClientDetail({
                   <CompactMetric value={workMetrics.completedAudits} label="Aud. concluídas" tone="text-violet-700" />
                   <CompactMetric value={workMetrics.pendingAudits} label="Aud. pendentes" tone="text-rose-700" />
                 </div>
-                {(client.isPriority || isHighlighted) && (
-                  <div className="mt-2 flex flex-wrap gap-1.5 border-t pt-2 text-[10px] font-semibold">
-                    {client.isPriority && <span className="bg-amber-50 px-2 py-1 text-amber-700">Em prioridade</span>}
-                    {isHighlighted && <span className="bg-red-50 px-2 py-1 text-red-700">Alerta de BO ativo</span>}
-                  </div>
-                )}
               </div>
             </div>
 
