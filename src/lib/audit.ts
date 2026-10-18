@@ -101,8 +101,34 @@ export function summarizeAudit(items: AuditClientItem[]): AuditSummary {
   summary.progress =
     summary.total === 0
       ? 0
-      : Math.round((summary.validated / summary.total) * 100);
+      : Math.round(((summary.completed + summary.validated) / summary.total) * 100);
   return summary;
+}
+
+export function isAuditOperationallyComplete(summary: AuditSummary): boolean {
+  return summary.total > 0 && summary.pending === 0 && summary.inProgress === 0;
+}
+
+export function getEffectiveAuditStatus(audit: Audit, summary: AuditSummary): AuditStatus {
+  if (audit.status === 'active' && isAuditOperationallyComplete(summary)) return 'closed';
+  return audit.status;
+}
+
+export function getAuditDisplayElapsedDays(
+  audit: Audit,
+  items: AuditClientItem[],
+  now = new Date(),
+): number {
+  if (audit.closedAt) return getAuditElapsedDays(audit, new Date(audit.closedAt));
+  const summary = summarizeAudit(items);
+  if (!isAuditOperationallyComplete(summary)) return getAuditElapsedDays(audit, now);
+  const completionDates = items
+    .map((item) => item.validatedAt ?? item.completedAt)
+    .filter((value): value is string => Boolean(value))
+    .map((value) => new Date(value).getTime())
+    .filter(Number.isFinite);
+  const completedAt = completionDates.length ? new Date(Math.max(...completionDates)) : now;
+  return getAuditElapsedDays(audit, completedAt);
 }
 
 export function getAuditElapsedDays(audit: Audit, now = new Date()): number {

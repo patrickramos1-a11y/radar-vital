@@ -35,6 +35,7 @@ export function ClientQuickEditDialog({
   const [category, setCategory] = useState<UniversoRamosCategory | "">("");
   const [collaboratorId, setCollaboratorId] = useState("");
   const [destinationType, setDestinationType] = useState<Client["clientType"]>("UNIVERSO_RAMOS");
+  const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const availableCollaborators = useMemo(
@@ -54,6 +55,7 @@ export function ClientQuickEditDialog({
     setCategory(client.universeCategory ?? "");
     setCollaboratorId(client.universeCollaboratorId ?? "");
     setDestinationType(client.clientType);
+    setIsActive(client.isActive);
   }, [client]);
 
   const handleFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,6 +79,7 @@ export function ClientQuickEditDialog({
         initials: selectedCollaborator?.initials ?? (initials.trim() || generateInitials(name.trim())),
         logoUrl: selectedCollaborator?.photoUrl ?? logoUrl,
         clientType: destinationType,
+        isActive,
         universeCategory: destinationType === "UNIVERSO_RAMOS"
           ? category || null
           : null,
@@ -116,17 +119,24 @@ export function ClientQuickEditDialog({
               </div>
             )}
           </div>
-          {client?.clientType === "UNIVERSO_RAMOS" && client.universeCategory === "EMPRESA" && (
+          {client && (client.clientType !== "UNIVERSO_RAMOS" || client.universeCategory === "EMPRESA") && (
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Destino do cadastro</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Painel do cliente</label>
               <select value={destinationType} onChange={(event) => setDestinationType(event.target.value as Client["clientType"])} className="w-full border bg-background px-3 py-2 text-sm">
-                <option value="UNIVERSO_RAMOS">Manter no Universo Ramos</option>
-                <option value="AC">Mover para Acompanhamento Ambiental (AC)</option>
-                <option value="AV">Mover para Acompanhamento de Vistoria (AV)</option>
+                {client.clientType === "UNIVERSO_RAMOS" && <option value="UNIVERSO_RAMOS">Universo Ramos</option>}
+                <option value="AC">Acompanhamento Ambiental (AC)</option>
+                <option value="AV">Acompanhamento de Vistoria (AV)</option>
               </select>
-              {destinationType !== "UNIVERSO_RAMOS" && <p className="mt-1 text-xs text-amber-700">Ao salvar, este cadastro sai do Universo Ramos e passa a aparecer somente no painel {destinationType}.</p>}
+              {client.clientType === "UNIVERSO_RAMOS" && destinationType !== "UNIVERSO_RAMOS" && <p className="mt-1 text-xs text-amber-700">Ao salvar, este cadastro sai do Universo Ramos e passa a aparecer somente no painel {destinationType}.</p>}
             </div>
           )}
+          <label className="flex cursor-pointer items-center justify-between border bg-muted/20 px-3 py-2.5">
+            <span>
+              <span className="block text-sm font-medium">Cliente ativo</span>
+              <span className="block text-xs text-muted-foreground">Desative clientes que saíram sem excluir o histórico.</span>
+            </span>
+            <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} className="h-4 w-4 accent-primary" />
+          </label>
           {isCollaboratorCard && (
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Perfil do colaborador</label>

@@ -61,7 +61,12 @@ function readLocalWorkspace(): LocalWorkspaceState | null {
   if (!LOCAL_WORKSPACE_PREVIEW || typeof window === 'undefined') return null;
   try {
     const value = window.localStorage.getItem(LOCAL_WORKSPACE_KEY);
-    return value ? JSON.parse(value) as LocalWorkspaceState : null;
+    if (!value) return null;
+    const parsed = JSON.parse(value) as LocalWorkspaceState;
+    return {
+      ...parsed,
+      tasks: parsed.tasks.map((task) => ({ ...task, modality: task.modality || 'levantamento' })),
+    };
   } catch {
     return null;
   }
@@ -86,6 +91,7 @@ function createLocalTask(clientId: string, data: TaskFormData): Task {
     completed_at: data.status === 'concluida' ? now : null,
     due_date: data.due_date || null,
     priority: data.priority || 'normal',
+    modality: data.modality || 'levantamento',
     parent_task_id: data.parent_task_id || null,
     sort_order: data.sort_order || 0,
     source_comment_id: data.source_comment_id || null,
@@ -107,6 +113,7 @@ const dbRowToTask = (row: TaskRow): Task => ({
   completed_at: row.completed_at,
   due_date: row.due_date || null,
   priority: (row.priority as Task['priority']) || 'normal',
+  modality: (row.modality as Task['modality']) || 'levantamento',
   priority_id: row.priority_id ?? null,
   parent_task_id: row.parent_task_id ?? null,
   sort_order: row.sort_order ?? 0,
@@ -218,6 +225,7 @@ export function useTasks() {
         assigned_to: data.assigned_to,
         due_date: data.due_date || null,
         priority: data.priority || 'normal',
+        modality: data.modality || 'levantamento',
         status: data.status || 'pendente',
         parent_task_id: data.parent_task_id || null,
         source_comment_id: data.source_comment_id || null,
@@ -255,6 +263,7 @@ export function useTasks() {
         assigned_to: overrides.assigned_to || [],
         due_date: overrides.due_date,
         priority: overrides.priority || template.default_priority,
+        modality: overrides.modality || 'levantamento',
         status: overrides.status || 'pendente',
         recurrence: overrides.recurrence || 'none',
       });
@@ -262,6 +271,7 @@ export function useTasks() {
         title,
         assigned_to: overrides.assigned_to || [],
         priority: overrides.priority || template.default_priority,
+        modality: overrides.modality || 'levantamento',
         parent_task_id: parent.id,
         sort_order: index,
       }));
@@ -276,6 +286,7 @@ export function useTasks() {
       assigned_to: overrides.assigned_to || [],
       due_date: overrides.due_date,
       priority: overrides.priority || template.default_priority,
+      modality: overrides.modality || 'levantamento',
       status: overrides.status || 'pendente',
       recurrence: overrides.recurrence || 'none',
     }, clientName, false);
@@ -287,6 +298,7 @@ export function useTasks() {
         title,
         assigned_to: overrides.assigned_to || [],
         priority: overrides.priority || template.default_priority,
+        modality: overrides.modality || 'levantamento',
         parent_task_id: parent.id,
         status: 'pendente',
         sort_order: index,
@@ -348,6 +360,7 @@ export function useTasks() {
             assigned_to: currentTask.assigned_to,
             due_date: getNextRecurrenceDate(currentTask.due_date, currentTask.recurrence) ?? undefined,
             priority: currentTask.priority,
+            modality: currentTask.modality,
             recurrence: currentTask.recurrence,
           });
           nextTask.recurrence_origin_id = currentTask.recurrence_origin_id || currentTask.id;
@@ -358,6 +371,7 @@ export function useTasks() {
               description: child.description ?? undefined,
               assigned_to: child.assigned_to,
               priority: child.priority,
+              modality: child.modality,
               parent_task_id: nextTask.id,
               sort_order: child.sort_order,
             }));
@@ -393,6 +407,7 @@ export function useTasks() {
           assigned_to: currentTask.assigned_to,
           due_date: nextDueDate,
           priority: currentTask.priority,
+          modality: currentTask.modality,
           status: 'pendente',
           recurrence: currentTask.recurrence,
           recurrence_origin_id: recurrenceOriginId,
@@ -409,6 +424,7 @@ export function useTasks() {
               assigned_to: child.assigned_to,
               due_date: null,
               priority: child.priority,
+              modality: child.modality,
               status: 'pendente',
               parent_task_id: nextTask.id,
               sort_order: child.sort_order,

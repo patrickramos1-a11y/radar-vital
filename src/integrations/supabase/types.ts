@@ -1892,6 +1892,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          modality: string
           parent_task_id: string | null
           priority: string
           priority_id: string | null
@@ -1912,6 +1913,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          modality?: string
           parent_task_id?: string | null
           priority?: string
           priority_id?: string | null
@@ -1932,6 +1934,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          modality?: string
           parent_task_id?: string | null
           priority?: string
           priority_id?: string | null

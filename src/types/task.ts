@@ -1,4 +1,10 @@
 export type TaskPriority = 'baixa' | 'normal' | 'alta' | 'urgente';
+export type TaskModality =
+  | 'levantamento'
+  | 'elaboracao'
+  | 'regularizacao'
+  | 'acompanhamento'
+  | 'execucao_operacional';
 export type TaskStatus =
   | 'pendente'
   | 'em_andamento'
@@ -22,6 +28,7 @@ export interface Task {
   completed_at: string | null;
   due_date: string | null;
   priority: TaskPriority;
+  modality: TaskModality;
   priority_id?: string | null;
   parent_task_id: string | null;
   sort_order: number;
@@ -37,6 +44,7 @@ export type TaskFormData = {
   assigned_to: string[];
   due_date?: string;
   priority?: TaskPriority;
+  modality?: TaskModality;
   status?: TaskStatus;
   parent_task_id?: string | null;
   source_comment_id?: string | null;
@@ -81,6 +89,14 @@ export const TASK_RECURRENCE_LABELS: Record<TaskRecurrence, string> = {
   none: 'Não repetir',
   weekly: 'Semanal',
   monthly: 'Mensal',
+};
+
+export const TASK_MODALITY_CONFIG: Record<TaskModality, { label: string; shortLabel: string }> = {
+  levantamento: { label: 'Levantamento', shortLabel: 'Levant.' },
+  elaboracao: { label: 'Elaboração', shortLabel: 'Elab.' },
+  regularizacao: { label: 'Regularização', shortLabel: 'Regular.' },
+  acompanhamento: { label: 'Acompanhamento', shortLabel: 'Acomp.' },
+  execucao_operacional: { label: 'Execução Operacional', shortLabel: 'Execução' },
 };
 
 export const PRIORITY_CONFIG: Record<TaskPriority, {

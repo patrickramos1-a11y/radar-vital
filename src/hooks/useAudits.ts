@@ -66,7 +66,7 @@ export function useAudits() {
   useEffect(() => {
     void fetchAudits();
     const channel = supabase
-      .channel("audits_realtime")
+      .channel(`audits_realtime_${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "audits" },

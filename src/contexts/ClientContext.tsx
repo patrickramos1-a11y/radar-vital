@@ -34,6 +34,7 @@ interface ClientContextType {
 }
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
+const LOCAL_WORKSPACE_PREVIEW = import.meta.env.VITE_CLIENT_WORKSPACE_PREVIEW === 'true';
 
 const CLIENT_LIST_COLUMNS = [
   'id',
@@ -314,6 +315,8 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         }
         return client;
       }));
+
+      if (LOCAL_WORKSPACE_PREVIEW) return;
 
       // Then sync to database
       const { error } = await supabase

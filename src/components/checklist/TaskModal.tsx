@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Check, ClipboardCheck, Clock3, FileCheck2, Flag, History, MessageSquareText, Plus, Search, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, Check, ClipboardCheck, Clock3, Eye, FileCheck2, Flame, History, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ClientWorkList } from '@/components/client-work/ClientWorkList';
 import { assigneeMatches, findCollaboratorColor } from '@/lib/taskAssignee';
-import { Task, TaskFormData, TaskPriority, PRIORITY_CONFIG, TASK_STATUS_CONFIG } from '@/types/task';
+import { Task, TaskFormData, TaskModality, TaskPriority, PRIORITY_CONFIG, TASK_MODALITY_CONFIG, TASK_STATUS_CONFIG } from '@/types/task';
 import { Client } from '@/types/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientWorkItems } from '@/hooks/useClientWorkItems';
@@ -14,6 +14,21 @@ import type { TaskDependency, TaskTemplate } from '@/types/task';
 import { TaskDetailSheet } from '@/components/tasks/TaskDetailSheet';
 import { getTaskProgress } from '@/lib/taskOperations';
 import { cn } from '@/lib/utils';
+
+const MODALITY_ICONS: Record<TaskModality, typeof Search> = {
+  levantamento: Search,
+  elaboracao: PenLine,
+  regularizacao: BadgeCheck,
+  acompanhamento: Eye,
+  execucao_operacional: Settings2,
+};
+
+const PRIORITY_VISUALS: Record<TaskPriority, { icon: typeof Flame; shortLabel: string; className: string }> = {
+  urgente: { icon: Flame, shortLabel: 'Urg.', className: 'border-red-300 bg-red-50 text-red-700' },
+  alta: { icon: ArrowUp, shortLabel: 'Alta', className: 'border-orange-300 bg-orange-50 text-orange-700' },
+  normal: { icon: Minus, shortLabel: 'Normal', className: 'border-slate-200 bg-background text-slate-600' },
+  baixa: { icon: ArrowDown, shortLabel: 'Baixa', className: 'border-sky-200 bg-sky-50 text-sky-700' },
+};
 
 export interface TaskModalProps {
   isOpen: boolean;
@@ -37,12 +52,10 @@ export function TaskModal({
   client,
   tasks,
   dependencies,
-  templates,
   onAddTask,
   onToggleComplete,
   onUpdateTask,
   onDeleteTask,
-  onAddTaskFromTemplate,
   onSetTaskDependencies,
   initialView = 'all',
 }: TaskModalProps) {
@@ -62,7 +75,7 @@ export function TaskModal({
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState('none');
+  const [newTaskModality, setNewTaskModality] = useState<TaskModality>('levantamento');
 
   const collaboratorColorMap: Record<string, string> = {};
   collaborators.forEach(c => { collaboratorColorMap[c.name] = c.color; });
@@ -105,29 +118,22 @@ export function TaskModal({
   };
 
   const handleAddTask = async () => {
-    const selectedTemplate = templates.find((item) => item.id === selectedTemplateId);
-    if (!newTaskTitle.trim() && !selectedTemplate) return;
+    if (!newTaskTitle.trim()) return;
 
-    const success = selectedTemplate
-      ? await onAddTaskFromTemplate(client.id, selectedTemplate, {
-          title: newTaskTitle.trim() || selectedTemplate.default_title,
-          assigned_to: newTaskAssignees,
-          due_date: newTaskDueDate || undefined,
-          priority: newTaskPriority,
-        }, client.name)
-      : await onAddTask(client.id, {
-          title: newTaskTitle.trim(),
-          assigned_to: newTaskAssignees,
-          due_date: newTaskDueDate || undefined,
-          priority: newTaskPriority,
-        });
+    const success = await onAddTask(client.id, {
+      title: newTaskTitle.trim(),
+      assigned_to: newTaskAssignees,
+      due_date: newTaskDueDate || undefined,
+      priority: newTaskPriority,
+      modality: newTaskModality,
+    });
 
     if (success) {
       setNewTaskTitle('');
       setNewTaskAssignees([]);
       setNewTaskDueDate('');
       setNewTaskPriority('normal');
-      setSelectedTemplateId('none');
+      setNewTaskModality('levantamento');
     }
   };
 
@@ -189,7 +195,7 @@ export function TaskModal({
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-1/2 hidden h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:grid"
+            className="absolute right-4 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title="Fechar Central do Cliente"
             aria-label="Fechar Central do Cliente"
           >
@@ -295,57 +301,47 @@ export function TaskModal({
               ) : (
               <>
                 {/* Add new task */}
-                <div className="sticky top-0 z-10 rounded-b-lg border bg-background/95 py-3 backdrop-blur">
-                  <div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto]">
-                    <select
-                      value={selectedTemplateId}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setSelectedTemplateId(value);
-                        const template = templates.find((item) => item.id === value);
-                        if (template) {
-                          setNewTaskTitle(template.default_title);
-                          setNewTaskPriority(template.default_priority);
-                        }
-                      }}
-                      className="h-10 max-w-44 rounded-md border bg-background px-2 text-xs"
-                      aria-label="Modelo de tarefa"
-                    >
-                      <option value="none">Tarefa livre</option>
-                      {templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
-                    </select>
-                    <input
-                      type="text"
-                      value={newTaskTitle}
-                      onChange={(e) => setNewTaskTitle(e.target.value)}
-                      placeholder="Nova tarefa..."
-                      className="h-10 min-w-0 rounded-md border bg-background px-3 text-sm"
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                      maxLength={100}
-                    />
-                    <NewTaskAssigneeDropdown
-                      collaborators={collaborators}
-                      selected={newTaskAssignees}
-                      onChange={setNewTaskAssignees}
-                    />
-                    <PrioritySelector value={newTaskPriority} onChange={setNewTaskPriority} />
-                    <div className="flex h-10 items-center gap-2 rounded-md border bg-background px-3">
-                      <span className="text-xs font-medium text-muted-foreground">Prazo</span>
+                <div className="sticky top-0 z-10 border bg-background/95 p-2 backdrop-blur">
+                  <div className="grid gap-2">
+                    <ModalitySelector value={newTaskModality} onChange={setNewTaskModality} />
+                    <div className="grid grid-cols-[minmax(0,1fr)_40px] gap-2">
                       <input
-                        type="date"
-                        value={newTaskDueDate}
-                        onChange={(e) => setNewTaskDueDate(e.target.value)}
-                        className="h-8 bg-transparent text-sm outline-none"
+                        type="text"
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        placeholder="Nova tarefa..."
+                        className="h-10 min-w-0 border bg-background px-3 text-sm"
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+                        maxLength={100}
                       />
+                      <button
+                        onClick={handleAddTask}
+                        disabled={!newTaskTitle.trim()}
+                        className="grid h-10 place-items-center bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Adicionar tarefa"
+                        aria-label="Adicionar tarefa"
+                      >
+                        <Plus className="h-5 w-5" />
+                      </button>
                     </div>
-                    <button
-                      onClick={handleAddTask}
-                      disabled={!newTaskTitle.trim() && selectedTemplateId === 'none'}
-                      className="flex h-10 items-center justify-center rounded-md bg-primary px-4 text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 md:w-12"
-                      title="Adicionar tarefa"
-                    >
-                      <Plus className="h-5 w-5" />
-                    </button>
+                    <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] gap-2">
+                      <NewTaskAssigneeDropdown
+                        collaborators={collaborators}
+                        selected={newTaskAssignees}
+                        onChange={setNewTaskAssignees}
+                      />
+                      <PrioritySelector value={newTaskPriority} onChange={setNewTaskPriority} />
+                      <label className="flex h-9 min-w-0 items-center gap-1 border bg-background px-2">
+                        <Clock3 className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                        <input
+                          type="date"
+                          value={newTaskDueDate}
+                          onChange={(e) => setNewTaskDueDate(e.target.value)}
+                          className="h-8 min-w-0 flex-1 bg-transparent text-xs outline-none"
+                          aria-label="Prazo da nova tarefa"
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -474,6 +470,8 @@ function TaskItem({
   collaboratorColorMap,
 }: TaskItemProps) {
   const priority = (task.priority || 'normal') as TaskPriority;
+  const modality = (task.modality || 'levantamento') as TaskModality;
+  const ModalityIcon = MODALITY_ICONS[modality];
   const pConf = PRIORITY_CONFIG[priority];
   const status = TASK_STATUS_CONFIG[task.status];
   const daysOpen = Math.max(0, Math.floor((Date.now() - new Date(task.created_at).getTime()) / 86_400_000));
@@ -512,11 +510,12 @@ function TaskItem({
       ) : (
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            {!task.completed && priority !== 'normal' && (
-              <span className={`inline-flex flex-shrink-0 items-center gap-1 rounded border border-current/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${pConf.textClass} ${pConf.bgClass}`}>
-                <span>{pConf.icon}</span>{pConf.label}
-              </span>
-            )}
+            <span
+              className="grid h-5 w-5 flex-shrink-0 place-items-center border bg-background text-muted-foreground"
+              title={`Modalidade: ${TASK_MODALITY_CONFIG[modality].label}`}
+            >
+              <ModalityIcon className="h-3 w-3" />
+            </span>
             {!task.completed && task.status !== 'pendente' && (
               <span className={cn('flex-shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold', status.className)}>
                 {status.label}
@@ -531,7 +530,7 @@ function TaskItem({
             </button>
           </div>
           {!task.completed && (
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
               <span>Criada há {daysOpen} {daysOpen === 1 ? 'dia' : 'dias'}</span>
               {progress.total > 0 && <span>{progress.completed}/{progress.total} etapas</span>}
               <label className="flex w-fit items-center gap-1">
@@ -540,7 +539,7 @@ function TaskItem({
                 type="date"
                 value={task.due_date ?? ''}
                 onChange={(event) => onDueDateChange(event.target.value)}
-                className={`h-6 rounded border bg-background px-1 text-xs outline-none ${
+                className={`h-6 rounded border bg-background px-1 text-[10px] outline-none ${
                   task.due_date && new Date(task.due_date) < new Date(new Date().toDateString())
                     ? 'border-destructive text-destructive font-bold'
                     : 'border-border'
@@ -688,7 +687,11 @@ function NewTaskAssigneeDropdown({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-sm transition-colors hover:bg-muted">
+        <button
+          className="flex h-9 min-w-9 items-center justify-center gap-1 border bg-background px-2 text-xs transition-colors hover:bg-muted"
+          title={selected.length ? `${selected.length} responsável(is)` : 'Selecionar responsáveis'}
+          aria-label={selected.length ? `${selected.length} responsável(is) selecionado(s)` : 'Selecionar responsáveis'}
+        >
           <User className="w-4 h-4 text-muted-foreground" />
           {selected.length > 0 ? (
             <div className="flex items-center -space-x-1">
@@ -708,9 +711,7 @@ function NewTaskAssigneeDropdown({
                 <span className="text-xs text-muted-foreground ml-1">+{selected.length - 3}</span>
               )}
             </div>
-          ) : (
-            <span className="text-muted-foreground">Responsáveis</span>
-          )}
+          ) : null}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-2" align="start">
@@ -751,18 +752,48 @@ function NewTaskAssigneeDropdown({
   );
 }
 
+function ModalitySelector({ value, onChange }: { value: TaskModality; onChange: (modality: TaskModality) => void }) {
+  return (
+    <div className="grid grid-cols-5 gap-1 border bg-muted/20 p-1" aria-label="Modalidade da tarefa">
+      {(Object.keys(TASK_MODALITY_CONFIG) as TaskModality[]).map((modality) => {
+        const Icon = MODALITY_ICONS[modality];
+        const label = TASK_MODALITY_CONFIG[modality].label;
+        return (
+          <button
+            key={modality}
+            type="button"
+            onClick={() => onChange(modality)}
+            title={label}
+            aria-label={label}
+            aria-pressed={value === modality}
+            className={cn(
+              'grid h-9 place-items-center border text-muted-foreground transition-colors hover:bg-background hover:text-foreground',
+              value === modality && 'border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
+            )}
+          >
+            <Icon className="h-4 w-4" />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // Priority selector for new-task form
 function PrioritySelector({ value, onChange }: { value: TaskPriority; onChange: (p: TaskPriority) => void }) {
   const conf = PRIORITY_CONFIG[value];
+  const visual = PRIORITY_VISUALS[value];
+  const Icon = visual.icon;
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={`flex h-10 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-opacity hover:opacity-80 ${conf.textClass} ${conf.bgClass}`}
+          className={cn('flex h-9 items-center gap-1 border px-2 text-[10px] font-semibold transition-opacity hover:opacity-80', visual.className)}
+          title={`Prioridade: ${conf.label}`}
         >
-          <Flag className="w-3.5 h-3.5" />
-          {conf.label}
+          <Icon className="h-3.5 w-3.5" />
+          <span>{visual.shortLabel}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-1" align="start">
@@ -789,15 +820,18 @@ function PrioritySelector({ value, onChange }: { value: TaskPriority; onChange: 
 // Priority change menu for existing tasks (compact icon)
 function PriorityMenu({ value, onChange }: { value: TaskPriority; onChange: (p: TaskPriority) => void }) {
   const conf = PRIORITY_CONFIG[value];
+  const visual = PRIORITY_VISUALS[value];
+  const Icon = visual.icon;
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
           title={`Prioridade: ${conf.label}`}
-          className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${conf.dotClass}`}
+          className={cn('flex h-6 flex-shrink-0 items-center gap-1 border px-1.5 text-[9px] font-semibold', visual.className)}
         >
-          {conf.label.charAt(0)}
+          <Icon className="h-3 w-3" />
+          <span>{visual.shortLabel}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-1" align="end">

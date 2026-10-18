@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+const LOCAL_WORKSPACE_PREVIEW = import.meta.env.VITE_CLIENT_WORKSPACE_PREVIEW === 'true';
+
 export interface ClientAssignment {
   clientId: string;
   collaboratorId: string;
@@ -45,6 +47,13 @@ export function useClientAssignments() {
     const exists = assignments.some(
       a => a.clientId === clientId && a.collaboratorId === collaboratorId
     );
+
+    if (LOCAL_WORKSPACE_PREVIEW) {
+      setAssignments(prev => exists
+        ? prev.filter(a => !(a.clientId === clientId && a.collaboratorId === collaboratorId))
+        : [...prev, { clientId, collaboratorId }]);
+      return;
+    }
 
     try {
       if (exists) {

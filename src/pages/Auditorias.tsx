@@ -31,7 +31,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useClients } from "@/contexts/ClientContext";
 import { useAudits } from "@/hooks/useAudits";
-import { getAuditElapsedDays } from "@/lib/audit";
+import { getAuditDisplayElapsedDays, getEffectiveAuditStatus } from "@/lib/audit";
 import { cn } from "@/lib/utils";
 import type {
   Audit,
@@ -125,11 +125,11 @@ export default function Auditorias() {
       return;
     }
     setSelectedAuditId(
-      audits.find((audit) => audit.status === "active")?.id ??
+      audits.find((audit) => getEffectiveAuditStatus(audit, getSummary(audit.id)) === "active")?.id ??
         audits[0]?.id ??
         null,
     );
-  }, [audits, searchParams, selectedAuditId]);
+  }, [audits, getSummary, searchParams, selectedAuditId]);
 
   const selectedAudit =
     audits.find((audit) => audit.id === selectedAuditId) ?? null;
@@ -138,6 +138,9 @@ export default function Auditorias() {
     [getItemsForAudit, selectedAuditId],
   );
   const summary = selectedAudit ? getSummary(selectedAudit.id) : null;
+  const selectedEffectiveStatus = selectedAudit && summary
+    ? getEffectiveAuditStatus(selectedAudit, summary)
+    : null;
   const selectedCriteria = selectedAudit
     ? criteria.filter((criterion) => criterion.auditId === selectedAudit.id)
     : [];
@@ -314,6 +317,7 @@ export default function Auditorias() {
                     audit={audit}
                     selected={audit.id === selectedAuditId}
                     summary={getSummary(audit.id)}
+                    items={getItemsForAudit(audit.id)}
                     onClick={() => setSelectedAuditId(audit.id)}
                     canDelete={isAdmin}
                     onDelete={() => setDeleteAuditId(audit.id)}
@@ -330,7 +334,7 @@ export default function Auditorias() {
                           <h2 className="text-lg font-bold">
                             {selectedAudit.title}
                           </h2>
-                          <AuditStatus audit={selectedAudit} />
+                          <AuditStatus audit={selectedAudit} summary={summary} />
                         </div>
                         {selectedAudit.objective && (
                           <p className="text-sm text-muted-foreground">
@@ -338,10 +342,10 @@ export default function Auditorias() {
                           </p>
                         )}
                       </div>
-                      {isAdmin && selectedAudit.status === "active" && (
+                      {isAdmin && selectedEffectiveStatus === "active" && (
                         <Button
                           variant="outline"
-                          disabled={summary.validated !== summary.total}
+                          disabled={summary.completed + summary.validated !== summary.total}
                           onClick={() => void closeAudit(selectedAudit.id)}
                         >
                           <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -358,7 +362,7 @@ export default function Auditorias() {
                       <Metric label="Validadas" value={summary.validated} />
                       <Metric
                         label="Tempo"
-                        value={`${getAuditElapsedDays(selectedAudit)}d`}
+                        value={`${getAuditDisplayElapsedDays(selectedAudit, selectedItems)}d`}
                       />
                     </div>
 
@@ -369,7 +373,7 @@ export default function Auditorias() {
                       />
                     </div>
                     <p className="mt-1 text-right text-[10px] text-muted-foreground">
-                      {summary.progress}% validada
+                      {summary.progress}% concluída
                     </p>
                   </div>
 
@@ -459,7 +463,7 @@ export default function Auditorias() {
                                 "Cliente removido"
                               }
                               canEdit={
-                                isAdmin && selectedAudit.status === "active"
+                                isAdmin && selectedEffectiveStatus === "active"
                               }
                               collaborators={collaborators}
                               criteriaCount={selectedCriteria.length}
@@ -562,7 +566,7 @@ export default function Auditorias() {
         results={results.filter(
           (result) => result.auditClientItemId === criteriaItem?.id,
         )}
-        canEdit={isAdmin && selectedAudit?.status === "active"}
+        canEdit={isAdmin && selectedEffectiveStatus === "active"}
         onSave={updateClientResult}
       />
     </AppLayout>
@@ -961,6 +965,7 @@ function AuditSelector({
   audit,
   selected,
   summary,
+  items,
   onClick,
   canDelete,
   onDelete,
@@ -968,6 +973,7 @@ function AuditSelector({
   audit: Audit;
   selected: boolean;
   summary: ReturnType<ReturnType<typeof useAudits>["getSummary"]>;
+  items: AuditClientItem[];
   onClick: () => void;
   canDelete: boolean;
   onDelete: () => void;
@@ -982,7 +988,7 @@ function AuditSelector({
       <button type="button" onClick={onClick} className="w-full p-3 text-left">
         <div className="flex items-start justify-between gap-2 pr-7">
           <span className="font-semibold">{audit.title}</span>
-          <AuditStatus audit={audit} />
+          <AuditStatus audit={audit} summary={summary} />
         </div>
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
           <span>{summary.total} empresas</span>
@@ -996,7 +1002,7 @@ function AuditSelector({
         </div>
         <div className="mt-2 flex items-center gap-1 pr-7 text-[10px] text-muted-foreground">
           <Clock3 className="h-3 w-3" />
-          {getAuditElapsedDays(audit)} dias
+          {getAuditDisplayElapsedDays(audit, items)} dias
         </div>
       </button>
       {canDelete && (
@@ -1014,24 +1020,25 @@ function AuditSelector({
   );
 }
 
-function AuditStatus({ audit }: { audit: Audit }) {
+function AuditStatus({ audit, summary }: { audit: Audit; summary: ReturnType<ReturnType<typeof useAudits>["getSummary"]> }) {
+  const status = getEffectiveAuditStatus(audit, summary);
   const labels: Record<Audit["status"], string> = {
     draft: "Rascunho",
     active: "Em andamento",
-    closed: "Encerrada",
+    closed: "Concluída",
     cancelled: "Cancelada",
   };
   return (
     <span
       className={cn(
         "inline-flex whitespace-nowrap px-2 py-0.5 text-[10px] font-semibold uppercase",
-        audit.status === "active" && "bg-amber-100 text-amber-800",
-        audit.status === "closed" && "bg-emerald-100 text-emerald-800",
-        audit.status === "draft" && "bg-slate-100 text-slate-700",
-        audit.status === "cancelled" && "bg-red-100 text-red-700",
+        status === "active" && "bg-amber-100 text-amber-800",
+        status === "closed" && "bg-emerald-100 text-emerald-800",
+        status === "draft" && "bg-slate-100 text-slate-700",
+        status === "cancelled" && "bg-red-100 text-red-700",
       )}
     >
-      {labels[audit.status]}
+      {labels[status]}
     </span>
   );
 }

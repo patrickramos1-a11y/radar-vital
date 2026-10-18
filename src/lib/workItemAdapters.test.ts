@@ -20,6 +20,7 @@ const task: Task = {
   completed_at: null,
   due_date: "2026-07-10",
   priority: "alta",
+  modality: "levantamento",
   parent_task_id: null,
   sort_order: 0,
   source_comment_id: null,

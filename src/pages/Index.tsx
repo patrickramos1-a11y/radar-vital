@@ -488,14 +488,25 @@ const Index = () => {
             templates={templates}
             onTogglePriority={togglePriority}
             onToggleHighlight={toggleHighlight}
-            onToggleChecked={toggleChecked}
-            onToggleCollaborator={toggleCollaborator}
+            collaborators={allCollaborators.filter((person) => person.isActive)}
+            assignedCollaboratorIds={mobileDetailClientId ? getAssignedCollaboratorIds(mobileDetailClientId) : []}
+            onToggleCollaboratorAssignment={handleToggleCollaboratorAssignment}
+            onEditClient={setEditingClient}
             onAddTask={addTask}
             onAddTaskFromTemplate={addTaskFromTemplate}
             onToggleComplete={toggleComplete}
             onUpdateTask={updateTask}
             onDeleteTask={deleteTask}
             onSetTaskDependencies={setTaskDependencies}
+          />
+
+          <ClientQuickEditDialog
+            client={editingClient}
+            open={Boolean(editingClient)}
+            onOpenChange={(open) => !open && setEditingClient(null)}
+            onSave={async (client, data) => updateClient(client.id, data)}
+            collaborators={allCollaborators}
+            linkedCollaboratorIds={editingClient ? getAssignedCollaboratorIds(editingClient.id) : []}
           />
 
           {/* Comments modal - opened from card action */}

@@ -9,11 +9,12 @@ import {
   FileCheck2,
   History,
   LayoutDashboard,
-  ShieldCheck,
-  X
+  Pencil,
+  ShieldCheck
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } from "@/types/client";
+import { Client } from "@/types/client";
+import type { Collaborator } from "@/types/collaborator";
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { CommentsModal } from "@/components/comments/CommentsModal";
 import { MarkerReasonDialog } from "@/components/dashboard/MarkerReasonDialog";
@@ -33,8 +34,10 @@ interface MobileClientDetailProps {
   templates: TaskTemplate[];
   onTogglePriority: (id: string, reason?: string) => void;
   onToggleHighlight: (id: string, reason?: string) => void;
-  onToggleChecked: (id: string) => void;
-  onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
+  collaborators: Collaborator[];
+  assignedCollaboratorIds: string[];
+  onToggleCollaboratorAssignment: (clientId: string, collaboratorId: string) => void;
+  onEditClient: (client: Client) => void;
   onAddTask: (clientId: string, data: TaskFormData) => Promise<boolean>;
   onAddTaskFromTemplate: (clientId: string, template: TaskTemplate, overrides: Partial<TaskFormData>, clientName?: string) => Promise<boolean>;
   onToggleComplete: (taskId: string) => Promise<boolean>;
@@ -55,8 +58,10 @@ export function MobileClientDetail({
   templates,
   onTogglePriority,
   onToggleHighlight,
-  onToggleChecked,
-  onToggleCollaborator,
+  collaborators,
+  assignedCollaboratorIds,
+  onToggleCollaboratorAssignment,
+  onEditClient,
   onAddTask,
   onAddTaskFromTemplate,
   onToggleComplete,
@@ -69,6 +74,7 @@ export function MobileClientDetail({
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
   const [workView, setWorkView] = useState<WorkItemFilter>('all');
   const { comments } = useClientComments(client?.id ?? '');
+  const completedTaskCount = tasks.filter((task) => !task.parent_task_id && task.completed).length;
 
   const recentActivity = useMemo(() => {
     const taskActivity = tasks.map((task) => ({
@@ -105,7 +111,7 @@ export function MobileClientDetail({
       <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-0">
           <SheetHeader className="p-4 border-b border-border">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center pr-8">
               <div className="flex items-center gap-3">
                 {client.logoUrl ? (
                   <img 
@@ -120,21 +126,18 @@ export function MobileClientDetail({
                     </span>
                   </div>
                 )}
-                <div>
-                  <SheetTitle className="text-left">{client.name}</SheetTitle>
+                <button type="button" onClick={() => onEditClient(client)} className="min-w-0 text-left" title="Editar cliente">
+                  <SheetTitle className="flex items-center gap-1.5 text-left">
+                    <span className="truncate">{client.name}</span>
+                    <Pencil className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                  </SheetTitle>
                   <span className="text-xs text-muted-foreground">{client.clientType}</span>
-                </div>
+                </button>
               </div>
-              <button 
-                onClick={onClose}
-                className="p-2 rounded-full hover:bg-muted"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
           </SheetHeader>
 
-          <div className="p-4 space-y-6 overflow-y-auto h-[calc(85vh-80px)]">
+          <div className="h-[calc(85vh-80px)] space-y-4 overflow-y-auto p-4">
             {/* Ações rápidas */}
             <div className="grid grid-cols-4 gap-2">
               <ActionButton
@@ -181,11 +184,17 @@ export function MobileClientDetail({
 
             <div className="space-y-2">
               <h4 className="text-sm font-semibold text-foreground">Gestão do cliente</h4>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-4 gap-1.5">
                 <ManagementButton color="emerald" icon={<FileCheck2 className="h-4 w-4" />} label="Entregáveis" onClick={() => openWorkView('deliverable')} />
                 <ManagementButton color="violet" icon={<ShieldCheck className="h-4 w-4" />} label="Auditorias" onClick={() => openWorkView('audit')} />
                 <ManagementButton color="amber" icon={<ClipboardCheck className="h-4 w-4" />} label="Prioridades" onClick={() => openWorkView('priority')} />
                 <ManagementButton color="sky" icon={<LayoutDashboard className="h-4 w-4" />} label="Visão do cliente" onClick={() => openWorkView('all')} />
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-y py-2 text-[11px]">
+                <span className="font-semibold text-emerald-700">{completedTaskCount} tarefas concluídas</span>
+                <span className="font-semibold text-indigo-700">{comments.length} comentários registrados</span>
+                <span className={client.isPriority ? 'font-semibold text-amber-700' : 'text-muted-foreground'}>{client.isPriority ? 'Em prioridade' : 'Sem prioridade'}</span>
+                <span className={isHighlighted ? 'font-semibold text-red-700' : 'text-muted-foreground'}>{isHighlighted ? 'Alerta de BO ativo' : 'Sem alerta de BO'}</span>
               </div>
             </div>
 
@@ -194,39 +203,39 @@ export function MobileClientDetail({
             <div className="space-y-2">
               <h4 className="text-sm font-semibold text-foreground">Colaboradores</h4>
               <div className="grid grid-cols-4 gap-2">
-                {COLLABORATOR_NAMES.map(name => (
+                {collaborators.map((person) => {
+                  const isAssigned = assignedCollaboratorIds.includes(person.id);
+                  return (
                   <button
-                    key={name}
-                    onClick={() => onToggleCollaborator(client.id, name)}
-                    className={`flex flex-col items-center p-3 rounded-lg transition-all ${
-                      client.collaborators[name] ? '' : 'opacity-40'
+                    key={person.id}
+                    onClick={() => onToggleCollaboratorAssignment(client.id, person.id)}
+                    className={`flex min-w-0 flex-col items-center p-2 transition-all ${
+                      isAssigned ? '' : 'opacity-40'
                     }`}
                     style={{
-                      backgroundColor: client.collaborators[name] 
-                        ? COLLABORATOR_COLORS[name] 
-                        : `${COLLABORATOR_COLORS[name]}30`,
+                      backgroundColor: isAssigned ? person.color : `${person.color}30`,
                     }}
                   >
                     <span 
                       className={`text-sm font-bold uppercase ${
-                        client.collaborators[name] ? 'text-white' : ''
+                        isAssigned ? 'text-white' : ''
                       }`}
                       style={{ 
-                        color: client.collaborators[name] ? 'white' : COLLABORATOR_COLORS[name] 
+                        color: isAssigned ? 'white' : person.color
                       }}
                     >
-                      {name.slice(0, 2)}
+                      {person.initials}
                     </span>
                     <span 
                       className="text-[10px] font-medium capitalize"
                       style={{ 
-                        color: client.collaborators[name] ? 'white' : COLLABORATOR_COLORS[name] 
+                        color: isAssigned ? 'white' : person.color
                       }}
                     >
-                      {name}
+                      {person.name}
                     </span>
                   </button>
-                ))}
+                );})}
               </div>
             </div>
 
@@ -342,10 +351,10 @@ function ManagementButton({ icon, label, color, onClick }: { icon: React.ReactNo
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 text-left text-sm font-medium transition-colors ${colorClasses[color]}`}
+      className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 border px-1 text-center text-[9px] font-semibold leading-tight transition-colors ${colorClasses[color]}`}
     >
       <span>{icon}</span>
-      {label}
+      <span className="max-w-full truncate">{label}</span>
     </button>
   );
 }

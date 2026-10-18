@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAuditElapsedDays, summarizeAudit } from "@/lib/audit";
+import { getAuditDisplayElapsedDays, getAuditElapsedDays, getEffectiveAuditStatus, summarizeAudit } from "@/lib/audit";
 import type { Audit, AuditClientItem, AuditClientStatus } from "@/types/audit";
 
 function item(status: AuditClientStatus): AuditClientItem {
@@ -20,7 +20,7 @@ function item(status: AuditClientStatus): AuditClientItem {
 }
 
 describe("audit helpers", () => {
-  it("summarizes client states and uses validation as campaign progress", () => {
+  it("summarizes completed and validated clients as campaign progress", () => {
     expect(
       summarizeAudit([
         item("pending"),
@@ -34,8 +34,32 @@ describe("audit helpers", () => {
       inProgress: 1,
       completed: 1,
       validated: 1,
-      progress: 25,
+      progress: 50,
     });
+  });
+
+  it("treats a campaign with every client completed as concluded", () => {
+    const audit: Audit = {
+      id: "audit-1",
+      title: "Atendimento",
+      description: null,
+      objective: null,
+      status: "active",
+      startsAt: "2026-07-01T00:00:00.000Z",
+      dueAt: null,
+      closedAt: null,
+      createdBy: "user-1",
+      validatedBy: null,
+      createdAt: "2026-07-01T00:00:00.000Z",
+      updatedAt: "2026-07-01T00:00:00.000Z",
+    };
+    const completed = [item("completed"), item("completed")].map((entry, index) => ({
+      ...entry,
+      completedAt: `2026-07-0${index + 3}T00:00:00.000Z`,
+    }));
+
+    expect(getEffectiveAuditStatus(audit, summarizeAudit(completed))).toBe("closed");
+    expect(getAuditDisplayElapsedDays(audit, completed)).toBe(3);
   });
 
   it("uses the closed date when calculating elapsed time", () => {
