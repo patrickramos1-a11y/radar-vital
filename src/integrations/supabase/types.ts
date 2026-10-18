@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -1852,6 +1852,39 @@ export type Database = {
           },
         ]
       }
+      task_dependencies: {
+        Row: {
+          created_at: string
+          depends_on_task_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          depends_on_task_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          depends_on_task_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_dependencies_depends_on_task_id_fkey"
+            columns: ["depends_on_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_dependencies_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_priority_policies: {
         Row: {
           enabled: boolean
@@ -1879,6 +1912,45 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           weight_step_days?: number
+        }
+        Relationships: []
+      }
+      task_templates: {
+        Row: {
+          created_at: string
+          default_description: string | null
+          default_priority: string
+          default_title: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          subtasks: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_description?: string | null
+          default_priority?: string
+          default_title: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          subtasks?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_description?: string | null
+          default_priority?: string
+          default_title?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          subtasks?: Json
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1955,17 +2027,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tasks_priority_id_fkey"
-            columns: ["priority_id"]
-            isOneToOne: false
-            referencedRelation: "priorities"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "tasks_parent_task_id_fkey"
             columns: ["parent_task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_priority_id_fkey"
+            columns: ["priority_id"]
+            isOneToOne: false
+            referencedRelation: "priorities"
             referencedColumns: ["id"]
           },
           {
@@ -2227,6 +2299,10 @@ export type Database = {
         Args: { p_actor_name?: string; p_rating_id: string; p_version: string }
         Returns: undefined
       }
+      delete_audit: {
+        Args: { p_actor_name?: string; p_audit_id: string }
+        Returns: undefined
+      }
       delete_universe_challenges: {
         Args: { p_actor_name?: string; p_challenge_ids: string[] }
         Returns: number
@@ -2431,13 +2507,6 @@ export type Database = {
           p_item_id: string
           p_notes?: string
           p_status: string
-        }
-        Returns: undefined
-      }
-      delete_audit: {
-        Args: {
-          p_actor_name?: string
-          p_audit_id: string
         }
         Returns: undefined
       }
