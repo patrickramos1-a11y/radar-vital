@@ -21,6 +21,7 @@ import { MarkerReasonDialog } from "@/components/dashboard/MarkerReasonDialog";
 import { Task, TaskDependency, TaskFormData, TaskTemplate } from "@/types/task";
 import type { WorkItemFilter } from "@/types/workItem";
 import { useClientComments } from "@/hooks/useClientComments";
+import { useClientWorkItems } from "@/hooks/useClientWorkItems";
 
 interface MobileClientDetailProps {
   client: Client | null;
@@ -74,7 +75,30 @@ export function MobileClientDetail({
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
   const [workView, setWorkView] = useState<WorkItemFilter>('all');
   const { comments } = useClientComments(client?.id ?? '');
+  const { items: clientWorkItems } = useClientWorkItems(client?.id ?? '', tasks);
   const completedTaskCount = tasks.filter((task) => !task.parent_task_id && task.completed).length;
+  const workMetrics = useMemo(() => {
+    const metrics = {
+      deliverables: 0,
+      priorities: 0,
+      completedAudits: 0,
+      pendingAudits: 0,
+    };
+
+    clientWorkItems.forEach((item) => {
+      if (item.kind === 'deliverable') metrics.deliverables += 1;
+      if (item.kind === 'priority') metrics.priorities += 1;
+      if (item.kind !== 'audit') return;
+
+      if (item.status === 'completed' || item.status === 'pending_validation') {
+        metrics.completedAudits += 1;
+      } else {
+        metrics.pendingAudits += 1;
+      }
+    });
+
+    return metrics;
+  }, [clientWorkItems]);
 
   const recentActivity = useMemo(() => {
     const taskActivity = tasks.map((task) => ({
@@ -190,11 +214,23 @@ export function MobileClientDetail({
                 <ManagementButton color="amber" icon={<ClipboardCheck className="h-4 w-4" />} label="Prioridades" onClick={() => openWorkView('priority')} />
                 <ManagementButton color="sky" icon={<LayoutDashboard className="h-4 w-4" />} label="Visão do cliente" onClick={() => openWorkView('all')} />
               </div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-y py-2 text-[11px]">
-                <span className="font-semibold text-emerald-700">{completedTaskCount} tarefas concluídas</span>
-                <span className="font-semibold text-indigo-700">{comments.length} comentários registrados</span>
-                <span className={client.isPriority ? 'font-semibold text-amber-700' : 'text-muted-foreground'}>{client.isPriority ? 'Em prioridade' : 'Sem prioridade'}</span>
-                <span className={isHighlighted ? 'font-semibold text-red-700' : 'text-muted-foreground'}>{isHighlighted ? 'Alerta de BO ativo' : 'Sem alerta de BO'}</span>
+              <div className="border-y py-2">
+                <div className="grid grid-cols-2 gap-x-3">
+                  <span className="text-[13px] font-bold text-emerald-700">{completedTaskCount} tarefas concluídas</span>
+                  <span className="text-[13px] font-bold text-indigo-700">{comments.length} comentários registrados</span>
+                </div>
+                <div className="mt-2 grid grid-cols-4 divide-x border-t pt-2">
+                  <CompactMetric value={workMetrics.deliverables} label="Entregáveis" tone="text-emerald-700" />
+                  <CompactMetric value={workMetrics.priorities} label="Prioridades" tone="text-amber-700" />
+                  <CompactMetric value={workMetrics.completedAudits} label="Aud. concluídas" tone="text-violet-700" />
+                  <CompactMetric value={workMetrics.pendingAudits} label="Aud. pendentes" tone="text-rose-700" />
+                </div>
+                {(client.isPriority || isHighlighted) && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 border-t pt-2 text-[10px] font-semibold">
+                    {client.isPriority && <span className="bg-amber-50 px-2 py-1 text-amber-700">Em prioridade</span>}
+                    {isHighlighted && <span className="bg-red-50 px-2 py-1 text-red-700">Alerta de BO ativo</span>}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -202,35 +238,32 @@ export function MobileClientDetail({
             {/* Collaborators */}
             <div className="space-y-2">
               <h4 className="text-sm font-semibold text-foreground">Colaboradores</h4>
-              <div className="grid grid-cols-4 gap-2">
+              <div
+                className="grid gap-1"
+                style={{ gridTemplateColumns: `repeat(${Math.max(collaborators.length, 1)}, minmax(0, 1fr))` }}
+              >
                 {collaborators.map((person) => {
                   const isAssigned = assignedCollaboratorIds.includes(person.id);
                   return (
                   <button
                     key={person.id}
                     onClick={() => onToggleCollaboratorAssignment(client.id, person.id)}
-                    className={`flex min-w-0 flex-col items-center p-2 transition-all ${
-                      isAssigned ? '' : 'opacity-40'
-                    }`}
+                    className="flex min-w-0 flex-col items-center border-b-2 px-1 py-1.5 transition-all"
                     style={{
-                      backgroundColor: isAssigned ? person.color : `${person.color}30`,
+                      backgroundColor: `${person.color}${isAssigned ? '30' : '12'}`,
+                      borderBottomColor: isAssigned ? person.color : 'transparent',
                     }}
+                    title={`${isAssigned ? 'Remover' : 'Vincular'} ${person.name}`}
                   >
                     <span 
-                      className={`text-sm font-bold uppercase ${
-                        isAssigned ? 'text-white' : ''
-                      }`}
-                      style={{ 
-                        color: isAssigned ? 'white' : person.color
-                      }}
+                      className="grid h-5 w-5 place-items-center rounded-full text-[11px] font-extrabold uppercase text-white"
+                      style={{ backgroundColor: person.color }}
                     >
                       {person.initials}
                     </span>
                     <span 
-                      className="text-[10px] font-medium capitalize"
-                      style={{ 
-                        color: isAssigned ? 'white' : person.color
-                      }}
+                      className="max-w-full truncate text-[9px] font-semibold capitalize"
+                      style={{ color: person.color }}
                     >
                       {person.name}
                     </span>
@@ -356,6 +389,15 @@ function ManagementButton({ icon, label, color, onClick }: { icon: React.ReactNo
       <span>{icon}</span>
       <span className="max-w-full truncate">{label}</span>
     </button>
+  );
+}
+
+function CompactMetric({ value, label, tone }: { value: number; label: string; tone: string }) {
+  return (
+    <div className="min-w-0 px-1 text-center">
+      <div className={`text-base font-extrabold leading-none ${tone}`}>{value}</div>
+      <div className="mt-1 truncate text-[8px] font-semibold uppercase text-muted-foreground" title={label}>{label}</div>
+    </div>
   );
 }
 

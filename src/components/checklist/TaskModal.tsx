@@ -23,6 +23,29 @@ const MODALITY_ICONS: Record<TaskModality, typeof Search> = {
   execucao_operacional: Settings2,
 };
 
+const MODALITY_VISUALS: Record<TaskModality, { className: string; selectedClassName: string }> = {
+  levantamento: {
+    className: 'border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100',
+    selectedClassName: 'border-cyan-600 bg-cyan-600 text-white hover:bg-cyan-600',
+  },
+  elaboracao: {
+    className: 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100',
+    selectedClassName: 'border-blue-600 bg-blue-600 text-white hover:bg-blue-600',
+  },
+  regularizacao: {
+    className: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100',
+    selectedClassName: 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-600',
+  },
+  acompanhamento: {
+    className: 'border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100',
+    selectedClassName: 'border-violet-600 bg-violet-600 text-white hover:bg-violet-600',
+  },
+  execucao_operacional: {
+    className: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100',
+    selectedClassName: 'border-amber-500 bg-amber-500 text-white hover:bg-amber-500',
+  },
+};
+
 const PRIORITY_VISUALS: Record<TaskPriority, { icon: typeof Flame; shortLabel: string; className: string }> = {
   urgente: { icon: Flame, shortLabel: 'Urg.', className: 'border-red-300 bg-red-50 text-red-700' },
   alta: { icon: ArrowUp, shortLabel: 'Alta', className: 'border-orange-300 bg-orange-50 text-orange-700' },
@@ -531,6 +554,7 @@ function TaskItem({
           </div>
           {!task.completed && (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+              <PriorityMenu value={priority} onChange={onPriorityChange} />
               <span>Criada há {daysOpen} {daysOpen === 1 ? 'dia' : 'dias'}</span>
               {progress.total > 0 && <span>{progress.completed}/{progress.total} etapas</span>}
               <label className="flex w-fit items-center gap-1">
@@ -553,15 +577,12 @@ function TaskItem({
       )}
 
       {!task.completed && (
-        <>
-          <PriorityMenu value={priority} onChange={onPriorityChange} />
-          <AssigneeDropdown
-            task={task}
-            collaborators={collaborators}
-            collaboratorColorMap={collaboratorColorMap}
-            onAssigneeChange={onAssigneeChange}
-          />
-        </>
+        <AssigneeDropdown
+          task={task}
+          collaborators={collaborators}
+          collaboratorColorMap={collaboratorColorMap}
+          onAssigneeChange={onAssigneeChange}
+        />
       )}
 
       <button
@@ -757,21 +778,23 @@ function ModalitySelector({ value, onChange }: { value: TaskModality; onChange: 
     <div className="grid grid-cols-5 gap-1 border bg-muted/20 p-1" aria-label="Modalidade da tarefa">
       {(Object.keys(TASK_MODALITY_CONFIG) as TaskModality[]).map((modality) => {
         const Icon = MODALITY_ICONS[modality];
-        const label = TASK_MODALITY_CONFIG[modality].label;
+        const config = TASK_MODALITY_CONFIG[modality];
+        const visual = MODALITY_VISUALS[modality];
         return (
           <button
             key={modality}
             type="button"
             onClick={() => onChange(modality)}
-            title={label}
-            aria-label={label}
+            title={config.label}
+            aria-label={config.label}
             aria-pressed={value === modality}
             className={cn(
-              'grid h-9 place-items-center border text-muted-foreground transition-colors hover:bg-background hover:text-foreground',
-              value === modality && 'border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
+              'flex h-9 min-w-0 flex-col items-center justify-center gap-0.5 border px-0.5 transition-colors',
+              value === modality ? visual.selectedClassName : visual.className,
             )}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="max-w-full truncate text-[7px] font-semibold leading-none">{config.shortLabel}</span>
           </button>
         );
       })}
@@ -828,10 +851,10 @@ function PriorityMenu({ value, onChange }: { value: TaskPriority; onChange: (p: 
         <button
           type="button"
           title={`Prioridade: ${conf.label}`}
-          className={cn('flex h-6 flex-shrink-0 items-center gap-1 border px-1.5 text-[9px] font-semibold', visual.className)}
+          aria-label={`Alterar prioridade: ${conf.label}`}
+          className={cn('grid h-5 w-5 flex-shrink-0 place-items-center rounded-full border transition-transform hover:scale-105', visual.className)}
         >
-          <Icon className="h-3 w-3" />
-          <span>{visual.shortLabel}</span>
+          <Icon className="h-2.5 w-2.5" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-1" align="end">
