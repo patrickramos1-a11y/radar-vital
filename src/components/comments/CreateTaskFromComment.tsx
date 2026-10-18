@@ -9,12 +9,13 @@ import { cn } from '@/lib/utils';
 
 interface CreateTaskFromCommentProps {
   commentText: string;
+  commentId: string;
   clientId: string;
   clientName: string;
   collaborators: { id: string; name: string; color?: string }[];
 }
 
-export function CreateTaskFromComment({ commentText, clientId, clientName, collaborators }: CreateTaskFromCommentProps) {
+export function CreateTaskFromComment({ commentText, commentId, clientId, clientName, collaborators }: CreateTaskFromCommentProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>('');
@@ -36,8 +37,10 @@ export function CreateTaskFromComment({ commentText, clientId, clientName, colla
     try {
       const success = await addTask(clientId, {
         title: title.trim(),
+        description: commentText,
         assigned_to: assignedTo ? [assignedTo] : [],
         due_date: dueDate || undefined,
+        source_comment_id: commentId,
       }, clientName);
       if (success) setIsOpen(false);
     } finally {
@@ -50,13 +53,13 @@ export function CreateTaskFromComment({ commentText, clientId, clientName, colla
       <PopoverTrigger asChild>
         <button
           className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
-          title="Criar tarefa a partir deste comentário"
+          title="Criar tarefa vinculada a este comentário"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[260px] p-3 space-y-3" align="end">
-        <p className="text-xs font-semibold text-foreground">Nova Tarefa</p>
+        <p className="text-xs font-semibold text-foreground">Criar tarefa vinculada</p>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}

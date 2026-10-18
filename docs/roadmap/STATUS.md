@@ -323,6 +323,14 @@ Migrations: nenhuma; a implementacao reutiliza os campos e atualizacoes existent
 Testes: 23 testes Vitest e build de producao aprovados; lint dos arquivos alterados sem erros; verificacao visual local e oficial em desktop e mobile aprovada, sem erros de console ou estouro horizontal.
 Resultado: busca, filtros por status/cliente/responsavel/prioridade, ordenacao por coluna e edicao direta de responsavel, prioridade, prazo e conclusao disponiveis na mesma pagina.
 Pendencias: nenhuma para esta entrega.
+
+2026-10-18 - Upgrade da Central do Cliente
+Resumo: as quatro etapas do upgrade foram consolidadas em uma unica experiencia operacional: base de status e contexto, execucao diaria com subtarefas, visao integrada de comentarios e historico, e escala com dependencias, modelos e recorrencia.
+Arquivos: `docs/roadmap/CLIENT_WORKSPACE_UPGRADE_PLAN.md`, `src/components/checklist/TaskModal.tsx`, `src/components/tasks/TaskDetailSheet.tsx`, hooks, adaptadores, tipos e integracoes desktop/mobile.
+Migrations: `20261018050305_client_workspace_upgrade.sql`, aditiva e pendente de aplicacao no projeto Supabase do Radar Vital.
+Testes: TypeScript sem erros, ESLint dos arquivos alterados sem erros, 26 testes Vitest aprovados e build de producao aprovado.
+Resultado: implementacao local concluida, com resumo gerencial do cliente, linha do tempo, comentarios integrados, descricao, situacao operacional, responsaveis, prazo, prioridade, subtarefas, dependencias, modelos e recorrencia.
+Pendencias: o conector Supabase atual nao tem permissao no projeto `ixiffabjunvpoizdhwtk`; aplicar a migration, regenerar os tipos a partir do banco, validar o fluxo autenticado e somente entao publicar no Vercel.
 ```
 
 ## Modelo para proximos registros

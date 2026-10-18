@@ -46,13 +46,17 @@ const Index = () => {
 
   const {
     tasks,
+    dependencies,
+    templates,
     getActiveTaskCount,
     getActiveTasksForClient,
     getTasksForClient,
     addTask,
+    addTaskFromTemplate,
     updateTask,
     deleteTask,
     toggleComplete,
+    setTaskDependencies,
   } = useTasks();
   const auditsSource = useAudits();
 
@@ -480,14 +484,18 @@ const Index = () => {
             activeTaskCount={mobileDetailClientId ? getActiveTaskCount(mobileDetailClientId) : 0}
             commentCount={mobileDetailClientId ? getCommentCount(mobileDetailClientId) : 0}
             tasks={mobileDetailClientId ? getTasksForClient(mobileDetailClientId) : []}
+            dependencies={dependencies}
+            templates={templates}
             onTogglePriority={togglePriority}
             onToggleHighlight={toggleHighlight}
             onToggleChecked={toggleChecked}
             onToggleCollaborator={toggleCollaborator}
             onAddTask={addTask}
+            onAddTaskFromTemplate={addTaskFromTemplate}
             onToggleComplete={toggleComplete}
             onUpdateTask={updateTask}
             onDeleteTask={deleteTask}
+            onSetTaskDependencies={setTaskDependencies}
           />
 
           {/* Comments modal - opened from card action */}
@@ -507,10 +515,14 @@ const Index = () => {
               onClose={() => setMobileJackboxClientId(null)}
               client={mobileJackboxClient}
               tasks={getTasksForClient(mobileJackboxClientId!)}
+              dependencies={dependencies}
+              templates={templates}
               onAddTask={addTask}
+              onAddTaskFromTemplate={addTaskFromTemplate}
               onToggleComplete={toggleComplete}
               onUpdateTask={updateTask}
               onDeleteTask={deleteTask}
+              onSetTaskDependencies={setTaskDependencies}
             />
           )}
 
@@ -680,10 +692,14 @@ const Index = () => {
               onClose={() => setChecklistClientId(null)}
               client={checklistClient}
               tasks={getTasksForClient(checklistClientId!)}
+              dependencies={dependencies}
+              templates={templates}
               onAddTask={addTask}
+              onAddTaskFromTemplate={addTaskFromTemplate}
               onToggleComplete={toggleComplete}
               onUpdateTask={updateTask}
               onDeleteTask={deleteTask}
+              onSetTaskDependencies={setTaskDependencies}
               initialView={checklistInitialView}
             />
           )}

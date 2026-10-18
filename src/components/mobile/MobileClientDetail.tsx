@@ -17,7 +17,7 @@ import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES, CollaboratorName } fro
 import { ClientWorkDialog } from "@/components/client-work/ClientWorkDialog";
 import { CommentsModal } from "@/components/comments/CommentsModal";
 import { MarkerReasonDialog } from "@/components/dashboard/MarkerReasonDialog";
-import { Task, TaskFormData } from "@/types/task";
+import { Task, TaskDependency, TaskFormData, TaskTemplate } from "@/types/task";
 import type { WorkItemFilter } from "@/types/workItem";
 import { useClientComments } from "@/hooks/useClientComments";
 
@@ -29,14 +29,18 @@ interface MobileClientDetailProps {
   activeTaskCount: number;
   commentCount: number;
   tasks: Task[];
+  dependencies: TaskDependency[];
+  templates: TaskTemplate[];
   onTogglePriority: (id: string, reason?: string) => void;
   onToggleHighlight: (id: string, reason?: string) => void;
   onToggleChecked: (id: string) => void;
   onToggleCollaborator: (id: string, collaborator: CollaboratorName) => void;
   onAddTask: (clientId: string, data: TaskFormData) => Promise<boolean>;
+  onAddTaskFromTemplate: (clientId: string, template: TaskTemplate, overrides: Partial<TaskFormData>, clientName?: string) => Promise<boolean>;
   onToggleComplete: (taskId: string) => Promise<boolean>;
   onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
   onDeleteTask: (taskId: string) => Promise<boolean>;
+  onSetTaskDependencies: (taskId: string, dependsOnIds: string[]) => Promise<boolean>;
 }
 
 export function MobileClientDetail({
@@ -47,14 +51,18 @@ export function MobileClientDetail({
   activeTaskCount,
   commentCount,
   tasks,
+  dependencies,
+  templates,
   onTogglePriority,
   onToggleHighlight,
   onToggleChecked,
   onToggleCollaborator,
   onAddTask,
+  onAddTaskFromTemplate,
   onToggleComplete,
   onUpdateTask,
   onDeleteTask,
+  onSetTaskDependencies,
 }: MobileClientDetailProps) {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
@@ -258,10 +266,14 @@ export function MobileClientDetail({
           onClose={() => setShowTaskModal(false)}
           client={client}
           tasks={tasks}
+          dependencies={dependencies}
+          templates={templates}
           onAddTask={onAddTask}
+          onAddTaskFromTemplate={onAddTaskFromTemplate}
           onToggleComplete={onToggleComplete}
           onUpdateTask={onUpdateTask}
           onDeleteTask={onDeleteTask}
+          onSetTaskDependencies={onSetTaskDependencies}
           initialView={workView}
         />
       )}

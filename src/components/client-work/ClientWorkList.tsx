@@ -8,6 +8,7 @@ import {
   PackageCheck,
   ShieldCheck,
   Sparkles,
+  MessageSquareText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const kindConfig: Record<
   },
   audit: { icon: ShieldCheck, className: "text-violet-700 bg-violet-50" },
   challenge: { icon: Sparkles, className: "text-rose-700 bg-rose-50" },
+  comment: { icon: MessageSquareText, className: "text-indigo-700 bg-indigo-50" },
 };
 
 const statusLabel: Record<WorkItem["status"], string> = {

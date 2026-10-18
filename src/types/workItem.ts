@@ -3,7 +3,8 @@ export type WorkItemKind =
   | "priority"
   | "deliverable"
   | "audit"
-  | "challenge";
+  | "challenge"
+  | "comment";
 
 export type WorkItemStatus =
   | "open"
@@ -35,4 +36,5 @@ export const WORK_ITEM_LABELS: Record<WorkItemKind, string> = {
   deliverable: "Entregável",
   audit: "Auditoria",
   challenge: "Desafio",
+  comment: "Comentário",
 };

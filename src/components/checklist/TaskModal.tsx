@@ -1,25 +1,33 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, ClipboardCheck, FileCheck2, Flag, History, Plus, Search, ShieldCheck, Star, Trash2, User, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, ClipboardCheck, Clock3, FileCheck2, Flag, History, MessageSquareText, Plus, Search, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ClientWorkList } from '@/components/client-work/ClientWorkList';
 import { assigneeMatches, findCollaboratorColor } from '@/lib/taskAssignee';
-import { Task, TaskFormData, TaskPriority, PRIORITY_CONFIG } from '@/types/task';
+import { Task, TaskFormData, TaskPriority, PRIORITY_CONFIG, TASK_STATUS_CONFIG } from '@/types/task';
 import { Client } from '@/types/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientWorkItems } from '@/hooks/useClientWorkItems';
 import type { WorkItem, WorkItemFilter } from '@/types/workItem';
+import type { TaskDependency, TaskTemplate } from '@/types/task';
+import { TaskDetailSheet } from '@/components/tasks/TaskDetailSheet';
+import { getTaskProgress } from '@/lib/taskOperations';
+import { cn } from '@/lib/utils';
 
 export interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   client: Client;
   tasks: Task[];
+  dependencies: TaskDependency[];
+  templates: TaskTemplate[];
   onAddTask: (clientId: string, data: TaskFormData) => Promise<boolean>;
   onToggleComplete: (taskId: string) => Promise<boolean>;
   onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
   onDeleteTask: (taskId: string) => Promise<boolean>;
+  onAddTaskFromTemplate: (clientId: string, template: TaskTemplate, overrides: Partial<TaskFormData>, clientName?: string) => Promise<boolean>;
+  onSetTaskDependencies: (taskId: string, dependsOnIds: string[]) => Promise<boolean>;
   initialView?: WorkItemFilter;
 }
 
@@ -28,10 +36,14 @@ export function TaskModal({
   onClose,
   client,
   tasks,
+  dependencies,
+  templates,
   onAddTask,
   onToggleComplete,
   onUpdateTask,
   onDeleteTask,
+  onAddTaskFromTemplate,
+  onSetTaskDependencies,
   initialView = 'all',
 }: TaskModalProps) {
   const navigate = useNavigate();
@@ -49,23 +61,36 @@ export function TaskModal({
   const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('normal');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('none');
 
   const collaboratorColorMap: Record<string, string> = {};
   collaborators.forEach(c => { collaboratorColorMap[c.name] = c.color; });
 
   const activeTasks = tasks
-    .filter(t => !t.completed)
+    .filter(t => !t.parent_task_id && !t.completed && t.status !== 'cancelada')
     .sort((a, b) => (PRIORITY_CONFIG[a.priority]?.order ?? 9) - (PRIORITY_CONFIG[b.priority]?.order ?? 9));
-  const completedTasks = tasks.filter(t => t.completed);
+  const completedTasks = tasks.filter(t => !t.parent_task_id && (t.completed || t.status === 'cancelada'));
+  const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
+  const openTasks = activeTasks.length;
+  const overdueTasks = activeTasks.filter((task) => task.due_date && new Date(`${task.due_date}T23:59:59`) < new Date()).length;
+  const waitingTasks = activeTasks.filter((task) => task.status === 'aguardando_cliente' || task.status === 'aguardando_terceiro').length;
+  const unassignedTasks = activeTasks.filter((task) => task.assigned_to.length === 0).length;
+  const nextAction = [...activeTasks].sort((left, right) => {
+    const leftDue = left.due_date ? new Date(left.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+    const rightDue = right.due_date ? new Date(right.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+    return leftDue - rightDue || new Date(left.created_at).getTime() - new Date(right.created_at).getTime();
+  })[0];
   const filteredWorkItems =
     activeView === 'all'
       ? workItems
       : workItems.filter(item => item.kind === activeView);
   const overviewItems = [
-    { kind: 'task' as const, label: 'Tarefas', count: tasks.length, icon: ClipboardCheck, className: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' },
+    { kind: 'task' as const, label: 'Tarefas', count: tasks.filter((task) => !task.parent_task_id).length, icon: ClipboardCheck, className: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' },
     { kind: 'priority' as const, label: 'Prioridades', count: workItems.filter(item => item.kind === 'priority').length, icon: Star, className: 'border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100' },
     { kind: 'deliverable' as const, label: 'Entregáveis', count: workItems.filter(item => item.kind === 'deliverable').length, icon: FileCheck2, className: 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100' },
     { kind: 'audit' as const, label: 'Auditorias', count: workItems.filter(item => item.kind === 'audit').length, icon: ShieldCheck, className: 'border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100' },
+    { kind: 'comment' as const, label: 'Comentários', count: workItems.filter(item => item.kind === 'comment' && item.status !== 'completed').length, icon: MessageSquareText, className: 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100' },
   ];
 
   useEffect(() => {
@@ -80,20 +105,29 @@ export function TaskModal({
   };
 
   const handleAddTask = async () => {
-    if (!newTaskTitle.trim()) return;
+    const selectedTemplate = templates.find((item) => item.id === selectedTemplateId);
+    if (!newTaskTitle.trim() && !selectedTemplate) return;
 
-    const success = await onAddTask(client.id, {
-      title: newTaskTitle.trim(),
-      assigned_to: newTaskAssignees,
-      due_date: newTaskDueDate || undefined,
-      priority: newTaskPriority,
-    });
+    const success = selectedTemplate
+      ? await onAddTaskFromTemplate(client.id, selectedTemplate, {
+          title: newTaskTitle.trim() || selectedTemplate.default_title,
+          assigned_to: newTaskAssignees,
+          due_date: newTaskDueDate || undefined,
+          priority: newTaskPriority,
+        }, client.name)
+      : await onAddTask(client.id, {
+          title: newTaskTitle.trim(),
+          assigned_to: newTaskAssignees,
+          due_date: newTaskDueDate || undefined,
+          priority: newTaskPriority,
+        });
 
     if (success) {
       setNewTaskTitle('');
       setNewTaskAssignees([]);
       setNewTaskDueDate('');
       setNewTaskPriority('normal');
+      setSelectedTemplateId('none');
     }
   };
 
@@ -125,7 +159,7 @@ export function TaskModal({
   };
 
   const handleDueDateChange = async (taskId: string, dueDate: string) => {
-    await onUpdateTask(taskId, { due_date: dueDate || undefined });
+    await onUpdateTask(taskId, { due_date: dueDate || null });
   };
 
   return (
@@ -162,32 +196,75 @@ export function TaskModal({
           {activeView === 'all' ? (
             <div className="flex-1 space-y-5 overflow-auto px-5 py-5">
               <section>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gestão do cliente</p>
-                <h3 className="mt-1 text-base font-semibold">Acompanhe o que está acontecendo neste cliente</h3>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Resumo operacional</p>
+                <h3 className="mt-1 text-base font-semibold">O que precisa de atenção neste cliente</h3>
               </section>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <SummaryMetric label="Tarefas abertas" value={openTasks} icon={ClipboardCheck} tone="text-sky-700" />
+                <SummaryMetric label="Atrasadas" value={overdueTasks} icon={AlertTriangle} tone={overdueTasks ? 'text-red-700' : 'text-muted-foreground'} />
+                <SummaryMetric label="Aguardando" value={waitingTasks} icon={Clock3} tone={waitingTasks ? 'text-amber-700' : 'text-muted-foreground'} />
+                <SummaryMetric label="Sem responsável" value={unassignedTasks} icon={UserRoundX} tone={unassignedTasks ? 'text-violet-700' : 'text-muted-foreground'} />
+              </div>
+
+              <section className="border-y bg-muted/20 px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">Próxima ação</p>
+                    {nextAction ? (
+                      <button type="button" onClick={() => setSelectedTaskId(nextAction.id)} className="mt-1 block max-w-full truncate text-left text-sm font-semibold hover:text-primary">
+                        {nextAction.title}
+                      </button>
+                    ) : (
+                      <p className="mt-1 text-sm text-muted-foreground">Nenhuma tarefa aberta.</p>
+                    )}
+                  </div>
+                  {nextAction?.due_date && (
+                    <span className="flex-shrink-0 text-xs text-muted-foreground">
+                      {new Date(`${nextAction.due_date}T12:00:00`).toLocaleDateString('pt-BR')}
+                    </span>
+                  )}
+                </div>
+              </section>
+
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {overviewItems.map(({ kind, label, count, icon: Icon, className }) => (
                   <button
                     key={kind}
                     type="button"
                     onClick={() => setActiveView(kind)}
-                    className={`flex min-h-28 items-center gap-4 rounded-xl border p-4 text-left transition-colors ${className}`}
+                    className={`flex min-h-20 items-center gap-3 rounded-lg border p-3 text-left transition-colors ${className}`}
                   >
-                    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-background/80 shadow-sm">
+                    <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-background/80 shadow-sm">
                       <Icon className="h-5 w-5" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-2xl font-bold leading-none">{count}</span>
-                      <span className="mt-1 block text-sm font-semibold">{label}</span>
+                      <span className="block text-lg font-bold leading-none">{count}</span>
+                      <span className="mt-1 block text-xs font-semibold">{label}</span>
                     </span>
                   </button>
                 ))}
               </div>
-              <section className="rounded-xl border bg-muted/30 p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold"><History className="h-4 w-4 text-muted-foreground" /> Visão rápida</div>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Escolha um indicador para abrir a área correspondente. Tarefas, prioridades, entregáveis e auditorias continuam separados, sem perder a visão geral do cliente.
-                </p>
+
+              <section>
+                <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><History className="h-4 w-4 text-muted-foreground" /> Últimas movimentações</div>
+                <div className="divide-y border">
+                  {[...workItems]
+                    .sort((left, right) => new Date(right.completedAt ?? right.createdAt).getTime() - new Date(left.completedAt ?? left.createdAt).getTime())
+                    .slice(0, 6)
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => item.kind === 'task' ? setSelectedTaskId(item.sourceId) : handleOpenSource(item)}
+                        className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left hover:bg-muted/40"
+                      >
+                        <span className="text-[10px] font-semibold uppercase text-muted-foreground">{item.kind === 'comment' ? 'Comentário' : item.kind === 'task' ? 'Tarefa' : item.kind}</span>
+                        <span className="truncate text-xs font-medium">{item.title}</span>
+                        <span className="text-[10px] text-muted-foreground">{new Date(item.completedAt ?? item.createdAt).toLocaleDateString('pt-BR')}</span>
+                      </button>
+                    ))}
+                  {workItems.length === 0 && <p className="px-3 py-6 text-center text-sm text-muted-foreground">Ainda não há movimentações registradas.</p>}
+                </div>
               </section>
             </div>
           ) : (
@@ -214,7 +291,24 @@ export function TaskModal({
               <>
                 {/* Add new task */}
                 <div className="sticky top-0 z-10 rounded-b-lg border bg-background/95 py-3 backdrop-blur">
-                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
+                  <div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto]">
+                    <select
+                      value={selectedTemplateId}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setSelectedTemplateId(value);
+                        const template = templates.find((item) => item.id === value);
+                        if (template) {
+                          setNewTaskTitle(template.default_title);
+                          setNewTaskPriority(template.default_priority);
+                        }
+                      }}
+                      className="h-10 max-w-44 rounded-md border bg-background px-2 text-xs"
+                      aria-label="Modelo de tarefa"
+                    >
+                      <option value="none">Tarefa livre</option>
+                      {templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
+                    </select>
                     <input
                       type="text"
                       value={newTaskTitle}
@@ -241,7 +335,7 @@ export function TaskModal({
                     </div>
                     <button
                       onClick={handleAddTask}
-                      disabled={!newTaskTitle.trim()}
+                      disabled={!newTaskTitle.trim() && selectedTemplateId === 'none'}
                       className="flex h-10 items-center justify-center rounded-md bg-primary px-4 text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 md:w-12"
                       title="Adicionar tarefa"
                     >
@@ -274,6 +368,8 @@ export function TaskModal({
                           onPriorityChange={(p) => handlePriorityChange(task.id, p)}
                           onDueDateChange={(dueDate) => handleDueDateChange(task.id, dueDate)}
                           onDelete={() => onDeleteTask(task.id)}
+                          onOpen={() => setSelectedTaskId(task.id)}
+                          progress={getTaskProgress(task.id, tasks)}
                           collaborators={collaborators}
                           collaboratorColorMap={collaboratorColorMap}
                         />
@@ -304,6 +400,8 @@ export function TaskModal({
                           onPriorityChange={() => {}}
                           onDueDateChange={() => {}}
                           onDelete={() => onDeleteTask(task.id)}
+                          onOpen={() => setSelectedTaskId(task.id)}
+                          progress={getTaskProgress(task.id, tasks)}
                           collaborators={collaborators}
                           collaboratorColorMap={collaboratorColorMap}
                         />
@@ -316,6 +414,18 @@ export function TaskModal({
             </div>
           )}
         </div>
+        <TaskDetailSheet
+          task={selectedTask}
+          tasks={tasks}
+          dependencies={dependencies}
+          collaborators={collaborators}
+          open={Boolean(selectedTask)}
+          onOpenChange={(open) => !open && setSelectedTaskId(null)}
+          onUpdateTask={onUpdateTask}
+          onAddTask={(clientId, data) => onAddTask(clientId, data)}
+          onDeleteTask={onDeleteTask}
+          onSetDependencies={onSetTaskDependencies}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -334,6 +444,8 @@ interface TaskItemProps {
   onPriorityChange: (priority: TaskPriority) => void;
   onDueDateChange: (dueDate: string) => void;
   onDelete: () => void;
+  onOpen: () => void;
+  progress: { completed: number; total: number };
   collaborators: { id: string; name: string; color: string; initials: string }[];
   collaboratorColorMap: Record<string, string>;
 }
@@ -351,11 +463,14 @@ function TaskItem({
   onPriorityChange,
   onDueDateChange,
   onDelete,
+  onOpen,
+  progress,
   collaborators,
   collaboratorColorMap,
 }: TaskItemProps) {
   const priority = (task.priority || 'normal') as TaskPriority;
   const pConf = PRIORITY_CONFIG[priority];
+  const status = TASK_STATUS_CONFIG[task.status];
   const daysOpen = Math.max(0, Math.floor((Date.now() - new Date(task.created_at).getTime()) / 86_400_000));
   const containerClass = task.completed
     ? 'bg-card border'
@@ -364,7 +479,9 @@ function TaskItem({
   return (
     <div className={`group flex items-center gap-2 rounded-md px-3 py-2 ${containerClass}`}>
       <button
+        type="button"
         onClick={onToggle}
+        aria-label={task.completed ? `Reabrir tarefa ${task.title}` : `Concluir tarefa ${task.title}`}
         className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border transition-colors ${
           task.completed
             ? 'bg-green-500 border-green-500 text-white'
@@ -395,16 +512,23 @@ function TaskItem({
                 <span>{pConf.icon}</span>{pConf.label}
               </span>
             )}
-            <span
-              className={`min-w-0 cursor-pointer truncate text-sm leading-snug ${task.completed ? 'text-muted-foreground line-through' : ''}`}
-              onClick={!task.completed ? onStartEdit : undefined}
+            {!task.completed && task.status !== 'pendente' && (
+              <span className={cn('flex-shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold', status.className)}>
+                {status.label}
+              </span>
+            )}
+            <button
+              type="button"
+              className={`min-w-0 truncate text-left text-sm leading-snug hover:text-primary ${task.completed ? 'text-muted-foreground line-through' : ''}`}
+              onClick={onOpen}
             >
               {task.title}
-            </span>
+            </button>
           </div>
           {!task.completed && (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <span>Criada há {daysOpen} {daysOpen === 1 ? 'dia' : 'dias'}</span>
+              {progress.total > 0 && <span>{progress.completed}/{progress.total} etapas</span>}
               <label className="flex w-fit items-center gap-1">
                 <span>Prazo</span>
               <input
@@ -437,7 +561,9 @@ function TaskItem({
       )}
 
       <button
+        type="button"
         onClick={onDelete}
+        aria-label={`Excluir tarefa ${task.title}`}
         className="p-1 text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover:opacity-100"
       >
         <Trash2 className="w-3.5 h-3.5" />
@@ -687,6 +813,28 @@ function PriorityMenu({ value, onChange }: { value: TaskPriority; onChange: (p: 
         })}
       </PopoverContent>
     </Popover>
+  );
+}
+
+function SummaryMetric({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: typeof ClipboardCheck;
+  tone: string;
+}) {
+  return (
+    <div className="border bg-background px-3 py-2.5">
+      <div className={cn('flex items-center gap-1.5 text-xs', tone)}>
+        <Icon className="h-3.5 w-3.5" />
+        <span className="font-medium">{label}</span>
+      </div>
+      <strong className="mt-1 block text-xl leading-none text-foreground">{value}</strong>
+    </div>
   );
 }
 

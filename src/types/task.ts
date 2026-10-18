@@ -1,23 +1,86 @@
 export type TaskPriority = 'baixa' | 'normal' | 'alta' | 'urgente';
+export type TaskStatus =
+  | 'pendente'
+  | 'em_andamento'
+  | 'aguardando_cliente'
+  | 'aguardando_terceiro'
+  | 'bloqueada'
+  | 'em_validacao'
+  | 'concluida'
+  | 'cancelada';
+export type TaskRecurrence = 'none' | 'weekly' | 'monthly';
 
 export interface Task {
   id: string;
   client_id: string;
   title: string;
+  description: string | null;
   completed: boolean;
+  status: TaskStatus;
   assigned_to: string[];
   created_at: string;
   completed_at: string | null;
   due_date: string | null;
   priority: TaskPriority;
   priority_id?: string | null;
+  parent_task_id: string | null;
+  sort_order: number;
+  source_comment_id: string | null;
+  recurrence: TaskRecurrence;
+  recurrence_origin_id: string | null;
+  updated_at: string;
 }
 
 export type TaskFormData = {
   title: string;
+  description?: string;
   assigned_to: string[];
   due_date?: string;
   priority?: TaskPriority;
+  status?: TaskStatus;
+  parent_task_id?: string | null;
+  source_comment_id?: string | null;
+  recurrence?: TaskRecurrence;
+  sort_order?: number;
+};
+
+export interface TaskTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  default_title: string;
+  default_description: string | null;
+  default_priority: TaskPriority;
+  subtasks: string[];
+  is_active: boolean;
+}
+
+export interface TaskDependency {
+  task_id: string;
+  depends_on_task_id: string;
+  created_at: string;
+}
+
+export const TASK_STATUS_CONFIG: Record<TaskStatus, {
+  label: string;
+  color: string;
+  className: string;
+  order: number;
+}> = {
+  pendente: { label: 'Pendente', color: '#64748B', className: 'border-slate-300 bg-slate-50 text-slate-700', order: 0 },
+  em_andamento: { label: 'Em andamento', color: '#D97706', className: 'border-amber-300 bg-amber-50 text-amber-800', order: 1 },
+  aguardando_cliente: { label: 'Aguardando cliente', color: '#2563EB', className: 'border-blue-300 bg-blue-50 text-blue-800', order: 2 },
+  aguardando_terceiro: { label: 'Aguardando terceiro', color: '#7C3AED', className: 'border-violet-300 bg-violet-50 text-violet-800', order: 3 },
+  bloqueada: { label: 'Bloqueada', color: '#DC2626', className: 'border-red-300 bg-red-50 text-red-800', order: 4 },
+  em_validacao: { label: 'Em validação', color: '#0891B2', className: 'border-cyan-300 bg-cyan-50 text-cyan-800', order: 5 },
+  concluida: { label: 'Concluída', color: '#059669', className: 'border-emerald-300 bg-emerald-50 text-emerald-800', order: 6 },
+  cancelada: { label: 'Cancelada', color: '#6B7280', className: 'border-slate-300 bg-slate-100 text-slate-600', order: 7 },
+};
+
+export const TASK_RECURRENCE_LABELS: Record<TaskRecurrence, string> = {
+  none: 'Não repetir',
+  weekly: 'Semanal',
+  monthly: 'Mensal',
 };
 
 export const PRIORITY_CONFIG: Record<TaskPriority, {

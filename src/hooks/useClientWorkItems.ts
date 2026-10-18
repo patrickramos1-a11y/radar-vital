@@ -5,6 +5,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { useAudits } from "@/hooks/useAudits";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useCollaborators } from "@/hooks/useCollaborators";
+import { useClientComments } from "@/hooks/useClientComments";
 import { getEffectiveChallengeStatus } from "@/lib/challenge";
 import {
   buildClientWorkItems,
@@ -19,6 +20,7 @@ export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
   const auditsSource = useAudits();
   const challengesSource = useChallenges();
   const collaboratorsSource = useCollaborators();
+  const commentsSource = useClientComments(clientId);
   const tasks = taskOverride ?? tasksSource.tasks;
   const auditById = useMemo(
     () => new Map(auditsSource.audits.map((audit) => [audit.id, audit])),
@@ -106,6 +108,7 @@ export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
         prioritiesSource.priorities,
         deliverablesSource.deliverables,
         [...auditItems, ...challengeItems],
+        commentsSource.comments,
       ),
     [
       clientId,
@@ -114,6 +117,7 @@ export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
       challengeItems,
       prioritiesSource.priorities,
       tasks,
+      commentsSource.comments,
     ],
   );
 
@@ -125,7 +129,8 @@ export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
       deliverablesSource.isLoading ||
       auditsSource.isLoading ||
       challengesSource.isLoading ||
-      collaboratorsSource.loading,
+      collaboratorsSource.loading ||
+      commentsSource.isLoading,
     error:
       (!taskOverride ? tasksSource.error : null) ||
       prioritiesSource.error ||
@@ -139,6 +144,7 @@ export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
         deliverablesSource.refetch(),
         auditsSource.refetch(),
         challengesSource.refetch(),
+        commentsSource.refetch(),
       ]);
     },
   };

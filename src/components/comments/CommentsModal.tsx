@@ -93,7 +93,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
   const pendingComments = activeComments.filter(c => !canReadSelf || !c.readStatus[currentReadStatusName]);
   const readComments = activeComments.filter(c => canReadSelf && c.readStatus[currentReadStatusName]);
 
-  const filteredComments = useMemo(() => {
+  const filteredComments = (() => {
     let result: ClientComment[];
     if (viewFilter === 'pendentes') {
       result = pendingComments;
@@ -110,7 +110,7 @@ export function CommentsModal({ clientId, clientName, isOpen, onClose }: Comment
       if (!a.isPinned && b.isPinned) return 1;
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
-  }, [comments, pendingComments, readComments, archivedComments, viewFilter]);
+  })();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -270,7 +270,7 @@ function CommentsListWithAutoScroll({
   comments: ClientComment[];
   currentUserName: string;
   isAdmin: boolean;
-  collaborators: { id: string; name: string }[];
+  collaborators: { id: string; name: string; color?: string }[];
   clientId: string;
   clientName: string;
   handleDelete: (id: string) => void;
@@ -340,7 +340,7 @@ function CommentsListWithAutoScroll({
 
 // --- ReadersDropdown ---
 interface ReadersDropdownProps {
-  collaborators: { id: string; name: string }[];
+  collaborators: { id: string; name: string; color?: string }[];
   selectedReaders: string[];
   onToggleReader: (name: string) => void;
   onSelectAll: () => void;
@@ -449,7 +449,7 @@ interface CommentItemProps {
   comment: ClientComment;
   currentUserName: string;
   isAdmin: boolean;
-  collaborators: { id: string; name: string }[];
+  collaborators: { id: string; name: string; color?: string }[];
   allComments: ClientComment[];
   clientId: string;
   clientName: string;
@@ -519,7 +519,7 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
 
   // Get author color from collaborators
   const authorCollab = collaborators.find(c => c.name.toLowerCase() === comment.authorName.toLowerCase());
-  const authorColor = (authorCollab as any)?.color || '#6B7280';
+  const authorColor = authorCollab?.color || '#6B7280';
 
   return (
     <div className={cn('flex w-full', isOwnComment ? 'justify-end' : 'justify-start')}>
@@ -597,7 +597,7 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
         {comment.replyToId && (() => {
           const parentComment = allComments.find(c => c.id === comment.replyToId);
           const parentCollab = parentComment ? collaborators.find(c => c.name.toLowerCase() === parentComment.authorName.toLowerCase()) : null;
-          const parentColor = (parentCollab as any)?.color || '#6B7280';
+          const parentColor = parentCollab?.color || '#6B7280';
           return parentComment ? (
             <div className="flex items-stretch gap-0 rounded-lg overflow-hidden mb-1.5 bg-muted/50">
               <div className="w-1 shrink-0" style={{ backgroundColor: parentColor }} />
@@ -726,6 +726,7 @@ function CommentItem({ comment, currentUserName, isAdmin, collaborators, allComm
             </button>
             <CreateTaskFromComment
               commentText={comment.commentText}
+              commentId={comment.id}
               clientId={clientId}
               clientName={clientName}
               collaborators={collaborators}
@@ -761,7 +762,7 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
   const selfIsRead = canMarkSelf && comment.readStatus[currentReadStatusName];
 
   const currentCollaborator = collaborators.find(c => c.name.toLowerCase() === currentReadStatusName);
-  const selfColor = (currentCollaborator as any)?.color || '#6B7280';
+  const selfColor = currentCollaborator?.color || '#6B7280';
 
   // Use ALL collaborators for read/pending display
   const readCollabs = collaborators.filter(c => comment.readTimestamps[c.name]);
@@ -826,7 +827,7 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
                 {readCollabs.map((collab) => (
                   <div key={collab.id} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: (collab as any).color || '#6B7280' }} />
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: collab.color || '#6B7280' }} />
                       <span className="text-xs">{collab.name}</span>
                     </div>
                     {isAdmin && READ_STATUS_NAMES.includes(collab.name.toLowerCase() as ReadStatusName) && (
@@ -846,7 +847,7 @@ function ReadStatusBar({ comment, currentUserName, isAdmin, collaborators, onTog
                 {pendingCollabs.map((collab) => (
                   <div key={collab.id} className="flex items-center justify-between gap-2 px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: (collab as any).color || '#6B7280' }} />
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: collab.color || '#6B7280' }} />
                       <span className="text-xs">{collab.name}</span>
                     </div>
                     {isAdmin && READ_STATUS_NAMES.includes(collab.name.toLowerCase() as ReadStatusName) && (

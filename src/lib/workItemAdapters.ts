@@ -1,6 +1,7 @@
 import type { Deliverable } from "@/types/deliverable";
 import type { Priority } from "@/types/priority";
 import type { Task } from "@/types/task";
+import type { ClientComment } from "@/types/comment";
 import type {
   WorkItem,
   WorkItemKind,
@@ -28,13 +29,37 @@ export function taskToWorkItem(task: Task): WorkItem {
     kind: "task",
     clientId: task.client_id,
     title: task.title,
-    description: null,
-    status: task.completed ? "completed" : "open",
+    description: task.description,
+    status:
+      task.status === "concluida"
+        ? "completed"
+        : task.status === "cancelada"
+          ? "cancelled"
+          : task.status === "em_andamento" || task.status === "em_validacao"
+            ? "in_progress"
+            : "open",
     createdAt: task.created_at,
     dueDate: task.due_date,
     completedAt: task.completed_at,
     assignees: task.assigned_to,
     sourcePath: null,
+  };
+}
+
+export function commentToWorkItem(comment: ClientComment): WorkItem {
+  return {
+    id: `comment:${comment.id}`,
+    sourceId: comment.id,
+    kind: "comment",
+    clientId: comment.clientId,
+    title: `Comentário de ${comment.authorName}`,
+    description: comment.commentText,
+    status: comment.isClosed || comment.isArchived ? "completed" : "open",
+    createdAt: comment.createdAt,
+    dueDate: null,
+    completedAt: comment.closedAt ?? comment.archivedAt ?? null,
+    assignees: comment.requiredReaders,
+    sourcePath: "/comentarios",
   };
 }
 
@@ -145,6 +170,7 @@ export function buildClientWorkItems(
   priorities: Priority[],
   deliverables: Deliverable[],
   futureSources: FutureWorkItemSource[] = [],
+  comments: ClientComment[] = [],
 ): WorkItem[] {
   const taskItems = tasks
     .filter((task) => task.client_id === clientId)
@@ -162,8 +188,11 @@ export function buildClientWorkItems(
   const futureItems = futureSources
     .filter((source) => source.clientId === clientId)
     .map(futureSourceToWorkItem);
+  const commentItems = comments
+    .filter((comment) => comment.clientId === clientId)
+    .map(commentToWorkItem);
 
-  return [...taskItems, ...priorityItems, ...deliverableItems, ...futureItems]
+  return [...taskItems, ...priorityItems, ...deliverableItems, ...futureItems, ...commentItems]
     .sort((left, right) => {
       const leftDone =
         left.status === "completed" || left.status === "cancelled";

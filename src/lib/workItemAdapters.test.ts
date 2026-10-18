@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Deliverable } from "@/types/deliverable";
+import type { ClientComment } from "@/types/comment";
 import type { Priority } from "@/types/priority";
 import type { Task } from "@/types/task";
 import {
@@ -11,12 +12,36 @@ const task: Task = {
   id: "task-1",
   client_id: "client-1",
   title: "Conferir licença",
+  description: "Revisar validade, condicionantes e dados da empresa.",
   completed: false,
+  status: "em_andamento",
   assigned_to: ["Celine"],
   created_at: "2026-07-01T10:00:00.000Z",
   completed_at: null,
   due_date: "2026-07-10",
   priority: "alta",
+  parent_task_id: null,
+  sort_order: 0,
+  source_comment_id: null,
+  recurrence: "none",
+  recurrence_origin_id: null,
+  updated_at: "2026-07-01T10:00:00.000Z",
+};
+
+const comment: ClientComment = {
+  id: "comment-1",
+  clientId: "client-1",
+  authorName: "Patrick",
+  commentText: "Cliente confirmou o envio dos documentos.",
+  createdAt: "2026-07-02T10:00:00.000Z",
+  isPinned: false,
+  readStatus: { celine: true, gabi: false, darley: false, vanessa: false, patrick: true },
+  commentType: "informativo",
+  requiredReaders: [],
+  readTimestamps: {},
+  isClosed: false,
+  isEdited: false,
+  isArchived: false,
 };
 
 const priority: Priority = {
@@ -93,5 +118,25 @@ describe("work item adapters", () => {
 
     expect(item.id).toBe("audit:audit-client-1");
     expect(item.kind).toBe("audit");
+  });
+
+  it("includes comments in the client history and preserves archived state", () => {
+    const activeItems = buildClientWorkItems("client-1", [task], [], [], [], [comment]);
+    const activeComment = activeItems.find((item) => item.id === "comment:comment-1");
+
+    expect(activeComment?.kind).toBe("comment");
+    expect(activeComment?.status).toBe("open");
+    expect(activeComment?.description).toContain("documentos");
+
+    const archivedItems = buildClientWorkItems(
+      "client-1",
+      [],
+      [],
+      [],
+      [],
+      [{ ...comment, isArchived: true, archivedAt: "2026-07-03T10:00:00.000Z" }],
+    );
+    expect(archivedItems[0].status).toBe("completed");
+    expect(archivedItems[0].completedAt).toBe("2026-07-03T10:00:00.000Z");
   });
 });

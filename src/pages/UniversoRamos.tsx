@@ -64,12 +64,16 @@ export default function UniversoRamos() {
     toggleAssignment,
   } = useClientAssignments();
   const {
+    dependencies,
+    templates,
     addTask,
+    addTaskFromTemplate,
     deleteTask,
     getActiveTaskCount,
     getTasksForClient,
     toggleComplete,
     updateTask,
+    setTaskDependencies,
   } = useTasks();
   const [commentCounts] = useAllClientsCommentCountsWithRefresh(
     currentUser?.name,
@@ -180,7 +184,7 @@ export default function UniversoRamos() {
       EMPRESA: 3,
       SEM_CATEGORIA: 4,
     };
-    let result = universeClients.filter((client) => {
+    const result = universeClients.filter((client) => {
       const assignedIds = getAssignedCollaboratorIds(client.id);
       const assignedNames = collaborators
         .filter((collaborator) => assignedIds.includes(collaborator.id))
@@ -523,10 +527,14 @@ export default function UniversoRamos() {
           onClose={() => setTaskClientId(null)}
           client={taskClient}
           tasks={getTasksForClient(taskClient.id)}
+          dependencies={dependencies}
+          templates={templates}
           onAddTask={addTask}
+          onAddTaskFromTemplate={addTaskFromTemplate}
           onToggleComplete={toggleComplete}
           onUpdateTask={updateTask}
           onDeleteTask={deleteTask}
+          onSetTaskDependencies={setTaskDependencies}
         />
       )}
 
