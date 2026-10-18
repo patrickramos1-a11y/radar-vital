@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { 
   ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X, 
   AlertTriangle, CheckSquare, ChevronUp, ChevronDown, RefreshCw,
-  Download, FolderUp, RotateCcw, MapPin, Search, Check
+  Download, FileJson, FolderUp, LoaderCircle, RotateCcw, MapPin, Search, Check
 } from "lucide-react";
 import { useClients } from "@/contexts/ClientContext";
 import { 
@@ -23,6 +23,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { buildClientCatalogExport } from "@/lib/clientCatalogExport";
+import { supabase } from "@/integrations/supabase/client";
+
+function downloadJson(content: string, fileName: string) {
+  const blob = new Blob([content], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
 
 const Config = () => {
   const { 
@@ -51,6 +65,7 @@ const Config = () => {
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set());
   const [moveToPositionId, setMoveToPositionId] = useState<string | null>(null);
   const [moveToPositionValue, setMoveToPositionValue] = useState<string>("");
+  const [isExportingClientCatalog, setIsExportingClientCatalog] = useState(false);
   
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,16 +136,46 @@ const Config = () => {
   // Export JSON
   const handleExport = () => {
     const data = exportData();
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `painel-ac-clientes-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadJson(data, `painel-ac-clientes-${new Date().toISOString().split('T')[0]}.json`);
     toast.success("Configuração exportada com sucesso!");
+  };
+
+  const handleClientCatalogExport = async () => {
+    setIsExportingClientCatalog(true);
+
+    try {
+      const externalClientIds = clients
+        .filter((client) => client.clientType === 'AC' || client.clientType === 'AV')
+        .map((client) => client.id);
+      const logoByClientId = new Map<string, string | null>();
+      const batchSize = 8;
+
+      for (let index = 0; index < externalClientIds.length; index += batchSize) {
+        const batch = externalClientIds.slice(index, index + batchSize);
+        const { data, error } = await supabase
+          .from('clients')
+          .select('id, logo_url')
+          .in('id', batch);
+
+        if (error) throw error;
+        data?.forEach((row) => logoByClientId.set(row.id, row.logo_url));
+      }
+
+      const catalog = buildClientCatalogExport(clients, new Date(), logoByClientId);
+      const date = new Date().toISOString().split('T')[0];
+      downloadJson(
+        JSON.stringify(catalog, null, 2),
+        `radar-vital-clientes-ac-av-${date}.json`,
+      );
+      toast.success(
+        `${catalog.total} clientes exportados com ${catalog.logoCount} logos. Universo Ramos não foi incluído.`,
+      );
+    } catch (error) {
+      console.error('Error exporting client catalog:', error);
+      toast.error('Não foi possível carregar os logos para a exportação.');
+    } finally {
+      setIsExportingClientCatalog(false);
+    }
   };
 
   // Import JSON
@@ -213,6 +258,19 @@ const Config = () => {
             >
               <Download className="w-4 h-4" />
               Exportar JSON
+            </button>
+            <button
+              onClick={handleClientCatalogExport}
+              disabled={isExportingClientCatalog}
+              className="admin-button-secondary flex items-center gap-2 disabled:cursor-wait disabled:opacity-60"
+              title="Exportar clientes AC e AV, incluindo logos e situação ativa"
+            >
+              {isExportingClientCatalog ? (
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileJson className="w-4 h-4" />
+              )}
+              {isExportingClientCatalog ? 'Preparando...' : 'Exportar Clientes'}
             </button>
 
             <div className="h-6 w-px bg-border mx-1" />
