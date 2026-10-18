@@ -1852,6 +1852,39 @@ export type Database = {
           },
         ]
       }
+      task_dependencies: {
+        Row: {
+          created_at: string
+          depends_on_task_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          depends_on_task_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          depends_on_task_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_dependencies_depends_on_task_id_fkey"
+            columns: ["depends_on_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_dependencies_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_priority_policies: {
         Row: {
           enabled: boolean
@@ -1882,6 +1915,45 @@ export type Database = {
         }
         Relationships: []
       }
+      task_templates: {
+        Row: {
+          created_at: string
+          default_description: string | null
+          default_priority: string
+          default_title: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          subtasks: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_description?: string | null
+          default_priority?: string
+          default_title: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          subtasks?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_description?: string | null
+          default_priority?: string
+          default_title?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          subtasks?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string[]
@@ -1889,11 +1961,20 @@ export type Database = {
           completed: boolean
           completed_at: string | null
           created_at: string
+          description: string | null
           due_date: string | null
           id: string
+          modality: string
+          parent_task_id: string | null
           priority: string
           priority_id: string | null
+          recurrence: string
+          recurrence_origin_id: string | null
+          sort_order: number
+          source_comment_id: string | null
+          status: string
           title: string
+          updated_at: string
         }
         Insert: {
           assigned_to?: string[]
@@ -1901,11 +1982,20 @@ export type Database = {
           completed?: boolean
           completed_at?: string | null
           created_at?: string
+          description?: string | null
           due_date?: string | null
           id?: string
+          modality?: string
+          parent_task_id?: string | null
           priority?: string
           priority_id?: string | null
+          recurrence?: string
+          recurrence_origin_id?: string | null
+          sort_order?: number
+          source_comment_id?: string | null
+          status?: string
           title: string
+          updated_at?: string
         }
         Update: {
           assigned_to?: string[]
@@ -1913,11 +2003,20 @@ export type Database = {
           completed?: boolean
           completed_at?: string | null
           created_at?: string
+          description?: string | null
           due_date?: string | null
           id?: string
+          modality?: string
+          parent_task_id?: string | null
           priority?: string
           priority_id?: string | null
+          recurrence?: string
+          recurrence_origin_id?: string | null
+          sort_order?: number
+          source_comment_id?: string | null
+          status?: string
           title?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1928,10 +2027,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tasks_priority_id_fkey"
             columns: ["priority_id"]
             isOneToOne: false
             referencedRelation: "priorities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_recurrence_origin_id_fkey"
+            columns: ["recurrence_origin_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_source_comment_id_fkey"
+            columns: ["source_comment_id"]
+            isOneToOne: false
+            referencedRelation: "client_comments"
             referencedColumns: ["id"]
           },
         ]
