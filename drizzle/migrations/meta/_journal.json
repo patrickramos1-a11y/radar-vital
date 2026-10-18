@@ -15,6 +15,13 @@
       "when": 1791566582000,
       "tag": "0001_delete_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792339141544,
+      "tag": "0002_central_do_cliente_tasks",
+      "breakpoints": true
     }
   ]
 }
