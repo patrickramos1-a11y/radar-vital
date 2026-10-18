@@ -179,6 +179,11 @@ export function TaskModal({
               <span className="block text-xs font-normal text-muted-foreground">
                 {workItems.length} itens vinculados
               </span>
+              {import.meta.env.VITE_CLIENT_WORKSPACE_PREVIEW === 'true' && (
+                <span className="mt-1 block text-[10px] font-semibold uppercase text-amber-700">
+                  Avaliação local: alterações não afetam a produção
+                </span>
+              )}
             </div>
           </DialogTitle>
           <button

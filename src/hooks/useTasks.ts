@@ -15,6 +15,86 @@ type TaskPriorityAutomationRpc = (
   args: Record<string, unknown>,
 ) => Promise<{ error: { code?: string; message: string } | null }>;
 
+const LOCAL_WORKSPACE_PREVIEW = import.meta.env.VITE_CLIENT_WORKSPACE_PREVIEW === 'true';
+const LOCAL_WORKSPACE_KEY = 'radar-vital:client-workspace-preview:v1';
+const LOCAL_WORKSPACE_EVENT = 'radar-vital:client-workspace-preview-change';
+
+const PREVIEW_TEMPLATES: TaskTemplate[] = [
+  {
+    id: 'preview-documents',
+    name: 'Solicitação de documentos',
+    description: 'Organiza a coleta, conferência e retorno de documentos do cliente.',
+    default_title: 'Solicitar e conferir documentos',
+    default_description: 'Registrar quais documentos são necessários, solicitar ao cliente e conferir o material recebido.',
+    default_priority: 'normal',
+    subtasks: ['Listar documentos necessários', 'Solicitar documentos ao cliente', 'Conferir documentos recebidos', 'Registrar pendências', 'Confirmar recebimento ao cliente'],
+    is_active: true,
+  },
+  {
+    id: 'preview-environmental-protocol',
+    name: 'Protocolo ambiental',
+    description: 'Etapas essenciais para preparar e protocolar uma demanda ambiental.',
+    default_title: 'Preparar protocolo ambiental',
+    default_description: 'Consolidar documentos, revisar o processo, realizar o protocolo e registrar o comprovante.',
+    default_priority: 'alta',
+    subtasks: ['Conferir documentos do processo', 'Preparar requerimento', 'Realizar revisão final', 'Protocolar no órgão', 'Registrar número e comprovante'],
+    is_active: true,
+  },
+  {
+    id: 'preview-client-return',
+    name: 'Retorno ao cliente',
+    description: 'Fluxo curto para organizar acompanhamento e devolutiva.',
+    default_title: 'Realizar retorno ao cliente',
+    default_description: 'Reunir o contexto da demanda, confirmar o andamento e registrar a devolutiva realizada.',
+    default_priority: 'normal',
+    subtasks: ['Reunir informações atualizadas', 'Preparar devolutiva', 'Contatar o cliente', 'Registrar resultado do contato'],
+    is_active: true,
+  },
+];
+
+interface LocalWorkspaceState {
+  tasks: Task[];
+  dependencies: TaskDependency[];
+}
+
+function readLocalWorkspace(): LocalWorkspaceState | null {
+  if (!LOCAL_WORKSPACE_PREVIEW || typeof window === 'undefined') return null;
+  try {
+    const value = window.localStorage.getItem(LOCAL_WORKSPACE_KEY);
+    return value ? JSON.parse(value) as LocalWorkspaceState : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalWorkspace(state: LocalWorkspaceState) {
+  window.localStorage.setItem(LOCAL_WORKSPACE_KEY, JSON.stringify(state));
+  window.dispatchEvent(new CustomEvent(LOCAL_WORKSPACE_EVENT));
+}
+
+function createLocalTask(clientId: string, data: TaskFormData): Task {
+  const now = new Date().toISOString();
+  return {
+    id: crypto.randomUUID(),
+    client_id: clientId,
+    title: data.title,
+    description: data.description?.trim() || null,
+    completed: data.status === 'concluida',
+    status: data.status || 'pendente',
+    assigned_to: data.assigned_to,
+    created_at: now,
+    completed_at: data.status === 'concluida' ? now : null,
+    due_date: data.due_date || null,
+    priority: data.priority || 'normal',
+    parent_task_id: data.parent_task_id || null,
+    sort_order: data.sort_order || 0,
+    source_comment_id: data.source_comment_id || null,
+    recurrence: data.recurrence || 'none',
+    recurrence_origin_id: null,
+    updated_at: now,
+  };
+}
+
 const dbRowToTask = (row: TaskRow): Task => ({
   id: row.id,
   client_id: row.client_id,
@@ -49,6 +129,21 @@ export function useTasks() {
     setIsLoading(true);
     setError(null);
     try {
+      if (LOCAL_WORKSPACE_PREVIEW) {
+        const taskResult = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
+        if (taskResult.error) throw taskResult.error;
+        const stored = readLocalWorkspace();
+        const previewState = stored ?? {
+          tasks: (taskResult.data || []).map(dbRowToTask),
+          dependencies: [],
+        };
+        if (!stored) writeLocalWorkspace(previewState);
+        setTasks(previewState.tasks);
+        setDependencies(previewState.dependencies);
+        setTemplates(PREVIEW_TEMPLATES);
+        return;
+      }
+
       // Idempotent: when the policy migration is available, this keeps aged
       // tasks and their automatic priorities in sync before rendering them.
       const { error: automationError } = await (supabase.rpc as unknown as TaskPriorityAutomationRpc)(
@@ -91,6 +186,18 @@ export function useTasks() {
     fetchTasks();
   }, [fetchTasks]);
 
+  useEffect(() => {
+    if (!LOCAL_WORKSPACE_PREVIEW) return;
+    const syncLocalWorkspace = () => {
+      const stored = readLocalWorkspace();
+      if (!stored) return;
+      setTasks(stored.tasks);
+      setDependencies(stored.dependencies);
+    };
+    window.addEventListener(LOCAL_WORKSPACE_EVENT, syncLocalWorkspace);
+    return () => window.removeEventListener(LOCAL_WORKSPACE_EVENT, syncLocalWorkspace);
+  }, []);
+
   const createTask = useCallback(async (
     clientId: string,
     data: TaskFormData,
@@ -98,6 +205,12 @@ export function useTasks() {
     refresh = true,
   ): Promise<Task | null> => {
     try {
+      if (LOCAL_WORKSPACE_PREVIEW) {
+        const created = createLocalTask(clientId, data);
+        writeLocalWorkspace({ tasks: [created, ...tasks], dependencies });
+        return created;
+      }
+
       const { data: inserted, error } = await supabase.from('tasks').insert({
         client_id: clientId,
         title: data.title,
@@ -121,7 +234,7 @@ export function useTasks() {
       toast.error('Erro ao criar tarefa');
       return null;
     }
-  }, [currentUserName, fetchTasks]);
+  }, [currentUserName, dependencies, fetchTasks, tasks]);
 
   const addTask = useCallback(async (clientId: string, data: TaskFormData, clientName?: string) => {
     const task = await createTask(clientId, data, clientName);
@@ -135,6 +248,28 @@ export function useTasks() {
     overrides: Partial<TaskFormData>,
     clientName?: string,
   ) => {
+    if (LOCAL_WORKSPACE_PREVIEW) {
+      const parent = createLocalTask(clientId, {
+        title: overrides.title || template.default_title,
+        description: overrides.description ?? template.default_description ?? undefined,
+        assigned_to: overrides.assigned_to || [],
+        due_date: overrides.due_date,
+        priority: overrides.priority || template.default_priority,
+        status: overrides.status || 'pendente',
+        recurrence: overrides.recurrence || 'none',
+      });
+      const childTasks = template.subtasks.map((title, index) => createLocalTask(clientId, {
+        title,
+        assigned_to: overrides.assigned_to || [],
+        priority: overrides.priority || template.default_priority,
+        parent_task_id: parent.id,
+        sort_order: index,
+      }));
+      writeLocalWorkspace({ tasks: [parent, ...childTasks, ...tasks], dependencies });
+      toast.success('Tarefa criada a partir do modelo');
+      return true;
+    }
+
     const parent = await createTask(clientId, {
       title: overrides.title || template.default_title,
       description: overrides.description ?? template.default_description ?? undefined,
@@ -165,7 +300,7 @@ export function useTasks() {
     await fetchTasks();
     toast.success('Tarefa criada a partir do modelo');
     return true;
-  }, [createTask, fetchTasks]);
+  }, [createTask, dependencies, fetchTasks, tasks]);
 
   const updateTask = useCallback(async (taskId: string, data: Partial<Task>) => {
     try {
@@ -174,6 +309,64 @@ export function useTasks() {
       if (isCompleting && !canCompleteTask(taskId, tasks)) {
         toast.error('Conclua ou cancele as subtarefas abertas primeiro');
         return false;
+      }
+
+      if (LOCAL_WORKSPACE_PREVIEW) {
+        if (!currentTask) return false;
+        const now = new Date().toISOString();
+        let completed = data.completed ?? currentTask.completed;
+        let status = data.status ?? currentTask.status;
+        let completedAt = currentTask.completed_at;
+
+        if (data.completed === true || data.status === 'concluida') {
+          completed = true;
+          status = 'concluida';
+          completedAt = completedAt || now;
+        } else if (data.completed === false) {
+          completed = false;
+          status = currentTask.status === 'concluida' ? 'pendente' : status;
+          completedAt = null;
+        } else if (data.status && data.status !== 'concluida') {
+          completed = false;
+          completedAt = null;
+        }
+
+        const updatedTask: Task = {
+          ...currentTask,
+          ...data,
+          completed,
+          status,
+          completed_at: completedAt,
+          updated_at: now,
+        };
+        let nextTasks = tasks.map((item) => item.id === taskId ? updatedTask : item);
+
+        if (isCompleting && !currentTask.completed && currentTask.recurrence !== 'none' && !currentTask.parent_task_id) {
+          const nextTask = createLocalTask(currentTask.client_id, {
+            title: currentTask.title,
+            description: currentTask.description ?? undefined,
+            assigned_to: currentTask.assigned_to,
+            due_date: getNextRecurrenceDate(currentTask.due_date, currentTask.recurrence) ?? undefined,
+            priority: currentTask.priority,
+            recurrence: currentTask.recurrence,
+          });
+          nextTask.recurrence_origin_id = currentTask.recurrence_origin_id || currentTask.id;
+          const nextChildren = tasks
+            .filter((item) => item.parent_task_id === currentTask.id)
+            .map((child) => createLocalTask(child.client_id, {
+              title: child.title,
+              description: child.description ?? undefined,
+              assigned_to: child.assigned_to,
+              priority: child.priority,
+              parent_task_id: nextTask.id,
+              sort_order: child.sort_order,
+            }));
+          nextTasks = [nextTask, ...nextChildren, ...nextTasks];
+          toast.success('Próxima ocorrência criada automaticamente');
+        }
+
+        writeLocalWorkspace({ tasks: nextTasks, dependencies });
+        return true;
       }
 
       const updateData: Database['public']['Tables']['tasks']['Update'] = { ...data };
@@ -233,10 +426,24 @@ export function useTasks() {
       toast.error('Erro ao atualizar tarefa');
       return false;
     }
-  }, [fetchTasks, tasks]);
+  }, [dependencies, fetchTasks, tasks]);
 
   const setTaskDependencies = useCallback(async (taskId: string, dependsOnIds: string[]) => {
     try {
+      if (LOCAL_WORKSPACE_PREVIEW) {
+        const nextDependencies = [
+          ...dependencies.filter((item) => item.task_id !== taskId),
+          ...dependsOnIds.map((dependsOnTaskId) => ({
+            task_id: taskId,
+            depends_on_task_id: dependsOnTaskId,
+            created_at: new Date().toISOString(),
+          })),
+        ];
+        writeLocalWorkspace({ tasks, dependencies: nextDependencies });
+        toast.success('Dependências atualizadas');
+        return true;
+      }
+
       const { error: deleteError } = await supabase.from('task_dependencies').delete().eq('task_id', taskId);
       if (deleteError) throw deleteError;
       if (dependsOnIds.length > 0) {
@@ -253,10 +460,20 @@ export function useTasks() {
       toast.error('Erro ao atualizar dependências');
       return false;
     }
-  }, [fetchTasks]);
+  }, [dependencies, fetchTasks, tasks]);
 
   const deleteTask = useCallback(async (taskId: string, _clientName?: string) => {
     try {
+      if (LOCAL_WORKSPACE_PREVIEW) {
+        const removedIds = new Set([taskId, ...tasks.filter((task) => task.parent_task_id === taskId).map((task) => task.id)]);
+        writeLocalWorkspace({
+          tasks: tasks.filter((task) => !removedIds.has(task.id)),
+          dependencies: dependencies.filter((item) => !removedIds.has(item.task_id) && !removedIds.has(item.depends_on_task_id)),
+        });
+        toast.success('Tarefa excluída');
+        return true;
+      }
+
       const { error } = await supabase.from('tasks').delete().eq('id', taskId);
       if (error) throw error;
       await fetchTasks();
@@ -267,7 +484,7 @@ export function useTasks() {
       toast.error('Erro ao excluir tarefa');
       return false;
     }
-  }, [fetchTasks]);
+  }, [dependencies, fetchTasks, tasks]);
 
   const toggleComplete = useCallback(async (taskId: string, _clientName?: string) => {
     const task = tasks.find(t => t.id === taskId);
