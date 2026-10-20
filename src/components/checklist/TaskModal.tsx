@@ -259,7 +259,7 @@ export function TaskModal({
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase text-muted-foreground">Próxima ação</p>
                     {nextAction ? (
-                      <button type="button" onClick={() => setSelectedTaskId(nextAction.id)} className="mt-1 block max-w-full truncate text-left text-sm font-semibold hover:text-primary">
+                      <button type="button" onClick={() => setActiveView('task')} className="mt-1 block max-w-full truncate text-left text-sm font-semibold hover:text-primary">
                         {nextAction.title}
                       </button>
                     ) : (

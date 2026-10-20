@@ -19,7 +19,9 @@ const task: Task = {
   created_at: "2026-07-01T10:00:00.000Z",
   completed_at: null,
   due_date: "2026-07-10",
+  scheduled_for: null,
   priority: "alta",
+
   modality: "levantamento",
   parent_task_id: null,
   sort_order: 0,
