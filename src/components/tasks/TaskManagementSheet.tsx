@@ -47,7 +47,7 @@ import {
 
 type StatusFilter = 'pending' | 'scheduled' | 'completed' | 'all';
 type DeadlineFilter = 'all' | 'overdue' | 'today' | 'next7' | 'no_date';
-type SortKey = 'title' | 'assignees' | 'modality' | 'priority' | 'createdAt' | 'daysOpen' | 'dueDate';
+type SortKey = 'client' | 'title' | 'assignees' | 'modality' | 'priority' | 'createdAt' | 'daysOpen' | 'dueDate';
 type SortDirection = 'asc' | 'desc';
 type BulkTaskUpdate = Partial<Pick<Task, 'assigned_to' | 'priority' | 'modality' | 'scheduled_for'>>;
 
@@ -162,6 +162,7 @@ export function TaskManagementSheet({
         const text = (left: string, right: string) => left.localeCompare(right, 'pt-BR');
         const nullableDate = (value: string | null) => value ? parseISO(value).getTime() : Number.MAX_SAFE_INTEGER;
         const comparisons: Record<SortKey, number> = {
+          client: text(clientById.get(a.client_id)?.name ?? '', clientById.get(b.client_id)?.name ?? ''),
           title: text(a.title, b.title),
           assignees: text(a.assigned_to.join(', '), b.assigned_to.join(', ')),
           modality: text(TASK_MODALITY_CONFIG[a.modality].label, TASK_MODALITY_CONFIG[b.modality].label),
@@ -428,7 +429,7 @@ function TaskResults({ groups, tasks, clientById, grouped, expandedClientIds, vi
           <thead className="sticky top-0 z-20 border-b bg-muted/95 text-[11px] uppercase text-muted-foreground backdrop-blur">
             <tr>
               <th className="w-11 px-3 py-2"><Checkbox checked={allVisibleSelected ? true : someVisibleSelected ? 'indeterminate' : false} onCheckedChange={checked => onToggleSelection(visibleIds, checked === true)} aria-label="Selecionar todas as tarefas visíveis" /></th>
-              {!grouped && <th className="w-[15%] px-3 py-2 text-left font-medium">Empresa</th>}
+              {!grouped && <SortHeader label="Empresa" sortKey="client" width="w-[15%]" activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />}
               <SortHeader label="Tarefa" sortKey="title" width={grouped ? 'w-[40%]' : 'w-[27%]'} activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />
               <SortHeader label="Responsáveis" sortKey="assignees" width="w-[13%]" activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />
               <SortHeader label="Modalidade" sortKey="modality" width="w-[12%]" activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />

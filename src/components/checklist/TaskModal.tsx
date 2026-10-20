@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, Check, ClipboardCheck, Clock3, Eye, FileCheck2, Flame, History, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, CalendarPlus, CalendarX2, Check, ClipboardCheck, Clock3, Eye, FileCheck2, Flame, History, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ClientWorkList } from '@/components/client-work/ClientWorkList';
@@ -406,6 +406,7 @@ export function TaskModal({
                           onPriorityChange={(p) => handlePriorityChange(task.id, p)}
                           onModalityChange={(modality) => handleModalityChange(task.id, modality)}
                           onDueDateChange={(dueDate) => handleDueDateChange(task.id, dueDate)}
+                          onScheduleChange={(date) => onUpdateTask(task.id, { scheduled_for: date })}
                           onDelete={() => onDeleteTask(task.id)}
                           subtasks={tasks.filter((item) => item.parent_task_id === task.id)}
                           onAddSubtask={(draft) => handleAddSubtask(task, draft)}
@@ -443,6 +444,7 @@ export function TaskModal({
                           onPriorityChange={() => {}}
                           onModalityChange={(modality) => handleModalityChange(task.id, modality)}
                           onDueDateChange={() => {}}
+                          onScheduleChange={(date) => onUpdateTask(task.id, { scheduled_for: date })}
                           onDelete={() => onDeleteTask(task.id)}
                           subtasks={tasks.filter((item) => item.parent_task_id === task.id)}
                           onAddSubtask={(draft) => handleAddSubtask(task, draft)}
@@ -480,6 +482,7 @@ interface TaskItemProps {
   onPriorityChange: (priority: TaskPriority) => void;
   onModalityChange: (modality: TaskModality) => void;
   onDueDateChange: (dueDate: string) => void;
+  onScheduleChange: (date: string | null) => Promise<boolean>;
   onDelete: () => void;
   subtasks: Task[];
   onAddSubtask: (draft: SubtaskDraft) => Promise<boolean>;
@@ -504,6 +507,7 @@ function TaskItem({
   onPriorityChange,
   onModalityChange,
   onDueDateChange,
+  onScheduleChange,
   onDelete,
   subtasks,
   onAddSubtask,
@@ -647,6 +651,7 @@ function TaskItem({
             collaboratorColorMap={collaboratorColorMap}
             onAssigneeChange={onAssigneeChange}
           />
+          <TaskReplanMenu task={task} onScheduleChange={onScheduleChange} />
         </>
       )}
 
@@ -725,6 +730,84 @@ function TaskItem({
           />
         ))}
     </div>
+  );
+}
+
+function TaskReplanMenu({ task, onScheduleChange }: {
+  task: Task;
+  onScheduleChange: (date: string | null) => Promise<boolean>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState(task.scheduled_for ?? '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const save = async (nextDate: string | null) => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const updated = await onScheduleChange(nextDate);
+      if (updated) setOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={(nextOpen) => {
+      setOpen(nextOpen);
+      if (nextOpen) setDate(task.scheduled_for ?? '');
+    }}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'grid h-7 w-7 flex-shrink-0 place-items-center border transition-colors',
+            task.scheduled_for
+              ? 'border-violet-300 bg-violet-100 text-violet-700'
+              : 'text-muted-foreground hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700',
+          )}
+          title="Replanejar tarefa"
+          aria-label={`Replanejar tarefa ${task.title}`}
+        >
+          <CalendarPlus className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-3">
+        <p className="text-sm font-semibold">Replanejar tarefa</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Ela ficará em Agendadas e voltará às tarefas ativas na data escolhida.
+        </p>
+        <input
+          type="date"
+          value={date}
+          min={new Date().toISOString().slice(0, 10)}
+          onChange={(event) => setDate(event.target.value)}
+          className="mt-3 h-9 w-full border bg-background px-2 text-xs outline-none focus:border-violet-400"
+          aria-label={`Nova data para ${task.title}`}
+        />
+        <div className="mt-3 flex items-center gap-2">
+          {task.scheduled_for && (
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => void save(null)}
+              className="inline-flex h-8 items-center gap-1 border px-2 text-xs hover:bg-muted disabled:opacity-50"
+            >
+              <CalendarX2 className="h-3.5 w-3.5" />
+              Ativar agora
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={!date || isSaving}
+            onClick={() => void save(date)}
+            className="ml-auto h-8 bg-violet-600 px-3 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-40"
+          >
+            {isSaving ? 'Salvando...' : 'Replanejar'}
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
