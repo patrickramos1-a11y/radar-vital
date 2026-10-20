@@ -346,8 +346,9 @@ export function useTasks() {
           completed = false;
           status = currentTask.status === 'concluida' ? 'pendente' : status;
           completedAt = null;
-        } else if (data.status && data.status !== 'concluida') {
+        } else if (data.status) {
           completed = false;
+
           completedAt = null;
         }
 
