@@ -15,7 +15,9 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     completed_at: null,
     due_date: null,
     scheduled_for: null,
+    modality: 'levantamento',
     priority: 'normal',
+
 
     parent_task_id: null,
     sort_order: 0,
