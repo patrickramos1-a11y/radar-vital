@@ -19,6 +19,11 @@ const LOCAL_WORKSPACE_PREVIEW = import.meta.env.VITE_CLIENT_WORKSPACE_PREVIEW ==
 const LOCAL_WORKSPACE_KEY = 'radar-vital:client-workspace-preview:v1';
 const LOCAL_WORKSPACE_EVENT = 'radar-vital:client-workspace-preview-change';
 
+const isFutureScheduled = (task: Task) => {
+  if (!task.scheduled_for) return false;
+  return task.scheduled_for > new Date().toISOString().slice(0, 10);
+};
+
 const PREVIEW_TEMPLATES: TaskTemplate[] = [
   {
     id: 'preview-documents',
@@ -65,7 +70,7 @@ function readLocalWorkspace(): LocalWorkspaceState | null {
     const parsed = JSON.parse(value) as LocalWorkspaceState;
     return {
       ...parsed,
-      tasks: parsed.tasks.map((task) => ({ ...task, modality: task.modality || 'levantamento' })),
+      tasks: parsed.tasks.map((task) => ({ ...task, modality: task.modality || 'levantamento', scheduled_for: task.scheduled_for || null })),
     };
   } catch {
     return null;
@@ -90,6 +95,7 @@ function createLocalTask(clientId: string, data: TaskFormData): Task {
     created_at: now,
     completed_at: data.status === 'concluida' ? now : null,
     due_date: data.due_date || null,
+    scheduled_for: data.scheduled_for || null,
     priority: data.priority || 'normal',
     modality: data.modality || 'levantamento',
     parent_task_id: data.parent_task_id || null,
@@ -112,6 +118,7 @@ const dbRowToTask = (row: TaskRow): Task => ({
   created_at: row.created_at,
   completed_at: row.completed_at,
   due_date: row.due_date || null,
+  scheduled_for: row.scheduled_for || null,
   priority: (row.priority as Task['priority']) || 'normal',
   modality: (row.modality as Task['modality']) || 'levantamento',
   priority_id: row.priority_id ?? null,
@@ -224,6 +231,7 @@ export function useTasks() {
         description: data.description?.trim() || null,
         assigned_to: data.assigned_to,
         due_date: data.due_date || null,
+        scheduled_for: data.scheduled_for || null,
         priority: data.priority || 'normal',
         modality: data.modality || 'levantamento',
         status: data.status || 'pendente',
@@ -444,6 +452,41 @@ export function useTasks() {
     }
   }, [dependencies, fetchTasks, tasks]);
 
+  const bulkUpdateTasks = useCallback(async (
+    taskIds: string[],
+    data: Partial<Pick<Task, 'assigned_to' | 'priority' | 'modality' | 'scheduled_for'>>,
+  ) => {
+    const uniqueTaskIds = [...new Set(taskIds)];
+    if (uniqueTaskIds.length === 0) return false;
+
+    try {
+      if (LOCAL_WORKSPACE_PREVIEW) {
+        const selectedIds = new Set(uniqueTaskIds);
+        const now = new Date().toISOString();
+        writeLocalWorkspace({
+          tasks: tasks.map(task => selectedIds.has(task.id) ? { ...task, ...data, updated_at: now } : task),
+          dependencies,
+        });
+        toast.success(`${uniqueTaskIds.length} tarefas atualizadas`);
+        return true;
+      }
+
+      const { error } = await supabase
+        .from('tasks')
+        .update(data)
+        .in('id', uniqueTaskIds);
+
+      if (error) throw error;
+      await fetchTasks();
+      toast.success(`${uniqueTaskIds.length} tarefas atualizadas`);
+      return true;
+    } catch (error) {
+      console.error('Error bulk updating tasks:', error);
+      toast.error('Erro ao atualizar tarefas em massa');
+      return false;
+    }
+  }, [dependencies, fetchTasks, tasks]);
+
   const setTaskDependencies = useCallback(async (taskId: string, dependsOnIds: string[]) => {
     try {
       if (LOCAL_WORKSPACE_PREVIEW) {
@@ -511,7 +554,7 @@ export function useTasks() {
   }, [tasks, updateTask]);
 
   const getActiveTasksForClient = useCallback((clientId: string) => {
-    return tasks.filter(t => t.client_id === clientId && !t.completed);
+    return tasks.filter(t => t.client_id === clientId && !t.completed && !isFutureScheduled(t));
   }, [tasks]);
 
   const getTasksForClient = useCallback((clientId: string) => {
@@ -519,15 +562,15 @@ export function useTasks() {
   }, [tasks]);
 
   const getActiveTaskCount = useCallback((clientId: string) => {
-    return tasks.filter(t => t.client_id === clientId && !t.completed).length;
+    return tasks.filter(t => t.client_id === clientId && !t.completed && !isFutureScheduled(t)).length;
   }, [tasks]);
 
   const clientsWithActiveTasks = new Set(
-    tasks.filter(t => !t.completed).map(t => t.client_id)
+    tasks.filter(t => !t.completed && !isFutureScheduled(t)).map(t => t.client_id)
   );
 
   const getTasksByCollaborator = useCallback((collaborator: string) => {
-    return tasks.filter(t => assigneeMatches(t.assigned_to, collaborator) && !t.completed);
+    return tasks.filter(t => assigneeMatches(t.assigned_to, collaborator) && !t.completed && !isFutureScheduled(t));
   }, [tasks]);
 
   const getDaysOpen = useCallback((task: Task) => {
@@ -537,7 +580,7 @@ export function useTasks() {
   }, []);
 
   const getOldestTask = useCallback(() => {
-    const pending = tasks.filter(t => !t.completed);
+    const pending = tasks.filter(t => !t.completed && !isFutureScheduled(t));
     if (pending.length === 0) return null;
     return pending.reduce((oldest, t) =>
       new Date(t.created_at) < new Date(oldest.created_at) ? t : oldest
@@ -545,7 +588,7 @@ export function useTasks() {
   }, [tasks]);
 
   const getAverageDaysOpen = useCallback(() => {
-    const pending = tasks.filter(t => !t.completed);
+    const pending = tasks.filter(t => !t.completed && !isFutureScheduled(t));
     if (pending.length === 0) return 0;
     const totalDays = pending.reduce((sum, t) => sum + getDaysOpen(t), 0);
     return Math.round(totalDays / pending.length);
@@ -555,7 +598,7 @@ export function useTasks() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return tasks
-      .filter(t => !t.completed && t.due_date && new Date(t.due_date) < today)
+      .filter(t => !t.completed && !isFutureScheduled(t) && t.due_date && new Date(t.due_date) < today)
       .map(t => {
         const dueDate = new Date(t.due_date!);
         const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -573,6 +616,7 @@ export function useTasks() {
     addTask,
     addTaskFromTemplate,
     updateTask,
+    bulkUpdateTasks,
     deleteTask,
     toggleComplete,
     setTaskDependencies,

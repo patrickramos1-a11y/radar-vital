@@ -8,6 +8,7 @@ import {
   MessageSquareText,
   Plus,
   Repeat2,
+  Shapes,
   Trash2,
   UserRound,
 } from 'lucide-react';
@@ -19,11 +20,13 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import {
   PRIORITY_CONFIG,
+  TASK_MODALITY_CONFIG,
   TASK_RECURRENCE_LABELS,
   TASK_STATUS_CONFIG,
   type Task,
   type TaskDependency,
   type TaskFormData,
+  type TaskModality,
   type TaskPriority,
   type TaskRecurrence,
   type TaskStatus,
@@ -120,6 +123,7 @@ export function TaskDetailSheet({
       title: value,
       assigned_to: task.assigned_to,
       priority: task.priority,
+      modality: task.modality,
       parent_task_id: task.id,
       sort_order: subtasks.length,
     });
@@ -187,6 +191,17 @@ export function TaskDetailSheet({
               >
                 {(Object.keys(PRIORITY_CONFIG) as TaskPriority[]).map((priority) => (
                   <option key={priority} value={priority}>{PRIORITY_CONFIG[priority].label}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Modalidade" icon={<Shapes className="h-3.5 w-3.5" />}>
+              <select
+                value={task.modality}
+                onChange={(event) => saveField({ modality: event.target.value as TaskModality })}
+                className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+              >
+                {(Object.keys(TASK_MODALITY_CONFIG) as TaskModality[]).map((modality) => (
+                  <option key={modality} value={modality}>{TASK_MODALITY_CONFIG[modality].label}</option>
                 ))}
               </select>
             </Field>

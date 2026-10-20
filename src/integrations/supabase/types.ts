@@ -1970,6 +1970,7 @@ export type Database = {
           priority_id: string | null
           recurrence: string
           recurrence_origin_id: string | null
+          scheduled_for: string | null
           sort_order: number
           source_comment_id: string | null
           status: string
@@ -1991,6 +1992,7 @@ export type Database = {
           priority_id?: string | null
           recurrence?: string
           recurrence_origin_id?: string | null
+          scheduled_for?: string | null
           sort_order?: number
           source_comment_id?: string | null
           status?: string
@@ -2012,6 +2014,7 @@ export type Database = {
           priority_id?: string | null
           recurrence?: string
           recurrence_origin_id?: string | null
+          scheduled_for?: string | null
           sort_order?: number
           source_comment_id?: string | null
           status?: string

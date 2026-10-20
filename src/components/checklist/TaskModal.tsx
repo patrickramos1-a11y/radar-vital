@@ -11,7 +11,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useClientWorkItems } from '@/hooks/useClientWorkItems';
 import type { WorkItem, WorkItemFilter } from '@/types/workItem';
 import type { TaskDependency, TaskTemplate } from '@/types/task';
-import { TaskDetailSheet } from '@/components/tasks/TaskDetailSheet';
 import { getTaskProgress } from '@/lib/taskOperations';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +52,10 @@ const PRIORITY_VISUALS: Record<TaskPriority, { icon: typeof Flame; shortLabel: s
   baixa: { icon: ArrowDown, shortLabel: 'Baixa', className: 'border-sky-200 bg-sky-50 text-sky-700' },
 };
 
+const isFutureScheduled = (task: Task) => Boolean(
+  task.scheduled_for && task.scheduled_for > new Date().toISOString().slice(0, 10),
+);
+
 export interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -69,17 +72,17 @@ export interface TaskModalProps {
   initialView?: WorkItemFilter;
 }
 
+type SubtaskDraft = Pick<TaskFormData, 'title' | 'assigned_to' | 'due_date' | 'priority' | 'modality'>;
+
 export function TaskModal({
   isOpen,
   onClose,
   client,
   tasks,
-  dependencies,
   onAddTask,
   onToggleComplete,
   onUpdateTask,
   onDeleteTask,
-  onSetTaskDependencies,
   initialView = 'all',
 }: TaskModalProps) {
   const navigate = useNavigate();
@@ -97,17 +100,15 @@ export function TaskModal({
   const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('normal');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [newTaskModality, setNewTaskModality] = useState<TaskModality>('levantamento');
 
   const collaboratorColorMap: Record<string, string> = {};
   collaborators.forEach(c => { collaboratorColorMap[c.name] = c.color; });
 
   const activeTasks = tasks
-    .filter(t => !t.parent_task_id && !t.completed && t.status !== 'cancelada')
+    .filter(t => !t.parent_task_id && !t.completed && t.status !== 'cancelada' && !isFutureScheduled(t))
     .sort((a, b) => (PRIORITY_CONFIG[a.priority]?.order ?? 9) - (PRIORITY_CONFIG[b.priority]?.order ?? 9));
   const completedTasks = tasks.filter(t => !t.parent_task_id && (t.completed || t.status === 'cancelada'));
-  const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const openTasks = activeTasks.length;
   const overdueTasks = activeTasks.filter((task) => task.due_date && new Date(`${task.due_date}T23:59:59`) < new Date()).length;
   const waitingTasks = activeTasks.filter((task) => task.status === 'aguardando_cliente' || task.status === 'aguardando_terceiro').length;
@@ -160,6 +161,15 @@ export function TaskModal({
     }
   };
 
+  const handleAddSubtask = async (parentTask: Task, draft: SubtaskDraft) => {
+    const siblingCount = tasks.filter((task) => task.parent_task_id === parentTask.id).length;
+    return onAddTask(client.id, {
+      ...draft,
+      parent_task_id: parentTask.id,
+      sort_order: siblingCount,
+    });
+  };
+
   const handleStartEdit = (task: Task) => {
     setEditingTaskId(task.id);
     setEditingTitle(task.title);
@@ -185,6 +195,10 @@ export function TaskModal({
 
   const handlePriorityChange = async (taskId: string, priority: TaskPriority) => {
     await onUpdateTask(taskId, { priority });
+  };
+
+  const handleModalityChange = async (taskId: string, modality: TaskModality) => {
+    await onUpdateTask(taskId, { modality });
   };
 
   const handleDueDateChange = async (taskId: string, dueDate: string) => {
@@ -289,7 +303,7 @@ export function TaskModal({
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => item.kind === 'task' ? setSelectedTaskId(item.sourceId) : handleOpenSource(item)}
+                        onClick={() => item.kind === 'task' ? setActiveView('task') : handleOpenSource(item)}
                         className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left hover:bg-muted/40"
                       >
                         <span className="text-[10px] font-semibold uppercase text-muted-foreground">{item.kind === 'comment' ? 'Comentário' : item.kind === 'task' ? 'Tarefa' : item.kind}</span>
@@ -390,9 +404,14 @@ export function TaskModal({
                           onCancelEdit={() => setEditingTaskId(null)}
                           onAssigneeChange={(a) => handleAssigneeChange(task.id, a)}
                           onPriorityChange={(p) => handlePriorityChange(task.id, p)}
+                          onModalityChange={(modality) => handleModalityChange(task.id, modality)}
                           onDueDateChange={(dueDate) => handleDueDateChange(task.id, dueDate)}
                           onDelete={() => onDeleteTask(task.id)}
-                          onOpen={() => setSelectedTaskId(task.id)}
+                          subtasks={tasks.filter((item) => item.parent_task_id === task.id)}
+                          onAddSubtask={(draft) => handleAddSubtask(task, draft)}
+                          onToggleSubtask={(subtaskId) => onToggleComplete(subtaskId)}
+                          onUpdateSubtask={(subtaskId, data) => onUpdateTask(subtaskId, data)}
+                          onDeleteSubtask={(subtaskId) => onDeleteTask(subtaskId)}
                           progress={getTaskProgress(task.id, tasks)}
                           collaborators={collaborators}
                           collaboratorColorMap={collaboratorColorMap}
@@ -422,9 +441,14 @@ export function TaskModal({
                           onCancelEdit={() => {}}
                           onAssigneeChange={() => {}}
                           onPriorityChange={() => {}}
+                          onModalityChange={(modality) => handleModalityChange(task.id, modality)}
                           onDueDateChange={() => {}}
                           onDelete={() => onDeleteTask(task.id)}
-                          onOpen={() => setSelectedTaskId(task.id)}
+                          subtasks={tasks.filter((item) => item.parent_task_id === task.id)}
+                          onAddSubtask={(draft) => handleAddSubtask(task, draft)}
+                          onToggleSubtask={(subtaskId) => onToggleComplete(subtaskId)}
+                          onUpdateSubtask={(subtaskId, data) => onUpdateTask(subtaskId, data)}
+                          onDeleteSubtask={(subtaskId) => onDeleteTask(subtaskId)}
                           progress={getTaskProgress(task.id, tasks)}
                           collaborators={collaborators}
                           collaboratorColorMap={collaboratorColorMap}
@@ -438,18 +462,6 @@ export function TaskModal({
             </div>
           )}
         </div>
-        <TaskDetailSheet
-          task={selectedTask}
-          tasks={tasks}
-          dependencies={dependencies}
-          collaborators={collaborators}
-          open={Boolean(selectedTask)}
-          onOpenChange={(open) => !open && setSelectedTaskId(null)}
-          onUpdateTask={onUpdateTask}
-          onAddTask={(clientId, data) => onAddTask(clientId, data)}
-          onDeleteTask={onDeleteTask}
-          onSetDependencies={onSetTaskDependencies}
-        />
       </DialogContent>
     </Dialog>
   );
@@ -466,9 +478,14 @@ interface TaskItemProps {
   onCancelEdit: () => void;
   onAssigneeChange: (collaboratorName: string) => void;
   onPriorityChange: (priority: TaskPriority) => void;
+  onModalityChange: (modality: TaskModality) => void;
   onDueDateChange: (dueDate: string) => void;
   onDelete: () => void;
-  onOpen: () => void;
+  subtasks: Task[];
+  onAddSubtask: (draft: SubtaskDraft) => Promise<boolean>;
+  onToggleSubtask: (taskId: string) => Promise<boolean>;
+  onUpdateSubtask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
+  onDeleteSubtask: (taskId: string) => Promise<boolean>;
   progress: { completed: number; total: number };
   collaborators: { id: string; name: string; color: string; initials: string }[];
   collaboratorColorMap: Record<string, string>;
@@ -485,16 +502,27 @@ function TaskItem({
   onCancelEdit,
   onAssigneeChange,
   onPriorityChange,
+  onModalityChange,
   onDueDateChange,
   onDelete,
-  onOpen,
+  subtasks,
+  onAddSubtask,
+  onToggleSubtask,
+  onUpdateSubtask,
+  onDeleteSubtask,
   progress,
   collaborators,
   collaboratorColorMap,
 }: TaskItemProps) {
+  const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+  const [subtaskTitle, setSubtaskTitle] = useState('');
+  const [subtaskModality, setSubtaskModality] = useState<TaskModality>(task.modality || 'levantamento');
+  const [subtaskPriority, setSubtaskPriority] = useState<TaskPriority>(task.priority || 'normal');
+  const [subtaskAssignees, setSubtaskAssignees] = useState<string[]>(task.assigned_to);
+  const [subtaskDueDate, setSubtaskDueDate] = useState('');
+  const [isSavingSubtask, setIsSavingSubtask] = useState(false);
   const priority = (task.priority || 'normal') as TaskPriority;
   const modality = (task.modality || 'levantamento') as TaskModality;
-  const ModalityIcon = MODALITY_ICONS[modality];
   const pConf = PRIORITY_CONFIG[priority];
   const status = TASK_STATUS_CONFIG[task.status];
   const daysOpen = Math.max(0, Math.floor((Date.now() - new Date(task.created_at).getTime()) / 86_400_000));
@@ -502,8 +530,31 @@ function TaskItem({
     ? 'bg-card border'
     : `${pConf.bgClass} ${pConf.borderClass} border-y border-r`;
 
+  const submitSubtask = async () => {
+    const title = subtaskTitle.trim();
+    if (!title || isSavingSubtask) return;
+    setIsSavingSubtask(true);
+    try {
+      const created = await onAddSubtask({
+        title,
+        modality: subtaskModality,
+        priority: subtaskPriority,
+        assigned_to: subtaskAssignees,
+        due_date: subtaskDueDate || undefined,
+      });
+      if (created) {
+        setSubtaskTitle('');
+        setSubtaskDueDate('');
+        setIsAddingSubtask(false);
+      }
+    } finally {
+      setIsSavingSubtask(false);
+    }
+  };
+
   return (
-    <div className={`group flex items-center gap-2 rounded-md px-3 py-2 ${containerClass}`}>
+    <div className="space-y-1">
+      <div className={`group flex items-center gap-2 rounded-md px-3 py-2 ${containerClass}`}>
       <button
         type="button"
         onClick={onToggle}
@@ -533,24 +584,19 @@ function TaskItem({
       ) : (
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span
-              className="grid h-5 w-5 flex-shrink-0 place-items-center border bg-background text-muted-foreground"
-              title={`Modalidade: ${TASK_MODALITY_CONFIG[modality].label}`}
-            >
-              <ModalityIcon className="h-3 w-3" />
-            </span>
+            <ModalityMenu value={modality} onChange={onModalityChange} />
             {!task.completed && task.status !== 'pendente' && (
               <span className={cn('flex-shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold', status.className)}>
                 {status.label}
               </span>
             )}
-            <button
-              type="button"
-              className={`min-w-0 truncate text-left text-sm leading-snug hover:text-primary ${task.completed ? 'text-muted-foreground line-through' : ''}`}
-              onClick={onOpen}
+            <span
+              className={`min-w-0 truncate text-sm leading-snug ${task.completed ? 'text-muted-foreground line-through' : ''}`}
+              onDoubleClick={onStartEdit}
+              title={task.title}
             >
               {task.title}
-            </button>
+            </span>
           </div>
           {!task.completed && (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
@@ -577,12 +623,31 @@ function TaskItem({
       )}
 
       {!task.completed && (
-        <AssigneeDropdown
-          task={task}
-          collaborators={collaborators}
-          collaboratorColorMap={collaboratorColorMap}
-          onAssigneeChange={onAssigneeChange}
-        />
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              setSubtaskModality(task.modality || 'levantamento');
+              setSubtaskPriority(task.priority || 'normal');
+              setSubtaskAssignees(task.assigned_to);
+              setIsAddingSubtask((current) => !current);
+            }}
+            className={cn(
+              'grid h-7 w-7 flex-shrink-0 place-items-center border text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary',
+              isAddingSubtask && 'border-primary bg-primary/10 text-primary',
+            )}
+            title="Adicionar subtarefa"
+            aria-label={`Adicionar subtarefa em ${task.title}`}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          <AssigneeDropdown
+            task={task}
+            collaborators={collaborators}
+            collaboratorColorMap={collaboratorColorMap}
+            onAssigneeChange={onAssigneeChange}
+          />
+        </>
       )}
 
       <button
@@ -593,7 +658,227 @@ function TaskItem({
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
+      </div>
+
+      {isAddingSubtask && !task.completed && (
+        <div className="ml-9 border-l-2 border-primary/30 bg-muted/20 py-1 pl-3 pr-1">
+          <div className="flex items-center gap-1.5">
+            <Plus className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
+            <input
+              type="text"
+              value={subtaskTitle}
+              onChange={(event) => setSubtaskTitle(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void submitSubtask();
+                if (event.key === 'Escape') {
+                  setSubtaskTitle('');
+                  setIsAddingSubtask(false);
+                }
+              }}
+              placeholder="Escreva a subtarefa e pressione Enter"
+              className="h-8 min-w-0 flex-1 border-0 bg-transparent px-1 text-xs outline-none"
+              maxLength={100}
+              autoFocus
+            />
+            <ModalityMenu value={subtaskModality} onChange={setSubtaskModality} />
+            <PriorityMenu value={subtaskPriority} onChange={setSubtaskPriority} />
+            <SubtaskAssigneeMenu
+              selected={subtaskAssignees}
+              collaborators={collaborators}
+              onChange={setSubtaskAssignees}
+            />
+            <button
+              type="button"
+              onClick={() => void submitSubtask()}
+              disabled={!subtaskTitle.trim() || isSavingSubtask}
+              className="grid h-7 w-7 flex-shrink-0 place-items-center bg-primary text-primary-foreground disabled:opacity-40"
+              title="Salvar subtarefa"
+              aria-label="Salvar subtarefa"
+            >
+              {isSavingSubtask ? <Clock3 className="h-3.5 w-3.5 animate-pulse" /> : <Check className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+          <label className="mt-1 flex w-fit items-center gap-1 pl-5 text-[9px] text-muted-foreground">
+            <Clock3 className="h-3 w-3" />
+            <span>Prazo opcional</span>
+            <input
+              type="date"
+              value={subtaskDueDate}
+              onChange={(event) => setSubtaskDueDate(event.target.value)}
+              className="h-6 border bg-background px-1 text-[9px]"
+              aria-label="Prazo da nova subtarefa"
+            />
+          </label>
+        </div>
+      )}
+
+      {[...subtasks]
+        .sort((left, right) => left.sort_order - right.sort_order || left.created_at.localeCompare(right.created_at))
+        .map((subtask) => (
+          <InlineSubtask
+            key={subtask.id}
+            task={subtask}
+            collaborators={collaborators}
+            onToggle={() => void onToggleSubtask(subtask.id)}
+            onUpdate={(data) => onUpdateSubtask(subtask.id, data)}
+            onDelete={() => void onDeleteSubtask(subtask.id)}
+          />
+        ))}
     </div>
+  );
+}
+
+function InlineSubtask({ task, collaborators, onToggle, onUpdate, onDelete }: {
+  task: Task;
+  collaborators: { id: string; name: string; color: string; initials: string }[];
+  onToggle: () => void;
+  onUpdate: (data: Partial<Task>) => Promise<boolean>;
+  onDelete: () => void;
+}) {
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [title, setTitle] = useState(task.title);
+  const modality = (task.modality || 'levantamento') as TaskModality;
+  const priority = (task.priority || 'normal') as TaskPriority;
+  const daysOpen = Math.max(0, Math.floor((Date.now() - new Date(task.created_at).getTime()) / 86_400_000));
+
+  const saveTitle = async () => {
+    const nextTitle = title.trim();
+    if (!nextTitle) {
+      setTitle(task.title);
+      setIsEditingTitle(false);
+      return;
+    }
+    if (nextTitle !== task.title) await onUpdate({ title: nextTitle });
+    setIsEditingTitle(false);
+  };
+
+  return (
+    <div className="group/subtask ml-9 border-l-2 border-border bg-muted/15 py-1 pl-3 pr-2">
+      <div className="flex min-h-8 items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onToggle}
+          className={cn(
+            'grid h-4 w-4 flex-shrink-0 place-items-center rounded border',
+            task.completed ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-muted-foreground/30 hover:border-primary',
+          )}
+          title={task.completed ? 'Reabrir subtarefa' : 'Concluir subtarefa'}
+          aria-label={task.completed ? `Reabrir subtarefa ${task.title}` : `Concluir subtarefa ${task.title}`}
+        >
+          {task.completed && <Check className="h-3 w-3" />}
+        </button>
+        <ModalityMenu value={modality} onChange={(value) => void onUpdate({ modality: value })} />
+        {isEditingTitle ? (
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            onBlur={() => void saveTitle()}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void saveTitle();
+              if (event.key === 'Escape') {
+                setTitle(task.title);
+                setIsEditingTitle(false);
+              }
+            }}
+            className="h-7 min-w-0 flex-1 border bg-background px-2 text-xs outline-none"
+            maxLength={100}
+            autoFocus
+            aria-label={`Editar subtarefa ${task.title}`}
+          />
+        ) : (
+          <span
+            className={cn('min-w-0 flex-1 truncate text-xs', task.completed && 'text-muted-foreground line-through')}
+            title={`${task.title} - clique duas vezes para editar`}
+            onDoubleClick={() => setIsEditingTitle(true)}
+          >
+            {task.title}
+          </span>
+        )}
+        <PriorityMenu value={priority} onChange={(value) => void onUpdate({ priority: value })} />
+        <SubtaskAssigneeMenu
+          selected={task.assigned_to}
+          collaborators={collaborators}
+          onChange={(value) => void onUpdate({ assigned_to: value })}
+        />
+        <button
+          type="button"
+          onClick={onDelete}
+          className="p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/subtask:opacity-100"
+          title="Excluir subtarefa"
+          aria-label={`Excluir subtarefa ${task.title}`}
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
+      <div className="ml-[42px] flex flex-wrap items-center gap-2 text-[9px] text-muted-foreground">
+        <span>Criada há {daysOpen} {daysOpen === 1 ? 'dia' : 'dias'}</span>
+        <label className="flex items-center gap-1">
+          <span>Prazo</span>
+          <input
+            type="date"
+            value={task.due_date ?? ''}
+            onChange={(event) => void onUpdate({ due_date: event.target.value || null })}
+            className="h-5 border bg-background px-1 text-[9px]"
+            aria-label={`Prazo da subtarefa ${task.title}`}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function SubtaskAssigneeMenu({ selected, collaborators, onChange }: {
+  selected: string[];
+  collaborators: { id: string; name: string; color: string; initials: string }[];
+  onChange: (value: string[]) => void;
+}) {
+  const toggle = (name: string) => {
+    const isSelected = selected.some((item) => assigneeMatches([item], name));
+    onChange(isSelected ? selected.filter((item) => !assigneeMatches([item], name)) : [...selected, name]);
+  };
+
+  const first = selected[0];
+  const firstCollaborator = collaborators.find((item) => assigneeMatches([item.name], first));
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="grid h-6 w-6 flex-shrink-0 place-items-center border bg-background text-muted-foreground hover:bg-muted"
+          title={selected.length ? selected.join(', ') : 'Vincular responsável'}
+          aria-label={selected.length ? `Responsáveis: ${selected.join(', ')}` : 'Vincular responsável à subtarefa'}
+        >
+          {first ? (
+            <span
+              className="grid h-5 w-5 place-items-center rounded-full text-[9px] font-bold text-white"
+              style={{ backgroundColor: firstCollaborator?.color || '#64748B' }}
+            >
+              {first.charAt(0).toUpperCase()}
+            </span>
+          ) : <User className="h-3.5 w-3.5" />}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-52 p-1.5">
+        {collaborators.map((collaborator) => {
+          const isSelected = selected.some((item) => assigneeMatches([item], collaborator.name));
+          return (
+            <button
+              key={collaborator.id}
+              type="button"
+              onClick={() => toggle(collaborator.name)}
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted"
+            >
+              <span className="grid h-5 w-5 place-items-center rounded-full text-[9px] font-bold text-white" style={{ backgroundColor: collaborator.color }}>
+                {collaborator.initials}
+              </span>
+              <span className="flex-1 truncate">{collaborator.name}</span>
+              {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -799,6 +1084,50 @@ function ModalitySelector({ value, onChange }: { value: TaskModality; onChange: 
         );
       })}
     </div>
+  );
+}
+
+function ModalityMenu({ value, onChange }: { value: TaskModality; onChange: (modality: TaskModality) => void }) {
+  const CurrentIcon = MODALITY_ICONS[value];
+  const currentConfig = TASK_MODALITY_CONFIG[value];
+  const currentVisual = MODALITY_VISUALS[value];
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn('grid h-6 w-6 flex-shrink-0 place-items-center border transition-colors', currentVisual.className)}
+          title={`Alterar modalidade: ${currentConfig.label}`}
+          aria-label={`Alterar modalidade da tarefa. Atual: ${currentConfig.label}`}
+        >
+          <CurrentIcon className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-56 p-1.5">
+        {(Object.keys(TASK_MODALITY_CONFIG) as TaskModality[]).map((modality) => {
+          const Icon = MODALITY_ICONS[modality];
+          const config = TASK_MODALITY_CONFIG[modality];
+          const visual = MODALITY_VISUALS[modality];
+          return (
+            <button
+              key={modality}
+              type="button"
+              onClick={() => onChange(modality)}
+              className={cn(
+                'flex w-full items-center gap-2 border px-2 py-2 text-left text-xs transition-colors',
+                value === modality ? visual.selectedClassName : visual.className,
+              )}
+              aria-pressed={value === modality}
+            >
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              <span className="flex-1 font-medium">{config.label}</span>
+              {value === modality && <Check className="h-3.5 w-3.5" />}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
   );
 }
 

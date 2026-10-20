@@ -27,6 +27,7 @@ export interface Task {
   created_at: string;
   completed_at: string | null;
   due_date: string | null;
+  scheduled_for: string | null;
   priority: TaskPriority;
   modality: TaskModality;
   priority_id?: string | null;
@@ -43,6 +44,7 @@ export type TaskFormData = {
   description?: string;
   assigned_to: string[];
   due_date?: string;
+  scheduled_for?: string;
   priority?: TaskPriority;
   modality?: TaskModality;
   status?: TaskStatus;
