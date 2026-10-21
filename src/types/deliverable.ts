@@ -13,6 +13,8 @@ export interface Deliverable {
   id: string;
   name: string;
   description: string | null;
+  client_id: string | null;
+  source_priority_id: string | null;
   assigned_to: string[];
   requester: string | null;
   due_date: string | null;
@@ -27,6 +29,8 @@ export interface Deliverable {
 export interface DeliverableFormData {
   name: string;
   description?: string;
+  client_id?: string | null;
+  completed_at?: string;
   assigned_to: string[];
   requester?: string | null;
   due_date?: string | null;

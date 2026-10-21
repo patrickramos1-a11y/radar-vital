@@ -17,21 +17,23 @@ export function useDeliverables() {
     setError(null);
     try {
       const [{ data: dels, error: e1 }, { data: items, error: e2 }] = await Promise.all([
-        supabase.from('deliverables').select('*').order('created_at', { ascending: false }),
+        supabase.from('deliverables').select('*').eq('status', 'concluido').order('completed_at', { ascending: false }),
         supabase.from('deliverable_items').select('*'),
       ]);
       if (e1) throw e1;
       if (e2) throw e2;
       const byDeliv = new Map<string, DeliverableItem[]>();
-      (items || []).forEach((it: any) => {
+      (items || []).forEach((it: DeliverableItem) => {
         const arr = byDeliv.get(it.deliverable_id) || [];
         arr.push(it as DeliverableItem);
         byDeliv.set(it.deliverable_id, arr);
       });
-      setDeliverables((dels || []).map((d: any) => ({
+      setDeliverables((dels || []).map(d => ({
         id: d.id,
         name: d.name,
         description: d.description,
+        client_id: d.client_id ?? null,
+        source_priority_id: d.source_priority_id ?? null,
         assigned_to: Array.isArray(d.assigned_to) ? d.assigned_to : [],
         requester: d.requester ?? null,
         due_date: d.due_date,
@@ -66,12 +68,14 @@ export function useDeliverables() {
       const { data: inserted, error } = await supabase.from('deliverables').insert({
         name: data.name,
         description: data.description || null,
+        client_id: data.client_id || null,
         assigned_to: data.assigned_to || [],
         requester: data.requester || null,
-        due_date: data.due_date || null,
-        status: data.status || 'aberto',
+        due_date: null,
+        status: 'concluido',
+        completed_at: data.completed_at || new Date().toISOString(),
         created_by: currentUserName,
-      } as any).select().single();
+      }).select().single();
       if (error) throw error;
       if (data.items && data.items.length > 0) {
         await supabase.from('deliverable_items').insert(
@@ -90,17 +94,20 @@ export function useDeliverables() {
 
   const updateDeliverable = useCallback(async (id: string, data: Partial<DeliverableFormData>) => {
     try {
-      const patch: any = { ...data };
-      delete patch.items;
-      if (data.status === 'concluido') patch.completed_at = new Date().toISOString();
-      if (data.status && data.status !== 'concluido') patch.completed_at = null;
+      const { items: nextItems, ...fields } = data;
+      const patch = {
+        ...fields,
+        status: 'concluido',
+        due_date: null,
+      };
+      if (!patch.completed_at) delete patch.completed_at;
       const { error } = await supabase.from('deliverables').update(patch).eq('id', id);
       if (error) throw error;
-      if (data.items) {
+      if (nextItems) {
         await supabase.from('deliverable_items').delete().eq('deliverable_id', id);
-        if (data.items.length > 0) {
+        if (nextItems.length > 0) {
           await supabase.from('deliverable_items').insert(
-            data.items.map(it => ({ deliverable_id: id, item_type: it.item_type, item_id: it.item_id }))
+            nextItems.map(it => ({ deliverable_id: id, item_type: it.item_type, item_id: it.item_id }))
           );
         }
       }

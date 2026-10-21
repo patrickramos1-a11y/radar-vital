@@ -1249,6 +1249,7 @@ export type Database = {
       deliverables: {
         Row: {
           assigned_to: string[]
+          client_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
@@ -1257,11 +1258,13 @@ export type Database = {
           id: string
           name: string
           requester: string | null
+          source_priority_id: string | null
           status: string
           updated_at: string
         }
         Insert: {
           assigned_to?: string[]
+          client_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -1270,11 +1273,13 @@ export type Database = {
           id?: string
           name: string
           requester?: string | null
+          source_priority_id?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           assigned_to?: string[]
+          client_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -1283,10 +1288,26 @@ export type Database = {
           id?: string
           name?: string
           requester?: string | null
+          source_priority_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deliverables_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliverables_source_priority_id_fkey"
+            columns: ["source_priority_id"]
+            isOneToOne: true
+            referencedRelation: "priorities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       municipalities: {
         Row: {

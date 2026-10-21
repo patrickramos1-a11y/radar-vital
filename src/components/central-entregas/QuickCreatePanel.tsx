@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Star, CheckSquare, MessageSquarePlus, Package, X } from 'lucide-react';
+import { Plus, Star, CheckSquare, MessageSquarePlus, Package, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Client } from '@/types/client';
 import { Priority, PriorityFormData } from '@/types/priority';
@@ -26,9 +26,9 @@ interface Props {
   responsibleList: RespOption[];
   priorities: Priority[];
   tasks: Task[];
-  onCreatePriority: (data: PriorityFormData, clientName?: string) => Promise<any>;
-  onCreateTask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<any>;
-  onCreateDeliverable: (data: DeliverableFormData) => Promise<any>;
+  onCreatePriority: (data: PriorityFormData, clientName?: string) => Promise<unknown>;
+  onCreateTask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<unknown>;
+  onCreateDeliverable: (data: DeliverableFormData) => Promise<unknown>;
   variant?: 'fab' | 'inline';
 }
 
@@ -42,7 +42,7 @@ export function QuickCreatePanel({
   const [active, setActive] = useState<Kind>(null);
   const { create: createCollabComment } = useCollaboratorComments();
 
-  const actions: { kind: Kind; label: string; icon: any; bg: string }[] = [
+  const actions: { kind: Kind; label: string; icon: LucideIcon; bg: string }[] = [
     { kind: 'task', label: 'Tarefa', icon: CheckSquare, bg: '#0EA5E9' },
     { kind: 'priority', label: 'Prioridade', icon: Star, bg: '#DC2626' },
     { kind: 'comment', label: 'Anotação', icon: MessageSquarePlus, bg: '#F59E0B' },
@@ -117,13 +117,11 @@ export function QuickCreatePanel({
         onOpenChange={(v) => { if (!v) setActive(null); }}
         editing={null}
         defaultAssignee={defaultAssignee}
-        priorities={priorities}
-        tasks={tasks}
         clients={clients}
         responsibleList={responsibleList}
         onSubmit={async (data) => {
-          await onCreateDeliverable(data);
-          setActive(null);
+          const created = await onCreateDeliverable(data);
+          if (created) setActive(null);
         }}
       />
 

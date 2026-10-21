@@ -57,8 +57,11 @@ export function useDeliverableRatings() {
 
   useEffect(() => {
     fetch();
+    const channelId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const ch = supabase
-      .channel('deliverable_ratings_realtime')
+      .channel(`deliverable_ratings_realtime_${channelId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deliverable_ratings' }, () => setTimeout(fetch, 100))
       .subscribe();
     return () => { supabase.removeChannel(ch); };

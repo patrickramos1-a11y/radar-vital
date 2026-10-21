@@ -1,6 +1,16 @@
 # Estado de Execucao
 
-Atualizado em: 2026-08-02
+Atualizado em: 2026-10-21
+
+## Entrega recente
+
+- Entregaveis semanais concluidos: implementacao concluida em 2026-10-21.
+- Prioridades concluidas geram entregas automaticamente; 37 entregaveis
+  historicos abertos ou em andamento foram convertidos em prioridades.
+- Lista agrupada por semana e colaborador; cadastro manual de entrega concluida
+  mantido. Regra registrada em D-020.
+- Migration aplicada no banco publicado e validada: nenhuma prioridade
+  concluida sem entrega, nenhuma entrega aberta ou sem data.
 
 ## Estrategia ativa
 

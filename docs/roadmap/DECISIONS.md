@@ -197,6 +197,18 @@ rodada sem nova decisao registrada.
 - Nenhum credito ocorre no aceite: Patrick valida a conclusao antes de aplicar
   recompensa ou penalidade.
 
+## D-020 - Entregaveis semanais concluidos (2026-10-21)
+
+Entregaveis representam somente trabalhos concluidos. Uma prioridade concluida
+gera uma entrega automaticamente, sem duplicar entregas historicas ja vinculadas.
+Entregaveis historicos abertos ou em andamento voltam ao fluxo de prioridades.
+Uma entrega concluida tambem pode ser cadastrada manualmente.
+
+A Central de Entregas mostra uma lista agrupada pela semana da conclusao e,
+dentro dela, por colaborador. Entregas com varios responsaveis aparecem no grupo
+de cada um, mas contam uma unica vez nos totais. A avaliacao segue D-007.
+Esta decisao especializa a apresentacao de D-004 sem unificar as tabelas.
+
 ## Decisoes pendentes
 
 | ID | Tema | Momento limite |

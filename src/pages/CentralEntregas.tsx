@@ -167,6 +167,13 @@ export default function CentralEntregas() {
     );
 
     return deliverablesHook.deliverables.filter(deliverable => {
+      if (deliverable.client_id) {
+        const belongsToUniverse = universeClientIds.has(deliverable.client_id);
+        return effectiveClientScope === 'universe'
+          ? belongsToUniverse
+          : !belongsToUniverse;
+      }
+
       const linkedClientIds = deliverable.items.flatMap(item => {
         if (item.item_type === 'task') {
           const clientId = taskById.get(item.item_id)?.client_id;

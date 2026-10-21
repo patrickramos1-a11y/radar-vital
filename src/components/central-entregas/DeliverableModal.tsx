@@ -1,242 +1,210 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Deliverable, DeliverableFormData, DeliverableStatus, DELIVERABLE_STATUS_CONFIG } from '@/types/deliverable';
-import { Priority } from '@/types/priority';
-import { Task } from '@/types/task';
-import { Client } from '@/types/client';
+import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { CalendarCheck2, Link2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { assigneeMatches, normalizeAssignee } from '@/lib/taskAssignee';
-import { Star, CheckSquare } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { Client } from '@/types/client';
+import { Deliverable, DeliverableFormData } from '@/types/deliverable';
+import { normalizeAssignee } from '@/lib/taskAssignee';
 
 interface RespOption { name: string; color: string; initials: string; }
 
 interface Props {
   open: boolean;
-  onOpenChange: (v: boolean) => void;
+  onOpenChange: (value: boolean) => void;
   editing: Deliverable | null;
   defaultAssignee?: string;
-  priorities: Priority[];
-  tasks: Task[];
   clients: Client[];
   responsibleList: RespOption[];
   onSubmit: (data: DeliverableFormData) => Promise<void>;
 }
 
-export function DeliverableModal({ open, onOpenChange, editing, defaultAssignee, priorities, tasks, clients, responsibleList, onSubmit }: Props) {
+const today = () => format(new Date(), 'yyyy-MM-dd');
+
+export function DeliverableModal({
+  open,
+  onOpenChange,
+  editing,
+  defaultAssignee,
+  clients,
+  responsibleList,
+  onSubmit,
+}: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [clientId, setClientId] = useState('');
+  const [completedDate, setCompletedDate] = useState(today());
   const [assignedTo, setAssignedTo] = useState<string[]>([]);
   const [requester, setRequester] = useState<string | null>(null);
-  const [dueDate, setDueDate] = useState('');
-  const [status, setStatus] = useState<DeliverableStatus>('aberto');
-  const [selectedItems, setSelectedItems] = useState<{ type: 'priority' | 'task'; id: string }[]>([]);
-  const [filterAssignee, setFilterAssignee] = useState(true);
 
   useEffect(() => {
-    if (open) {
-      if (editing) {
-        setName(editing.name);
-        setDescription(editing.description || '');
-        setAssignedTo(editing.assigned_to);
-        setRequester(editing.requester ?? null);
-        setDueDate(editing.due_date || '');
-        setStatus(editing.status);
-        setSelectedItems(editing.items.map(i => ({ type: i.item_type, id: i.item_id })));
-      } else {
-        setName('');
-        setDescription('');
-        setAssignedTo(defaultAssignee ? [defaultAssignee] : []);
-        setRequester(null);
-        setDueDate('');
-        setStatus('aberto');
-        setSelectedItems([]);
-      }
+    if (!open) return;
+
+    if (editing) {
+      setName(editing.name);
+      setDescription(editing.description || '');
+      setClientId(editing.client_id || '');
+      setCompletedDate(format(new Date(editing.completed_at || editing.created_at), 'yyyy-MM-dd'));
+      setAssignedTo(editing.assigned_to);
+      setRequester(editing.requester ?? null);
+      return;
     }
+
+    setName('');
+    setDescription('');
+    setClientId('');
+    setCompletedDate(today());
+    setAssignedTo(defaultAssignee ? [defaultAssignee] : []);
+    setRequester(null);
   }, [open, editing, defaultAssignee]);
 
-  const durationInfo = useMemo(() => {
-    if (!editing) return null;
-    const start = new Date(editing.created_at).getTime();
-    if (editing.status === 'concluido' && editing.completed_at) {
-      const days = Math.max(0, Math.round((new Date(editing.completed_at).getTime() - start) / 86400000));
-      return `Concluído em ${days} dia${days === 1 ? '' : 's'}`;
-    }
-    if (editing.status === 'cancelado') return null;
-    const days = Math.max(0, Math.round((Date.now() - start) / 86400000));
-    return `${days} dia${days === 1 ? '' : 's'} em aberto`;
-  }, [editing]);
-
-  const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
-
-  const availablePriorities = useMemo(() => {
-    return priorities.filter(p => {
-      if (p.status === 'concluida' || p.status === 'cancelada') return false;
-      if (filterAssignee && defaultAssignee) return assigneeMatches(p.assigned_to, defaultAssignee);
-      return true;
-    });
-  }, [priorities, filterAssignee, defaultAssignee]);
-
-  const availableTasks = useMemo(() => {
-    return tasks.filter(t => {
-      if (t.completed) return false;
-      if (filterAssignee && defaultAssignee) return assigneeMatches(t.assigned_to, defaultAssignee);
-      return true;
-    });
-  }, [tasks, filterAssignee, defaultAssignee]);
-
-  const toggleItem = (type: 'priority' | 'task', id: string) => {
-    setSelectedItems(prev => prev.some(x => x.type === type && x.id === id)
-      ? prev.filter(x => !(x.type === type && x.id === id))
-      : [...prev, { type, id }]);
-  };
-
-  const isSelected = (type: 'priority' | 'task', id: string) => selectedItems.some(x => x.type === type && x.id === id);
-
-  const toggleAssignee = (nm: string) => {
-    setAssignedTo(prev => prev.some(a => normalizeAssignee(a) === normalizeAssignee(nm))
-      ? prev.filter(a => normalizeAssignee(a) !== normalizeAssignee(nm))
-      : [...prev, nm]);
+  const toggleAssignee = (candidate: string) => {
+    setAssignedTo(current => current.some(name => normalizeAssignee(name) === normalizeAssignee(candidate))
+      ? current.filter(name => normalizeAssignee(name) !== normalizeAssignee(candidate))
+      : [...current, candidate]);
   };
 
   const handleSubmit = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !completedDate) return;
+
     await onSubmit({
       name: name.trim(),
       description: description.trim() || undefined,
+      client_id: clientId || null,
+      completed_at: new Date(`${completedDate}T12:00:00`).toISOString(),
       assigned_to: assignedTo,
-      requester: requester || null,
-      due_date: dueDate || null,
-      status,
-      items: selectedItems.map(x => ({ item_type: x.type, item_id: x.id })),
+      requester,
+      status: 'concluido',
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editing ? 'Editar entregável' : 'Novo entregável'}</DialogTitle>
+          <DialogTitle>{editing ? 'Editar entrega' : 'Registrar entrega'}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <div>
-            <Label>Nome</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Entregas até a próxima PT" />
-          </div>
-          <div>
-            <Label>Descrição</Label>
-            <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} />
+        <div className="space-y-4">
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+            <div className="flex items-center gap-2 font-medium">
+              <CalendarCheck2 className="h-4 w-4" />
+              Entregáveis registram somente trabalhos concluídos.
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Prazo</Label>
-              <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+          {editing?.source_priority_id && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Link2 className="h-3.5 w-3.5" />
+              Criado automaticamente a partir de uma prioridade concluída.
             </div>
+          )}
+
+          <div>
+            <Label htmlFor="deliverable-name">Entrega</Label>
+            <Input
+              id="deliverable-name"
+              value={name}
+              onChange={event => setName(event.target.value)}
+              placeholder="Ex: Relatório de auditoria entregue"
+              autoFocus
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Status</Label>
-              <select value={status} onChange={e => setStatus(e.target.value as DeliverableStatus)} className="w-full px-2 py-2 border rounded-md bg-background text-sm">
-                {(Object.keys(DELIVERABLE_STATUS_CONFIG) as DeliverableStatus[]).map(s => (
-                  <option key={s} value={s}>{DELIVERABLE_STATUS_CONFIG[s].label}</option>
-                ))}
+              <Label htmlFor="deliverable-client">Cliente</Label>
+              <select
+                id="deliverable-client"
+                value={clientId}
+                onChange={event => setClientId(event.target.value)}
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">Sem cliente vinculado</option>
+                {clients
+                  .filter(client => client.isActive)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
               </select>
             </div>
+            <div>
+              <Label htmlFor="deliverable-date">Data da entrega</Label>
+              <Input
+                id="deliverable-date"
+                type="date"
+                value={completedDate}
+                onChange={event => setCompletedDate(event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="deliverable-description">Observação</Label>
+            <Textarea
+              id="deliverable-description"
+              value={description}
+              onChange={event => setDescription(event.target.value)}
+              rows={2}
+              placeholder="Informação complementar sobre a entrega"
+            />
           </div>
 
           <div>
             <Label>Responsáveis</Label>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {responsibleList.map(r => {
-                const selected = assignedTo.some(a => normalizeAssignee(a) === normalizeAssignee(r.name));
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {responsibleList.map(responsible => {
+                const selected = assignedTo.some(name => normalizeAssignee(name) === normalizeAssignee(responsible.name));
                 return (
-                  <button key={r.name} type="button" onClick={() => toggleAssignee(r.name)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium border ${selected ? 'text-white' : 'bg-background hover:bg-muted'}`}
-                    style={selected ? { backgroundColor: r.color, borderColor: r.color } : {}}>
-                    {r.name}
+                  <button
+                    key={responsible.name}
+                    type="button"
+                    onClick={() => toggleAssignee(responsible.name)}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-medium ${selected ? 'text-white' : 'bg-background hover:bg-muted'}`}
+                    style={selected ? { backgroundColor: responsible.color, borderColor: responsible.color } : {}}
+                  >
+                    {responsible.name}
                   </button>
                 );
               })}
             </div>
           </div>
 
-
           <div>
-            <Label>Solicitante <span className="text-xs text-muted-foreground font-normal">(opcional — apenas visual)</span></Label>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              <button type="button" onClick={() => setRequester(null)}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium border ${!requester ? 'bg-muted text-foreground border-foreground/30' : 'bg-background hover:bg-muted text-muted-foreground'}`}>
+            <Label>Solicitante <span className="font-normal text-muted-foreground">(opcional)</span></Label>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setRequester(null)}
+                className={`rounded-full border px-2.5 py-1 text-xs font-medium ${!requester ? 'border-foreground/30 bg-muted' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+              >
                 Nenhum
               </button>
-              {responsibleList.map(r => {
-                const selected = requester && normalizeAssignee(requester) === normalizeAssignee(r.name);
+              {responsibleList.map(responsible => {
+                const selected = requester && normalizeAssignee(requester) === normalizeAssignee(responsible.name);
                 return (
-                  <button key={r.name} type="button" onClick={() => setRequester(r.name)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium border ${selected ? 'text-white' : 'bg-background hover:bg-muted'}`}
-                    style={selected ? { backgroundColor: r.color, borderColor: r.color } : {}}>
-                    {r.name}
+                  <button
+                    key={responsible.name}
+                    type="button"
+                    onClick={() => setRequester(responsible.name)}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-medium ${selected ? 'text-white' : 'bg-background hover:bg-muted'}`}
+                    style={selected ? { backgroundColor: responsible.color, borderColor: responsible.color } : {}}
+                  >
+                    {responsible.name}
                   </button>
                 );
               })}
-            </div>
-          </div>
-
-          {durationInfo && (
-            <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-              ⏱ {durationInfo}
-            </div>
-          )}
-
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <Label>Itens vinculados</Label>
-              <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                <input type="checkbox" checked={filterAssignee} onChange={e => setFilterAssignee(e.target.checked)} />
-                Só do responsável
-              </label>
-            </div>
-
-            <div className="max-h-64 overflow-y-auto border rounded-md p-2 space-y-1">
-              {availablePriorities.length > 0 && (
-                <>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold pt-1">Prioridades</div>
-                  {availablePriorities.map(p => (
-                    <label key={p.id} className={cn('flex items-center gap-2 p-1.5 rounded cursor-pointer text-sm hover:bg-muted', isSelected('priority', p.id) && 'bg-red-50')}>
-                      <input type="checkbox" checked={isSelected('priority', p.id)} onChange={() => toggleItem('priority', p.id)} />
-                      <Star className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                      <span className="flex-1 break-words">{p.title}</span>
-                      {p.client_id && <span className="text-xs text-muted-foreground">{clientMap.get(p.client_id)}</span>}
-                    </label>
-                  ))}
-                </>
-              )}
-              {availableTasks.length > 0 && (
-                <>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold pt-2">Tarefas</div>
-                  {availableTasks.map(t => (
-                    <label key={t.id} className={cn('flex items-center gap-2 p-1.5 rounded cursor-pointer text-sm hover:bg-muted', isSelected('task', t.id) && 'bg-sky-50')}>
-                      <input type="checkbox" checked={isSelected('task', t.id)} onChange={() => toggleItem('task', t.id)} />
-                      <CheckSquare className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                      <span className="flex-1 break-words">{t.title}</span>
-                      <span className="text-xs text-muted-foreground">{clientMap.get(t.client_id)}</span>
-                    </label>
-                  ))}
-                </>
-              )}
-              {availablePriorities.length === 0 && availableTasks.length === 0 && (
-                <div className="text-xs text-muted-foreground text-center py-4">Nenhum item disponível.</div>
-              )}
             </div>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit}>{editing ? 'Salvar' : 'Criar'}</Button>
+          <Button onClick={handleSubmit} disabled={!name.trim() || !completedDate}>
+            {editing ? 'Salvar entrega' : 'Registrar entrega'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
