@@ -42,14 +42,17 @@ export function useDeliverableRatings() {
   const currentUserName = actorName(currentUser);
   const [ratings, setRatings] = useState<DeliverableRating[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const fetch = useCallback(async () => {
     try {
       const { data, error } = await supabase.from('deliverable_ratings').select('*');
       if (error) throw error;
       setRatings((data ?? []) as unknown as DeliverableRating[]);
+      setError(false);
     } catch (e) {
       console.error(e);
+      setError(true);
     } finally {
       setIsLoading(false);
     }
@@ -69,7 +72,7 @@ export function useDeliverableRatings() {
 
   const rate = useCallback(async (deliverableId: string, rating_type: RatingType, value: number) => {
     try {
-      if (!isAdmin) { toast.error('Apenas o administrador pode avaliar'); return; }
+      if (!isAdmin) { toast.error('Apenas o administrador pode avaliar'); return false; }
       const { error } = await supabase.rpc('set_deliverable_rating', {
         p_deliverable_id: deliverableId,
         p_rater_name: currentUserName,
@@ -80,15 +83,17 @@ export function useDeliverableRatings() {
       if (error) throw error;
       await fetch();
       toast.success('Avaliação registrada');
+      return true;
     } catch (e) {
       console.error(e);
       toast.error('Erro ao avaliar');
+      return false;
     }
   }, [currentUserName, fetch, isAdmin]);
 
   const removeRating = useCallback(async (deliverableId: string) => {
     try {
-      if (!isAdmin) { toast.error('Apenas o administrador pode avaliar'); return; }
+      if (!isAdmin) { toast.error('Apenas o administrador pode avaliar'); return false; }
       const { error } = await supabase.rpc('remove_deliverable_rating', {
         p_deliverable_id: deliverableId,
         p_rater_name: currentUserName,
@@ -96,8 +101,13 @@ export function useDeliverableRatings() {
       });
       if (error) throw error;
       await fetch();
-    } catch (e) { console.error(e); }
+      return true;
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao remover avaliação');
+      return false;
+    }
   }, [currentUserName, fetch, isAdmin]);
 
-  return { ratings, isLoading, rate, removeRating, currentUser: currentUserName };
+  return { ratings, isLoading, error, rate, removeRating, currentUser: currentUserName, refetch: fetch };
 }

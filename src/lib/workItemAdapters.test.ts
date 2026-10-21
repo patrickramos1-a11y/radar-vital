@@ -67,7 +67,7 @@ const deliverable: Deliverable = {
   id: "deliverable-1",
   name: "Entrega mensal",
   description: null,
-  client_id: null,
+  client_id: "client-1",
   source_priority_id: null,
   assigned_to: ["Celine"],
   requester: "Patrick",

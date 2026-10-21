@@ -9,7 +9,7 @@ import { useTasks } from '@/hooks/useTasks';
 
 export default function JackboxUnified() {
   const { collaborators } = useAuth();
-  const { clients } = useClients();
+  const { activeClients } = useClients();
   const {
     tasks,
     toggleComplete,
@@ -20,11 +20,17 @@ export default function JackboxUnified() {
     error,
   } = useTasks();
 
+  const externalClientIds = useMemo(() => new Set(activeClients.map(client => client.id)), [activeClients]);
+  const externalTasks = useMemo(
+    () => tasks.filter(task => externalClientIds.has(task.client_id)),
+    [externalClientIds, tasks],
+  );
+
   const metrics = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const scheduled = tasks.filter(task => !task.completed && task.scheduled_for && task.scheduled_for > today);
-    const pending = tasks.filter(task => !task.completed && (!task.scheduled_for || task.scheduled_for <= today));
-    const completed = tasks.filter(task => task.completed).length;
+    const scheduled = externalTasks.filter(task => !task.completed && task.scheduled_for && task.scheduled_for > today);
+    const pending = externalTasks.filter(task => !task.completed && (!task.scheduled_for || task.scheduled_for <= today));
+    const completed = externalTasks.filter(task => task.completed).length;
     const unassigned = pending.filter(task => task.assigned_to.length === 0).length;
     return {
       pending: pending.length,
@@ -33,7 +39,7 @@ export default function JackboxUnified() {
       unassigned,
       scheduled: scheduled.length,
     };
-  }, [tasks]);
+  }, [externalTasks]);
 
   return (
     <AppLayout>
@@ -51,8 +57,8 @@ export default function JackboxUnified() {
         </VisualPanelHeader>
 
         <TaskManagementSheet
-          tasks={tasks}
-          clients={clients}
+          tasks={externalTasks}
+          clients={activeClients}
           collaborators={collaborators}
           isLoading={isLoading}
           error={error}
