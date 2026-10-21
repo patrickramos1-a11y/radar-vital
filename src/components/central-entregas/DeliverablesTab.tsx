@@ -2,32 +2,24 @@ import { useMemo, useState } from 'react';
 import { format, isSameWeek, subWeeks } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  CalendarCheck2,
   CalendarDays,
   ChevronDown,
   ChevronRight,
   Link2,
-  Package,
   Pencil,
   Plus,
-  Sparkles,
-  Star,
-  ThumbsUp,
   Trash2,
-  Trophy,
   UserPlus,
-  Users,
-  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ClientCell } from './ClientCell';
 import { CollaboratorAvatar } from './CollaboratorAvatar';
 import { DeliverableModal } from './DeliverableModal';
 import { DeliverableRatingControl } from './DeliverableRating';
-import { KpiCard } from './KpiCard';
 import { useDeliverableRatings, summarizeRatings } from '@/hooks/useDeliverableRatings';
 import { assigneeMatches, normalizeAssignee } from '@/lib/taskAssignee';
-import { deliveryDate, groupDeliverablesByWeek } from '@/lib/deliverableWeekGroups';
+import { deliveryDate, groupDeliverablesByWeek, type WeekGroup } from '@/lib/deliverableWeekGroups';
+import { partitionDeliverablesByReview, pendingDeliverablesInReviewRound } from '@/lib/deliverableReview';
 import { cn } from '@/lib/utils';
 import { Client } from '@/types/client';
 import { Deliverable, DeliverableFormData } from '@/types/deliverable';
@@ -50,7 +42,7 @@ interface Props {
   onDelete: (id: string) => Promise<boolean>;
 }
 
-type RatingFilter = 'thumbs' | 'star' | 'superstar';
+type ReviewView = 'pending' | 'reviewed' | 'all';
 
 export function DeliverablesTab({
   collaborator,
@@ -67,12 +59,11 @@ export function DeliverablesTab({
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Deliverable | null>(null);
-  const [ratingFilter, setRatingFilter] = useState<Set<RatingFilter>>(new Set());
-  const [noRatingAtAll, setNoRatingAtAll] = useState(false);
-  const [notRatedByMe, setNotRatedByMe] = useState(false);
-  const [requesterFilter, setRequesterFilter] = useState<Set<string>>(new Set());
+  const [reviewView, setReviewView] = useState<ReviewView>('pending');
+  const [requesterFilter, setRequesterFilter] = useState('');
   const [weekExpansion, setWeekExpansion] = useState<Record<string, boolean>>({});
-  const { ratings, rate, removeRating, currentUser } = useDeliverableRatings();
+  const [reviewedInCurrentRound, setReviewedInCurrentRound] = useState<Set<string>>(() => new Set());
+  const { ratings, isLoading: ratingsLoading, error: ratingsError, rate, removeRating, currentUser, refetch: refetchRatings } = useDeliverableRatings();
 
   const ratingsByDeliverable = useMemo(() => {
     const result = new Map<string, typeof ratings>();
@@ -108,83 +99,47 @@ export function DeliverablesTab({
     return Array.from(names).sort((a, b) => a.localeCompare(b));
   }, [deliverables]);
 
-  const filtered = useMemo(() => {
+  const scopedDeliverables = useMemo(() => {
     let list = deliverables.filter(deliverable =>
       isTeamView || assigneeMatches(deliverable.assigned_to, collaborator));
 
-    if (requesterFilter.size > 0) {
+    if (requesterFilter) {
       list = list.filter(deliverable =>
-        Boolean(deliverable.requester && requesterFilter.has(deliverable.requester)));
-    }
-
-    if (ratingFilter.size > 0) {
-      list = list.filter(deliverable =>
-        (ratingsByDeliverable.get(deliverable.id) || [])
-          .some(rating => ratingFilter.has(rating.rating_type as RatingFilter)));
-    }
-
-    if (noRatingAtAll) {
-      list = list.filter(deliverable => (ratingsByDeliverable.get(deliverable.id) || []).length === 0);
-    }
-
-    if (notRatedByMe) {
-      list = list.filter(deliverable =>
-        !(ratingsByDeliverable.get(deliverable.id) || [])
-          .some(rating => rating.rater_name.toLowerCase() === currentUser.toLowerCase()));
+        deliverable.requester === requesterFilter);
     }
 
     return [...list].sort((a, b) => deliveryDate(b).getTime() - deliveryDate(a).getTime());
-  }, [collaborator, currentUser, deliverables, isTeamView, noRatingAtAll, notRatedByMe, ratingFilter, ratingsByDeliverable, requesterFilter]);
+  }, [collaborator, deliverables, isTeamView, requesterFilter]);
+
+  const { reviewed } = useMemo(
+    () => partitionDeliverablesByReview(scopedDeliverables, ratingsByDeliverable),
+    [scopedDeliverables, ratingsByDeliverable],
+  );
+
+  const pending = useMemo(() => {
+    return pendingDeliverablesInReviewRound(scopedDeliverables, ratingsByDeliverable, reviewedInCurrentRound);
+  }, [ratingsByDeliverable, reviewedInCurrentRound, scopedDeliverables]);
+
+  const visibleDeliverables = reviewView === 'pending' ? pending : reviewView === 'reviewed' ? reviewed : scopedDeliverables;
 
   const weekGroups = useMemo(
-    () => groupDeliverablesByWeek(filtered, collaborator, isTeamView, responsibleList),
-    [collaborator, filtered, isTeamView, responsibleList],
+    () => groupDeliverablesByWeek(visibleDeliverables, collaborator, isTeamView, responsibleList),
+    [collaborator, visibleDeliverables, isTeamView, responsibleList],
   );
 
-  const kpis = useMemo(() => {
+  const thisWeekPending = pending.filter(deliverable =>
+    isSameWeek(deliveryDate(deliverable), new Date(), { weekStartsOn: 1 })).length;
+
+  const overview = useMemo(() => {
     const now = new Date();
     const previousWeek = subWeeks(now, 1);
-    const thisWeek = filtered.filter(deliverable => isSameWeek(deliveryDate(deliverable), now, { weekStartsOn: 1 })).length;
-    const lastWeek = filtered.filter(deliverable => isSameWeek(deliveryDate(deliverable), previousWeek, { weekStartsOn: 1 })).length;
-    const collaborators = new Set(
-      filtered.flatMap(deliverable => deliverable.assigned_to.map(normalizeAssignee)),
-    ).size;
-    const summary = summarizeRatings(filtered.flatMap(deliverable => ratingsByDeliverable.get(deliverable.id) || []));
-    return { total: filtered.length, thisWeek, lastWeek, collaborators, ...summary };
-  }, [filtered, ratingsByDeliverable]);
-
-  const requesterColor = (name: string) =>
-    responsibleList.find(responsible => normalizeAssignee(responsible.name) === normalizeAssignee(name))?.color;
-
-  const toggle = <T,>(current: Set<T>, update: (value: Set<T>) => void, value: T) => {
-    const next = new Set(current);
-    if (next.has(value)) next.delete(value);
-    else next.add(value);
-    update(next);
-  };
-
-  const anyFilterActive = ratingFilter.size > 0 || noRatingAtAll || notRatedByMe || requesterFilter.size > 0;
-
-  const clearFilters = () => {
-    setRatingFilter(new Set());
-    setNoRatingAtAll(false);
-    setNotRatedByMe(false);
-    setRequesterFilter(new Set());
-  };
-
-  const chip = (active: boolean, onClick: () => void, label: React.ReactNode, tone: string) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-full border px-2.5 py-1 text-[11px] font-medium transition',
-        active ? 'text-white shadow-sm' : 'bg-background text-muted-foreground hover:bg-muted',
-      )}
-      style={active ? { backgroundColor: tone, borderColor: tone } : {}}
-    >
-      {label}
-    </button>
-  );
+    return {
+      thisWeek: visibleDeliverables.filter(deliverable => isSameWeek(deliveryDate(deliverable), now, { weekStartsOn: 1 })).length,
+      lastWeek: visibleDeliverables.filter(deliverable => isSameWeek(deliveryDate(deliverable), previousWeek, { weekStartsOn: 1 })).length,
+      collaborators: new Set(visibleDeliverables.flatMap(deliverable => deliverable.assigned_to.map(normalizeAssignee))).size,
+      ...summarizeRatings(visibleDeliverables.flatMap(deliverable => ratingsByDeliverable.get(deliverable.id) || [])),
+    };
+  }, [visibleDeliverables, ratingsByDeliverable]);
 
   const weekTitle = (week: WeekGroup) => {
     const currentWeek = isSameWeek(week.start, new Date(), { weekStartsOn: 1 });
@@ -205,67 +160,94 @@ export function DeliverablesTab({
     setWeekExpansion(current => ({ ...current, [weekKey]: !currentlyExpanded }));
   };
 
+  const rateInCurrentRound = async (deliverableId: string, type: Parameters<typeof rate>[1], value: number) => {
+    setReviewedInCurrentRound(current => new Set(current).add(deliverableId));
+    const saved = await rate(deliverableId, type, value);
+    if (!saved) {
+      setReviewedInCurrentRound(current => {
+        const next = new Set(current);
+        next.delete(deliverableId);
+        return next;
+      });
+    }
+    return saved;
+  };
+
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
-          Entregas concluídas por semana e colaborador. Prioridades concluídas entram automaticamente.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+        <div role="tablist" aria-label="Avaliação dos entregáveis" className="inline-flex max-w-full flex-wrap gap-1 rounded-md bg-muted p-1">
+          {([
+            { value: 'pending', label: 'A avaliar', count: pending.length },
+            { value: 'reviewed', label: 'Avaliados', count: reviewed.length },
+            { value: 'all', label: 'Todos', count: scopedDeliverables.length },
+          ] as const).map(tab => (
+            <button
+              key={tab.value}
+              id={`deliverables-tab-${tab.value}`}
+              type="button"
+              role="tab"
+              aria-selected={reviewView === tab.value}
+              aria-controls="deliverables-review-panel"
+              onClick={() => setReviewView(tab.value)}
+              className={cn(
+                'min-h-8 rounded px-3 text-xs font-medium transition-colors',
+                reviewView === tab.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {tab.label} <span className="ml-1 tabular-nums text-[11px]">{ratingsLoading || ratingsError ? '...' : tab.count}</span>
+            </button>
+          ))}
+        </div>
         <Button onClick={() => { setEditing(null); setModalOpen(true); }} size="sm" style={{ backgroundColor: color }}>
           <Plus className="mr-1 h-4 w-4" /> Registrar entrega
         </Button>
       </div>
 
-      <div className="space-y-2 rounded-md border bg-card/60 p-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="w-20 text-[10px] font-semibold uppercase text-muted-foreground">Avaliação</span>
-          {chip(ratingFilter.has('thumbs'), () => toggle(ratingFilter, setRatingFilter, 'thumbs'), <span className="flex items-center gap-1"><ThumbsUp className="h-3 w-3" />Joinha</span>, '#10B981')}
-          {chip(ratingFilter.has('star'), () => toggle(ratingFilter, setRatingFilter, 'star'), <span className="flex items-center gap-1"><Star className="h-3 w-3" />Estrela</span>, '#F59E0B')}
-          {chip(ratingFilter.has('superstar'), () => toggle(ratingFilter, setRatingFilter, 'superstar'), <span className="flex items-center gap-1"><Sparkles className="h-3 w-3" />Super</span>, '#F97316')}
-          <span className="mx-1 h-4 w-px bg-border" />
-          {chip(noRatingAtAll, () => setNoRatingAtAll(value => !value), 'Sem avaliação', '#64748B')}
-          {chip(notRatedByMe, () => setNotRatedByMe(value => !value), 'Não avaliei', '#0EA5E9')}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span>{ratingsLoading ? 'Carregando avaliações...' : ratingsError ? 'Avaliações indisponíveis' : `${visibleDeliverables.length} entrega(s) em ${weekGroups.length} semana(s)`}</span>
+          {!ratingsLoading && !ratingsError && <span>{thisWeekPending} a avaliar nesta semana</span>}
         </div>
-
         {availableRequesters.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="w-20 text-[10px] font-semibold uppercase text-muted-foreground">Solicitante</span>
-            {availableRequesters.map(name => chip(
-              requesterFilter.has(name),
-              () => toggle(requesterFilter, setRequesterFilter, name),
-              name,
-              requesterColor(name) || '#64748B',
-            ))}
-          </div>
+          <select
+            aria-label="Filtrar por solicitante"
+            value={requesterFilter}
+            onChange={event => setRequesterFilter(event.target.value)}
+            className="h-8 max-w-full rounded border bg-background px-2 text-xs text-foreground"
+          >
+            <option value="">Todos os solicitantes</option>
+            {availableRequesters.map(name => <option key={name} value={name}>{name}</option>)}
+          </select>
         )}
+      </div>
 
-        <div className="flex items-center justify-between border-t border-dashed pt-2">
-          <span className="text-[11px] text-muted-foreground">{filtered.length} entrega(s) em {weekGroups.length} semana(s)</span>
-          {anyFilterActive && (
-            <button onClick={clearFilters} className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
-              <X className="h-3 w-3" /> Limpar filtros
-            </button>
-          )}
+      {!ratingsLoading && !ratingsError && reviewView !== 'pending' && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 border-y py-2 text-xs text-muted-foreground">
+          <span>Esta semana <strong className="text-foreground">{overview.thisWeek}</strong></span>
+          <span>Semana anterior <strong className="text-foreground">{overview.lastWeek}</strong></span>
+          <span>Colaboradores <strong className="text-foreground">{overview.collaborators}</strong></span>
+          <span>Joinhas <strong className="text-foreground">{overview.thumbs}</strong></span>
+          <span>Estrelas <strong className="text-foreground">{overview.stars}</strong></span>
+          <span>Pontos <strong className="text-foreground">{overview.score}</strong></span>
         </div>
-      </div>
+      )}
 
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-7">
-        <KpiCard label="Entregas" value={kpis.total} icon={Package} color={color} />
-        <KpiCard label="Esta semana" value={kpis.thisWeek} icon={CalendarCheck2} variant="success" />
-        <KpiCard label="Semana anterior" value={kpis.lastWeek} icon={CalendarDays} />
-        <KpiCard label="Colaboradores" value={kpis.collaborators} icon={Users} />
-        <KpiCard label="Joinhas" value={kpis.thumbs} icon={ThumbsUp} />
-        <KpiCard label="Estrelas" value={kpis.stars} icon={Star} />
-        <KpiCard label="Pontos" value={kpis.score} icon={Trophy} variant="success" />
-      </div>
-
-      {weekGroups.length === 0 ? (
+      <div id="deliverables-review-panel" role="tabpanel" aria-labelledby={`deliverables-tab-${reviewView}`}>
+        {ratingsLoading ? (
+        <div className="py-10 text-center text-sm text-muted-foreground">Carregando avaliações...</div>
+      ) : ratingsError ? (
+        <div className="flex flex-col items-center gap-3 py-10 text-center text-sm text-muted-foreground">
+          <span>Não foi possível carregar as avaliações.</span>
+          <Button type="button" size="sm" variant="outline" onClick={refetchRatings}>Tentar novamente</Button>
+        </div>
+      ) : weekGroups.length === 0 ? (
         <div className="rounded-md border bg-card/60 p-8 text-center text-sm text-muted-foreground">
-          Nenhuma entrega encontrada.
+          {reviewView === 'pending' ? 'Nenhuma entrega aguardando avaliação.' : reviewView === 'reviewed' ? 'Nenhuma entrega avaliada.' : 'Nenhuma entrega encontrada.'}
         </div>
       ) : (
         <div className="overflow-hidden rounded-md border bg-card">
-          <div className="hidden grid-cols-[minmax(140px,1fr)_minmax(240px,2.2fr)_minmax(130px,1fr)_100px_minmax(180px,1.2fr)_64px] gap-3 border-b bg-muted/80 px-3 py-2 text-[10px] font-semibold uppercase text-muted-foreground lg:grid">
+          <div className="hidden grid-cols-[minmax(120px,1fr)_minmax(220px,2.2fr)_minmax(100px,.8fr)_84px_228px_64px] gap-3 border-b bg-muted/80 px-3 py-2 text-[10px] font-semibold uppercase text-muted-foreground lg:grid">
             <span>Cliente</span>
             <span>Entrega</span>
             <span>Responsáveis</span>
@@ -310,7 +292,7 @@ export function DeliverablesTab({
                     const deliveryRatings = ratingsByDeliverable.get(deliverable.id) || [];
                     return (
                       <div key={deliverable.id} className="border-b last:border-b-0 hover:bg-muted/20">
-                        <div className="hidden grid-cols-[minmax(140px,1fr)_minmax(240px,2.2fr)_minmax(130px,1fr)_100px_minmax(180px,1.2fr)_64px] items-center gap-3 px-3 py-2.5 lg:grid">
+                        <div className="hidden grid-cols-[minmax(120px,1fr)_minmax(220px,2.2fr)_minmax(100px,.8fr)_84px_228px_64px] items-center gap-3 px-3 py-2.5 lg:grid">
                           <ClientCell client={client} fallbackName={client ? undefined : 'Sem cliente'} size={28} />
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
@@ -342,7 +324,7 @@ export function DeliverablesTab({
                             deliverableId={deliverable.id}
                             ratings={deliveryRatings}
                             currentUser={currentUser}
-                            onRate={rate}
+                            onRate={rateInCurrentRound}
                             onRemove={removeRating}
                           />
                           <div className="flex justify-end gap-1">
@@ -392,7 +374,7 @@ export function DeliverablesTab({
                             deliverableId={deliverable.id}
                             ratings={deliveryRatings}
                             currentUser={currentUser}
-                            onRate={rate}
+                            onRate={rateInCurrentRound}
                             onRemove={removeRating}
                           />
                         </div>
@@ -406,6 +388,7 @@ export function DeliverablesTab({
           })}
         </div>
       )}
+      </div>
 
       <DeliverableModal
         open={modalOpen}

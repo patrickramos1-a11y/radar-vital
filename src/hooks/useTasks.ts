@@ -323,8 +323,8 @@ export function useTasks() {
   }, [createTask, dependencies, fetchTasks, tasks]);
 
   const updateTask = useCallback(async (taskId: string, data: Partial<Task>) => {
+    const currentTask = tasks.find((task) => task.id === taskId);
     try {
-      const currentTask = tasks.find((task) => task.id === taskId);
       const isCompleting = data.completed === true || data.status === 'concluida';
       if (isCompleting && !canCompleteTask(taskId, tasks)) {
         toast.error('Conclua ou cancele as subtarefas abertas primeiro');
@@ -392,12 +392,36 @@ export function useTasks() {
         return true;
       }
 
-      const updateData: Database['public']['Tables']['tasks']['Update'] = { ...data };
-      if (data.completed === true) {
-        updateData.completed_at = new Date().toISOString();
-      } else if (data.completed === false) {
-        updateData.completed_at = null;
-      }
+      if (!currentTask) return false;
+      const now = new Date().toISOString();
+      const completed = data.completed === true || data.status === 'concluida'
+        ? true
+        : data.completed === false || Boolean(data.status)
+          ? false
+          : currentTask.completed;
+      const status = data.completed === true
+        ? 'concluida'
+        : data.completed === false && currentTask.status === 'concluida'
+          ? 'pendente'
+          : data.status ?? currentTask.status;
+      const completedAt = completed ? currentTask.completed_at || now : null;
+      const optimisticTask: Task = {
+        ...currentTask,
+        ...data,
+        completed,
+        status,
+        completed_at: completedAt,
+        updated_at: now,
+      };
+
+      setTasks(current => current.map(task => task.id === taskId ? optimisticTask : task));
+
+      const updateData: Database['public']['Tables']['tasks']['Update'] = {
+        ...data,
+        completed,
+        status,
+        completed_at: completedAt,
+      };
 
       const { error } = await supabase
         .from('tasks')
@@ -426,7 +450,7 @@ export function useTasks() {
         if (nextTask) {
           const childTasks = tasks.filter((task) => task.parent_task_id === currentTask.id);
           if (childTasks.length > 0) {
-            const { error: childrenError } = await supabase.from('tasks').insert(childTasks.map((child) => ({
+            const { data: insertedChildren, error: childrenError } = await supabase.from('tasks').insert(childTasks.map((child) => ({
               client_id: child.client_id,
               title: child.title,
               description: child.description,
@@ -437,21 +461,26 @@ export function useTasks() {
               status: 'pendente',
               parent_task_id: nextTask.id,
               sort_order: child.sort_order,
-            })));
+            }))).select('*');
             if (childrenError) throw childrenError;
+            if (insertedChildren?.length) {
+              setTasks(current => [...insertedChildren.map(dbRowToTask), ...current]);
+            }
           }
+          setTasks(current => [dbRowToTask(nextTask), ...current]);
           toast.success('Próxima ocorrência criada automaticamente');
         }
       }
-
-      await fetchTasks();
       return true;
     } catch (error) {
+      if (currentTask) {
+        setTasks(current => current.map(task => task.id === taskId ? currentTask : task));
+      }
       console.error('Error updating task:', error);
       toast.error('Erro ao atualizar tarefa');
       return false;
     }
-  }, [dependencies, fetchTasks, tasks]);
+  }, [dependencies, tasks]);
 
   const bulkUpdateTasks = useCallback(async (
     taskIds: string[],
@@ -459,6 +488,7 @@ export function useTasks() {
   ) => {
     const uniqueTaskIds = [...new Set(taskIds)];
     if (uniqueTaskIds.length === 0) return false;
+    const previousTasks = tasks;
 
     try {
       if (LOCAL_WORKSPACE_PREVIEW) {
@@ -472,21 +502,25 @@ export function useTasks() {
         return true;
       }
 
+      const selectedIds = new Set(uniqueTaskIds);
+      const now = new Date().toISOString();
+      setTasks(current => current.map(task => selectedIds.has(task.id) ? { ...task, ...data, updated_at: now } : task));
+
       const { error } = await supabase
         .from('tasks')
         .update(data)
         .in('id', uniqueTaskIds);
 
       if (error) throw error;
-      await fetchTasks();
       toast.success(`${uniqueTaskIds.length} tarefas atualizadas`);
       return true;
     } catch (error) {
+      setTasks(previousTasks);
       console.error('Error bulk updating tasks:', error);
       toast.error('Erro ao atualizar tarefas em massa');
       return false;
     }
-  }, [dependencies, fetchTasks, tasks]);
+  }, [dependencies, tasks]);
 
   const setTaskDependencies = useCallback(async (taskId: string, dependsOnIds: string[]) => {
     try {
