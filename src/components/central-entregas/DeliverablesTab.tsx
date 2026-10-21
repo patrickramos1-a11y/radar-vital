@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { endOfWeek, format, isSameWeek, startOfWeek, subWeeks } from 'date-fns';
+import { format, isSameWeek, subWeeks } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   CalendarCheck2,
@@ -27,6 +27,7 @@ import { DeliverableRatingControl } from './DeliverableRating';
 import { KpiCard } from './KpiCard';
 import { useDeliverableRatings, summarizeRatings } from '@/hooks/useDeliverableRatings';
 import { assigneeMatches, normalizeAssignee } from '@/lib/taskAssignee';
+import { deliveryDate, groupDeliverablesByWeek } from '@/lib/deliverableWeekGroups';
 import { cn } from '@/lib/utils';
 import { Client } from '@/types/client';
 import { Deliverable, DeliverableFormData } from '@/types/deliverable';
@@ -50,22 +51,6 @@ interface Props {
 }
 
 type RatingFilter = 'thumbs' | 'star' | 'superstar';
-
-interface CollaboratorGroup {
-  name: string;
-  deliveries: Deliverable[];
-}
-
-interface WeekGroup {
-  key: string;
-  start: Date;
-  end: Date;
-  deliveries: Deliverable[];
-  collaborators: CollaboratorGroup[];
-}
-
-const deliveryDate = (deliverable: Deliverable) =>
-  new Date(deliverable.completed_at || deliverable.updated_at || deliverable.created_at);
 
 export function DeliverablesTab({
   collaborator,
@@ -151,47 +136,10 @@ export function DeliverablesTab({
     return [...list].sort((a, b) => deliveryDate(b).getTime() - deliveryDate(a).getTime());
   }, [collaborator, currentUser, deliverables, isTeamView, noRatingAtAll, notRatedByMe, ratingFilter, ratingsByDeliverable, requesterFilter]);
 
-  const weekGroups = useMemo<WeekGroup[]>(() => {
-    const weeks = new Map<string, { start: Date; end: Date; deliveries: Deliverable[] }>();
-
-    filtered.forEach(deliverable => {
-      const deliveredAt = deliveryDate(deliverable);
-      const weekStart = startOfWeek(deliveredAt, { weekStartsOn: 1 });
-      const key = format(weekStart, 'yyyy-MM-dd');
-      const current = weeks.get(key) || {
-        start: weekStart,
-        end: endOfWeek(deliveredAt, { weekStartsOn: 1 }),
-        deliveries: [],
-      };
-      current.deliveries.push(deliverable);
-      weeks.set(key, current);
-    });
-
-    return Array.from(weeks.entries())
-      .map(([key, week]) => {
-        const byCollaborator = new Map<string, Deliverable[]>();
-        week.deliveries.forEach(deliverable => {
-          const assignees = isTeamView
-            ? deliverable.assigned_to.length > 0 ? deliverable.assigned_to : ['Sem responsável']
-            : [collaborator];
-          const groupNames = new Set(assignees.map(assignee =>
-            responsibleList.find(responsible =>
-              normalizeAssignee(responsible.name) === normalizeAssignee(assignee))?.name || assignee));
-          groupNames.forEach(groupName => {
-            const current = byCollaborator.get(groupName) || [];
-            current.push(deliverable);
-            byCollaborator.set(groupName, current);
-          });
-        });
-
-        const collaborators = Array.from(byCollaborator.entries())
-          .map(([name, deliveriesForCollaborator]) => ({ name, deliveries: deliveriesForCollaborator }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        return { key, ...week, collaborators };
-      })
-      .sort((a, b) => b.start.getTime() - a.start.getTime());
-  }, [collaborator, filtered, isTeamView, responsibleList]);
+  const weekGroups = useMemo(
+    () => groupDeliverablesByWeek(filtered, collaborator, isTeamView, responsibleList),
+    [collaborator, filtered, isTeamView, responsibleList],
+  );
 
   const kpis = useMemo(() => {
     const now = new Date();
