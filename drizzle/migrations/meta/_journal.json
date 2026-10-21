@@ -29,6 +29,13 @@
       "when": 1792518124795,
       "tag": "0003_add_tasks_scheduled_for",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792620473008,
+      "tag": "0004_limit_priority_deliverables_to_october_21_completions",
+      "breakpoints": true
     }
   ]
 }
