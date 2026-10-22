@@ -38,11 +38,11 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, cli
       .filter(p => isTeamView ? true : assigneeMatches(p.assigned_to, collaborator))
       .filter(p => showAll ? true : (p.status !== 'concluida' && p.status !== 'cancelada'))
       .sort((a, b) => {
-        // Overdue first, then weight desc, then due date asc, then created asc
+        // Weight is the primary operational order; urgency resolves equal weights.
+        if (a.weight !== b.weight) return b.weight - a.weight;
         const aOver = a.due_date && new Date(a.due_date) < today && a.status !== 'concluida' ? 1 : 0;
         const bOver = b.due_date && new Date(b.due_date) < today && b.status !== 'concluida' ? 1 : 0;
         if (aOver !== bOver) return bOver - aOver;
-        if (a.weight !== b.weight) return b.weight - a.weight;
         const aDue = a.due_date ? new Date(a.due_date).getTime() : Infinity;
         const bDue = b.due_date ? new Date(b.due_date).getTime() : Infinity;
         if (aDue !== bDue) return aDue - bDue;
