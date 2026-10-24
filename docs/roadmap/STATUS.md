@@ -1,6 +1,6 @@
 # Estado de Execucao
 
-Atualizado em: 2026-10-21
+Atualizado em: 2026-10-24
 
 ## Entrega recente
 
@@ -21,6 +21,9 @@ Atualizado em: 2026-10-21
 - Banco de producao: migrations somente no ciclo final.
 - Lovable: uma unica publicacao depois da Fase 7.
 - Universo Ramos: extensao em andamento na branch `feat/universo-ramos-categorias`.
+- Plano Mestre do Universo Ramos: fundamento estratégico registrado; ainda sem
+  decisões de produto, modelo de dados ou fase de implementação fechados. Ver
+  `UNIVERSO_RAMOS_MASTER_PLAN_FOUNDATION.md`.
 
 ## Legenda
 

@@ -26,6 +26,7 @@ O objetivo e permitir que uma nova execucao consiga entender rapidamente:
 | [UNIVERSO_RAMOS_CHALLENGES_PLAN.md](UNIVERSO_RAMOS_CHALLENGES_PLAN.md) | Plano de desafios, metas e operacao interna do Universo Ramos |
 | [UNIVERSO_RAMOS_IMPORT_PROCESS.md](UNIVERSO_RAMOS_IMPORT_PROCESS.md) | Fluxo controlado do Banco Mestre para rascunhos de desafios |
 | [UNIVERSO_RAMOS_OPPORTUNITIES_TREASURY_PLAN.md](UNIVERSO_RAMOS_OPPORTUNITIES_TREASURY_PLAN.md) | Banco de oportunidades, Tesouro, saques individuais, cores e artes setoriais |
+| [UNIVERSO_RAMOS_MASTER_PLAN_FOUNDATION.md](UNIVERSO_RAMOS_MASTER_PLAN_FOUNDATION.md) | Levantamento estratégico dos problemas que o Plano Mestre do Universo Ramos deve resolver |
 
 ## Visao do produto
 
