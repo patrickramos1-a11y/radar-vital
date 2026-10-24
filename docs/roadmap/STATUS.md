@@ -24,6 +24,10 @@ Atualizado em: 2026-10-24
 - Plano Mestre do Universo Ramos: fundamento estratégico registrado; ainda sem
   decisões de produto, modelo de dados ou fase de implementação fechados. Ver
   `UNIVERSO_RAMOS_MASTER_PLAN_FOUNDATION.md`.
+- Plano Mestre: arquitetura conceitual externa analisada e conectada ao
+  Universo Ramos existente. O próximo passo é a descoberta PM-0, começando por
+  três setores-piloto e um Marco Zero, sem alterar os domínios operacionais.
+  Ver `UNIVERSO_RAMOS_MASTER_PLAN_INTEGRATION.md`.
 
 ## Legenda
 

@@ -27,6 +27,8 @@ O objetivo e permitir que uma nova execucao consiga entender rapidamente:
 | [UNIVERSO_RAMOS_IMPORT_PROCESS.md](UNIVERSO_RAMOS_IMPORT_PROCESS.md) | Fluxo controlado do Banco Mestre para rascunhos de desafios |
 | [UNIVERSO_RAMOS_OPPORTUNITIES_TREASURY_PLAN.md](UNIVERSO_RAMOS_OPPORTUNITIES_TREASURY_PLAN.md) | Banco de oportunidades, Tesouro, saques individuais, cores e artes setoriais |
 | [UNIVERSO_RAMOS_MASTER_PLAN_FOUNDATION.md](UNIVERSO_RAMOS_MASTER_PLAN_FOUNDATION.md) | Levantamento estratégico dos problemas que o Plano Mestre do Universo Ramos deve resolver |
+| [UNIVERSO_RAMOS_MASTER_PLAN_CONCEPT_SOURCE.md](UNIVERSO_RAMOS_MASTER_PLAN_CONCEPT_SOURCE.md) | Proposta conceitual externa de arquitetura completa do Plano Mestre |
+| [UNIVERSO_RAMOS_MASTER_PLAN_INTEGRATION.md](UNIVERSO_RAMOS_MASTER_PLAN_INTEGRATION.md) | Plano de integração do Plano Mestre à estrutura já existente do Universo Ramos |
 
 ## Visao do produto
 
