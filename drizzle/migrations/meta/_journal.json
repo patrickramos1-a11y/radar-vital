@@ -36,6 +36,13 @@
       "when": 1792620473008,
       "tag": "0004_limit_priority_deliverables_to_october_21_completions",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792941318274,
+      "tag": "0005_create_master_plan_versioned_documents",
+      "breakpoints": true
     }
   ]
 }
