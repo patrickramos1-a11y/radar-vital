@@ -14,8 +14,8 @@ Atualizado em: 2026-10-25
 
 ## Estrategia ativa
 
-- A entrega do Plano Mestre segue a excecao especifica D-021: migration aditiva
-  primeiro, verificacao de leitura/escrita, publicacao do frontend depois.
+- A entrega inicial do Plano Mestre seguiu a excecao D-021: migration aditiva,
+  leitura e escrita verificadas, frontend publicado no dominio oficial.
 
 - Modelo: desenvolvimento faseado com publicacao unica e acesso atual preservado.
 - Producao: deve permanecer inalterada durante as Fases 0 a 6.
@@ -24,8 +24,8 @@ Atualizado em: 2026-10-25
 - Banco de producao: migrations somente no ciclo final.
 - Lovable: uma unica publicacao depois da Fase 7.
 - Universo Ramos: extensao em andamento na branch `feat/universo-ramos-categorias`.
-- Plano Mestre do Universo Ramos: fundamento estratégico registrado; ainda sem
-  decisões de produto, modelo de dados ou fase de implementação fechados. Ver
+- Plano Mestre do Universo Ramos: fundamento estrategico registrado e base
+  inicial publicada. As proximas regras de maturidade permanecem em descoberta. Ver
   `UNIVERSO_RAMOS_MASTER_PLAN_FOUNDATION.md`.
 - Plano Mestre: arquitetura conceitual externa analisada e conectada ao
   Universo Ramos existente. O próximo passo é a descoberta PM-0, começando por
@@ -34,16 +34,15 @@ Atualizado em: 2026-10-25
 - Plano Mestre: especificacao detalhada de paginas, navegacao, regras e
   prototipo visual registrada em `UNIVERSO_RAMOS_PLANO_MESTRE_ESPECIFICACAO.md`.
   Os exemplos usam os 11 setores ativos confirmados no banco conectado ao
-  Lovable em 2026-10-24. Documento somente; nenhuma tela, migration ou dado
-  operacional foi alterado nesta entrega.
+  Lovable em 2026-10-24. Esta especificacao antecedeu a publicacao inicial.
 - Plano Mestre (publicação inicial): dez áreas navegáveis implementadas na rota
   `/universo-ramos/plano-mestre`. Setores, desafios, tarefas, comentários e
   colaboradores são lidos das tabelas atuais sem escrita nelas. Capacidades,
   responsabilidades, solicitações novas, planejamento, pedidos de capacitação,
   pedidos para assumir responsabilidades, vínculos com núcleos e limiares são
-  salvos em documento versionado separado. O SQL aditivo está preparado, mas
-  aguarda aplicação pelo usuário no projeto `ixiffabjunvpoizdhwtk`; frontend
-  ainda não publicado. Ver D-021 e `UNIVERSO_RAMOS_PLANO_MESTRE_PUBLICACAO.md`.
+  salvos em documento versionado separado. SQL e frontend publicados em
+  2026-10-25; leitura e escrita verificadas. Ver D-021 e
+  `UNIVERSO_RAMOS_PLANO_MESTRE_PUBLICACAO.md`.
 
 ## Legenda
 
@@ -72,8 +71,8 @@ Atualizado em: 2026-10-25
 | Producao atual | ATUALIZADO | Pacote do Universo Ramos aplicado em 2026-07-31 |
 | Branch de integracao | ATIVA | `roadmap/radar-vital-integrado` |
 | Supabase de desenvolvimento | BLOQUEADO | Docker indisponivel; avaliar projeto remoto de teste |
-| Supabase de producao | AGUARDANDO SQL | Plano Mestre: aplicar a migration D-021 no projeto `ixiffabjunvpoizdhwtk` e verificar leitura/escrita |
-| Site publicado | PRESERVADO | `radar-vital.vercel.app` continua na versao atual ate a verificacao do SQL; Lovable permanece conectado ao fluxo anterior |
+| Supabase de producao | ATUALIZADO | Documento do Plano Mestre acessivel; leitura e escrita verificadas no projeto `ixiffabjunvpoizdhwtk` |
+| Site publicado | ATUALIZADO | Plano Mestre disponivel em `radar-vital.vercel.app/universo-ramos/plano-mestre` |
 
 ## Baseline tecnico
 

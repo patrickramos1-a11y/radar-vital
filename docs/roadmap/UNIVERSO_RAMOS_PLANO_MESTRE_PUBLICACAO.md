@@ -1,7 +1,8 @@
 # Plano Mestre: publicacao inicial
 
-Estado em 2026-10-25: frontend e migration preparados; SQL de producao e
-publicacao ainda dependem de validacao. Decisao de escopo: D-021.
+Estado em 2026-10-25: SQL aplicado no projeto `ixiffabjunvpoizdhwtk` e
+frontend publicado em `https://radar-vital.vercel.app/universo-ramos/plano-mestre`.
+Decisao de escopo: D-021.
 
 ## Fonte de dados
 
@@ -19,13 +20,22 @@ publicacao ainda dependem de validacao. Decisao de escopo: D-021.
   incorporado por acao explicita; em conflito de IDs, o registro ja salvo no
   banco prevalece. Importar JSON tambem mescla, sem apagar registros atuais.
 
-## Aplicacao e verificacao
+## Aplicacao e verificacao realizada
 
-1. Confirmar que o SQL Editor aponta para o projeto `ixiffabjunvpoizdhwtk`.
-2. Fazer backup do banco de producao conforme D-015.
-3. Aplicar integralmente `supabase/migrations/20261025004456_master_plan_document.sql`.
-4. Verificar que a consulta abaixo retorna uma linha com `revision = 0` e
-   `version = 1` antes da primeira gravacao:
+1. O usuario confirmou a aplicacao do SQL no projeto `ixiffabjunvpoizdhwtk`.
+2. A API de producao retornou o documento `universo-ramos`, com `version = 1`.
+3. Uma gravacao controlada do mesmo payload avancou a revisao de 0 para 1 e
+   confirmou o caminho de escrita sem criar cadastro de teste.
+4. A suite Vitest passou (57 testes) e o build Vite local terminou com a
+   configuracao de contingencia para o SWC indisponivel nesta instalacao.
+5. O commit `da0359d` foi enviado a `main`; a Vercel marcou o deploy
+   `dpl_FBAqeoMri58Dza5LjA9Vro9FHTbt` como READY e atribuiu o dominio oficial.
+6. No dominio oficial, foram verificados o mapa inicial, os setores e pessoas
+   reais, as telas de responsabilidades, capacidades e solicitacoes e a abertura
+   do formulario de cadastro. Os demais fluxos tem cobertura automatizada,
+   mas ainda dependem de uso real para validacao operacional.
+
+A consulta de integridade do documento continua disponivel:
 
 ```sql
 SELECT document_key, revision, payload->>'version' AS version
@@ -33,12 +43,9 @@ FROM public.master_plan_documents
 WHERE document_key = 'universo-ramos';
 ```
 
-5. Abrir a rota local, cadastrar uma capacidade de teste, atualizar a pagina e
-   confirmar que ela permanece. Exportar um backup JSON.
-6. Publicar o frontend somente apos a verificacao de leitura e gravacao no
-   projeto correto. Executar smoke tests na URL oficial: abrir as dez areas,
-   cadastrar uma responsabilidade, vincular capacidade/setor, planejar uma
-   solicitacao e verificar persistencia apos recarga.
+Nao foi cadastrado nenhum exemplo artificial em producao. Na primeira sessao
+de uso, exportar um backup JSON apos os cadastros iniciais e conferir a
+persistencia apos recarregar a pagina.
 
 ## Limites desta versao
 
