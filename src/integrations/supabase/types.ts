@@ -1309,6 +1309,56 @@ export type Database = {
           },
         ]
       }
+      master_plan_document_revisions: {
+        Row: {
+          archived_at: string
+          document_key: string
+          payload: Json
+          revision: number
+        }
+        Insert: {
+          archived_at?: string
+          document_key: string
+          payload: Json
+          revision: number
+        }
+        Update: {
+          archived_at?: string
+          document_key?: string
+          payload?: Json
+          revision?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_document_revisions_document_key_fkey"
+            columns: ["document_key"]
+            isOneToOne: false
+            referencedRelation: "master_plan_documents"
+            referencedColumns: ["document_key"]
+          },
+        ]
+      }
+      master_plan_documents: {
+        Row: {
+          document_key: string
+          payload: Json
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          document_key: string
+          payload: Json
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          document_key?: string
+          payload?: Json
+          revision?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       municipalities: {
         Row: {
           created_at: string
