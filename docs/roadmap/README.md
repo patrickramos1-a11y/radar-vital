@@ -29,6 +29,9 @@ O objetivo e permitir que uma nova execucao consiga entender rapidamente:
 | [UNIVERSO_RAMOS_MASTER_PLAN_FOUNDATION.md](UNIVERSO_RAMOS_MASTER_PLAN_FOUNDATION.md) | Levantamento estratégico dos problemas que o Plano Mestre do Universo Ramos deve resolver |
 | [UNIVERSO_RAMOS_MASTER_PLAN_CONCEPT_SOURCE.md](UNIVERSO_RAMOS_MASTER_PLAN_CONCEPT_SOURCE.md) | Proposta conceitual externa de arquitetura completa do Plano Mestre |
 | [UNIVERSO_RAMOS_MASTER_PLAN_INTEGRATION.md](UNIVERSO_RAMOS_MASTER_PLAN_INTEGRATION.md) | Plano de integração do Plano Mestre à estrutura já existente do Universo Ramos |
+| [UNIVERSO_RAMOS_PLANO_MESTRE_ESPECIFICACAO.md](UNIVERSO_RAMOS_PLANO_MESTRE_ESPECIFICACAO.md) | Especificacao detalhada das telas, fluxos, regras, migracao e exemplos com os 11 setores ativos |
+| [UNIVERSO_RAMOS_PLANO_MESTRE_PREVIA.md](UNIVERSO_RAMOS_PLANO_MESTRE_PREVIA.md) | Rota, escopo e contrato de transição da maquete navegável do Plano Mestre |
+| [UNIVERSO_RAMOS_PLANO_MESTRE_PUBLICACAO.md](UNIVERSO_RAMOS_PLANO_MESTRE_PUBLICACAO.md) | Migration, verificacao e limites da primeira publicacao compartilhada do Plano Mestre |
 
 ## Visao do produto
 

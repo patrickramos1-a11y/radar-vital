@@ -1,6 +1,6 @@
 # Estado de Execucao
 
-Atualizado em: 2026-10-24
+Atualizado em: 2026-10-25
 
 ## Entrega recente
 
@@ -13,6 +13,9 @@ Atualizado em: 2026-10-24
   concluida sem entrega, nenhuma entrega aberta ou sem data.
 
 ## Estrategia ativa
+
+- A entrega do Plano Mestre segue a excecao especifica D-021: migration aditiva
+  primeiro, verificacao de leitura/escrita, publicacao do frontend depois.
 
 - Modelo: desenvolvimento faseado com publicacao unica e acesso atual preservado.
 - Producao: deve permanecer inalterada durante as Fases 0 a 6.
@@ -28,6 +31,19 @@ Atualizado em: 2026-10-24
   Universo Ramos existente. O próximo passo é a descoberta PM-0, começando por
   três setores-piloto e um Marco Zero, sem alterar os domínios operacionais.
   Ver `UNIVERSO_RAMOS_MASTER_PLAN_INTEGRATION.md`.
+- Plano Mestre: especificacao detalhada de paginas, navegacao, regras e
+  prototipo visual registrada em `UNIVERSO_RAMOS_PLANO_MESTRE_ESPECIFICACAO.md`.
+  Os exemplos usam os 11 setores ativos confirmados no banco conectado ao
+  Lovable em 2026-10-24. Documento somente; nenhuma tela, migration ou dado
+  operacional foi alterado nesta entrega.
+- Plano Mestre (publicação inicial): dez áreas navegáveis implementadas na rota
+  `/universo-ramos/plano-mestre`. Setores, desafios, tarefas, comentários e
+  colaboradores são lidos das tabelas atuais sem escrita nelas. Capacidades,
+  responsabilidades, solicitações novas, planejamento, pedidos de capacitação,
+  pedidos para assumir responsabilidades, vínculos com núcleos e limiares são
+  salvos em documento versionado separado. O SQL aditivo está preparado, mas
+  aguarda aplicação pelo usuário no projeto `ixiffabjunvpoizdhwtk`; frontend
+  ainda não publicado. Ver D-021 e `UNIVERSO_RAMOS_PLANO_MESTRE_PUBLICACAO.md`.
 
 ## Legenda
 
@@ -56,10 +72,19 @@ Atualizado em: 2026-10-24
 | Producao atual | ATUALIZADO | Pacote do Universo Ramos aplicado em 2026-07-31 |
 | Branch de integracao | ATIVA | `roadmap/radar-vital-integrado` |
 | Supabase de desenvolvimento | BLOQUEADO | Docker indisponivel; avaliar projeto remoto de teste |
-| Supabase de producao | PRESERVADO | Aplicar migrations apenas na Fase 7 |
-| Lovable publicado | IDENTIFICADO | Projeto `ff634e1a-388b-4ec0-8a30-e4b3f23c2e3e` (`radar-vital.lovable.app`); publicar uma unica vez no final |
+| Supabase de producao | AGUARDANDO SQL | Plano Mestre: aplicar a migration D-021 no projeto `ixiffabjunvpoizdhwtk` e verificar leitura/escrita |
+| Site publicado | PRESERVADO | `radar-vital.vercel.app` continua na versao atual ate a verificacao do SQL; Lovable permanece conectado ao fluxo anterior |
 
 ## Baseline tecnico
+
+- Plano Mestre: 12 testes de interface, 3 de armazenamento e 3 de documento
+  remoto aprovados nesta preparacao. Suite completa: 57 testes aprovados.
+- Lint dos arquivos alterados do Plano Mestre: aprovado. Lint global ainda
+  aponta 67 erros preexistentes em outros arquivos.
+- Compilacao local com configuracao de contingencia: aprovada. Compilacao
+  padrao local nao inicia por ausencia do binario SWC nesta instalacao.
+- Checagem de tipos: dois erros preexistentes em `useActivityLogs.ts` e
+  `useClientComments.ts`; nenhum no Plano Mestre.
 
 - Branch observada: `main`.
 - Build de producao: aprovado antes da criacao deste roadmap.

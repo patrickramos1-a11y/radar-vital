@@ -260,3 +260,27 @@ Transacoes financeiras nao devem ser editadas ou excluidas diretamente.
 Enquanto o login estiver adiado, a autoria usa o colaborador operacional
 selecionado no painel. Uma futura autenticacao podera acrescentar
 `actor_user_id` sem substituir o historico existente.
+
+## 8. Plano Mestre do Universo Ramos: publicacao inicial
+
+Esta extensao separada nao muda as entidades operacionais anteriores.
+
+### `master_plan_documents`
+
+- `document_key`: chave fixa `universo-ramos`;
+- `revision`: numero incremental usado para escrita condicional;
+- `payload`: documento JSON versao 1, limitado a 2 MB;
+- `updated_at`: data da ultima gravacao.
+
+O payload contem nucleos por setor, limiares de cobertura, capacidades,
+responsabilidades e titulares/substitutos, solicitacoes novas, planejamento de
+solicitacoes e pedidos de capacitacao/assuncao. O frontend valida o formato
+antes de escrever. O documento nao substitui `clients`, `challenges`, `tasks`,
+`client_comments` ou `collaborators`.
+
+### `master_plan_document_revisions`
+
+Armazena cada payload anterior por `(document_key, revision)` em trigger
+transacional. Nao e exposto a leitura/escrita anonima; serve a recuperacao
+administrativa. A versao anterior do frontend continua compativel porque estas
+tabelas sao aditivas.

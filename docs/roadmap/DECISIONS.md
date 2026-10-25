@@ -209,7 +209,28 @@ dentro dela, por colaborador. Entregas com varios responsaveis aparecem no grupo
 de cada um, mas contam uma unica vez nos totais. A avaliacao segue D-007.
 Esta decisao especializa a apresentacao de D-004 sem unificar as tabelas.
 
+## D-021 - Publicacao inicial do Plano Mestre (2026-10-25)
+
+Por solicitacao expressa, o Plano Mestre do Universo Ramos sera publicado como
+modulo oficial antes da futura normalizacao completa. Esta e uma excecao
+especifica ao ciclo de publicacao unico de D-014/D-015, nao uma liberacao
+geral de migrations pendentes do roadmap.
+
+- A migration aditiva cria um documento versionado separado dos registros
+  operacionais. Setores, pessoas, desafios, tarefas e comentarios continuam
+  nas tabelas atuais e sao lidos sem migracao destrutiva.
+- Nucleos, capacidades, responsabilidades, solicitacoes novas, planejamento,
+  pedidos de capacitacao e pedidos para assumir responsabilidade sao salvos no
+  documento do Plano Mestre. Cadastros anteriores no navegador podem ser
+  mesclados mediante acao explicita e exportados em JSON.
+- Acesso e permissao seguem o modelo atual sem login de D-016. Portanto, os
+  cadastros compartilhados nao tem controle de autoria ou aprovacao confiavel.
+  Certificacao, aprovacao e efeitos no trabalho operacional nao sao inferidos.
+- Primeiro o usuario aplica e verifica o SQL no projeto correto. So depois o
+  frontend e publicado e testado na URL oficial.
+
 ## Decisoes pendentes
+
 
 | ID | Tema | Momento limite |
 | --- | --- | --- |

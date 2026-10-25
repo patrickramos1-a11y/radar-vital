@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Globe2,
+  Layers3,
   ListChecks,
   MessageCircle,
   MonitorUp,
@@ -389,9 +390,10 @@ export default function UniversoRamos() {
             <Summary label="Desafios" value={universeChallenges.length} icon={Sparkles} onClick={() => setWorkspace("challenges")} active={workspace === "challenges"} />
           </div>
 
-          <div className="mt-3 flex w-fit gap-1 border p-1">
+          <div className="mt-3 flex w-full flex-wrap gap-1 border p-1 sm:w-fit">
             <button type="button" onClick={() => setWorkspace("units")} className={`h-8 px-3 text-xs font-medium ${workspace === "units" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Unidades internas</button>
             <button type="button" onClick={() => setWorkspace("challenges")} className={`h-8 px-3 text-xs font-medium ${workspace === "challenges" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Desafios e oportunidades</button>
+            <button type="button" onClick={() => navigate("/universo-ramos/plano-mestre")} className="flex h-8 items-center gap-1.5 px-3 text-xs font-medium hover:bg-muted"><Layers3 className="h-3.5 w-3.5" />Plano Mestre</button>
           </div>
         </header>
 
