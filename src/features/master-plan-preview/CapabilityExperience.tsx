@@ -1,0 +1,224 @@
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, ChevronDown, ChevronRight,
+  ClipboardCheck, Clock3, FileText, FilterX, GraduationCap, Info,
+  RotateCcw, Search, ShieldCheck, Sparkles, UserRound, X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  canApproveApplication, canSubmitApplication, capabilityCatalogue, capabilityLevelNames,
+  certifiedLevelFor, createAssessment, criteriaFor, latestAssessmentFor, newApplication,
+  pendingCriteria, submitApplication, type CapabilityLevel, type CapabilityRecord,
+  type Criterion, type JourneyStore, type LevelApplication,
+} from "./capabilityJourney";
+import {
+  changeResponse, changeReview, DEMO_PERSON_ID, DEMO_PERSON_NAME, REVIEW_PERSON_ID, nextTargetLevel,
+  responsibilitiesFor, sourceLines, updateApplication,
+} from "./capabilityDemo";
+import type { PreviewCapability, PreviewResponsibility } from "./model";
+import type { Unit } from "./data";
+import { CapabilityCatalogCard, CapabilityHero, CapabilityIdentityStrip } from "./CapabilityVisualIdentity";
+import { capabilityVisualStyle } from "./capabilityVisuals";
+import { CapabilityPrerequisites, CapabilityPurpose } from "./capabilityPresentation";
+import { capabilitySummary, firstLetterUpper } from "./capabilityPresentationData";
+import { criterionPrompt, criterionResponsePrompt } from "./criterionGuidance";
+import { CapabilityTeamMatrix } from "./CapabilityTeamMatrix";
+import sourceCatalog from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
+import "./capability-experience.css";
+
+type Screen = "capacidades" | "capacidade" | "capacitacoes";
+type Go = (view: Screen | "responsabilidade", id?: string, tab?: string, mode?: string) => void;
+type Props = {
+  view: Screen;
+  code: string;
+  tab: string;
+  mode: string;
+  go: Go;
+  store: JourneyStore;
+  setStore: Dispatch<SetStateAction<JourneyStore>>;
+  registeredCapabilities: PreviewCapability[];
+  mappedResponsibilities: PreviewResponsibility[];
+  sectors: Unit[];
+  openSector: (sectorId: string) => void;
+  people?: Array<{ id: string; name: string }>;
+  capabilityPlans?: Record<string, Record<string, 0 | CapabilityLevel>>;
+  onCapabilityPlanChange?: (capabilityCode: string, collaboratorId: string, level: 0 | CapabilityLevel) => void;
+};
+
+const kinds = ["Todas", "Transversal", "Funcional", "Especializada"] as const;
+const levelColors = ["text-zinc-600", "text-sky-700", "text-teal-700", "text-violet-700"];
+const levelBackgrounds = ["bg-zinc-100", "bg-sky-50", "bg-teal-50", "bg-violet-50"];
+const answerLabels = ["Preciso de ajuda", "Com apoio", "Sozinho", "Consigo ensinar"];
+
+function DemoFlag() {
+  return <div className="cap-demo-flag" role="note"><Info className="h-4 w-4 shrink-0" /><span><strong>Prévia visual.</strong> Respostas, referências e avaliações desta jornada são exemplos temporários; nada é enviado ou salvo.</span></div>;
+}
+
+function SectionHeading({ eyebrow, title, children }: { eyebrow?: string; title: string; children?: React.ReactNode }) {
+  return <div className="mb-4 border-b border-zinc-200 pb-3">{eyebrow && <p className="cap-eyebrow">{eyebrow}</p>}<h2 className="text-lg font-semibold text-[#172824]">{title}</h2>{children && <p className="mt-1 text-sm leading-relaxed text-zinc-600">{children}</p>}</div>;
+}
+
+function TextList({ value }: { value: string }) {
+  const lines = sourceLines(value);
+  return lines.length > 0 ? <ul className="space-y-2">{lines.map((line, index) => <li key={`${line}-${index}`} className="flex gap-3 text-sm leading-relaxed text-zinc-700"><Check className="mt-1 h-4 w-4 shrink-0 text-teal-600" /><span>{firstLetterUpper(line)}</span></li>)}</ul> : <p className="text-sm text-zinc-500">Não detalhado na fonte.</p>;
+}
+
+function IntroHeader({ title, subtitle, eyebrow, action }: { title: string; subtitle: string; eyebrow: string; action?: React.ReactNode }) {
+  return <div className="cap-intro-title mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-zinc-200 pb-5"><div className="min-w-0 max-w-3xl"><p className="cap-eyebrow">{eyebrow}</p><h1 className="text-2xl font-semibold leading-tight text-[#172824] sm:text-[28px]">{title}</h1><p className="mt-2 text-sm leading-relaxed text-zinc-600">{subtitle}</p></div>{action}</div>;
+}
+
+export function CapabilityExperience({ view, code, tab, mode, go, store, setStore, registeredCapabilities, mappedResponsibilities, sectors, openSector, people = [], capabilityPlans = {}, onCapabilityPlanChange = () => {} }: Props) {
+  const selected = capabilityCatalogue.find((item) => item.code === code)
+    ?? (view === "capacitacoes" && !code ? capabilityCatalogue.find((item) => item.code === "F04") : undefined);
+  return <div className="cap-experience cap-themed relative min-w-0" style={selected ? capabilityVisualStyle(selected.code) : undefined} data-testid="capability-experience">
+    <DemoFlag />
+    {view === "capacidades" && <Catalog go={go} registeredCapabilities={registeredCapabilities} mappedCount={mappedResponsibilities.filter((item) => item.id.startsWith("resp-")).length} />}
+    {view !== "capacidades" && !selected && <div className="cap-empty"><p>Capacidade não encontrada neste catálogo.</p><Button variant="outline" onClick={() => go("capacidades")}>Voltar ao catálogo</Button></div>}
+    {view === "capacidade" && selected && <CapabilitySheet item={selected} tab={tab} go={go} store={store} mappedResponsibilities={mappedResponsibilities} sectors={sectors} openSector={openSector} />}
+    {view === "capacitacoes" && selected && <TrainingJourney item={selected} tab={tab} mode={mode} go={go} store={store} setStore={setStore} people={people} capabilityPlans={capabilityPlans} onCapabilityPlanChange={onCapabilityPlanChange} />}
+  </div>;
+}
+
+function Catalog({ go, registeredCapabilities, mappedCount }: { go: Go; registeredCapabilities: PreviewCapability[]; mappedCount: number }) {
+  const [query, setQuery] = useState("");
+  const [kind, setKind] = useState<(typeof kinds)[number]>("Todas");
+  const list = useMemo(() => capabilityCatalogue.filter((item) => {
+    const matchKind = kind === "Todas" || item.nature === kind;
+    const needle = query.trim().toLocaleLowerCase("pt-BR");
+    return matchKind && (!needle || `${item.code} ${item.title} ${item.summary} ${item.originLabel}`.toLocaleLowerCase("pt-BR").includes(needle));
+  }), [query, kind]);
+  return <>
+    <IntroHeader eyebrow="Plano Mestre / Capacidades" title="Banco de capacidades" subtitle="O que a Ramos precisa saber fazer, com critérios e caminhos claros para desenvolver cada domínio." action={<Button onClick={() => go("capacitacoes", "F04", "autoavaliacao")} className="bg-[#176f68] hover:bg-[#115b55]"><GraduationCap className="mr-2 h-4 w-4" /> Explorar jornada</Button>} />
+    <div className="cap-search-shell mb-4"><Search className="h-5 w-5 shrink-0 text-teal-700" /><input aria-label="Buscar capacidades" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por capacidade, código ou atividade" className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-400" />{query && <button type="button" onClick={() => setQuery("")} aria-label="Limpar busca" className="grid h-8 w-8 place-items-center text-zinc-500 hover:text-zinc-900"><X className="h-4 w-4" /></button>}</div>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div className="flex flex-wrap gap-1" role="group" aria-label="Filtrar por natureza">{kinds.map((item) => <button type="button" key={item} aria-pressed={kind === item} onClick={() => setKind(item)} className={`cap-filter ${kind === item ? "cap-filter-active" : ""}`}>{item}<span className="ml-2 text-[11px] opacity-70">{item === "Todas" ? capabilityCatalogue.length : capabilityCatalogue.filter((capability) => capability.nature === item).length}</span></button>)}</div><span className="text-xs text-zinc-500">{list.length} de {capabilityCatalogue.length} capacidades</span></div>
+    <div className="mb-4 flex items-start gap-2 border-l-2 border-amber-400 bg-amber-50 px-3 py-2.5 text-xs text-amber-950"><Info className="h-4 w-4 shrink-0" /><p>Fichas extraídas da planilha de responsabilidades. {mappedCount ? `${mappedCount} responsabilidades vinculadas aos setores no Plano Mestre; outras ainda aguardam revisão.` : "A associação aos setores atuais ainda precisa ser validada."}</p></div>
+    {list.length > 0 ? <div className="cap-catalog-grid">{list.map((item) => <CapabilityCatalogCard key={item.code} item={item} onOpen={() => go("capacidade", item.code)} />)}</div> : <div className="cap-empty"><FilterX className="h-5 w-5 text-zinc-400" /><p>Nenhuma capacidade encontrada. Ajuste a busca ou os filtros.</p><Button variant="outline" size="sm" onClick={() => { setQuery(""); setKind("Todas"); }}>Limpar filtros</Button></div>}
+    {registeredCapabilities.some((item) => !/^[TFE]\d{2}$/.test(item.id)) && <section className="mt-8 border-t pt-6"><SectionHeading eyebrow="Cadastros existentes" title="Outras capacidades do Plano Mestre">Itens cadastrados separadamente das 28 fichas da planilha.</SectionHeading><div className="grid gap-2 sm:grid-cols-2">{registeredCapabilities.filter((item) => !/^[TFE]\d{2}$/.test(item.id)).map((item) => <button key={item.id} type="button" onClick={() => go("capacidade", item.id, undefined, "atual")} className="flex items-center justify-between gap-2 border bg-white px-4 py-3 text-left text-sm hover:border-teal-500"><span className="min-w-0 break-words font-medium">{item.title}</span><ChevronRight className="h-4 w-4 shrink-0" /></button>)}</div></section>}
+    <div className="mt-7 flex justify-end"><Button variant="outline" size="sm" onClick={() => go("capacidades", undefined, undefined, "atual")}>Abrir cadastro atual <ArrowRight className="ml-2 h-4 w-4" /></Button></div>
+  </>;
+}
+
+function CapabilitySheet({ item, tab, go, store, mappedResponsibilities, sectors }: { item: CapabilityRecord; tab: string; go: Go; store: JourneyStore; mappedResponsibilities: PreviewResponsibility[]; sectors: Unit[]; openSector: (sectorId: string) => void }) {
+  const section = ["visao", "niveis", "responsabilidades"].includes(tab) ? tab : "visao";
+  const linked = responsibilitiesFor(item.code);
+  const certified = certifiedLevelFor(store, DEMO_PERSON_ID, item.code);
+  const assessment = latestAssessmentFor(store, DEMO_PERSON_ID, item.code);
+  const certifiedLevels = new Map(capabilityCatalogue.map((capability) => [capability.code, certifiedLevelFor(store, DEMO_PERSON_ID, capability.code)] as const).filter(([, level]) => level > 0));
+  return <>
+    <button type="button" onClick={() => go("capacidades")} className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-teal-800 hover:underline"><ArrowLeft className="h-4 w-4" /> Banco de capacidades</button>
+    <div className="cap-sheet-identity">
+      <CapabilityHero item={item} />
+      <IntroHeader eyebrow={`${item.nature} / ${item.code}`} title={item.title} subtitle={capabilitySummary(item)} action={<Button onClick={() => go("capacitacoes", item.code, "autoavaliacao")} className="bg-[#176f68] hover:bg-[#115b55]">Iniciar autoavaliação <ArrowRight className="ml-2 h-4 w-4" /></Button>} />
+    </div>
+    <div className="mb-5 flex gap-1 overflow-x-auto border-b border-zinc-200" role="tablist" aria-label="Seções da capacidade">{[["visao", "Visão geral"], ["niveis", "Níveis e evidências"], ["responsabilidades", `Responsabilidades (${linked.length})`]].map(([key, label]) => <button type="button" role="tab" aria-selected={section === key} key={key} onClick={() => go("capacidade", item.code, key)} className={`cap-section-tab ${section === key ? "cap-section-tab-active" : ""}`}>{label}</button>)}</div>
+    <div className="grid min-w-0 gap-7 xl:grid-cols-[minmax(0,1fr)_280px]"><div className="min-w-0">
+      {section === "visao" && <div className="space-y-8"><section><SectionHeading eyebrow="Propósito" title="O domínio esperado" /><CapabilityPurpose item={item} /></section><section><SectionHeading eyebrow="Prática" title="O que está no escopo" /><TextList value={item.detail.scope} /></section><section><SectionHeading eyebrow="Comprovação" title="Critérios de desempenho" >Cada critério é uma declaração da sua prática: use um caso real para explicar o que fez e como o resultado pode ser conferido.</SectionHeading><div className="space-y-3">{criteriaFor(item, 1).filter((criterion) => criterion.kind === "performance").map((criterion) => <div key={criterion.id} className="border-l-2 border-teal-400 pl-3 text-sm"><strong>{criterionPrompt(criterion.text)}</strong><p className="mt-1 leading-relaxed text-zinc-700">{firstLetterUpper(criterion.text)}</p><p className="mt-1 text-xs leading-relaxed text-zinc-600">{firstLetterUpper(criterion.guidance)}</p></div>)}</div></section><section className="grid gap-5 border-t pt-6 sm:grid-cols-2"><div><h3 className="mb-2 text-sm font-semibold">Pré-requisitos</h3><CapabilityPrerequisites value={item.detail.prerequisites} currentCode={item.code} onOpen={(code) => go("capacidade", code)} certifiedLevels={certifiedLevels} /></div><div><h3 className="mb-2 text-sm font-semibold">Limites desta capacidade</h3><p className="whitespace-pre-line text-sm leading-relaxed text-zinc-600">{item.detail.limits}</p></div></section></div>}
+      {section === "niveis" && <div><SectionHeading eyebrow="Progressão" title="Do apoio à multiplicação">Os critérios se acumulam por nível. Uma aprovação anterior é apenas ilustrativa nesta prévia.</SectionHeading><div className="space-y-0">{([1, 2, 3] as CapabilityLevel[]).map((level) => { const description = level === 1 ? item.detail.assisted : level === 2 ? item.detail.autonomous : item.detail.multiplier; const evidence = criteriaFor(item, level).filter((criterion) => criterion.level === level); return <section key={level} className="cap-level-row"><span className={`cap-level-number ${levelBackgrounds[level]} ${levelColors[level]}`}>{String(level).padStart(2, "0")}</span><div className="min-w-0 flex-1 pb-6"><h3 className={`text-base font-semibold ${levelColors[level]}`}>{capabilityLevelNames[level]}</h3><p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-zinc-700">{firstLetterUpper(description)}</p><div className="mt-3 border-l-2 border-zinc-200 pl-3"><p className="mb-1 text-[11px] font-semibold uppercase text-zinc-500">Evidências deste nível</p>{evidence.map((criterion) => <div key={criterion.id} className="py-2 text-xs leading-relaxed"><strong>{criterionPrompt(criterion.text)}</strong><p className="mt-1 text-zinc-700">{firstLetterUpper(criterion.text)}</p><p className="mt-1 text-zinc-600">{firstLetterUpper(criterion.guidance)}</p></div>)}</div></div></section>; })}</div><p className="mt-2 border-l-2 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-950">Certificação interna não substitui habilitação profissional, atribuição legal ou responsabilidade técnica.</p></div>}
+      {section === "responsabilidades" && <div><SectionHeading eyebrow="Aplicação no trabalho" title="Onde esta capacidade é exigida">Cada responsabilidade indica o nível mínimo necessário e o setor que responde por ela. Abra as responsabilidades vinculadas para ver as atividades e quem pode assumi-las.</SectionHeading>{linked.length ? <div className="divide-y border-y bg-white">{linked.map((responsibility) => { const required = responsibility.requiredCapabilities.find((entry) => entry.capabilityCode === item.code); const mapped = mappedResponsibilities.find((entry) => entry.id === responsibility.sourceId); const sector = sectors.find((entry) => entry.id === mapped?.sectorId); const requiredLevel = required?.minimumLevel ?? 0; return <button type="button" key={responsibility.sourceId} disabled={!mapped} onClick={() => go("responsabilidade", responsibility.sourceId)} className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3 text-left hover:bg-teal-50 disabled:cursor-default disabled:hover:bg-white"><span className="min-w-0"><strong className="block text-sm text-[#172824]">{responsibility.title}</strong><span className="mt-1 block text-xs text-zinc-600">{sector ? `Setor responsável: ${sector.name}` : "Vínculo com setor pendente; ficha ainda indisponível"}</span></span><span className={`cap-level-badge cap-level-badge-${requiredLevel}`}>Nível mínimo <strong>{capabilityLevelNames[requiredLevel]}</strong> {mapped && <ArrowRight className="h-4 w-4" />}</span></button>; })}</div> : <p className="text-sm text-zinc-500">Nenhuma responsabilidade exige esta capacidade no momento.</p>}</div>}
+    </div><aside className="xl:sticky xl:top-3 xl:self-start"><div className="border-t-4 border-teal-600 bg-white p-4 shadow-sm"><div className="mb-4 flex items-center gap-2 text-teal-800"><Sparkles className="h-4 w-4" /><h2 className="text-sm font-semibold">Sua jornada de exemplo</h2></div><p className="text-xs text-zinc-500">Nível indicado</p><p className="mt-1 text-lg font-semibold text-[#172824]">{assessment ? capabilityLevelNames[assessment.indicatedLevel] : "Ainda não avaliado"}</p><div className="my-4 h-px bg-zinc-200" /><p className="text-xs text-zinc-500">Nível aprovado na simulação</p><p className={`mt-1 text-lg font-semibold ${levelColors[certified]}`}>{certified ? capabilityLevelNames[certified] : "Nenhum"}</p><Button className="mt-5 w-full bg-[#176f68] hover:bg-[#115b55]" onClick={() => go("capacitacoes", item.code, "autoavaliacao")}>Abrir jornada <ArrowRight className="ml-2 h-4 w-4" /></Button></div><p className="mt-3 text-xs leading-relaxed text-zinc-500">Fonte: planilha de responsabilidades, versão {item.sourceVersion}. Nenhuma pessoa recebeu esta capacidade por meio da prévia.</p></aside></div>
+  </>;
+}
+
+function TrainingJourney({ item, tab, mode, go, store, setStore, people, capabilityPlans, onCapabilityPlanChange }: { item: CapabilityRecord; tab: string; mode: string; go: Go; store: JourneyStore; setStore: Dispatch<SetStateAction<JourneyStore>>; people: Array<{ id: string; name: string }>; capabilityPlans: Record<string, Record<string, 0 | CapabilityLevel>>; onCapabilityPlanChange: (capabilityCode: string, collaboratorId: string, level: 0 | CapabilityLevel) => void }) {
+  const administrator = mode === "administrador";
+  const section = ["autoavaliacao", "criterios", "retorno"].includes(tab) ? tab : "autoavaliacao";
+  const [answers, setAnswers] = useState<number[]>([-1, -1, -1, -1]);
+  const [comment, setComment] = useState("");
+  const [targetLevel, setTargetLevel] = useState<CapabilityLevel>(1);
+  const [showDeclaration, setShowDeclaration] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  const [selectedApplicationId, setSelectedApplicationId] = useState("00000000-0000-4000-8000-000000000004");
+  const [queueFilter, setQueueFilter] = useState<"submitted" | "all">("submitted");
+  useEffect(() => { setTargetLevel(1); setAnswers([-1, -1, -1, -1]); setComment(""); }, [item.code]);
+  const certified = certifiedLevelFor(store, DEMO_PERSON_ID, item.code);
+  const nextLevel = nextTargetLevel(certified);
+  const requestedLevel = Math.max(targetLevel, nextLevel ?? 3) as CapabilityLevel;
+  const application = store.applications.find((entry) => entry.personId === DEMO_PERSON_ID && entry.capabilityCode === item.code && entry.targetLevel === requestedLevel && entry.status !== "approved");
+  const applicableCriteria = pendingCriteria(item, requestedLevel, certified);
+  const completedCriteria = applicableCriteria.filter((criterion) => application?.responses[criterion.id]?.complete).length;
+  const assessmentHistory = store.assessments.filter((entry) => entry.capabilityCode === item.code && entry.personId === DEMO_PERSON_ID).sort((a, b) => b.at.localeCompare(a.at));
+  const latestAssessment = assessmentHistory[0];
+  const nextAssessmentAt = latestAssessment ? new Date(new Date(latestAssessment.at).getTime() + 15 * 24 * 60 * 60 * 1000) : undefined;
+  const canAssess = !nextAssessmentAt || nextAssessmentAt.getTime() <= Date.now();
+  const activeApplication = store.applications.find((entry) => entry.id === selectedApplicationId);
+  const activeCapability = capabilityCatalogue.find((entry) => entry.code === activeApplication?.capabilityCode);
+  const priorApprovedLevel = activeApplication ? store.applications.reduce((highest, entry) =>
+    entry.id !== activeApplication.id && entry.capabilityCode === activeApplication.capabilityCode
+      && entry.personId === activeApplication.personId && entry.status === "approved"
+      && entry.targetLevel < activeApplication.targetLevel ? Math.max(highest, entry.targetLevel) : highest, 0) : 0;
+  const reviewCriteria = activeCapability && activeApplication ? pendingCriteria(activeCapability, activeApplication.targetLevel, priorApprovedLevel) : [];
+  const queue = store.applications.filter((entry) => entry.status !== "draft" && (queueFilter === "all" || entry.status === "submitted"));
+
+  const openApplication = () => {
+    if (application || !nextLevel) return;
+    const created = newApplication(DEMO_PERSON_ID, item.code, requestedLevel);
+    setStore((current) => ({ ...current, applications: [...current.applications, created] }));
+  };
+  const editApplication = (updated: LevelApplication) => setStore((current) => updateApplication(current, updated));
+  const selectLevel = (level: CapabilityLevel) => { setTargetLevel(level); if (level >= (nextLevel ?? 4)) { const exists = store.applications.some((entry) => entry.personId === DEMO_PERSON_ID && entry.capabilityCode === item.code && entry.targetLevel === level && entry.status !== "approved"); if (!exists) setStore((current) => ({ ...current, applications: [...current.applications, newApplication(DEMO_PERSON_ID, item.code, level)] })); } };
+  const submitAssessment = () => {
+    if (answers.some((answer) => answer < 0) || !comment.trim()) { toast.error("Responda às quatro perguntas e descreva sua avaliação."); return; }
+    if (!canAssess) { toast.info(`A próxima autoavaliação desta capacidade estará disponível em ${nextAssessmentAt!.toLocaleDateString("pt-BR")}.`); return; }
+    setStore((current) => createAssessment(current, DEMO_PERSON_ID, item.code, answers as [number, number, number, number], comment));
+    setAnswers([-1, -1, -1, -1]); setComment("");
+    toast.success("Autoavaliação registrada apenas nesta simulação.");
+  };
+  const assessment = latestAssessmentFor(store, DEMO_PERSON_ID, item.code);
+
+  if (administrator && tab === "mapa") return <CapabilityTeamMatrix library={{ capabilities: capabilityCatalogue, responsibilities: sourceCatalog.responsibilities, sourceSha256: sourceCatalog.source.sha256 }} people={people} plans={capabilityPlans} onPlanChange={onCapabilityPlanChange} />;
+
+  return <>
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><button type="button" onClick={() => go("capacidade", item.code)} className="inline-flex items-center gap-1 text-xs font-medium text-teal-800 hover:underline"><ArrowLeft className="h-4 w-4" /> Voltar à ficha</button><button type="button" onClick={() => go("capacitacoes", undefined, undefined, "atual")} className="text-xs text-zinc-500 hover:text-zinc-900 hover:underline">Ver pedidos já registrados no Plano Mestre</button></div>
+    <IntroHeader eyebrow="Jornada de capacitação" title={administrator ? "Avaliação administrativa" : "Minha capacitação"} subtitle={administrator ? "Analise os critérios e veja como funcionaria uma devolutiva, sem conceder certificação real." : "Entenda seu nível, reúna evidências e acompanhe cada passo da solicitação."} action={<div className="inline-flex border border-zinc-200 bg-white p-1" role="group" aria-label="Visão da jornada"><button type="button" aria-pressed={!administrator} onClick={() => go("capacitacoes", item.code, section, "colaborador")} className={`cap-mode ${!administrator ? "cap-mode-active" : ""}`}><UserRound className="h-4 w-4" /> Colaborador</button><button type="button" aria-pressed={administrator} onClick={() => go("capacitacoes", item.code, "fila", "administrador")} className={`cap-mode ${administrator ? "cap-mode-active" : ""}`}><ShieldCheck className="h-4 w-4" /> Administrador</button>{administrator && <button type="button" onClick={() => go("capacitacoes", item.code, "mapa", "administrador")} className="cap-mode">Mapa da equipe</button>}</div>} />
+    <CapabilityIdentityStrip item={administrator ? activeCapability ?? item : item} />
+    {administrator ? <div className="grid min-w-0 gap-5 lg:grid-cols-[290px_minmax(0,1fr)]"><aside className="min-w-0"><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-semibold">Solicitações de exemplo</h2><span className="text-xs text-zinc-500">{queue.length}</span></div><div className="mb-3 flex gap-1" role="group" aria-label="Filtro da fila"><button type="button" aria-pressed={queueFilter === "submitted"} className={`cap-filter ${queueFilter === "submitted" ? "cap-filter-active" : ""}`} onClick={() => setQueueFilter("submitted")}>A avaliar</button><button type="button" aria-pressed={queueFilter === "all"} className={`cap-filter ${queueFilter === "all" ? "cap-filter-active" : ""}`} onClick={() => setQueueFilter("all")}>Todas</button></div><div className="divide-y border bg-white">{queue.map((entry) => { const capability = capabilityCatalogue.find((candidate) => candidate.code === entry.capabilityCode); return <button type="button" key={entry.id} onClick={() => setSelectedApplicationId(entry.id)} className={`w-full px-3 py-3 text-left hover:bg-teal-50 ${selectedApplicationId === entry.id ? "border-l-4 border-teal-600 bg-teal-50" : ""}`}><span className="text-[11px] font-semibold text-teal-700">{entry.capabilityCode} · Nível {entry.targetLevel}</span><strong className="mt-1 block text-sm leading-snug">{capability?.title}</strong><span className="mt-1 block text-xs text-zinc-500">{entry.status === "submitted" ? "A avaliar" : entry.status === "approved" ? "Aprovada na simulação" : "Ajustes solicitados"}</span></button>; })}{queue.length === 0 && <p className="p-3 text-sm text-zinc-500">Nenhuma solicitação nesta seleção.</p>}</div></aside><section className="min-w-0">{activeApplication && activeCapability && activeApplication.status !== "draft" ? <><div className="mb-4 border-b pb-3"><p className="cap-eyebrow">{activeApplication.personId === REVIEW_PERSON_ID ? "Caso demonstrativo" : DEMO_PERSON_NAME} / {activeCapability.code}</p><h2 className="text-xl font-semibold">{activeCapability.title}</h2><p className="mt-1 text-sm text-zinc-500">Nível solicitado: {capabilityLevelNames[activeApplication.targetLevel]} · {activeApplication.status === "submitted" ? "Aguardando decisão" : activeApplication.status === "approved" ? "Aprovado apenas na simulação" : "Ajustes solicitados"}</p></div><div className="space-y-3">{reviewCriteria.map((criterion) => { const response = activeApplication.responses[criterion.id]; const review = activeApplication.reviews[criterion.id]; return <article key={criterion.id} className="border bg-white p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-[11px] font-semibold uppercase text-teal-700">{criterion.kind === "performance" ? "Desempenho" : `Nível ${criterion.level}`}</span><h3 className="mt-1 text-sm font-semibold leading-snug">{criterion.text}</h3>{criterion.reviewCheck && <p className="mt-2 border-l-2 border-violet-400 pl-2 text-xs text-zinc-600"><strong>Conferir:</strong> {criterion.reviewCheck}</p>}</div>{review && <span className={`shrink-0 text-xs font-semibold ${review.decision === "accepted" ? "text-teal-700" : "text-rose-700"}`}>{review.decision === "accepted" ? "Aceito" : "Ajustar"}</span>}</div><p className="mt-3 text-sm leading-relaxed text-zinc-700">{response?.explanation || "Sem explicação enviada."}</p>{response?.reference && <EvidenceLink name={response.evidenceName} location={response.reference} />}{activeApplication.status === "submitted" && <div className="mt-4 flex flex-wrap items-end gap-2 border-t pt-3"><label className="min-w-[160px] flex-1 text-xs font-medium">Observação ao colaborador<input value={reviewNotes[criterion.id] ?? review?.note ?? ""} onChange={(event) => setReviewNotes((current) => ({ ...current, [criterion.id]: event.target.value }))} className="mt-1 h-9 w-full border px-2 outline-none focus:border-teal-600" placeholder="Opcional ao aceitar; obrigatória ao pedir ajuste" /></label><Button size="sm" variant="outline" onClick={() => editApplication(changeReview(activeApplication, criterion.id, { decision: "accepted", note: reviewNotes[criterion.id] ?? "", at: new Date().toISOString() }))}><Check className="mr-1 h-4 w-4" /> Aceitar</Button><Button size="sm" variant="outline" onClick={() => { const note = (reviewNotes[criterion.id] ?? "").trim(); if (!note) { toast.error("Explique o ajuste solicitado."); return; } editApplication(changeReview(activeApplication, criterion.id, { decision: "changes_requested", note, at: new Date().toISOString() })); }}>Pedir ajuste</Button></div>}</article>; })}</div>{activeApplication.status === "submitted" && <div className="mt-4 flex flex-wrap gap-2"><Button disabled={!canApproveApplication(activeApplication, reviewCriteria)} onClick={() => { editApplication({ ...activeApplication, status: "approved", approvedAt: new Date().toISOString() }); toast.success("Aprovação registrada somente na simulação."); }} className="bg-[#176f68] hover:bg-[#115b55]">Aprovar na simulação</Button><Button variant="outline" disabled={!Object.values(activeApplication.reviews).some((review) => review.decision === "changes_requested")} onClick={() => { editApplication({ ...activeApplication, status: "changes_requested" }); toast.info("Pedido de ajustes registrado somente na simulação."); }}>Devolver para ajustes</Button></div>}</> : <div className="cap-empty">Selecione uma solicitação para ver os critérios.</div>}</section></div> : <>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b pb-4"><label className="flex min-w-0 items-center gap-2 text-xs font-medium">Capacidade<select aria-label="Capacidade da jornada" value={item.code} onChange={(event) => go("capacitacoes", event.target.value, "autoavaliacao", "colaborador")} className="h-9 min-w-0 max-w-[min(70vw,390px)] border bg-white px-2 text-xs">{capabilityCatalogue.map((candidate) => <option key={candidate.code} value={candidate.code}>{candidate.code} · {candidate.title}</option>)}</select></label><button type="button" onClick={() => go("capacidade", item.code)} className="inline-flex items-center gap-1 text-xs font-medium text-teal-800 hover:underline">Ver ficha completa <ArrowRight className="h-4 w-4" /></button></div>
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-zinc-200" role="tablist" aria-label="Etapas da jornada">{[["autoavaliacao", "1. Autoavaliação"], ["criterios", "2. Critérios e evidências"], ["retorno", "3. Acompanhamento"]].map(([key, label]) => <button key={key} type="button" role="tab" aria-selected={section === key} onClick={() => go("capacitacoes", item.code, key, "colaborador")} className={`cap-section-tab ${section === key ? "cap-section-tab-active" : ""}`}>{label}</button>)}</div>
+      {section === "autoavaliacao" && <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_260px]"><section><SectionHeading eyebrow={item.code} title="Como você atua hoje?">A autoavaliação registra a evolução da sua aprendizagem e não concede certificação. Faça uma nova reflexão a cada 15 dias; para acompanhar a jornada inicial, registre ao menos 3 avaliações ao longo do período.</SectionHeading><div className="mb-5 border-l-2 border-sky-400 bg-sky-50 px-3 py-2 text-xs leading-relaxed text-sky-950"><strong>Seu ritmo de acompanhamento:</strong> {assessmentHistory.length} de 3 autoavaliações iniciais registradas.{nextAssessmentAt && !canAssess ? ` A próxima estará disponível em ${nextAssessmentAt.toLocaleDateString("pt-BR")}.` : " Você já pode registrar a reflexão deste ciclo."}</div><div className="space-y-4">{item.selfAssessmentQuestions.map((question, index) => <fieldset key={question.number} className="border-b border-zinc-200 pb-4"><legend className="text-[11px] font-semibold uppercase text-teal-700">{question.dimension}</legend><p className="mt-2 text-sm font-medium leading-relaxed text-[#172824]">{question.question}</p><div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">{answerLabels.map((label, value) => <button type="button" key={label} aria-pressed={answers[index] === value} onClick={() => setAnswers((current) => current.map((answer, answerIndex) => answerIndex === index ? value : answer))} className={`cap-answer ${answers[index] === value ? "cap-answer-active" : ""}`}>{label}</button>)}</div></fieldset>)}</div><label className="mt-5 block text-sm font-semibold">Por que esse nível representa sua prática?<textarea aria-label="Comentário da autoavaliação" value={comment} onChange={(event) => setComment(event.target.value)} rows={3} placeholder="Descreva situações reais, autonomia e pontos em que ainda precisa de apoio." className="mt-2 w-full resize-y border bg-white p-3 text-sm font-normal outline-none focus:border-teal-600" /></label><div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-zinc-500">{answers.every((answer) => answer >= 0) ? `Nível indicado: ${capabilityLevelNames[Math.min(...answers)]}` : "Responda as quatro dimensões para ver o nível indicado."}</p><Button onClick={submitAssessment} disabled={!canAssess || answers.some((answer) => answer < 0) || !comment.trim()} className="bg-[#176f68] hover:bg-[#115b55]">Registrar na simulação</Button></div></section><aside className="border-t-4 border-sky-500 bg-white p-4 xl:self-start"><Clock3 className="h-5 w-5 text-sky-700" /><h3 className="mt-2 text-sm font-semibold">Histórico desta sessão</h3><p className="mt-1 text-xs text-zinc-500">Cada resposta registrada aparece aqui sem substituir as anteriores.</p><div className="mt-4 space-y-3 border-l-2 border-sky-100 pl-3">{assessmentHistory.map((entry) => <div key={entry.id}><p className="text-xs font-semibold text-sky-800">{capabilityLevelNames[entry.indicatedLevel]}</p><p className="text-[11px] text-zinc-500">{new Date(entry.at).toLocaleDateString("pt-BR")}</p><p className="mt-1 text-xs leading-relaxed text-zinc-600">{entry.comment}</p></div>)}{!assessment && <p className="text-xs text-zinc-500">Nenhuma autoavaliação nesta sessão.</p>}</div></aside></div>}
+      {section === "criterios" && <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_260px]"><section><SectionHeading eyebrow="Solicitação" title="Critérios e evidências">Selecione diretamente o nível que deseja alcançar. Os critérios são cumulativos, então um pedido de Autônomo também inclui o que sustenta o nível Assistido. Você pode voltar a qualquer rascunho e manter o que já registrou.</SectionHeading><div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Nível solicitado">{([1, 2, 3] as CapabilityLevel[]).map((level) => <button key={level} type="button" disabled={level < (nextLevel ?? 4)} aria-pressed={requestedLevel === level} onClick={() => selectLevel(level)} className={`cap-level-choice ${requestedLevel === level ? "cap-level-choice-active" : ""}`}>{level}. {capabilityLevelNames[level]}</button>)}</div><p className="mb-5 text-xs text-zinc-500">Escolha outro nível para abrir ou retomar o respectivo rascunho. A conclusão de cada cartão compõe o progresso do pedido.</p>{nextLevel ? <>{!application && <Button onClick={openApplication} className="mb-5 bg-[#176f68] hover:bg-[#115b55]">Começar solicitação de exemplo <ArrowRight className="ml-2 h-4 w-4" /></Button>}{application && <><div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-l-2 border-violet-400 bg-violet-50 px-3 py-2 text-xs"><span>Situação: <strong>{application.status === "draft" ? "Em preenchimento" : application.status === "submitted" ? "Enviada para avaliação simulada" : "Ajustes solicitados"}</strong></span><strong>{completedCriteria} de {applicableCriteria.length} critérios concluídos</strong></div><div className="space-y-3">{applicableCriteria.map((criterion) => <CriterionEditor key={criterion.id} criterion={criterion} application={application} onChange={editApplication} readOnly={application.status === "submitted"} />)}</div><div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><Button variant="outline" disabled={!applicableCriteria.some((criterion) => application.responses[criterion.id]?.complete)} onClick={() => setShowDeclaration(true)}><FileText className="mr-2 h-4 w-4" /> Prévia da declaração</Button><Button disabled={!canSubmitApplication(application, applicableCriteria) || application.status === "submitted"} onClick={() => { try { editApplication(submitApplication(application, applicableCriteria)); setSelectedApplicationId(application.id); go("capacitacoes", item.code, "retorno", "colaborador"); toast.success("Solicitação enviada apenas para a fila demonstrativa."); } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível enviar."); } }} className="bg-[#176f68] hover:bg-[#115b55]">Enviar para avaliação de exemplo</Button></div></>}</> : <p className="border-l-2 border-teal-500 bg-teal-50 p-3 text-sm">O nível Multiplicador já está marcado como aprovado nesta simulação.</p>}</section><aside className="border-t-4 border-violet-500 bg-white p-4 xl:self-start"><GraduationCap className="h-5 w-5 text-violet-700" /><h3 className="mt-2 text-sm font-semibold">Progressão</h3><p className="mt-2 text-xs text-zinc-500">Nível aprovado na simulação</p><p className="mt-1 text-lg font-semibold">{certified ? capabilityLevelNames[certified] : "Nenhum"}</p><div className="my-4 border-t" /><p className="text-xs text-zinc-500">Critérios concluídos neste pedido</p><strong className="mt-1 block text-lg">{completedCriteria} de {applicableCriteria.length}</strong><p className="mt-4 text-xs leading-relaxed text-zinc-500">Conclua cada cartão quando sua declaração e a evidência já estiverem prontas. Nenhum arquivo é enviado nesta prévia.</p></aside></div>}
+      {section === "retorno" && <section><SectionHeading eyebrow="Histórico demonstrativo" title="Acompanhe o retorno">Pedidos e avaliações abaixo existem apenas nesta sessão. Atualizar a página reinicia a demonstração.</SectionHeading><div className="divide-y border-y bg-white">{store.applications.filter((entry) => entry.personId === DEMO_PERSON_ID && entry.capabilityCode === item.code).slice().reverse().map((entry) => <div key={entry.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4"><div><p className="text-sm font-semibold">Nível {entry.targetLevel} · {capabilityLevelNames[entry.targetLevel]}</p><p className="mt-1 text-xs text-zinc-500">{entry.status === "draft" ? "Em preenchimento" : entry.status === "submitted" ? "Aguardando avaliação" : entry.status === "changes_requested" ? "Ajustes solicitados" : "Aprovado na simulação"}</p>{Object.values(entry.reviews).filter((review) => review.decision === "changes_requested").map((review, index) => <p key={index} className="mt-1 text-xs text-rose-700">Ajuste: {review.note}</p>)}</div>{entry.status === "draft" || entry.status === "changes_requested" ? <Button size="sm" variant="outline" onClick={() => { setTargetLevel(entry.targetLevel); go("capacitacoes", item.code, "criterios", "colaborador"); }}>Continuar <ArrowRight className="ml-1 h-4 w-4" /></Button> : <span className={`text-xs font-semibold ${entry.status === "approved" ? "text-teal-700" : "text-sky-700"}`}>{entry.status === "approved" ? "Concluído (demo)" : "Na fila (demo)"}</span>}</div>)}{store.applications.every((entry) => entry.capabilityCode !== item.code) && <p className="p-4 text-sm text-zinc-500">Ainda não há pedido para esta capacidade.</p>}</div><Button className="mt-5 bg-[#176f68] hover:bg-[#115b55]" onClick={() => go("capacitacoes", item.code, "criterios", "colaborador")}>Ver critérios <ArrowRight className="ml-2 h-4 w-4" /></Button></section>}
+    </>}
+    <Dialog open={showDeclaration} onOpenChange={setShowDeclaration}><DialogContent className="max-h-[85vh] max-w-2xl overflow-auto"><DialogHeader><DialogTitle>Declaração de critérios realizados · exemplo</DialogTitle></DialogHeader><p className="border-l-2 border-amber-400 bg-amber-50 p-3 text-xs text-amber-950">Documento demonstrativo. Não é certificação, habilitação profissional ou decisão da Ramos Engenharia.</p><p className="text-sm"><strong>Capacidade:</strong> {item.code} · {item.title}<br /><strong>Nível pretendido:</strong> {capabilityLevelNames[requestedLevel]}</p><ol className="space-y-3 text-sm">{applicableCriteria.filter((criterion) => application?.responses[criterion.id]?.complete).map((criterion) => <li key={criterion.id} className="border-b pb-3"><strong>{criterion.text}</strong><p className="mt-1 text-zinc-600">{application?.responses[criterion.id]?.explanation || "Explicação ainda não preenchida."}</p></li>)}</ol></DialogContent></Dialog>
+  </>;
+}
+
+function CriterionEditor({ criterion, application, onChange, readOnly }: { criterion: Criterion; application: LevelApplication; onChange: (application: LevelApplication) => void; readOnly: boolean }) {
+  const response = application.responses[criterion.id] ?? { complete: false, explanation: "", evidenceName: "", reference: "", files: [] };
+  const review = application.reviews[criterion.id];
+  const update = (patch: Parameters<typeof changeResponse>[2]) => onChange(changeResponse(application, criterion.id, patch));
+  return <article className="border bg-white p-4">
+    <div className="flex items-start gap-3">
+      <input type="checkbox" aria-label={`Marcar critério: ${criterion.text}`} checked={response.complete} disabled={readOnly}
+        onChange={(event) => update({ complete: event.target.checked })} className="mt-1 h-4 w-4 shrink-0 accent-teal-700" />
+      <div className="min-w-0 flex-1">
+        <span className="text-[11px] font-semibold uppercase text-teal-700">{criterion.kind === "performance" ? "Critério de desempenho" : `Evidência · ${capabilityLevelNames[criterion.level]}`}</span>
+        <h3 className="mt-1 text-sm font-semibold leading-relaxed">{criterionPrompt(criterion.text)}</h3>
+        <p className="mt-1 text-sm leading-relaxed text-zinc-700">{criterion.text}</p>
+        {criterion.guidance && <p className="mt-2 border-l-2 border-teal-400 pl-3 text-xs leading-relaxed text-zinc-600"><strong>Como comprovar:</strong> {criterion.guidance}</p>}
+        {review?.decision === "changes_requested" && <p className="mt-2 text-xs font-medium text-rose-700">Ajuste pedido: {review.note}</p>}
+        <label className="mt-3 block text-xs font-medium">Registre sua declaração e a evidência desta prática
+          <textarea rows={2} value={response.explanation} disabled={readOnly} onChange={(event) => update({ explanation: event.target.value })}
+            placeholder={criterionResponsePrompt(criterion.kind)} className="mt-1 w-full resize-y border p-2 text-sm font-normal outline-none focus:border-teal-600 disabled:bg-zinc-50" />
+        </label>
+        {criterion.kind === "evidence" && <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="text-xs font-medium">Nome da evidência
+            <input value={response.evidenceName ?? ""} disabled={readOnly} onChange={(event) => update({ evidenceName: event.target.value })}
+              placeholder="Ex.: auditoria do acervo" className="mt-1 h-9 w-full border px-2 text-sm font-normal outline-none focus:border-teal-600 disabled:bg-zinc-50" />
+          </label>
+          <label className="text-xs font-medium">Link ou caminho no repositório
+            <input value={response.reference} disabled={readOnly} onChange={(event) => update({ reference: event.target.value })}
+              placeholder="https://... ou pasta/subpasta" className="mt-1 h-9 w-full border px-2 text-sm font-normal outline-none focus:border-teal-600 disabled:bg-zinc-50" />
+          </label>
+        </div>}
+      </div>
+    </div>
+  </article>;
+}
+
+function EvidenceLink({ name, location }: { name?: string; location: string }) {
+  const trimmed = location.trim();
+  const url = /^https?:\/\/\S+$/i.test(trimmed) ? trimmed : null;
+  return <p className="mt-2 break-all text-xs text-zinc-600"><strong>{name?.trim() || "Evidência registrada"}:</strong> {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-teal-700 underline">{trimmed}</a> : trimmed}</p>;
+}

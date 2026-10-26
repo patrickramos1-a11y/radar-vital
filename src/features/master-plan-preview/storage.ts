@@ -31,6 +31,7 @@ export interface MasterPlanDraft {
   requestPlans: Record<string, RequestPlan>;
   trainingRequests: Array<{ personId: string; capabilityId: string }>;
   claims: Array<{ personId: string; responsibilityId: string }>;
+  capabilityPlans: Record<string, Record<string, 0 | 1 | 2 | 3>>;
   nucleusThresholds: Partial<Record<NucleusId, number>>;
 }
 
@@ -70,13 +71,14 @@ const draftSchema = z.object({
   requestPlans: z.record(requestPlanSchema),
   trainingRequests: z.array(z.object({ personId: identifier, capabilityId: identifier })).max(5_000),
   claims: z.array(z.object({ personId: identifier, responsibilityId: identifier })).max(5_000),
+  capabilityPlans: z.record(z.record(z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]))).default({}),
   nucleusThresholds: z.record(z.number().int().min(1).max(100)).default({}),
 });
 
 export function emptyMasterPlanDraft(): MasterPlanDraft {
   return {
     version: 1, savedAt: "", nucleusOverrides: {}, capabilities: [], responsibilities: [],
-    requests: [], responsibilityOverrides: {}, requestPlans: {}, trainingRequests: [], claims: [], nucleusThresholds: {},
+    requests: [], responsibilityOverrides: {}, requestPlans: {}, trainingRequests: [], claims: [], capabilityPlans: {}, nucleusThresholds: {},
   };
 }
 
@@ -121,6 +123,7 @@ export function mergeMasterPlanDraft(current: MasterPlanDraft, imported: MasterP
     requestPlans: { ...imported.requestPlans, ...current.requestPlans },
     trainingRequests: mergePairs(current.trainingRequests, imported.trainingRequests, (item) => `${item.personId}:${item.capabilityId}`),
     claims: mergePairs(current.claims, imported.claims, (item) => `${item.personId}:${item.responsibilityId}`),
+    capabilityPlans: Object.fromEntries([...new Set([...Object.keys(imported.capabilityPlans), ...Object.keys(current.capabilityPlans)])].map((code) => [code, { ...(imported.capabilityPlans[code] ?? {}), ...(current.capabilityPlans[code] ?? {}) }])),
     nucleusThresholds: { ...imported.nucleusThresholds, ...current.nucleusThresholds },
   };
 }

@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { updateRemoteMasterPlanDraft } from "@/features/master-plan-preview/remote";
 import PlanoMestrePreview from "./PlanoMestrePreview";
 
 const fixture = vi.hoisted(() => ({
@@ -26,8 +27,11 @@ const remote = vi.hoisted(() => ({
 }));
 
 vi.mock("@tanstack/react-query", () => ({
-  useQuery: ({ queryKey }: { queryKey: string[] }) => ({ data: queryKey.at(-1) === "documento" ? remote.document : fixture, isLoading: false, isFetching: false, error: null, refetch: vi.fn() }),
+  useQuery: ({ queryKey }: { queryKey: string[] }) => ({ data: queryKey.at(-1) === "documento" ? remote.document : queryKey[0] === "master-plan-requests" ? [] : fixture, isLoading: false, isFetching: false, error: null, refetch: vi.fn() }),
   useQueryClient: () => ({ setQueryData: vi.fn() }),
+}));
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ currentUser: { id: "person-1", name: "Gabi", role: "admin" }, loading: false }),
 }));
 vi.mock("@/features/master-plan-preview/remote", () => ({
   fetchRemoteMasterPlanDraft: vi.fn(),
@@ -36,7 +40,19 @@ vi.mock("@/features/master-plan-preview/remote", () => ({
     return remote.document;
   }),
 }));
-vi.mock("@/components/layout/AppLayout", () => ({ AppLayout: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
+vi.mock("@/components/layout/AppLayout", async () => {
+  const { Link } = await import("react-router-dom");
+  const views = [
+    ["Visão geral", "empresa"], ["Núcleos", "nucleos"], ["Setores", "setores"],
+    ["Responsabilidades", "responsabilidades"], ["Capacidades", "capacidades"],
+    ["Capacitações", "capacitacoes"], ["Solicitações", "solicitacoes"],
+    ["Cronologia", "cronologia"], ["Minha jornada", "jornada"], ["Cobertura e sucessão", "cobertura"],
+  ];
+  return { AppLayout: ({ children, navigationTools }: { children: React.ReactNode; navigationTools?: React.ReactNode }) => <>
+    <nav aria-label="Visões de Plano Mestre">{views.map(([label, view]) => <Link key={view} to={`?view=${view}`}>{label}</Link>)}</nav>
+    {navigationTools}{children}
+  </> };
+});
 vi.mock("sonner", () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }));
 beforeEach(() => {
   window.localStorage.clear();
@@ -48,24 +64,120 @@ function openPreview(initial = "/universo-ramos/plano-mestre") {
   return render(<MemoryRouter initialEntries={[initial]}><Routes><Route path="/universo-ramos/plano-mestre" element={<PlanoMestrePreview />} /></Routes></MemoryRouter>);
 }
 
-const nav = () => within(screen.getByRole("navigation", { name: "Páginas do Plano Mestre" }));
+const nav = () => within(screen.getByRole("navigation", { name: "Visões de Plano Mestre" }));
 const main = () => within(screen.getByRole("main"));
 
 describe("Plano Mestre organizational preview", () => {
+  it("starts the sectors page without duplicate heading or breadcrumb bars", () => {
+    openPreview("/universo-ramos/plano-mestre?view=setores");
+    expect(main().getByRole("heading", { name: "Setores" })).toBeTruthy();
+    expect(main().queryByRole("button", { name: "Voltar" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Plano Mestre" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Ferramentas do Plano Mestre" })).toBeTruthy();
+  });
+
+  it("opens the library focused on the sector from its responsibilities tab", () => {
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=projects&tab=responsabilidades");
+    fireEvent.click(main().getByRole("button", { name: "Vincular da biblioteca" }));
+    expect(main().getByText("Vincular responsabilidades a SETOR DE PROJETOS")).toBeTruthy();
+    expect((main().getByRole("combobox", { name: "Filtrar responsabilidades por setor" }) as HTMLSelectElement).value).toBe("projects");
+  });
+
+  it("derives sector capabilities from its saved responsibilities", async () => {
+    remote.document = {
+      version: 1, savedAt: "2026-10-25T20:00:00Z", nucleusOverrides: {}, requests: [], responsibilityOverrides: {}, requestPlans: {}, trainingRequests: [], claims: [], nucleusThresholds: {},
+      capabilities: [{ id: "cap-prazo", title: "Gestão de Prazos", sectorIds: [], sourceChallengeIds: [], status: "local" }],
+      responsibilities: [{ id: "resp-projetos", title: "Controlar entregas de projeto", sectorId: "projects", capabilityIds: ["cap-prazo"], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" }],
+    };
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=projects&tab=capacidades");
+    await waitFor(() => expect(main().getByRole("button", { name: /Gestão de Prazos/ })).toBeTruthy());
+    expect(main().getByText("Exigida por responsabilidade deste setor")).toBeTruthy();
+  });
+
+  it("explains when a sector has no saved library mapping", () => {
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=training&tab=responsabilidades");
+    expect(main().getByText("Este setor ainda não recebeu responsabilidades da biblioteca.")).toBeTruthy();
+  });
+
+  it("opens a source capability directly and returns to the 28-item catalog", () => {
+    openPreview("/universo-ramos/plano-mestre?view=capacidade&id=F04");
+    expect(main().getByTestId("capability-experience")).toBeTruthy();
+    expect(main().getByRole("button", { name: "Banco de capacidades" })).toBeTruthy();
+    fireEvent.click(main().getByRole("tab", { name: "Níveis e evidências" }));
+    expect(main().getByRole("heading", { name: "Do apoio à multiplicação" })).toBeTruthy();
+    fireEvent.click(main().getByRole("button", { name: "Banco de capacidades" }));
+    expect(main().getByText("28 de 28 capacidades")).toBeTruthy();
+    fireEvent.change(main().getByRole("textbox", { name: "Buscar capacidades" }), { target: { value: "F04" } });
+    expect(main().getByText("1 de 28 capacidades")).toBeTruthy();
+  });
+
+  it("keeps position across tabs and links T04 to its prerequisite", () => {
+    openPreview("/universo-ramos/plano-mestre?view=capacidade&id=T04&tab=visao");
+    expect(main().getByText(/Cada prazo relevante precisa ter origem/)).toBeTruthy();
+    expect(main().getByText(/Organizar prazos legais, contratuais e internos/)).toBeTruthy();
+    document.documentElement.scrollTop = 350;
+    fireEvent.click(main().getByRole("tab", { name: "Níveis e evidências" }));
+    expect(document.documentElement.scrollTop).toBe(350);
+    fireEvent.click(main().getByRole("tab", { name: "Visão geral" }));
+    fireEvent.click(main().getByRole("button", { name: /T02.*Uso e Integridade do SISRAMOS/ }));
+    expect(main().getByRole("heading", { name: "Uso e Integridade do SISRAMOS" })).toBeTruthy();
+  });
+
+  it("keeps the capacity identity and title together in the desktop composition", () => {
+    openPreview("/universo-ramos/plano-mestre?view=capacidade&id=T04&tab=visao");
+    expect(main().getByRole("heading", { name: "Gestão de Prazos e Prioridades" }).closest(".cap-sheet-identity")).toBeTruthy();
+  });
+
+  it("does not silently replace an invalid source code with another capability", () => {
+    openPreview("/universo-ramos/plano-mestre?view=capacidade&id=F99");
+    expect(main().getByText("Capacidade não encontrada neste catálogo.")).toBeTruthy();
+    fireEvent.click(main().getByRole("button", { name: "Voltar ao catálogo" }));
+    expect(main().getByRole("heading", { name: "Banco de capacidades" })).toBeTruthy();
+  });
+
+  it("keeps self-assessments in memory and indicates the lowest answer", () => {
+    openPreview("/universo-ramos/plano-mestre?view=capacitacoes&id=F04");
+    const answers = main().getAllByRole("button", { name: "Consigo ensinar" });
+    answers.forEach((button) => fireEvent.click(button));
+    fireEvent.click(main().getAllByRole("button", { name: "Com apoio" })[1]);
+    expect(main().getByText("Nível indicado: Assistido")).toBeTruthy();
+    fireEvent.change(main().getByRole("textbox", { name: "Comentário da autoavaliação" }), { target: { value: "Atuo com apoio na análise." } });
+    fireEvent.click(main().getByRole("button", { name: "Registrar na simulação" }));
+    expect(main().getByText("Atuo com apoio na análise.")).toBeTruthy();
+    expect(localStorage.length).toBe(0);
+    expect(updateRemoteMasterPlanDraft).not.toHaveBeenCalled();
+  });
+
+  it("reviews every criterion before enabling a simulated approval", () => {
+    openPreview("/universo-ramos/plano-mestre?view=capacitacoes&id=F04&mode=administrador");
+    const approve = main().getByRole("button", { name: "Aprovar na simulação" }) as HTMLButtonElement;
+    expect(approve.disabled).toBe(true);
+    const criterionCount = main().getAllByRole("button", { name: "Aceitar" }).length;
+    expect(criterionCount).toBeGreaterThan(0);
+    for (let index = 0; index < criterionCount; index += 1) {
+      fireEvent.click(main().getAllByRole("button", { name: "Aceitar" })[index]);
+    }
+    expect(approve.disabled).toBe(false);
+    fireEvent.click(approve);
+    expect(main().getByText(/Aprovado apenas na simulação/)).toBeTruthy();
+    expect(updateRemoteMasterPlanDraft).not.toHaveBeenCalled();
+  });
+
   it("opens all ten pages without treating proposals as registered data", () => {
     openPreview();
     const pages = [
       ["Visão geral", "Mapa da Ramos"], ["Núcleos", "Núcleos"], ["Setores", "Setores"],
       ["Responsabilidades", "Responsabilidades"], ["Capacidades", "Banco de capacidades"],
-      ["Capacitações", "Capacitações e oportunidades"], ["Solicitações", "Solicitações"],
+      ["Capacitações", "Minha capacitação"], ["Solicitações", "Solicitações"],
       ["Cronologia", "Cronologia"], ["Minha jornada", "Minha jornada"],
       ["Cobertura e sucessão", "Cobertura e sucessão"],
     ];
     for (const [button, heading] of pages) {
-      fireEvent.click(nav().getByRole("button", { name: button }));
+      fireEvent.click(nav().getByRole("link", { name: button }));
       expect(main().getByRole("heading", { name: heading })).toBeTruthy();
     }
-    fireEvent.click(screen.getByRole("button", { name: "Entenda os dados" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Ferramentas do Plano Mestre" }), { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Entenda os dados" }));
     expect(screen.getByText(/Do banco operacional:/)).toBeTruthy();
     expect(screen.getByText(/Do Plano Mestre:/)).toBeTruthy();
   });
@@ -79,9 +191,11 @@ describe("Plano Mestre organizational preview", () => {
     expect(main().getByRole("button", { name: "Cadastrar primeira capacidade" })).toBeTruthy();
     expect(main().getByRole("button", { name: "Cadastrar primeira responsabilidade" })).toBeTruthy();
     expect(main().getByRole("button", { name: /Criar o Padrão Ramos de Projetos/ })).toBeTruthy();
-    fireEvent.click(nav().getByRole("button", { name: "Capacitações" }));
-    expect(main().getByText("Nenhuma capacidade cadastrada no Plano Mestre.")).toBeTruthy();
-    expect(main().getByText("Nenhuma responsabilidade cadastrada no Plano Mestre.")).toBeTruthy();
+    fireEvent.click(nav().getByRole("link", { name: "Capacitações" }));
+    expect(main().getByRole("heading", { name: "Minha capacitação" })).toBeTruthy();
+    expect(main().getByText("Prévia visual.")).toBeTruthy();
+    expect(remote.document.capabilities).toEqual([]);
+    expect(remote.document.responsibilities).toEqual([]);
   });
 
   it("saves a capability and responsibility before linking them", async () => {
@@ -101,7 +215,7 @@ describe("Plano Mestre organizational preview", () => {
     fireEvent.click(dialog.getByRole("button", { name: "Salvar no Plano Mestre" }));
     await waitFor(() => expect(main().getByRole("heading", { name: "Conferir qualidade dos projetos" })).toBeTruthy());
     expect(main().getAllByText("Revisar projetos").length).toBeGreaterThan(0);
-    fireEvent.click(nav().getByRole("button", { name: "Solicitações" }));
+    fireEvent.click(nav().getByRole("link", { name: "Solicitações" }));
     fireEvent.click(main().getByRole("button", { name: /Criar o Padrão Ramos de Projetos/ }));
     expect(main().getByText("Definir um padrão oficial.")).toBeTruthy();
     expect(main().getByText(/ID de origem preservado: real-challenge/)).toBeTruthy();
@@ -144,7 +258,7 @@ describe("Plano Mestre organizational preview", () => {
     fireEvent.change(dialog.getByLabelText("Setor existente"), { target: { value: "projects" } });
     fireEvent.click(dialog.getByRole("button", { name: "Salvar no Plano Mestre" }));
     await waitFor(() => expect(main().getByRole("heading", { name: "Revisar projetos" })).toBeTruthy());
-    fireEvent.click(nav().getByRole("button", { name: "Responsabilidades" }));
+    fireEvent.click(nav().getByRole("link", { name: "Responsabilidades" }));
     fireEvent.click(main().getByRole("button", { name: "Nova responsabilidade" }));
     dialog = within(screen.getByRole("dialog"));
     fireEvent.change(dialog.getByLabelText("Título"), { target: { value: "Conferir qualidade" } });
@@ -181,7 +295,7 @@ describe("Plano Mestre organizational preview", () => {
 
   it("saves regrouping of existing sectors without changing their names", async () => {
     openPreview();
-    fireEvent.click(nav().getByRole("button", { name: "Núcleos" }));
+    fireEvent.click(nav().getByRole("link", { name: "Núcleos" }));
     fireEvent.change(screen.getByRole("combobox", { name: "Núcleo de SETOR DE PROJETOS" }), { target: { value: "suporte" } });
     expect(main().getByRole("button", { name: /Núcleo Suporte/ })).toBeTruthy();
     expect(screen.getAllByText("SETOR DE PROJETOS").length).toBeGreaterThan(0);
@@ -190,7 +304,7 @@ describe("Plano Mestre organizational preview", () => {
 
   it("keeps challenge-derived requests in Kanban and marks missing responsibility for classification", () => {
     openPreview();
-    fireEvent.click(nav().getByRole("button", { name: "Solicitações" }));
+    fireEvent.click(nav().getByRole("link", { name: "Solicitações" }));
     expect(main().getByLabelText("Kanban de solicitações")).toBeTruthy();
     expect(main().getByText("A classificar")).toBeTruthy();
     fireEvent.click(main().getByRole("button", { name: "Lista" }));
@@ -199,7 +313,7 @@ describe("Plano Mestre organizational preview", () => {
 
   it("shows where forms are persisted", () => {
     openPreview();
-    fireEvent.click(nav().getByRole("button", { name: "Responsabilidades" }));
+    fireEvent.click(nav().getByRole("link", { name: "Responsabilidades" }));
     fireEvent.click(main().getByRole("button", { name: "Nova responsabilidade" }));
     expect(screen.getByRole("dialog")).toBeTruthy();
     expect(screen.getByText(/grava no Plano Mestre/)).toBeTruthy();
@@ -209,7 +323,7 @@ describe("Plano Mestre organizational preview", () => {
 
   it("keeps planning changes and leaves unclassified requests unlinked", async () => {
     openPreview();
-    fireEvent.click(nav().getByRole("button", { name: "Solicitações" }));
+    fireEvent.click(nav().getByRole("link", { name: "Solicitações" }));
     fireEvent.click(main().getByRole("button", { name: /Criar o Padrão Ramos de Projetos/ }));
     fireEvent.click(main().getByRole("button", { name: "Planejar solicitação" }));
     const dialog = within(screen.getByRole("dialog"));

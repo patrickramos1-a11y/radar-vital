@@ -29,12 +29,14 @@ export interface PreviewResponsibility {
 const suggestedNucleusBySector: Record<string, NucleusId> = {
   "SETOR DE PROJETOS": "tecnico",
   "LICENCIAMENTO E PROCESSOS": "tecnico",
+  "SERVIÇOS DE CAMPO": "tecnico",
   "TREINAMENTOS": "tecnico",
   "MANUTENÇÃO": "suporte",
   "SUPRIMENTOS E COMPRAS": "suporte",
   "MARKETING": "suporte",
   "ADMINISTRAÇÃO": "administrativo",
   "GESTÃO E PLANEJAMENTO": "administrativo",
+  "FINANCEIRO": "administrativo",
   "PESSOAS E CULTURA": "administrativo",
 };
 

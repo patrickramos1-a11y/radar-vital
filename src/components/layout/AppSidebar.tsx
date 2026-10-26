@@ -30,8 +30,9 @@ const painelAcIcon = "/icons/ramos-ac-app-icon-192-v3.png";
 
 export function AppSidebar() {
   const location = useLocation();
-  const { state } = useSidebar();
+  const { state, setOpen, setOpenMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const closeMenu = () => { setOpen(false); setOpenMobile(false); };
 
   const isActiveRoute = (href: string) => {
     if (href === "/") return location.pathname === "/";
@@ -39,7 +40,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl">
+    <Sidebar collapsible="offcanvas" className="border-r border-sidebar-border bg-sidebar/95 backdrop-blur-xl">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2.5 px-2 py-2.5">
           <img src={painelAcIcon} alt="Painel AC" className="w-8 h-8 rounded-lg object-contain shrink-0" />
@@ -65,7 +66,7 @@ export function AppSidebar() {
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                      <NavLink to={item.href} className={active ? 'relative' : ''}>
+                      <NavLink to={item.href} onClick={closeMenu} className={active ? 'relative' : ''}>
                         {active && (
                           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-primary" />
                         )}
@@ -90,7 +91,7 @@ export function AppSidebar() {
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                      <NavLink to={item.href} className={active ? 'relative' : ''}>
+                      <NavLink to={item.href} onClick={closeMenu} className={active ? 'relative' : ''}>
                         {active && (
                           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-primary" />
                         )}

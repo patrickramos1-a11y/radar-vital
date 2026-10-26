@@ -4,6 +4,9 @@ import { requestColumn, suggestedNucleus } from "./model";
 describe("Plano Mestre preview model", () => {
   it("proposes nuclei without forcing unclassified current sectors into a nucleus", () => {
     expect(suggestedNucleus("SETOR DE PROJETOS")).toBe("tecnico");
+    expect(suggestedNucleus("SERVIÇOS DE CAMPO")).toBe("tecnico");
+    expect(suggestedNucleus("FINANCEIRO")).toBe("administrativo");
+    expect(suggestedNucleus("TECNOLOGIA E SISTEMAS")).toBe("");
     expect(suggestedNucleus("BRINDES")).toBe("");
   });
 

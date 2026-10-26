@@ -13,7 +13,7 @@ export function UserSelector() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-2 border border-transparent px-3 py-1.5 transition-colors hover:border-border/50 hover:bg-secondary/50">
+      <DropdownMenuTrigger aria-label={currentUser ? `Perfil: ${currentUser.name}` : "Selecionar usuário"} className="flex h-9 items-center gap-1 rounded-md border border-transparent px-1.5 transition-colors hover:border-border/50 hover:bg-secondary/50 sm:gap-2 sm:px-2">
         {currentUser ? (
           currentUser.photoUrl ? (
             <img src={currentUser.photoUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
@@ -27,10 +27,10 @@ export function UserSelector() {
             <User className="h-4 w-4" />
           </div>
         )}
-        <span className="hidden text-xs font-semibold sm:inline" style={{ color: currentUser?.color }}>
+        <span className="hidden text-xs font-semibold lg:inline" style={{ color: currentUser?.color }}>
           {currentUser?.name ?? "Selecionar usuário"}
         </span>
-        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-52">

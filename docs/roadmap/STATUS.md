@@ -51,6 +51,21 @@ Atualizado em: 2026-10-25
   salvos em documento versionado separado. SQL e frontend publicados em
   2026-10-25; leitura e escrita verificadas. Ver D-021 e
   `UNIVERSO_RAMOS_PLANO_MESTRE_PUBLICACAO.md`.
+- Planilha de responsabilidades recebida em 2026-10-25: 56 responsabilidades,
+  184 atividades, 28 capacidades e 166 exigencias de nivel organizadas em
+  catalogo auditavel. Quatro responsabilidades ainda nao tem perfil de
+  capacidades. O mapeamento das 51 responsabilidades aplicaveis foi salvo em
+  documento versionado; as 14 de Gestao Interna foram atribuidas a Gestao e
+  Planejamento por decisao de Patrick. Cinco entradas gerais/transversais
+  ficam fora da importacao automatica.
+  A biblioteca oficial em tabelas proprias ainda depende do SQL. Ver
+  `UNIVERSO_RAMOS_RESPONSABILIDADES_ESTUDO.md`.
+- Jornada de capacidade do colaborador: biblioteca navegavel e fluxo de
+  autoavaliacao, solicitacao e revisao administrativa implementados no codigo.
+  Com as migracoes ainda nao aplicadas, a pagina permanece em previa visual sem
+  gravacao. O seletor atual de perfil nao comprova identidade; a proposta de
+  persistencia tem riscos de privacidade e integridade explicitados em
+  `UNIVERSO_RAMOS_JORNADA_PUBLICACAO.md`. Anexos ficam indisponiveis.
 
 ## Legenda
 

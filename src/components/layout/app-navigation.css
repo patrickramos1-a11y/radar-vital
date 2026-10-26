@@ -1,0 +1,155 @@
+.app-navigation {
+  --nav-accent: #529f25;
+  --nav-accent-soft: #eff8e9;
+  position: relative;
+  z-index: 30;
+  flex: none;
+  min-width: 0;
+  color: #21354a;
+  background: #fff;
+  box-shadow: 0 4px 14px rgb(31 48 66 / 5%);
+}
+
+.app-navigation-ramos {
+  --nav-accent: #087f7c;
+  --nav-accent-soft: #e9f7f4;
+}
+
+.app-navigation-top {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  border-bottom: 1px solid #dfe6ed;
+}
+
+.app-navigation-left,
+.app-navigation-right {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.app-navigation-left { flex: none; gap: 8px; }
+.app-navigation-right { flex: none; justify-content: flex-end; gap: 4px; }
+
+.app-navigation-icon {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #32445b;
+}
+.app-navigation-icon:hover,
+.app-navigation-icon:focus-visible { background: var(--nav-accent-soft); color: var(--nav-accent); }
+
+.app-navigation-modules,
+.app-navigation-views {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: #cbd8e1 transparent;
+  scrollbar-width: thin;
+  white-space: nowrap;
+}
+.app-navigation-modules::-webkit-scrollbar,
+.app-navigation-views::-webkit-scrollbar { height: 4px; }
+.app-navigation-modules::-webkit-scrollbar-thumb,
+.app-navigation-views::-webkit-scrollbar-thumb { background: #cbd8e1; border-radius: 4px; }
+.app-navigation-modules {
+  position: relative;
+  min-height: 51px;
+  flex: 1 1 auto;
+  gap: 3px;
+}
+.app-navigation-module {
+  position: relative;
+  display: inline-flex;
+  min-height: 49px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  color: #566b82;
+  font-size: 13px;
+  font-weight: 600;
+}
+.app-navigation-module::after {
+  position: absolute;
+  right: 10px;
+  bottom: -1px;
+  left: 10px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: transparent;
+  content: "";
+}
+.app-navigation-module:hover { background: #f7faf7; color: #21354a; }
+.app-navigation-module.is-active { color: var(--nav-accent); font-weight: 750; }
+.app-navigation-module.is-active::after { background: var(--nav-accent); }
+
+.app-navigation-views-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  border-bottom: 1px solid #e2e8ed;
+}
+.app-navigation-views {
+  min-height: 45px;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 20px;
+}
+.app-navigation-tools {
+  flex: none;
+  padding: 0 16px 0 8px;
+}
+.app-navigation-view {
+  display: inline-flex;
+  min-height: 33px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #65788f;
+  font-size: 12px;
+  font-weight: 600;
+}
+.app-navigation-view:hover { background: #f5f7f9; color: #21354a; }
+.app-navigation-view.is-active { border-color: #c3dda9; background: var(--nav-accent-soft); color: var(--nav-accent); font-weight: 750; }
+.app-navigation-ramos .app-navigation-view.is-active { border-color: #a9d8d1; }
+
+.app-navigation :is(button, a):focus-visible {
+  outline: 2px solid #1675d1;
+  outline-offset: 2px;
+}
+
+@media (max-width: 1180px) {
+  .app-navigation-top { gap: 6px; padding-inline: 10px; }
+  .app-navigation-module { padding-inline: 10px; font-size: 12px; }
+}
+
+@media (min-width: 701px) and (max-width: 900px) {
+  .app-navigation-top { flex-wrap: wrap; justify-content: space-between; padding-bottom: 0; }
+  .app-navigation-modules { order: 3; flex-basis: 100%; }
+}
+
+@media (max-width: 700px) {
+  .app-navigation-top { min-height: 60px; flex-wrap: wrap; justify-content: space-between; gap: 0; padding: 6px 8px 0; }
+  .app-navigation-left { gap: 3px; }
+  .app-navigation-right { gap: 1px; }
+  .app-navigation-icon { width: 34px; height: 36px; flex-basis: 34px; }
+  .app-navigation-modules { order: 3; min-height: 48px; flex-basis: 100%; margin-top: 4px; }
+  .app-navigation-module { min-height: 47px; padding: 0 11px; font-size: 12px; }
+  .app-navigation-views { min-height: 43px; padding: 4px 8px; }
+  .app-navigation-view { min-height: 30px; font-size: 12px; }
+  .app-navigation-tools { padding: 0 8px 0 2px; }
+}

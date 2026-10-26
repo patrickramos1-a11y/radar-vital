@@ -23,16 +23,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function isPatrickProfile(name: string): boolean {
+  return name.trim().toLocaleLowerCase("pt-BR").startsWith("patrick");
+}
+
 function mapCollaborator(row: Record<string, unknown>): Collaborator {
+  const name = row.name as string;
   return {
     id: row.id as string,
-    name: row.name as string,
+    name,
     email: (row.email as string | null) ?? null,
     color: row.color as string,
     initials: row.initials as string,
     userId: (row.user_id as string | null) ?? null,
     isActive: Boolean(row.is_active),
-    role: (row.role as string | null) ?? "colaborador",
+    // The current product uses the selected operational profile, not login.
+    role: isPatrickProfile(name) ? "admin" : "colaborador",
     isCentralOnly: Boolean(row.is_central_only),
     photoUrl: (row.photo_url as string | null) ?? null,
     createdAt: row.created_at as string,
@@ -103,12 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextType>(() => {
-    const normalizedName = currentUser?.name.toLocaleLowerCase("pt-BR") ?? "";
     return {
       currentUser,
       collaborators,
       loading,
-      isAdmin: currentUser?.role === "admin" || normalizedName.includes("patrick"),
+      isAdmin: currentUser?.role === "admin",
       selectUser,
       clearUser,
     };

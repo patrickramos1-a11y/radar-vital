@@ -4,16 +4,27 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, BookOpen, BriefcaseBusiness, Building2, CalendarDays, CheckCircle2,
   ChevronRight, ClipboardList, Clock3, FilterX, GitBranch, GraduationCap, History,
-  Info, Layers3, ListChecks, Menu, MessageSquare, Pencil, Plus, RefreshCw, Search, ShieldAlert,
+  Info, Layers3, Link2, ListChecks, MessageSquare, MoreHorizontal, Pencil, Plus, RefreshCw, Search, ShieldAlert,
   Target, Users, Download, Upload, X, type LucideIcon,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { CapabilityExperience } from "@/features/master-plan-preview/CapabilityExperience";
+import { OfficialCapabilityExperience } from "@/features/master-plan-preview/OfficialCapabilityExperience";
+import { LibraryIntegrationPanel } from "@/features/master-plan-preview/LibraryIntegrationPanel";
+import { ResponsibilityCapabilityCoverage } from "@/features/master-plan-preview/ResponsibilityCapabilityCoverage";
+import { ResponsibilityAvailability, ResponsibilityClaimControl } from "@/features/master-plan-preview/ResponsibilityAvailability";
+import { responsibilityRequirements } from "@/features/master-plan-preview/responsibilityEligibility";
+import { firstLetterUpper } from "@/features/master-plan-preview/capabilityPresentationData";
+import { createDemoStore } from "@/features/master-plan-preview/capabilityDemo";
+import { capabilityCatalogue } from "@/features/master-plan-preview/capabilityJourney";
+import { fetchLibrary } from "@/features/master-plan-preview/journeyRemote";
 import {
-  countsForUnit, fetchMasterPlanContext, sectorRecords, sectorUnits,
+  countsForUnit, ensureMasterPlanSectors, fetchMasterPlanContext, sectorRecords, sectorUnits,
   type Challenge, type MasterPlanContext, type Unit,
 } from "@/features/master-plan-preview/data";
 import {
@@ -26,12 +37,13 @@ import {
   type MasterPlanDraft, type RequestPlan,
 } from "@/features/master-plan-preview/storage";
 import { fetchRemoteMasterPlanDraft, updateRemoteMasterPlanDraft } from "@/features/master-plan-preview/remote";
+import { integrateSourceLibrary, sourceResponsibilities } from "@/features/master-plan-preview/libraryIntegration";
 
 type MainView = "empresa" | "nucleos" | "setores" | "responsabilidades" | "capacidades" | "capacitacoes" | "solicitacoes" | "cronologia" | "jornada" | "cobertura";
 type DetailView = "nucleo" | "setor" | "responsabilidade" | "capacidade" | "pessoa" | "solicitacao";
 type View = MainView | DetailView;
 type DraftKind = "responsabilidade" | "capacidade" | "solicitacao" | "editarResponsabilidade" | "editarCapacidade" | "editarSolicitacao" | "capacitacao" | "assumir" | "planejamento";
-type Go = (view: View, id?: string, tab?: string) => void;
+type Go = (view: View, id?: string, tab?: string, mode?: string) => void;
 type Draft = { kind: DraftKind; sectorId?: string; capabilityId?: string; responsibilityId?: string; requestId?: string } | null;
 
 const navItems: Array<{ view: MainView; label: string; icon: LucideIcon }> = [
@@ -45,11 +57,6 @@ const navItems: Array<{ view: MainView; label: string; icon: LucideIcon }> = [
   { view: "cronologia", label: "Cronologia", icon: CalendarDays },
   { view: "jornada", label: "Minha jornada", icon: Users },
   { view: "cobertura", label: "Cobertura e sucessão", icon: GitBranch },
-];
-const navGroups: Array<{ label: string; views: MainView[] }> = [
-  { label: "Organização", views: ["empresa", "nucleos", "setores", "responsabilidades", "capacidades"] },
-  { label: "Trabalho", views: ["solicitacoes", "cronologia"] },
-  { label: "Pessoas", views: ["capacitacoes", "jornada", "cobertura"] },
 ];
 type TrailItem = { view: View; id: string; tab: string };
 const detailViews: DetailView[] = ["nucleo", "setor", "responsabilidade", "capacidade", "pessoa", "solicitacao"];
@@ -68,21 +75,9 @@ const sectorName = (context: MasterPlanContext, id: string | null) => findSector
 const personName = (context: MasterPlanContext, id: string | null | undefined) => context.collaborators.find((item) => item.id === id)?.name ?? "Não definido";
 const textMatch = (value: string, search: string) => value.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR"));
 
-function viewLabel(item: TrailItem, context?: MasterPlanContext, responsibilities?: PreviewResponsibility[], capabilities?: PreviewCapability[], requests?: Challenge[]) {
-  const main = navItems.find((entry) => entry.view === item.view);
-  if (main) return main.label;
-  if (item.view === "nucleo") return nuclei.find((entry) => entry.id === item.id)?.name ?? "Núcleo";
-  if (item.view === "setor") return context?.units.find((entry) => entry.id === item.id)?.name ?? "Setor";
-  if (item.view === "responsabilidade") return responsibilities?.find((entry) => entry.id === item.id)?.title ?? "Responsabilidade";
-  if (item.view === "capacidade") return capabilities?.find((entry) => entry.id === item.id)?.title ?? "Capacidade";
-  if (item.view === "solicitacao") return requests?.find((entry) => entry.id === item.id)?.title ?? "Solicitação";
-  if (item.view === "pessoa") return context?.collaborators.find((entry) => entry.id === item.id)?.name ?? "Pessoa";
-  return "Detalhe";
-}
-
 function Badge({ kind }: { kind: "real" | "proposal" | "local" | "undefined" }) {
   const styles = { real: "border-emerald-200 bg-emerald-50 text-emerald-800", proposal: "border-amber-200 bg-amber-50 text-amber-900", local: "border-sky-200 bg-sky-50 text-sky-800", undefined: "border-zinc-200 bg-zinc-100 text-zinc-600" };
-  const labels = { real: "Cadastrado", proposal: "Proposta visual", local: "No Plano Mestre", undefined: "A definir" };
+  const labels = { real: "Cadastrado", proposal: "Proposta visual", local: "Cadastro salvo", undefined: "A definir" };
   return <span className={`inline-flex shrink-0 items-center border px-1.5 py-0.5 text-[10px] font-semibold ${styles[kind]}`}>{labels[kind]}</span>;
 }
 
@@ -90,8 +85,8 @@ function Identity({ unit }: { unit: Unit }) {
   return <span className="flex min-w-0 items-center gap-2.5"><span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden border bg-white">{unit.logo_url ? <img src={unit.logo_url} alt="" className="h-full w-full object-contain p-0.5" /> : <Building2 className="h-4 w-4 text-muted-foreground" />}</span><span className="min-w-0 break-words font-medium">{unit.name}</span></span>;
 }
 
-function Heading({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
-  return <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b pb-4"><div className="min-w-0"><h2 className="text-xl font-semibold">{title}</h2>{subtitle && <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{subtitle}</p>}</div>{action}</div>;
+function Heading({ eyebrow, title, subtitle, action }: { eyebrow?: string; title: string; subtitle?: string; action?: ReactNode }) {
+  return <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b pb-4"><div className="min-w-0">{eyebrow && <p className="mb-1 text-xs font-semibold uppercase text-teal-700">{eyebrow}</p>}<h2 className="text-xl font-semibold">{title}</h2>{subtitle && <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{subtitle}</p>}</div>{action}</div>;
 }
 
 function Metric({ label, value, icon: Icon, onClick }: { label: string; value: string | number; icon: LucideIcon; onClick?: () => void }) {
@@ -127,7 +122,10 @@ export default function PlanoMestrePreview() {
   const view: View = navItems.some((item) => item.view === rawView) || detailViews.includes(rawView as DetailView) ? rawView as View : "empresa";
   const id = params.get("id") ?? "";
   const tab = params.get("tab") ?? "visao";
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const mode = params.get("mode") ?? "";
+  const isDemoView = (view === "capacidades" && mode !== "atual")
+    || (view === "capacidade" && mode !== "atual" && /^[TFE]\d{2}$/.test(id))
+    || (view === "capacitacoes" && mode !== "atual");
   const [showDataInfo, setShowDataInfo] = useState(false);
   const [trail, setTrail] = useState<TrailItem[]>([]);
   const [draft, setDraft] = useState<Draft>(null);
@@ -141,7 +139,10 @@ export default function PlanoMestrePreview() {
   const importRef = useRef<HTMLInputElement>(null);
   const mutationQueue = useRef<Promise<unknown>>(Promise.resolve());
   const [selectedPerson, setSelectedPerson] = useState("");
+  const [demoStore, setDemoStore] = useState(createDemoStore);
+  const [integrationBusy, setIntegrationBusy] = useState(false);
   const { data, isLoading, isFetching, error, refetch } = useQuery({ queryKey: ["universo-ramos", "plano-mestre", "contexto"], queryFn: fetchMasterPlanContext, staleTime: 30_000 });
+  const { data: officialLibrary } = useQuery({ queryKey: ["universo-ramos", "plano-mestre", "biblioteca-oficial"], queryFn: fetchLibrary, enabled: isDemoView, retry: false, staleTime: 300_000 });
   const { data: remoteDraft, isLoading: isLoadingDraft, error: remoteError, refetch: refetchDraft } = useQuery({ queryKey: ["universo-ramos", "plano-mestre", "documento"], queryFn: fetchRemoteMasterPlanDraft, staleTime: 30_000 });
   const capabilities = workspace.capabilities;
   const responsibilities = workspace.responsibilities.map((item) => ({ ...item, ...workspace.responsibilityOverrides[item.id] }));
@@ -211,7 +212,33 @@ export default function PlanoMestrePreview() {
     if (saved) toast.success("Rascunho deste navegador incorporado ao Plano Mestre.");
   };
 
-  const go: Go = (next, nextId, nextTab) => {
+  const createMissingSectors = async () => {
+    setIntegrationBusy(true);
+    try {
+      await ensureMasterPlanSectors();
+      await refetch();
+      toast.success("Setores cadastrados no Universo Ramos.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Não foi possível cadastrar os setores.");
+    } finally {
+      setIntegrationBusy(false);
+    }
+  };
+
+  const integrateLibrary = async (selections: Record<string, string>) => {
+    if (!data) return;
+    setIntegrationBusy(true);
+    try {
+      const saved = await updateWorkspace((current) => integrateSourceLibrary(current, sectorUnits(data), selections));
+      if (saved) toast.success("Capacidades e responsabilidades vinculadas no Plano Mestre.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Não foi possível integrar a biblioteca.");
+    } finally {
+      setIntegrationBusy(false);
+    }
+  };
+
+  const go: Go = (next, nextId, nextTab, nextMode) => {
     if (next === "empresa") {
       setTrail([]);
     } else if (view !== next || id !== (nextId ?? "")) {
@@ -220,8 +247,8 @@ export default function PlanoMestrePreview() {
     const query = new URLSearchParams({ view: next });
     if (nextId) query.set("id", nextId);
     if (nextTab) query.set("tab", nextTab);
+    if (nextMode) query.set("mode", nextMode);
     navigate(`/universo-ramos/plano-mestre?${query.toString()}`);
-    setMobileNavOpen(false);
   };
 
   const jumpTo = (item: TrailItem, index: number) => {
@@ -235,6 +262,8 @@ export default function PlanoMestrePreview() {
   const back = () => {
     const previous = trail.at(-1);
     if (previous) jumpTo(previous, trail.length - 1);
+    else if (view === "capacidade" && isDemoView) go("capacidades");
+    else if (view === "capacitacoes" && isDemoView) go("capacidades");
     else if (view === "empresa") navigate("/universo-ramos");
     else go("empresa");
   };
@@ -281,39 +310,37 @@ export default function PlanoMestrePreview() {
     setDraft(null);
   };
 
-  const page = data && remoteDraft ? <WorkspaceContent context={data} view={view} id={id} tab={tab} go={go} openDraft={setDraft} nucleiOf={nucleusOf} setNucleus={(sectorId, nucleusId) => { void updateWorkspace((value) => ({ ...value, nucleusOverrides: { ...value.nucleusOverrides, [sectorId]: nucleusId } })); }} nucleusThresholds={workspace.nucleusThresholds} setNucleusThreshold={(nucleusId, threshold) => { void updateWorkspace((value) => ({ ...value, nucleusThresholds: { ...value.nucleusThresholds, [nucleusId]: threshold } })); }} capabilities={capabilities} responsibilities={responsibilities} requests={requests} requestPlans={workspace.requestPlans} setResponsibility={(responsibilityId, patch) => { void updateWorkspace((value) => ({ ...value, responsibilityOverrides: { ...value.responsibilityOverrides, [responsibilityId]: { ...value.responsibilityOverrides[responsibilityId], ...patch } } })); }} trainingRequests={workspace.trainingRequests} claims={workspace.claims} personId={personId} setPersonId={setSelectedPerson} /> : null;
-  const visibleTrail = trail.map((item, index) => ({ item, index })).filter(({ item }) => item.view !== "empresa").slice(-3);
+  const officialReady = officialLibrary?.capabilities?.length === 28 && officialLibrary?.responsibilities?.length === 56;
+  const page = isDemoView
+    ? officialReady
+      ? <OfficialCapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes"} code={id} tab={tab} mode={mode} go={go} library={officialLibrary} people={data?.collaborators ?? []} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} capabilityPlans={workspace.capabilityPlans ?? {}} onCapabilityPlanChange={(capabilityCode, collaboratorId, level) => { void updateWorkspace((current) => ({ ...current, capabilityPlans: { ...current.capabilityPlans, [capabilityCode]: { ...current.capabilityPlans?.[capabilityCode], [collaboratorId]: level } } })); }} />
+      : <CapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes"} code={id} tab={tab} mode={mode} go={go} store={demoStore} setStore={setDemoStore} registeredCapabilities={capabilities} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} people={data?.collaborators ?? []} capabilityPlans={workspace.capabilityPlans ?? {}} onCapabilityPlanChange={(capabilityCode, collaboratorId, level) => { void updateWorkspace((current) => ({ ...current, capabilityPlans: { ...current.capabilityPlans, [capabilityCode]: { ...current.capabilityPlans?.[capabilityCode], [collaboratorId]: level } } })); }} />
+    : data && remoteDraft ? <WorkspaceContent context={data} view={view} id={id} tab={tab} go={go} openDraft={setDraft} nucleiOf={nucleusOf} setNucleus={(sectorId, nucleusId) => { void updateWorkspace((value) => ({ ...value, nucleusOverrides: { ...value.nucleusOverrides, [sectorId]: nucleusId } })); }} nucleusThresholds={workspace.nucleusThresholds} setNucleusThreshold={(nucleusId, threshold) => { void updateWorkspace((value) => ({ ...value, nucleusThresholds: { ...value.nucleusThresholds, [nucleusId]: threshold } })); }} capabilities={capabilities} responsibilities={responsibilities} requests={requests} requestPlans={workspace.requestPlans} setResponsibility={(responsibilityId, patch) => { void updateWorkspace((value) => ({ ...value, responsibilityOverrides: { ...value.responsibilityOverrides, [responsibilityId]: { ...value.responsibilityOverrides[responsibilityId], ...patch } } })); }} trainingRequests={workspace.trainingRequests} claims={workspace.claims} personId={personId} setPersonId={setSelectedPerson} /> : null;
+  const navigationTools = <DropdownMenu>
+    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="Ferramentas do Plano Mestre" title="Ferramentas do Plano Mestre"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
+    <DropdownMenuContent align="end" className="w-60">
+      <DropdownMenuItem onSelect={() => setShowDataInfo((open) => !open)}><Info className="mr-2 h-4 w-4" />Entenda os dados</DropdownMenuItem>
+      <DropdownMenuItem disabled={isFetching} onSelect={() => { void refetch(); void refetchDraft(); }}><RefreshCw className="mr-2 h-4 w-4" />Atualizar registros</DropdownMenuItem>
+      {!isDemoView && <>
+        <DropdownMenuItem onSelect={exportDraft}><Download className="mr-2 h-4 w-4" />Exportar backup JSON</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => importRef.current?.click()}><Upload className="mr-2 h-4 w-4" />Importar backup JSON</DropdownMenuItem>
+        {initialLoad.value.savedAt && <DropdownMenuItem onSelect={() => void importBrowserBackup()}>Trazer rascunho local</DropdownMenuItem>}
+      </>}
+    </DropdownMenuContent>
+  </DropdownMenu>;
 
-  return <AppLayout><div className="flex h-full min-h-0 flex-col bg-[#f8faf9]">
-    <header className="shrink-0 border-b bg-white px-4 py-3 sm:px-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <button type="button" onClick={() => navigate("/universo-ramos")} aria-label="Voltar ao Universo Ramos" title="Voltar ao Universo Ramos" className="grid h-9 w-9 shrink-0 place-items-center border hover:bg-muted"><ArrowLeft className="h-4 w-4" /></button>
-          <div className="min-w-0"><div className="flex items-center gap-2"><h1 className="truncate text-lg font-semibold">Plano Mestre</h1><span className="border-l-2 border-emerald-500 pl-2 text-[11px] font-semibold text-emerald-700">CADASTROS COMPARTILHADOS</span></div><p className="text-xs text-muted-foreground">Universo Ramos · dados salvos no banco</p></div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="hidden text-xs text-muted-foreground xl:inline">{workspace.savedAt ? `Atualizado em ${dateLabel(workspace.savedAt)}` : "Pronto para cadastrar"}</span>
-          {initialLoad.value.savedAt && <Button variant="outline" size="sm" onClick={importBrowserBackup} title="Trazer rascunho deste navegador para o banco">Trazer rascunho local</Button>}
-          <Button variant="outline" size="sm" onClick={exportDraft} title="Exportar backup JSON" aria-label="Exportar backup JSON"><Download className="h-4 w-4" /><span className="hidden sm:inline"> Backup</span></Button>
-          <Button variant="outline" size="sm" onClick={() => importRef.current?.click()} title="Importar backup JSON" aria-label="Importar backup JSON"><Upload className="h-4 w-4" /></Button>
-          <input ref={importRef} type="file" accept=".json,application/json" className="hidden" onChange={importDraft} aria-label="Arquivo de backup do Plano Mestre" />
-          <Button variant="outline" size="sm" onClick={() => setShowDataInfo((open) => !open)} title="Entenda os dados" aria-label="Entenda os dados"><Info className="h-4 w-4" /></Button>
-          <Button variant="outline" size="sm" onClick={() => { void refetch(); void refetchDraft(); }} title="Atualizar registros" aria-label="Atualizar registros" disabled={isFetching}><RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} /></Button>
-          <Button variant="outline" size="sm" className="lg:hidden" onClick={() => setMobileNavOpen((open) => !open)}><Menu className="h-4 w-4" /> Páginas</Button>
-        </div>
-      </div>
-    </header>
-    <div className="relative flex min-h-0 flex-1"><aside className={`${mobileNavOpen ? "block" : "hidden"} absolute inset-x-0 top-0 z-30 max-h-[70vh] overflow-y-auto border-b bg-white shadow-lg lg:static lg:block lg:max-h-none lg:w-52 lg:shrink-0 lg:border-b-0 lg:border-r lg:shadow-none`}><nav aria-label="Páginas do Plano Mestre" className="space-y-4 p-3">{navGroups.map((group) => <div key={group.label}><div className="px-3 pb-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>{group.views.map((itemView) => { const item = navItems.find((entry) => entry.view === itemView)!; const Icon = item.icon; const active = view === itemView || (itemView === "nucleos" && view === "nucleo") || (itemView === "setores" && view === "setor") || (itemView === "responsabilidades" && view === "responsabilidade") || (itemView === "capacidades" && view === "capacidade") || (itemView === "solicitacoes" && view === "solicitacao") || (itemView === "jornada" && view === "pessoa"); return <button key={itemView} type="button" onClick={() => go(itemView)} className={`flex min-h-9 w-full items-center gap-2.5 border-l-[3px] px-3 text-left text-xs font-medium ${active ? "border-emerald-600 bg-emerald-50 text-emerald-900" : "border-transparent hover:bg-muted"}`}><Icon className="h-4 w-4 shrink-0" />{item.label}</button>; })}</div>)}</nav></aside>
-      <main className="min-w-0 flex-1 overflow-auto"><div className="mx-auto max-w-[1450px] px-4 pb-16 pt-4 sm:px-6">
-        <div className="mb-4 flex min-h-9 min-w-0 items-center gap-2 border-b pb-3 text-xs"><button type="button" onClick={back} className="inline-flex h-7 shrink-0 items-center gap-1 border px-2 font-medium hover:bg-muted"><ArrowLeft className="h-3.5 w-3.5" /> Voltar</button><div className="flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap text-muted-foreground"><button type="button" onClick={() => go("empresa")} className="hover:text-foreground">Início</button>{visibleTrail.map(({ item, index }) => <span key={`${item.view}-${item.id}-${index}`} className="inline-flex items-center gap-1"><ChevronRight className="h-3 w-3" /><button type="button" onClick={() => jumpTo(item, index)} className="max-w-36 truncate hover:text-foreground">{viewLabel(item, data, responsibilities, capabilities, requests)}</button></span>)}{view !== "empresa" && <><ChevronRight className="h-3 w-3 shrink-0" /><strong className="max-w-48 truncate text-foreground">{viewLabel({ view, id, tab }, data, responsibilities, capabilities, requests)}</strong></>}</div></div>
-        {storageError && <div role="alert" className="mb-4 border-l-4 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900">{storageError}</div>}
+  return <AppLayout navigationTools={navigationTools}><div className="flex h-full min-h-0 flex-col bg-[#f8faf9]">
+    <input ref={importRef} type="file" accept=".json,application/json" className="hidden" onChange={importDraft} aria-label="Arquivo de backup do Plano Mestre" />
+    <main className="min-w-0 flex-1 overflow-auto"><div className="mx-auto max-w-[1450px] px-4 pb-16 pt-4 sm:px-6">
+        {detailViews.includes(view as DetailView) && <button type="button" onClick={back} className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" /> Voltar</button>}
+        {!isDemoView && storageError && <div role="alert" className="mb-4 border-l-4 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900">{storageError}</div>}
         {showDataInfo && <div className="mb-5 flex flex-wrap items-center gap-3 border-l-2 border-sky-600 bg-sky-50 px-4 py-3 text-xs"><span><strong>Do banco operacional:</strong> setores, desafios, tarefas, comentários e colaboradores.</span><span><strong>Do Plano Mestre:</strong> núcleos, capacidades, responsabilidades, pedidos e planejamento, em um documento versionado com histórico.</span><span><strong>Backup:</strong> exporte o JSON para guardar uma cópia fora do navegador.</span></div>}
-        {(isLoading || isLoadingDraft) && <Empty>Carregando o Universo Ramos...</Empty>}
-        {error && <div role="alert" className="border-l-2 border-rose-600 bg-white p-4 text-sm">Não foi possível ler os dados atuais: {error instanceof Error ? error.message : "erro desconhecido"}. <Button variant="outline" size="sm" onClick={() => refetch()}>Tentar novamente</Button></div>}
-        {remoteError && <div role="alert" className="border-l-2 border-rose-600 bg-white p-4 text-sm">Plano Mestre indisponível no banco: {remoteError instanceof Error ? remoteError.message : "erro desconhecido"}. A migração SQL precisa ser aplicada antes do uso. <Button variant="outline" size="sm" onClick={() => refetchDraft()}>Tentar novamente</Button></div>}
+        {!isDemoView && (isLoading || isLoadingDraft) && <Empty>Carregando o Universo Ramos...</Empty>}
+        {!isDemoView && error && <div role="alert" className="border-l-2 border-rose-600 bg-white p-4 text-sm">Não foi possível ler os dados atuais: {error instanceof Error ? error.message : "erro desconhecido"}. <Button variant="outline" size="sm" onClick={() => refetch()}>Tentar novamente</Button></div>}
+        {!isDemoView && remoteError && <div role="alert" className="border-l-2 border-rose-600 bg-white p-4 text-sm">Plano Mestre indisponível no banco: {remoteError instanceof Error ? remoteError.message : "erro desconhecido"}. A migração SQL precisa ser aplicada antes do uso. <Button variant="outline" size="sm" onClick={() => refetchDraft()}>Tentar novamente</Button></div>}
+        {view === "responsabilidades" && data && remoteDraft && <LibraryIntegrationPanel context={data} workspace={workspace} focusSectorId={id} busy={integrationBusy} createSectors={createMissingSectors} integrate={integrateLibrary} />}
         {page}
       </div></main>
-    </div>
     <DraftDialog draft={draft} close={() => setDraft(null)} submit={submitDraft} context={data} capabilities={capabilities} responsibilities={responsibilities} requests={requests} requestPlans={workspace.requestPlans} personId={personId} />
   </div></AppLayout>;
 }
@@ -423,40 +450,137 @@ function SectorDetail({ context, go, id, tab, nucleiOf, capabilities, responsibi
   if (!sector) return <Empty>Setor não encontrado no cadastro atual.</Empty>;
   const nucleus = nuclei.find((item) => item.id === nucleiOf(sector));
   const sectorResponsibilities = responsibilities.filter((item) => item.sectorId === id);
-  const sectorCapabilities = capabilities.filter((item) => item.sectorIds.includes(id));
+  const capabilityIdsRequiredBySector = new Set(sectorResponsibilities.flatMap((item) => item.capabilityIds));
+  const sectorCapabilities = capabilities.filter((item) => item.sectorIds.includes(id) || capabilityIdsRequiredBySector.has(item.id));
+  const mappedResponsibilities = responsibilities.filter((item) => Boolean(item.sectorId));
+  const mappedCapabilityIds = new Set(mappedResponsibilities.flatMap((item) => item.capabilityIds));
   const sectorRequests = requests.filter((item) => item.client_id === id);
   const tasks = context.tasks.filter((item) => item.client_id === id);
   const comments = context.comments.filter((item) => item.client_id === id);
   const tabs = [{ id: "visao", label: "Visão geral" }, { id: "responsabilidades", label: "Responsabilidades" }, { id: "capacidades", label: "Capacidades" }, { id: "solicitacoes", label: "Solicitações" }, { id: "pessoas", label: "Pessoas" }, { id: "historico", label: "Histórico" }];
   return <><Heading title={sector.name} subtitle={`${nucleus?.name ?? "Núcleo a definir"} · setor existente no Universo Ramos`} action={<Badge kind="real" />} /><div className="mb-5 flex gap-1 overflow-x-auto border-b" role="tablist" aria-label={`Abas de ${sector.name}`}>{tabs.map((item) => <button role="tab" aria-selected={tab === item.id} key={item.id} type="button" onClick={() => go("setor", id, item.id)} className={`shrink-0 border-b-2 px-3 py-2 text-xs font-medium ${tab === item.id ? "border-emerald-600 text-emerald-800" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{item.label}</button>)}</div>
     {tab === "visao" && <SectorOverview sector={sector} responsibilities={sectorResponsibilities} capabilities={sectorCapabilities} requests={sectorRequests} tasks={tasks.length} comments={comments.length} go={go} openDraft={openDraft} />}
-    {tab === "responsabilidades" && <><div className="mb-3"><Button size="sm" onClick={() => openDraft({ kind: "responsabilidade", sectorId: id })}><Plus className="h-4 w-4" /> Cadastrar responsabilidade</Button></div><div className="border bg-white">{sectorResponsibilities.map((item) => <Row key={item.id} title={item.title} meta={`${item.capabilityIds.length} capacidade(s) vinculada(s) · titular ${personName(context, item.holderId)}`} onClick={() => go("responsabilidade", item.id)} badge={<Badge kind={item.status === "local" ? "local" : "proposal"} />} />)}{sectorResponsibilities.length === 0 && <Empty>Nenhuma responsabilidade mapeada neste setor.</Empty>}</div></>}
-    {tab === "capacidades" && <><div className="mb-3"><Button size="sm" onClick={() => openDraft({ kind: "capacidade", sectorId: id })}><Plus className="h-4 w-4" /> Cadastrar capacidade</Button></div><div className="border bg-white">{sectorCapabilities.map((item) => <Row key={item.id} title={item.title} meta={"Capacidade salva no Plano Mestre"} onClick={() => go("capacidade", item.id)} badge={<Badge kind={item.status === "local" ? "local" : "proposal"} />} />)}{sectorCapabilities.length === 0 && <Empty>Capacidades necessárias ainda não foram mapeadas.</Empty>}</div></>}
+    {tab === "responsabilidades" && <><div className="mb-3 flex flex-wrap gap-2"><Button size="sm" onClick={() => go("responsabilidades", id)}><Link2 className="h-4 w-4" /> Vincular da biblioteca</Button><Button size="sm" variant="outline" onClick={() => openDraft({ kind: "responsabilidade", sectorId: id })}><Plus className="h-4 w-4" /> Cadastrar responsabilidade</Button></div><div className="border bg-white">{sectorResponsibilities.map((item) => <Row key={item.id} title={item.title} meta={`${item.capabilityIds.length} capacidade(s) vinculada(s) · titular ${personName(context, item.holderId)}`} onClick={() => go("responsabilidade", item.id)} badge={<Badge kind={item.status === "local" ? "local" : "proposal"} />} />)}{sectorResponsibilities.length === 0 && <Empty><strong className="block text-foreground">Este setor ainda não recebeu responsabilidades da biblioteca.</strong><p className="mt-1">O cadastro salvo possui {mappedResponsibilities.length} responsabilidades distribuídas entre os setores já definidos. Para incluir trabalho próprio de {sector.name}, cadastre uma responsabilidade ou abra a biblioteca para atribuir um item existente.</p><Button size="sm" variant="outline" className="mt-3" onClick={() => go("responsabilidades", id)}>Ver responsabilidades mapeadas <ArrowRight className="ml-2 h-4 w-4" /></Button></Empty>}</div></>}
+    {tab === "capacidades" && <><div className="mb-3"><Button size="sm" onClick={() => openDraft({ kind: "capacidade", sectorId: id })}><Plus className="h-4 w-4" /> Cadastrar capacidade</Button></div><div className="border bg-white">{sectorCapabilities.map((item) => <Row key={item.id} title={item.title} meta={capabilityIdsRequiredBySector.has(item.id) ? "Exigida por responsabilidade deste setor" : "Capacidade vinculada diretamente ao setor"} onClick={() => go("capacidade", item.id)} badge={<Badge kind={item.status === "local" ? "local" : "proposal"} />} />)}{sectorCapabilities.length === 0 && <Empty><strong className="block text-foreground">Nenhuma capacidade está vinculada a este setor.</strong><p className="mt-1">As capacidades aparecem aqui quando são relacionadas diretamente ao setor ou exigidas por uma responsabilidade dele. O cadastro atual possui {mappedCapabilityIds.size} capacidade(s) já utilizada(s) nos setores mapeados.</p><Button size="sm" variant="outline" className="mt-3" onClick={() => go("capacidades")}>Ver banco de capacidades <ArrowRight className="ml-2 h-4 w-4" /></Button></Empty>}</div></>}
     {tab === "solicitacoes" && <><div className="mb-3 flex gap-2"><Button size="sm" onClick={() => go("solicitacoes", undefined, id)}>Abrir Kanban do setor <ArrowRight className="h-4 w-4" /></Button><Button size="sm" variant="outline" onClick={() => openDraft({ kind: "solicitacao", sectorId: id })}><Plus className="h-4 w-4" /> Registrar solicitação</Button></div><RequestKanban context={context} requests={sectorRequests} requestPlans={requestPlans} go={go} /></>}
     {tab === "pessoas" && <><Note>Nenhum vínculo de titular, substituto ou habilitação foi confirmado. Tarefas atribuídas não comprovam responsabilidade setorial.</Note><div className="border bg-white">{context.collaborators.map((person) => <Row key={person.id} title={person.name} meta="Colaborador ativo; vínculo com o setor a definir" onClick={() => go("pessoa", person.id)} badge={<Badge kind="undefined" />} />)}</div></>}
     {tab === "historico" && <div className="grid gap-6 lg:grid-cols-2"><section><SectionTitle>Tarefas cadastradas ({tasks.length})</SectionTitle><div className="border bg-white">{tasks.map((item) => <div key={item.id} className="border-b px-3 py-3 text-sm last:border-0"><p className="font-medium">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.completed ? "Concluída" : "Pendente"} · {dateLabel(item.created_at)}</p></div>)}{tasks.length === 0 && <Empty>Sem tarefas neste setor.</Empty>}</div></section><section><SectionTitle>Comentários cadastrados ({comments.length})</SectionTitle><div className="border bg-white">{comments.map((item) => <div key={item.id} className="border-b px-3 py-3 text-sm last:border-0"><p className="whitespace-pre-wrap">{item.comment_text}</p><p className="mt-1 text-xs text-muted-foreground">{item.author_name} · {dateLabel(item.created_at)}</p></div>)}{comments.length === 0 && <Empty>Sem comentários neste setor.</Empty>}</div></section></div>}
   </>;
 }
 
-function Responsibilities({ context, go, responsibilities, capabilities, openDraft }: WorkspaceProps) {
-  const [sectorId, setSectorId] = useState("all");
+function Responsibilities({ context, go, id, tab, responsibilities, capabilities, openDraft, claims }: WorkspaceProps) {
+  const [sectorId, setSectorId] = useState(id || "all");
   const [search, setSearch] = useState("");
+  useEffect(() => setSectorId(id || "all"), [id]);
+  const activeTab = tab === "disponiveis" ? "disponiveis" : "biblioteca";
+  const sourceRequirements = Object.fromEntries(sourceResponsibilities.map((item) => [item.sourceId, item.requiredCapabilities.map(({ capabilityCode, minimumLevel }) => ({ capabilityCode, minimumLevel }))]));
   const list = responsibilities.filter((item) => (sectorId === "all" || item.sectorId === sectorId) && textMatch(`${item.title} ${sectorName(context, item.sectorId)}`, search));
   return <>
     <Heading title="Responsabilidades" subtitle="O trabalho contínuo que precisa ter titular, substituto e capacidades claras." action={<Button size="sm" onClick={() => openDraft({ kind: "responsabilidade" })}><Plus className="h-4 w-4" /> Nova responsabilidade</Button>} />
+    <div className="mb-5 flex gap-1 overflow-x-auto border-b" role="tablist" aria-label="Visões de responsabilidades"><button type="button" role="tab" aria-selected={activeTab === "biblioteca"} onClick={() => go("responsabilidades")} className={`cap-section-tab ${activeTab === "biblioteca" ? "cap-section-tab-active" : ""}`}>Biblioteca e vínculos</button><button type="button" role="tab" aria-selected={activeTab === "disponiveis"} onClick={() => go("responsabilidades", undefined, "disponiveis")} className={`cap-section-tab ${activeTab === "disponiveis" ? "cap-section-tab-active" : ""}`}>Disponíveis para mim</button></div>
+    {activeTab === "disponiveis" ? <ResponsibilityAvailability responsibilities={responsibilities} capabilities={capabilities} sourceRequirements={sourceRequirements} onOpen={(responsibilityId) => go("responsabilidade", responsibilityId)} onRequest={(responsibilityId) => openDraft({ kind: "assumir", responsibilityId })} /> : <>
     <div className="mb-5 flex flex-wrap gap-2"><SearchBox value={search} setValue={setSearch} placeholder="Buscar responsabilidade ou setor" /><select aria-label="Filtrar responsabilidades por setor" value={sectorId} onChange={(event) => setSectorId(event.target.value)} className="h-9 border bg-white px-2 text-xs"><option value="all">Todos os setores</option>{sectorUnits(context).map((sector) => <option key={sector.id} value={sector.id}>{sector.name}</option>)}</select></div>
     <div className="mb-3 flex items-center gap-3 text-xs text-muted-foreground"><strong className="text-sm text-foreground">{list.length}</strong> responsabilidades nesta visão <span className="h-1.5 w-1.5 rounded-full bg-orange-500" /> <span>{list.filter((item) => !item.holderId).length} sem titular</span></div>
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{list.map((item) => { const sector = findSector(context, item.sectorId); const firstCapability = capabilities.find((capability) => item.capabilityIds.includes(capability.id)); return <button key={item.id} type="button" onClick={() => go("responsabilidade", item.id)} className="flex min-h-44 min-w-0 flex-col border-l-4 border-orange-500 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><span className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground"><span className="min-w-0 truncate">{sector?.name ?? "Setor a definir"}</span><ShieldAlert className="h-4 w-4 shrink-0 text-orange-600" /></span><strong className="mt-3 min-w-0 break-words text-sm leading-snug">{item.title}</strong><span className="mt-2 min-w-0 break-words text-xs text-violet-700">{firstCapability?.title ?? "Capacidade a definir"}</span><span className="mt-auto flex items-center justify-between gap-2 border-t pt-3 text-xs"><span className={item.holderId ? "text-emerald-700" : "text-orange-700"}>{item.holderId ? personName(context, item.holderId) : "Titular pendente"}</span><ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" /></span></button>; })}</div>
     {list.length === 0 && <div className="border-l-4 border-orange-500 bg-orange-50 px-4 py-5 text-sm text-orange-950"><strong className="block">O mapeamento começa vazio.</strong><p className="mt-1">Defina o trabalho contínuo de cada setor e vincule as capacidades necessárias.</p><div className="mt-4 flex flex-wrap gap-2"><Button size="sm" onClick={() => openDraft({ kind: "responsabilidade", sectorId: sectorId === "all" ? undefined : sectorId })}><Plus className="h-4 w-4" /> Cadastrar responsabilidade</Button><Button size="sm" variant="outline" onClick={() => go("capacidades")}>Ver capacidades <ArrowRight className="h-4 w-4" /></Button></div></div>}
+    </>}
   </>;
 }
 
 function ResponsibilityDetail({ context, go, id, responsibilities, capabilities, requests, openDraft, setResponsibility, claims }: WorkspaceProps) {
   const item = responsibilities.find((candidate) => candidate.id === id);
-  if (!item) return <div className="border-l-4 border-orange-500 bg-orange-50 p-5 text-sm"><h2 className="font-semibold">Responsabilidade indisponível</h2><p className="mt-1 text-muted-foreground">Este cadastro não está no Plano Mestre. Importe o backup se foi criado em outro endereço ou dispositivo.</p><Button size="sm" className="mt-4" onClick={() => go("responsabilidades")}>Ver responsabilidades <ArrowRight className="h-4 w-4" /></Button></div>;
+  if (!item) return <div className="border-l-4 border-orange-500 bg-orange-50 p-5 text-sm">
+    <h2 className="font-semibold">Responsabilidade indisponível</h2>
+    <p className="mt-1 text-muted-foreground">Este cadastro não está no Plano Mestre. Importe o backup se foi criado em outro endereço ou dispositivo.</p>
+    <Button size="sm" className="mt-4" onClick={() => go("responsabilidades")}>Ver responsabilidades <ArrowRight className="h-4 w-4" /></Button>
+  </div>;
+
+  const source = sourceResponsibilities.find((candidate) => candidate.sourceId === id);
   const relatedRequests = requests.filter((request) => item.sourceChallengeIds.includes(request.id));
   const relatedClaims = claims.filter((claim) => claim.responsibilityId === id);
-  return <><Heading title={item.title} subtitle="Responsabilidade mapeada no Plano Mestre" action={<div className="flex items-center gap-2"><Badge kind={item.status === "local" ? "local" : "proposal"} /><Button size="sm" variant="outline" onClick={() => openDraft({ kind: "editarResponsabilidade", responsibilityId: id })}><Pencil className="h-4 w-4" /> Editar</Button></div>} /><Pathway items={[{ label: "Setor", value: sectorName(context, item.sectorId), icon: Building2, tone: "border-teal-500 bg-teal-50 text-teal-900", onClick: () => go("setor", item.sectorId) }, { label: "Responsabilidade", value: item.title, icon: ShieldAlert, tone: "border-orange-500 bg-orange-50 text-orange-900" }, { label: "Capacidade", value: capabilities.find((candidate) => item.capabilityIds.includes(candidate.id))?.title ?? "A definir", icon: BookOpen, tone: "border-violet-500 bg-violet-50 text-violet-900", onClick: item.capabilityIds[0] ? () => go("capacidade", item.capabilityIds[0]) : undefined }]} /><div className="mb-5 flex flex-wrap gap-x-6 gap-y-2 border-b pb-4 text-xs text-muted-foreground"><span><strong className="text-foreground">{item.capabilityIds.length}</strong> capacidade(s)</span><span><strong className="text-foreground">{relatedRequests.length}</strong> solicitação(ões) relacionadas</span><span>Titular: <strong className="text-foreground">{personName(context, item.holderId)}</strong></span><span>Substituto: <strong className="text-foreground">{personName(context, item.substituteId)}</strong></span></div><div className="mt-5 grid gap-6 lg:grid-cols-2"><section><SectionTitle>Capacidades necessárias</SectionTitle><div className="border bg-white">{item.capabilityIds.map((capabilityId) => { const capability = capabilities.find((candidate) => candidate.id === capabilityId); return capability && <div key={capabilityId} className="flex items-center border-b last:border-0"><div className="min-w-0 flex-1"><Row title={capability.title} meta="Capacidade vinculada" onClick={() => go("capacidade", capabilityId)} badge={<Badge kind={capability.status === "local" ? "local" : "proposal"} />} /></div><button type="button" title={`Desvincular ${capability.title}`} aria-label={`Desvincular ${capability.title}`} onClick={() => setResponsibility(id, { capabilityIds: item.capabilityIds.filter((value) => value !== capabilityId) })} className="mr-2 grid h-8 w-8 shrink-0 place-items-center border hover:bg-rose-50"><X className="h-4 w-4" /></button></div>; })}{item.capabilityIds.length === 0 && <Empty>Nenhuma capacidade vinculada.</Empty>}</div><label className="mt-3 block text-xs font-medium">Vincular capacidade<select aria-label="Vincular capacidade" defaultValue="" onChange={(event) => { const value = event.target.value; if (value && !item.capabilityIds.includes(value)) setResponsibility(id, { capabilityIds: [...item.capabilityIds, value] }); event.target.value = ""; }} className="mt-1 h-9 w-full border bg-white px-2 text-xs"><option value="">Escolha uma capacidade</option>{capabilities.filter((capability) => !item.capabilityIds.includes(capability.id)).map((capability) => <option key={capability.id} value={capability.id}>{capability.title}</option>)}</select></label><Button size="sm" variant="outline" className="mt-2" onClick={() => openDraft({ kind: "capacidade", sectorId: item.sectorId })}><Plus className="h-4 w-4" /> Cadastrar nova capacidade</Button></section><section><SectionTitle>Pessoas e sucessão</SectionTitle><div className="space-y-3 border bg-white p-4"><label className="block text-xs font-medium">Titular (salvo no Plano Mestre)<select aria-label="Titular da responsabilidade" value={item.holderId ?? ""} onChange={(event) => setResponsibility(id, { holderId: event.target.value || null })} className="mt-1 h-9 w-full border bg-white px-2 text-xs"><option value="">A definir</option>{context.collaborators.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label><label className="block text-xs font-medium">Substituto (salvo no Plano Mestre)<select aria-label="Substituto da responsabilidade" value={item.substituteId ?? ""} onChange={(event) => setResponsibility(id, { substituteId: event.target.value || null })} className="mt-1 h-9 w-full border bg-white px-2 text-xs"><option value="">A definir</option>{context.collaborators.filter((person) => person.id !== item.holderId).map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label><p className="text-xs text-muted-foreground">Selecionar uma pessoa aqui não comprova habilitação nem delega a responsabilidade no sistema atual.</p>{relatedClaims.map((claim, index) => <p key={`${claim.personId}-${index}`} className="text-xs text-sky-800">Pedido registrado: {personName(context, claim.personId)} quer assumir esta responsabilidade.</p>)}<Button size="sm" variant="outline" onClick={() => openDraft({ kind: "assumir", responsibilityId: id })}>Solicitar responsabilidade</Button></div></section></div><div className="mt-6"><SectionTitle>Solicitações relacionadas por origem</SectionTitle><div className="border bg-white">{relatedRequests.map((request) => <Row key={request.id} title={request.title} meta="Desafio cadastrado; vínculo de responsabilidade ainda não confirmado" onClick={() => go("solicitacao", request.id)} badge={<Badge kind="real" />} />)}{relatedRequests.length === 0 && <Empty>Sem solicitação relacionada no Plano Mestre.</Empty>}</div></div></>;
+  const linkedCapabilities = capabilities.filter((capability) => item.capabilityIds.includes(capability.id));
+  const minimumLevels = Object.fromEntries(
+    source?.requiredCapabilities.map((entry) => [entry.capabilityCode, entry.minimumLevelLabel]) ?? [],
+  );
+  const capabilityRequirements = responsibilityRequirements(item, source?.requiredCapabilities.map(({ capabilityCode, minimumLevel }) => ({ capabilityCode, minimumLevel })));
+  const capabilityNames = new Map(capabilities.map((capability) => [capability.id, capability.title]));
+
+  return <>
+    <Heading eyebrow="Responsabilidade" title={item.title} subtitle="Trabalho contínuo deste setor, suas atividades e as capacidades necessárias para executá-lo."
+      action={<div className="flex items-center gap-2"><Badge kind={item.status === "local" ? "local" : "proposal"} />
+        <Button size="sm" variant="outline" onClick={() => openDraft({ kind: "editarResponsabilidade", responsibilityId: id })}><Pencil className="h-4 w-4" /> Editar</Button>
+      </div>} />
+    <Pathway items={[
+      { label: "Setor", value: sectorName(context, item.sectorId), icon: Building2, tone: "border-teal-500 bg-teal-50 text-teal-900", onClick: () => go("setor", item.sectorId) },
+      { label: "Responsabilidade", value: item.title, icon: ShieldAlert, tone: "border-orange-500 bg-orange-50 text-orange-900" },
+      { label: "Capacidade", value: linkedCapabilities[0]?.title ?? "A definir", icon: BookOpen, tone: "border-violet-500 bg-violet-50 text-violet-900", onClick: linkedCapabilities[0] ? () => go("capacidade", linkedCapabilities[0].id) : undefined },
+    ]} />
+    <div className="mb-5 flex flex-wrap gap-x-6 gap-y-2 border-b pb-4 text-xs text-muted-foreground">
+      <span><strong className="text-foreground">{item.capabilityIds.length}</strong> capacidade(s)</span>
+      <span><strong className="text-foreground">{relatedRequests.length}</strong> solicitação(ões) relacionadas</span>
+      <span>Titular: <strong className="text-foreground">{personName(context, item.holderId)}</strong></span>
+      <span>Substituto: <strong className="text-foreground">{personName(context, item.substituteId)}</strong></span>
+    </div>
+    <div className="mt-5 grid gap-6 lg:grid-cols-2">
+      <section>
+        <SectionTitle>Capacidades necessárias</SectionTitle>
+        <ResponsibilityCapabilityCoverage
+          capabilities={linkedCapabilities}
+          collaborators={context.collaborators}
+          minimumLevels={minimumLevels}
+          onOpen={(code) => go("capacidade", code)}
+          onRequest={(code) => go("capacitacoes", code, "criterios", "colaborador")}
+          onReview={(code) => go("capacitacoes", code, "fila", "administrador")}
+          onUnlink={(code) => setResponsibility(id, { capabilityIds: item.capabilityIds.filter((value) => value !== code) })}
+        />
+        <label className="mt-3 block text-xs font-medium">Vincular capacidade
+          <select aria-label="Vincular capacidade" defaultValue="" onChange={(event) => {
+            const value = event.target.value;
+            if (value && !item.capabilityIds.includes(value)) setResponsibility(id, { capabilityIds: [...item.capabilityIds, value] });
+            event.target.value = "";
+          }} className="mt-1 h-9 w-full border bg-white px-2 text-xs">
+            <option value="">Escolha uma capacidade</option>
+            {capabilities.filter((capability) => !item.capabilityIds.includes(capability.id)).map((capability) =>
+              <option key={capability.id} value={capability.id}>{capability.title}</option>)}
+          </select>
+        </label>
+        <Button size="sm" variant="outline" className="mt-2" onClick={() => openDraft({ kind: "capacidade", sectorId: item.sectorId })}><Plus className="h-4 w-4" /> Cadastrar nova capacidade</Button>
+      </section>
+      <section>
+        <SectionTitle>Pessoas e sucessão</SectionTitle>
+        <div className="space-y-3 border bg-white p-4">
+          <label className="block text-xs font-medium">Titular (salvo no Plano Mestre)
+            <select aria-label="Titular da responsabilidade" value={item.holderId ?? ""} onChange={(event) => setResponsibility(id, { holderId: event.target.value || null })} className="mt-1 h-9 w-full border bg-white px-2 text-xs">
+              <option value="">A definir</option>
+              {context.collaborators.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+            </select>
+          </label>
+          <label className="block text-xs font-medium">Substituto (salvo no Plano Mestre)
+            <select aria-label="Substituto da responsabilidade" value={item.substituteId ?? ""} onChange={(event) => setResponsibility(id, { substituteId: event.target.value || null })} className="mt-1 h-9 w-full border bg-white px-2 text-xs">
+              <option value="">A definir</option>
+              {context.collaborators.filter((person) => person.id !== item.holderId).map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+            </select>
+          </label>
+          <p className="text-xs text-muted-foreground">Indicar titular ou substituto não comprova certificação nem delega esta responsabilidade no sistema atual.</p>
+          {relatedClaims.map((claim, index) => <p key={claim.personId + index} className="text-xs text-sky-800">Pedido registrado: {personName(context, claim.personId)} quer assumir esta responsabilidade.</p>)}
+          <ResponsibilityClaimControl requirements={capabilityRequirements} capabilityNames={capabilityNames} requestedBy={relatedClaims.map((claim) => claim.personId)} onRequest={() => openDraft({ kind: "assumir", responsibilityId: id })} />
+        </div>
+      </section>
+    </div>
+    {source && <section className="mt-6">
+      <SectionTitle>Atividades desta responsabilidade</SectionTitle>
+      <p className="mb-2 text-xs text-muted-foreground">Estas atividades descrevem o que deve ser feito no setor. As solicitações concretas são acompanhadas separadamente.</p>
+      <div className="divide-y border-y bg-white">{source.activities.map((activity, index) =>
+        <div key={activity.sourceRef + index} className="px-3 py-2 text-sm">{firstLetterUpper(activity.text)}</div>)}</div>
+    </section>}
+    <div className="mt-6">
+      <SectionTitle>Solicitações relacionadas</SectionTitle>
+      <div className="border bg-white">{relatedRequests.map((request) =>
+        <Row key={request.id} title={request.title} meta="Desafio cadastrado; vínculo de responsabilidade ainda não confirmado" onClick={() => go("solicitacao", request.id)} badge={<Badge kind="real" />} />)}
+        {relatedRequests.length === 0 && <Empty>Sem solicitação relacionada no Plano Mestre.</Empty>}
+      </div>
+    </div>
+  </>;
 }
 
 function Capabilities({ context, go, capabilities, responsibilities, openDraft }: WorkspaceProps) {

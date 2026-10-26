@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { newSectorNames } from "./libraryIntegration";
 
 // Operational records remain read-only; Plano Mestre writes use its separate document.
 export interface Unit { id: string; name: string; universe_category: string | null; logo_url: string | null }
@@ -68,5 +69,33 @@ export function sectorRecords(context: MasterPlanContext) {
     tasks: context.tasks.filter((item) => ids.has(item.client_id)),
     comments: context.comments.filter((item) => ids.has(item.client_id)),
   };
+}
+
+export async function ensureMasterPlanSectors(): Promise<void> {
+  const initials: Record<(typeof newSectorNames)[number], string> = {
+    "SERVIÇOS DE CAMPO": "SC",
+    "FINANCEIRO": "FI",
+    "TECNOLOGIA E SISTEMAS": "TS",
+  };
+  const { data, error } = await supabase.from("clients")
+    .select("name,display_order")
+    .eq("client_type", "UNIVERSO_RAMOS")
+    .eq("universe_category", "SETOR");
+  assertNoError(error);
+  const existing = new Set((data ?? []).map((sector) => sector.name));
+  let order = Math.max(0, ...(data ?? []).map((sector) => sector.display_order ?? 0));
+  for (const name of newSectorNames) {
+    if (existing.has(name)) continue;
+    order += 1;
+    const result = await supabase.from("clients").insert({
+      name,
+      initials: initials[name],
+      client_type: "UNIVERSO_RAMOS",
+      universe_category: "SETOR",
+      is_active: true,
+      display_order: order,
+    });
+    assertNoError(result.error);
+  }
 }
 

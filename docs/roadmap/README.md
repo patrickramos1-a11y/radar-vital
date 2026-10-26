@@ -32,6 +32,9 @@ O objetivo e permitir que uma nova execucao consiga entender rapidamente:
 | [UNIVERSO_RAMOS_PLANO_MESTRE_ESPECIFICACAO.md](UNIVERSO_RAMOS_PLANO_MESTRE_ESPECIFICACAO.md) | Especificacao detalhada das telas, fluxos, regras, migracao e exemplos com os 11 setores ativos |
 | [UNIVERSO_RAMOS_PLANO_MESTRE_PREVIA.md](UNIVERSO_RAMOS_PLANO_MESTRE_PREVIA.md) | Rota, escopo e contrato de transição da maquete navegável do Plano Mestre |
 | [UNIVERSO_RAMOS_PLANO_MESTRE_PUBLICACAO.md](UNIVERSO_RAMOS_PLANO_MESTRE_PUBLICACAO.md) | Migration, verificacao e limites da primeira publicacao compartilhada do Plano Mestre |
+| [UNIVERSO_RAMOS_RESPONSABILIDADES_ESTUDO.md](UNIVERSO_RAMOS_RESPONSABILIDADES_ESTUDO.md) | Leitura, decisoes pendentes e proposta de pagina para a planilha de responsabilidades |
+| [UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json](UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json) | Catalogo estruturado com origem por celula, preparado para revisao; nao importado |
+| [UNIVERSO_RAMOS_JORNADA_PUBLICACAO.md](UNIVERSO_RAMOS_JORNADA_PUBLICACAO.md) | Biblioteca e jornada de capacitacao, SQL de ativacao e limites do perfil selecionavel |
 
 ## Visao do produto
 

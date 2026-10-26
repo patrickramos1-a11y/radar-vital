@@ -1,0 +1,97 @@
+// @vitest-environment jsdom
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
+import { OfficialCapabilityExperience } from "./OfficialCapabilityExperience";
+import { fetchAssessments, fetchRequests } from "./journeyRemote";
+import type { Library } from "./journeyRemote";
+
+const fixture = vi.hoisted(() => ({
+  profile: { id: "collaborator-1", name: "Gabi", role: "colaborador" },
+  requests: [] as Array<Record<string, unknown>>,
+}));
+
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ currentUser: fixture.profile, loading: false }),
+}));
+vi.mock("./journeyRemote", () => ({
+  fetchAssessments: vi.fn(async () => []),
+  fetchRequests: vi.fn(async () => fixture.requests),
+  createRemoteAssessment: vi.fn(async () => ({ id: "assessment-1" })),
+}));
+
+const library: Library = {
+  capabilities: source.capabilities,
+  responsibilities: source.responsibilities,
+  sourceSha256: source.source.sha256,
+};
+
+function open(view: "capacidades" | "capacidade" | "capacitacoes", code = "", tab = "visao", mode = "") {
+  const go = vi.fn();
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><OfficialCapabilityExperience view={view} code={code} tab={tab} mode={mode} go={go} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} /></QueryClientProvider>);
+  return go;
+}
+
+afterEach(() => { cleanup(); fixture.profile = { id: "collaborator-1", name: "Gabi", role: "colaborador" }; fixture.requests = []; });
+
+describe("official capability library", () => {
+  it("shows all 28 published cards and filters by the source title", () => {
+    const go = open("capacidades");
+    expect(screen.getByText("28 de 28")).toBeTruthy();
+    expect(screen.getAllByRole("img", { name: /^Capa ilustrada de / })).toHaveLength(28);
+    fireEvent.change(screen.getByRole("textbox", { name: "Buscar capacidades" }), { target: { value: "Gestão de Informações e Acervo" } });
+    expect(screen.getByText("1 de 28")).toBeTruthy();
+    expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ }).getAttribute("src")).toBe("/universe-capabilities/T01.png");
+    fireEvent.click(screen.getByRole("button", { name: /T01.*Gestão de Informações e Acervo/ }));
+    expect(go).toHaveBeenCalledWith("capacidade", "T01");
+  });
+
+  it("uses complete source text and keeps unmapped responsibilities visibly pending", () => {
+    open("capacidade", "T01", "responsabilidades");
+    expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Gestão de Informações e Acervo" })).toBeTruthy();
+    expect(screen.getByText(/Estas responsabilidades exigem a capacidade/)).toBeTruthy();
+    expect(screen.getAllByText("Vínculo com setor pendente; ficha ainda indisponível").length).toBeGreaterThan(0);
+  });
+
+  it("opens a mapped responsibility directly from the capability", () => {
+    const mapped = library.responsibilities.find((responsibility) => responsibility.requiredCapabilities.some((entry) => entry.capabilityCode === "T01"))!;
+    const go = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacidade" code="T01" tab="responsabilidades" mode="" go={go} library={library} people={[]} mappedResponsibilities={[{ id: mapped.sourceId, title: mapped.title, sectorId: "sector-1", capabilityIds: ["T01"], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" }]} sectors={[{ id: "sector-1", name: "GESTÃO E PLANEJAMENTO", universe_category: "SETOR", logo_url: null }]} /></QueryClientProvider>);
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(mapped.title) }));
+    expect(go).toHaveBeenCalledWith("responsabilidade", mapped.sourceId);
+  });
+
+  it("uses the selected collaborator profile without requesting an email login", async () => {
+    open("capacitacoes", "T01", "autoavaliacao");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Registrar autoavaliação" })).toBeTruthy());
+    expect(screen.getByText("Gabi")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Entrar na jornada" })).toBeNull();
+    expect(fetchAssessments).toHaveBeenCalledWith("collaborator-1");
+    expect(fetchRequests).toHaveBeenCalledWith("collaborator-1", false);
+  });
+
+  it("does not offer the administrative queue to a collaborator", async () => {
+    open("capacitacoes", "T01", "autoavaliacao", "administrador");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Registrar autoavaliação" })).toBeTruthy());
+    expect(screen.queryByRole("heading", { name: /Aguardando avaliação/ })).toBeNull();
+  });
+
+  it("asks for an evidence name and repository location, without file upload", async () => {
+    open("capacitacoes", "T01", "criterios");
+    await waitFor(() => expect(screen.getAllByText("Como comprovar:").length).toBeGreaterThan(0));
+    expect(screen.getAllByText("Nome da evidência").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Link ou caminho no repositório").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Selecionar arquivo")).toBeNull();
+  });
+
+  it("shows the review queue for the existing admin profile", async () => {
+    fixture.profile = { id: "admin-1", name: "Patrick", role: "admin" };
+    open("capacitacoes", "T01", "retorno", "administrador");
+    await waitFor(() => expect(screen.getByText("Aguardando avaliação · 0")).toBeTruthy());
+    expect(fetchRequests).toHaveBeenCalledWith("admin-1", true);
+  });
+});
