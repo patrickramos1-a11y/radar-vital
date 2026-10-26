@@ -23,7 +23,7 @@ import { responsibilityRequirements } from "@/features/master-plan-preview/respo
 import { firstLetterUpper } from "@/features/master-plan-preview/capabilityPresentationData";
 import { createDemoStore } from "@/features/master-plan-preview/capabilityDemo";
 import { capabilityCatalogue } from "@/features/master-plan-preview/capabilityJourney";
-import { fetchLibrary, fetchResponsibilityClaims, reviewResponsibilityClaim } from "@/features/master-plan-preview/journeyRemote";
+import { fetchLibrary, fetchResponsibilityClaims, requestResponsibility, reviewResponsibilityClaim } from "@/features/master-plan-preview/journeyRemote";
 import type { ResponsibilityClaim } from "@/features/master-plan-preview/responsibilityJourney";
 import {
   countsForUnit, ensureMasterPlanSectors, fetchMasterPlanContext, sectorRecords, sectorUnits,
@@ -541,10 +541,19 @@ function Responsibilities({ context, go, id, tab, responsibilities, capabilities
       setReviewingClaimId(null);
     }
   };
+  const requestClaim = async (responsibilityId: string) => {
+    try {
+      await requestResponsibility(responsibilityId);
+      await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
+      toast.success("Responsabilidade solicitada para avaliação administrativa.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a responsabilidade.");
+    }
+  };
   return <>
     <Heading title="Responsabilidades" subtitle="Gerencie vínculos concedidos, solicitações para avaliação e os requisitos técnicos de cada responsabilidade." action={<Button size="sm" onClick={() => openDraft({ kind: "responsabilidade" })}><Plus className="h-4 w-4" /> Nova responsabilidade</Button>} />
     <div className="mb-5 flex gap-1 overflow-x-auto border-b" role="tablist" aria-label="Visões de responsabilidades"><button type="button" role="tab" aria-selected={activeTab === "biblioteca"} onClick={() => go("responsabilidades")} className={`cap-section-tab ${activeTab === "biblioteca" ? "cap-section-tab-active" : ""}`}>Biblioteca e vínculos</button><button type="button" role="tab" aria-selected={activeTab === "disponiveis"} onClick={() => go("responsabilidades", undefined, "disponiveis")} className={`cap-section-tab ${activeTab === "disponiveis" ? "cap-section-tab-active" : ""}`}>Disponíveis para mim</button>{isAdmin && <button type="button" role="tab" aria-selected={activeTab === "solicitacoes"} onClick={() => go("responsabilidades", undefined, "solicitacoes")} className={`cap-section-tab ${activeTab === "solicitacoes" ? "cap-section-tab-active" : ""}`}>Solicitações para aprovar{pendingClaims.length ? ` (${pendingClaims.length})` : ""}</button>}</div>
-    {activeTab === "disponiveis" ? <ResponsibilityAvailability responsibilities={responsibilities} capabilities={capabilities} sourceRequirements={sourceRequirements} onOpen={(responsibilityId) => go("responsabilidade", responsibilityId)} onRequest={(responsibilityId) => openDraft({ kind: "assumir", responsibilityId })} /> : activeTab === "solicitacoes" && isAdmin ? <section className="border bg-white"><div className="border-b p-4"><h2 className="text-lg font-semibold">Solicitações de responsabilidade</h2><p className="mt-1 text-sm text-zinc-600">Conceda apenas quando a jornada estiver conferida. Ao conceder, a pessoa passa a constar como vinculada na responsabilidade, junto com todas as demais pessoas já concedidas.</p></div><div className="divide-y">{pendingClaims.map((claim) => { const item = responsibilities.find((responsibility) => responsibility.id === claim.responsibility_source_id); return <article key={claim.id} className="flex flex-wrap items-center justify-between gap-4 p-4"><div className="min-w-0"><p className="text-xs font-semibold uppercase text-teal-700">{item ? sectorName(context, item.sectorId) : "Responsabilidade oficial"}</p><h3 className="mt-1 text-sm font-semibold">{item?.title ?? "Responsabilidade não localizada"}</h3><p className="mt-1 text-xs text-zinc-600">Solicitada por <strong>{personName(context, claim.collaborator_id)}</strong> em {dateLabel(claim.requested_at)}</p></div><div className="flex shrink-0 gap-2"><Button size="sm" variant="outline" disabled={reviewingClaimId === claim.id} onClick={() => void reviewClaim(claim.id, "rejected")}>Devolver</Button><Button size="sm" disabled={reviewingClaimId === claim.id} onClick={() => void reviewClaim(claim.id, "approved")}>{reviewingClaimId === claim.id ? "Atualizando..." : "Conceder responsabilidade"}</Button></div></article>; })}{!pendingClaims.length && <Empty>Nenhuma solicitação de responsabilidade aguardando avaliação.</Empty>}</div></section> : <>
+    {activeTab === "disponiveis" ? <ResponsibilityAvailability responsibilities={responsibilities} capabilities={capabilities} sourceRequirements={sourceRequirements} onOpen={(responsibilityId) => go("responsabilidade", responsibilityId)} onRequest={(responsibilityId) => void requestClaim(responsibilityId)} /> : activeTab === "solicitacoes" && isAdmin ? <section className="border bg-white"><div className="border-b p-4"><h2 className="text-lg font-semibold">Solicitações de responsabilidade</h2><p className="mt-1 text-sm text-zinc-600">Conceda apenas quando a jornada estiver conferida. Ao conceder, a pessoa passa a constar como vinculada na responsabilidade, junto com todas as demais pessoas já concedidas.</p></div><div className="divide-y">{pendingClaims.map((claim) => { const item = responsibilities.find((responsibility) => responsibility.id === claim.responsibility_source_id); return <article key={claim.id} className="flex flex-wrap items-center justify-between gap-4 p-4"><div className="min-w-0"><p className="text-xs font-semibold uppercase text-teal-700">{item ? sectorName(context, item.sectorId) : "Responsabilidade oficial"}</p><h3 className="mt-1 text-sm font-semibold">{item?.title ?? "Responsabilidade não localizada"}</h3><p className="mt-1 text-xs text-zinc-600">Solicitada por <strong>{personName(context, claim.collaborator_id)}</strong> em {dateLabel(claim.requested_at)}</p></div><div className="flex shrink-0 gap-2"><Button size="sm" variant="outline" disabled={reviewingClaimId === claim.id} onClick={() => void reviewClaim(claim.id, "rejected")}>Devolver</Button><Button size="sm" disabled={reviewingClaimId === claim.id} onClick={() => void reviewClaim(claim.id, "approved")}>{reviewingClaimId === claim.id ? "Atualizando..." : "Conceder responsabilidade"}</Button></div></article>; })}{!pendingClaims.length && <Empty>Nenhuma solicitação de responsabilidade aguardando avaliação.</Empty>}</div></section> : <>
     <div className="mb-3 flex flex-wrap gap-2"><SearchBox value={search} setValue={setSearch} placeholder="Buscar responsabilidade ou setor" /><select aria-label="Filtrar responsabilidades por setor" value={sectorId} onChange={(event) => setSectorId(event.target.value)} className="h-9 border bg-white px-2 text-xs"><option value="all">Todos os setores</option>{sectorUnits(context).map((sector) => <option key={sector.id} value={sector.id}>{sector.name}</option>)}</select></div>
     <div className="mb-5 flex flex-wrap gap-1" role="group" aria-label="Filtrar responsabilidades por nível exigido"><span className="self-center pr-2 text-xs font-semibold text-muted-foreground">Nível exigido</span>{(["all", "1", "2", "3"] as const).map((level) => <button type="button" key={level} aria-pressed={requiredLevel === level} onClick={() => setRequiredLevel(level)} className={`cap-filter ${requiredLevel === level ? "cap-filter-active" : ""}`}>{level === "all" ? "Todos" : levelLabel(Number(level))}</button>)}</div>
     <div className="mb-3 flex items-center gap-3 text-xs text-muted-foreground"><strong className="text-sm text-foreground">{list.length}</strong> responsabilidades nesta visão <span className="h-1.5 w-1.5 rounded-full bg-orange-500" /> <span>{list.filter((item) => !linkedResponsibilityPeople(context, item, officialClaims).length).length} sem pessoa vinculada</span></div>
@@ -556,6 +565,7 @@ function Responsibilities({ context, go, id, tab, responsibilities, capabilities
 
 function ResponsibilityDetail({ context, go, id, responsibilities, capabilities, requests, openDraft, setResponsibility, claims }: WorkspaceProps) {
   const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const officialClaimsQuery = useQuery({ queryKey: ["master-plan-responsibility-claims"], queryFn: fetchResponsibilityClaims, enabled: !!currentUser, retry: false });
   const officialClaims = Array.isArray(officialClaimsQuery.data) ? officialClaimsQuery.data : [];
   const item = responsibilities.find((candidate) => candidate.id === id);
@@ -575,6 +585,15 @@ function ResponsibilityDetail({ context, go, id, responsibilities, capabilities,
   );
   const capabilityRequirements = responsibilityRequirements(item, source?.requiredCapabilities.map(({ capabilityCode, minimumLevel }) => ({ capabilityCode, minimumLevel })));
   const capabilityNames = new Map(capabilities.map((capability) => [capability.id, capability.title]));
+  const requestClaim = async () => {
+    try {
+      await requestResponsibility(item.id);
+      await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
+      toast.success("Responsabilidade solicitada para avaliação administrativa.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a responsabilidade.");
+    }
+  };
 
   return <>
     <Heading eyebrow="Responsabilidade" title={item.title} subtitle="Trabalho contínuo deste setor, suas atividades e as capacidades necessárias para executá-lo."
@@ -635,7 +654,7 @@ function ResponsibilityDetail({ context, go, id, responsibilities, capabilities,
           </label>
           <p className="text-xs text-muted-foreground">A referência e o substituto ajudam na sucessão, mas não substituem os vínculos concedidos pela aprovação da solicitação.</p>
           {relatedClaims.map((claim, index) => <p key={claim.personId + index} className="text-xs text-sky-800">Pedido registrado: {personName(context, claim.personId)} quer assumir esta responsabilidade.</p>)}
-          <ResponsibilityClaimControl requirements={capabilityRequirements} capabilityNames={capabilityNames} requestedBy={relatedClaims.map((claim) => claim.personId)} onRequest={() => openDraft({ kind: "assumir", responsibilityId: id })} />
+          <ResponsibilityClaimControl requirements={capabilityRequirements} capabilityNames={capabilityNames} requestedBy={[...relatedClaims.map((claim) => claim.personId), ...officialClaims.filter((claim) => claim.responsibility_source_id === item.id && (claim.status === "requested" || claim.status === "approved")).map((claim) => claim.collaborator_id)]} onRequest={() => void requestClaim()} />
         </div>
       </section>
     </div>
