@@ -168,12 +168,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
           .sort((left, right) => {
             const leftInherited = inheritedPlan.competencyIds.has(left.responsibility.sourceId);
             const rightInherited = inheritedPlan.competencyIds.has(right.responsibility.sourceId);
-            const leftSelected = selectedResponsibilityIds.has(left.responsibility.sourceId);
-            const rightSelected = selectedResponsibilityIds.has(right.responsibility.sourceId);
             return Number(rightInherited) - Number(leftInherited)
-              || Number(rightSelected) - Number(leftSelected)
-              || Number(left.unmet.length > 0) - Number(right.unmet.length > 0)
-              || left.unmet.length - right.unmet.length
               || left.responsibility.title.localeCompare(right.responsibility.title, "pt-BR");
           });
         const isCrossNucleus = step.nucleiRequired > 1;
