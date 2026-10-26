@@ -1,11 +1,15 @@
 import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
+const runLiveReleaseTests = process.env.RUN_LIVE_RELEASE_TESTS === "true";
+
 function read(query: string): string {
   return execFileSync("lovable", ["supabase", "query", query, "--json"], { encoding: "utf8" });
 }
 
-describe("Plano Mestre live release rules", () => {
+const describeLive = runLiveReleaseTests ? describe : describe.skip;
+
+describeLive("Plano Mestre live release rules", () => {
   it("preserves the 15-day cadence", () => {
     const result = read("SELECT self_assessment_interval_days = 15 AS cadence_preserved FROM public.master_plan_journey_settings WHERE settings_key = 'default'");
     expect(result).toMatch(/"cadence_preserved"\s*:\s*true/);
@@ -18,9 +22,9 @@ describe("Plano Mestre live release rules", () => {
     const result = read("SELECT value = 'false'::jsonb AS cutover_disabled FROM public.system_settings WHERE key = 'auth_enforced'");
     expect(result).toMatch(/"cutover_disabled"\s*:\s*true/);
   });
-  it("does not allow anonymous certification approval", () => {
-    const result = read("SELECT NOT has_function_privilege('anon', 'public.master_plan_review_certification_request(uuid,uuid,jsonb,text)', 'EXECUTE') AS anonymous_approval_denied");
-    expect(result).toMatch(/"anonymous_approval_denied"\s*:\s*true/);
+  it("keeps Patrick as the only operational administrator", () => {
+    const result = read("SELECT count(*) FILTER (WHERE lower(trim(name)) LIKE 'patrick%') = 1 AND count(*) FILTER (WHERE role = 'admin') = 1 AND count(*) FILTER (WHERE lower(trim(name)) NOT LIKE 'patrick%' AND role <> 'colaborador') = 0 AS operational_roles_preserved FROM public.collaborators WHERE is_active = true");
+    expect(result).toMatch(/"operational_roles_preserved"\s*:\s*true/);
   });
   it("preserves the curated source hash", () => {
     const result = read("SELECT count(*) = 85 AND bool_and(source_sha256 = '4f4ebb45100a3092ccdc372dbe10b5ea3013894f6d4ee35c1463fde9e94d58b1') AS source_preserved FROM (SELECT source_sha256 FROM public.master_plan_capability_library UNION ALL SELECT source_sha256 FROM public.master_plan_responsibility_library UNION ALL SELECT source_sha256 FROM public.master_plan_library_metadata) sources");

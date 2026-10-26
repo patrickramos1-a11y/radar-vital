@@ -71,6 +71,13 @@
       "when": 1792973319920,
       "tag": "0009_protect_master_plan_identity_links",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793050000000,
+      "tag": "0010_master_plan_operational_profiles",
+      "breakpoints": true
     }
   ]
 }

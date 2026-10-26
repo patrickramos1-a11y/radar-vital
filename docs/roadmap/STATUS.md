@@ -4,14 +4,13 @@ Atualizado em: 2026-10-25
 
 ## Entrega recente
 
-- Plano Mestre: base D-022 aplicada e verificada em 2026-10-26: 28 capacidades,
-  56 responsabilidades e 1 metadata com hash original. Documento existente
-  preservado na revisao 7; 11 colaboradores preservados. Jornada oficial com
-  RPCs autenticadas, revisao administrativa por papel de servidor e protecao
-  de vinculos de identidade. 26 testes aprovados; pagina atual abre sem erros.
-  `auth_enforced=false`: nao existem colaboradores ativos vinculados nem conta
-  administrativa. Interface atual continua usando o documento versionado;
-  o fluxo oficial autenticado ainda nao esta integrado nem validado.
+- Plano Mestre: jornada operacional publicada e verificada em 2026-10-26: 28
+  capacidades, 56 responsabilidades e 1 metadata com hash original. O perfil
+  ativo Patrick e o unico administrador operacional; os demais perfis ativos
+  sao colaboradores. A jornada usa o seletor de perfil existente, sem login ou
+  e-mail. As RPCs e politicas publicas foram adaptadas a esse modelo; ele nao
+  constitui uma fronteira de identidade. O teste de infraestrutura ao vivo so
+  executa com `RUN_LIVE_RELEASE_TESTS=true` e a CLI Lovable disponivel.
 - Entregaveis semanais concluidos: implementacao concluida em 2026-10-21.
 - Prioridades concluidas geram entregas automaticamente; 37 entregaveis
   historicos abertos ou em andamento foram convertidos em prioridades.
