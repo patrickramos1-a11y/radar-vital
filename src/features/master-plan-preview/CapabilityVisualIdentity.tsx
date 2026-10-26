@@ -22,8 +22,9 @@ export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, traini
       </span>
     </button>
     <div className="border-t px-3 py-2 text-xs">
-      {certifiedLevel > 0 ? <p className="text-emerald-800">Capacidade atual: <strong>{capabilityLevelNames[certifiedLevel]}</strong>{activeTrainingLevel ? <span className="text-sky-800"> · Em desenvolvimento: {capabilityLevelNames[activeTrainingLevel]}</span> : nextLevel && <span className="text-zinc-600"> · Próximo: {capabilityLevelNames[nextLevel]}</span>}</p> : trainingLevel > 0 ? <p className="text-sky-800">Em desenvolvimento: <strong>{capabilityLevelNames[trainingLevel]}</strong></p> : <p className="text-amber-800">Falta iniciar: <strong>Assistido</strong></p>}
-      {nextLevel && onRequestLevel && <button type="button" onClick={() => onRequestLevel(nextLevel)} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-900"><ArrowRight className="h-3.5 w-3.5" /> {activeTrainingLevel ? `Acompanhar ${capabilityLevelNames[activeTrainingLevel]}` : `Solicitar ${capabilityLevelNames[nextLevel]}`}</button>}
+      {certifiedLevel > 0 ? <p className="text-emerald-800">Capacidade atual: <strong>{capabilityLevelNames[certifiedLevel]}</strong>{activeTrainingLevel ? <span className="text-sky-800"> · Capacitação solicitada: <strong>{capabilityLevelNames[activeTrainingLevel]}</strong></span> : nextLevel && <span className="text-zinc-600"> · Próximo nível: {capabilityLevelNames[nextLevel]}</span>}</p> : activeTrainingLevel ? <p className="text-sky-800">Capacitação solicitada: <strong>{capabilityLevelNames[activeTrainingLevel]}</strong></p> : <p className="text-amber-800">Falta iniciar: <strong>Assistido</strong></p>}
+      {activeTrainingLevel && <p className="mt-1 text-[11px] text-sky-800">Próximo passo: concluir os critérios do nível solicitado e aguardar a validação.</p>}
+      {nextLevel && onRequestLevel && <button type="button" onClick={() => onRequestLevel(nextLevel)} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-900"><ArrowRight className="h-3.5 w-3.5" /> {activeTrainingLevel ? "Ver solicitação e critérios" : `Solicitar ${capabilityLevelNames[nextLevel]}`}</button>}
     </div>
   </article>;
 }

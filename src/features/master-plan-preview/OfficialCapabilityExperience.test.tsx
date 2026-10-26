@@ -141,6 +141,14 @@ describe("official capability library", () => {
     expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ })).toBeTruthy();
   });
 
+  it("explains the requested training level and next step on a capability card", async () => {
+    fixture.trainingRequests = [{ collaborator_id: "collaborator-1", capability_code: "T01", target_level: 1, status: "requested", requested_by: "admin-1", requested_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
+    open("capacidades");
+    await waitFor(() => expect(screen.getByText("Capacitação solicitada:")).toBeTruthy());
+    expect(screen.getByText("Próximo passo: concluir os critérios do nível solicitado e aguardar a validação.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Ver solicitação e critérios" })).toBeTruthy();
+  });
+
   it("shows responsibility readiness from the complete mixed-level capability matrix", async () => {
     fixture.certifications = [
       { collaborator_id: "collaborator-1", capability_code: "T02", certified_level: 3, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
