@@ -229,6 +229,15 @@ geral de migrations pendentes do roadmap.
 - Primeiro o usuario aplica e verifica o SQL no projeto correto. So depois o
   frontend e publicado e testado na URL oficial.
 
+## D-022 - Preparacao autenticada do Plano Mestre (2026-10-26)
+
+Por autorizacao expressa, corrigir e aplicar os scripts de fundacao, biblioteca
+e jornada oficial, preservando hashes das fontes e o acesso operacional atual.
+Publicar a versao atual apos verificacao. Esta autorizacao prepara as regras
+autenticadas do modulo; nao ativa `auth_enforced` nem introduz login na interface.
+A virada final depende de contas vinculadas, administrador confirmado e testes
+autenticados. Permissoes publicas dos dominios operacionais permanecem intactas.
+
 ## Decisoes pendentes
 
 

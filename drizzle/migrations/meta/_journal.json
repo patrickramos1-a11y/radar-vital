@@ -43,6 +43,34 @@
       "when": 1792941318274,
       "tag": "0005_create_master_plan_versioned_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792973214908,
+      "tag": "0006_master_plan_auth_foundation_compatible",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792973247474,
+      "tag": "0007_master_plan_capability_journey_secure",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792973276279,
+      "tag": "0008_master_plan_official_journey_secure",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792973319920,
+      "tag": "0009_protect_master_plan_identity_links",
+      "breakpoints": true
     }
   ]
 }
