@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { requestColumn, suggestedNucleus } from "./model";
+import { nucleusCoverPath, requestColumn, suggestedNucleus } from "./model";
 
 describe("Plano Mestre preview model", () => {
   it("proposes nuclei without forcing unclassified current sectors into a nucleus", () => {
@@ -15,5 +15,11 @@ describe("Plano Mestre preview model", () => {
     expect(requestColumn("in_progress")).toBe("andamento");
     expect(requestColumn("awaiting_validation")).toBe("validacao");
     expect(requestColumn("succeeded")).toBe("concluida");
+  });
+
+  it("maps each nucleus to its official cover", () => {
+    expect(nucleusCoverPath("tecnico")).toBe("/nucleus-covers/NUCLEO_TECNICO_CORUJA_BURAQUEIRA.png");
+    expect(nucleusCoverPath("suporte")).toBe("/nucleus-covers/NUCLEO_SUPORTE_ABELHA_JATAI.png");
+    expect(nucleusCoverPath("administrativo")).toBe("/nucleus-covers/NUCLEO_ADMINISTRATIVO_CAPIVARA.png");
   });
 });

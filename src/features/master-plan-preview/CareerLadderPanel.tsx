@@ -8,6 +8,7 @@ type Go = (view: "capacidade" | "responsabilidade", id?: string, tab?: string, m
 
 export function CareerLadderPanel({ library, certifiedLevels, claims, collaboratorId, go }: { library: Library; certifiedLevels: Map<string, number>; claims: ResponsibilityClaim[]; collaboratorId: string; go: Go }) {
   const ladder = nucleoTecnicoCareerLadder;
+  const capabilityByCode = new Map(library.capabilities.map((capability) => [capability.code, capability]));
   const responsibilityById = new Map(library.responsibilities.map((responsibility) => [responsibility.sourceId, responsibility]));
   const steps = ladder.steps.map((step) => ({
     step,
@@ -47,7 +48,10 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
               <div className="flex flex-wrap gap-1">{readiness.pac.map((requirement) => {
                 const level = certifiedLevels.get(requirement.capabilityCode) ?? 0;
                 const complete = level >= requirement.minimumLevel;
-                return <button key={requirement.capabilityCode} type="button" onClick={() => go("capacidade", requirement.capabilityCode)} aria-label={`${requirement.capabilityCode} · ${capabilityLevelNames[requirement.minimumLevel]}`} title={capabilityLevelNames[requirement.minimumLevel]} className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] font-medium ${complete ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-amber-300 bg-amber-50 text-amber-900"}`}><span>{requirement.capabilityCode}</span><img src={capabilityLevelInsignia[requirement.minimumLevel]} alt="" className="h-4 w-4 object-contain" loading="lazy" decoding="async" /></button>;
+                const capability = capabilityByCode.get(requirement.capabilityCode);
+                const levelName = capabilityLevelNames[requirement.minimumLevel];
+                const label = capability?.title ?? requirement.capabilityCode;
+                return <button key={requirement.capabilityCode} type="button" onClick={() => go("capacidade", requirement.capabilityCode)} aria-label={`${requirement.capabilityCode} · ${label} · ${levelName}`} title={`${requirement.capabilityCode} · ${label} · ${levelName}`} className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] font-medium ${complete ? "border-emerald-500 bg-white text-emerald-900 hover:bg-emerald-50" : "border-zinc-300 bg-zinc-100 text-zinc-600 hover:bg-zinc-200"}`}><span>{label}</span><img src={capabilityLevelInsignia[requirement.minimumLevel]} alt="" className="h-4 w-4 object-contain" loading="lazy" decoding="async" /></button>;
               })}</div>
               {readiness.missingCapabilities.length > 0 && <p className="mt-2 text-xs text-amber-800">Faltam {readiness.missingCapabilities.length} capacidades ou níveis para completar o PAC.</p>}
             </div>

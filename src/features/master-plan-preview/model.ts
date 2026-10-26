@@ -5,6 +5,16 @@ export const nuclei = [
 ] as const;
 
 export type NucleusId = (typeof nuclei)[number]["id"];
+const nucleusCoverFiles: Record<NucleusId, string> = {
+  tecnico: "NUCLEO_TECNICO_CORUJA_BURAQUEIRA.png",
+  suporte: "NUCLEO_SUPORTE_ABELHA_JATAI.png",
+  administrativo: "NUCLEO_ADMINISTRATIVO_CAPIVARA.png",
+};
+
+export function nucleusCoverPath(nucleusId: NucleusId) {
+  return `/nucleus-covers/${nucleusCoverFiles[nucleusId]}`;
+}
+
 export type ProposalStatus = "proposal" | "local";
 
 export interface PreviewCapability {

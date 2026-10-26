@@ -129,7 +129,7 @@ describe("official capability library", () => {
     const go = open("jornada");
     await waitFor(() => expect(screen.getByText(/3 de 84 pontos/)).toBeTruthy());
     const capability = screen.getByRole("button", { name: /E01.*Engenharia de Sistemas de Saneamento/ });
-    expect(within(capability).getByRole("img", { name: "Figurinha E01: Engenharia de Sistemas de Saneamento" })).toBeTruthy();
+    expect(within(capability).getByRole("img", { name: "Figurinha E01: Engenharia de Sistemas de Saneamento" }).getAttribute("src")).toBe("/capability-stickers/posters/E01.png");
     expect(within(capability).getByRole("img", { name: "Nível habilitado: Assistido" })).toBeTruthy();
     expect(within(capability).getByRole("img", { name: "Nível a desenvolver: Autônomo" })).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "Responsabilidades" }));
@@ -141,7 +141,7 @@ describe("official capability library", () => {
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Responsabilidades deste cargo").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Responsabilidades acumuladas · \d+/).length).toBeGreaterThan(0);
-    const firstF01 = screen.getAllByRole("button", { name: /F01 · Autônomo/ })[0];
+    const firstF01 = screen.getAllByRole("button", { name: /^F01.*Autônomo/ })[0];
     expect(firstF01.querySelector("img")?.getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
     fireEvent.click(firstF01);
     expect(go).toHaveBeenCalledWith("capacidade", "F01");
