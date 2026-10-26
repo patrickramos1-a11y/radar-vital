@@ -14,7 +14,7 @@ import { capabilitySummary, firstLetterUpper } from "./capabilityPresentationDat
 import { criterionPrompt, criterionResponsePrompt } from "./criterionGuidance";
 import { CapabilityTeamMatrix } from "./CapabilityTeamMatrix";
 import { ResponsibilityJourneyPanel } from "./ResponsibilityJourneyPanel";
-import { CareerJourneyExperience, CareerStructureExperience } from "./CareerJourneyExperience";
+import { CareerJourneyExperience, CareerStructureExperience, ProfessionalProfile } from "./CareerJourneyExperience";
 import { approvedLevels } from "./responsibilityEligibility";
 import type { PreviewResponsibility } from "./model";
 import type { Unit } from "./data";
@@ -26,7 +26,7 @@ import {
 } from "./journeyRemote";
 import "./capability-experience.css";
 
-type Screen = "capacidades" | "capacidade" | "capacitacoes" | "responsabilidades" | "jornada" | "cargos-funcoes";
+type Screen = "capacidades" | "capacidade" | "capacitacoes" | "responsabilidades" | "jornada" | "perfil-profissional" | "cargos-funcoes";
 type Go = (view: Screen | "responsabilidade" | "responsabilidades" | "setor", id?: string, tab?: string, mode?: string) => void;
 type Props = { view: Screen; code: string; tab: string; mode: string; go: Go; library: Library; people: Array<{ id: string; name: string }>; mappedResponsibilities?: PreviewResponsibility[]; sectors?: Unit[]; openSector?: (sectorId: string) => void; capabilityPlans?: Record<string, Record<string, 0 | CapabilityLevel>>; localClaims?: LocalResponsibilityClaim[]; onDeactivateCollaborator?: (collaboratorId: string) => Promise<void> };
 const kinds = ["Todas", "Transversal", "Funcional", "Especializada"];
@@ -95,6 +95,7 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
     {view === "capacidades" && <Catalog library={library} go={go} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} />}
     {view === "responsabilidades" && (currentUser ? <ResponsibilityJourneyPanel library={library} certifiedLevels={certifiedLevels} initialFilter={tab === "minhas" ? "Consolidadas" : tab === "disponiveis" ? "Em formação" : "Todas"} onOpenSector={(responsibilitySourceId) => { const responsibility = mappedResponsibilities.find((item) => item.id === responsibilitySourceId); if (responsibility) go("setor", responsibility.sectorId); }} go={go} /> : <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar suas competências.</div>)}
     {view === "jornada" && (currentUser ? <CareerJourneyExperience library={library} certifiedLevels={ownCertifiedLevels} claims={allResponsibilityClaims} collaboratorId={currentUser.id} collaboratorName={currentUser.name} isAdmin={isAdmin} people={people} teamLevels={teamLevels} mappedResponsibilities={mappedResponsibilities} go={go} /> : <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar sua jornada.</div>)}
+    {view === "perfil-profissional" && (currentUser ? <ProfessionalProfile library={library} certifiedLevels={ownCertifiedLevels} claims={allResponsibilityClaims} collaboratorId={currentUser.id} collaboratorName={currentUser.name} go={go} /> : <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar seu perfil profissional.</div>)}
     {view === "cargos-funcoes" && <CareerStructureExperience library={library} people={people} teamLevels={teamLevels} claims={allResponsibilityClaims} isAdmin={isAdmin} go={go} />}
     {view === "capacitacoes" && !selected && <TrainingOverview library={library} mappedResponsibilities={mappedResponsibilities} go={go} tab={tab} currentUser={currentUser} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} teamTrainingRequests={teamTrainingRequests.data ?? []} people={people} teamLevels={teamLevels} claims={allResponsibilityClaims} isAdmin={isAdmin} capabilityPlans={capabilityPlans} onApplyTeamCertifications={(updates) => applyTeamCertifications(currentUser!.id, updates)} onRequestTeamTraining={(collaboratorId, capabilityCode, level) => requestTeamTraining(currentUser!.id, collaboratorId, capabilityCode, level)} onDeactivateCollaborator={onDeactivateCollaborator} onRequestResponsibility={submitResponsibilityClaim} onReviewResponsibility={decideResponsibilityClaim} />}
     {view === "capacidade" && !selected && <div className="cap-empty">Capacidade não encontrada.<Button variant="outline" onClick={() => go("capacidades")}>Voltar ao catálogo</Button></div>}
