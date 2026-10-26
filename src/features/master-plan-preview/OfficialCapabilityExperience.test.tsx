@@ -107,6 +107,7 @@ describe("official capability library", () => {
     expect(screen.getByRole("columnheader", { name: "Gabi" }).className).toContain("sticky");
     expect(screen.getByRole("columnheader", { name: "Gabi" }).className).toContain("top-0");
     const controls = screen.getByRole("group", { name: /Capacitação planejada de Engenharia de Sistemas de Saneamento para Gabi/ });
+    expect(within(controls).getByRole("button", { name: "Solicitar capacitação" })).toBeTruthy();
     fireEvent.click(within(controls).getByRole("button", { name: "Autônomo" }));
     fireEvent.click(within(controls).getByRole("button", { name: "Solicitar capacitação" }));
     await waitFor(() => expect(requestTeamTraining).toHaveBeenCalledWith("admin-1", "collaborator-1", "E01", 2));
