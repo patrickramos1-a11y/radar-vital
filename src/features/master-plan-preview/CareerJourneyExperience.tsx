@@ -41,8 +41,7 @@ function progressBar(value: number, color: string) {
 function stageFor(library: Library, levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string) {
   return nucleoTecnicoCareerLadder.steps
     .filter((step) => step.nucleiRequired === 1)
-    .filter((step) => careerStepReadiness(library, nucleoTecnicoCareerLadder, step.id, levels, claims, collaboratorId).eligible)
-    .at(-1);
+    .find((step) => careerStepReadiness(library, nucleoTecnicoCareerLadder, step.id, levels, claims, collaboratorId).eligible);
 }
 
 function CapabilityLevelSeals({ code, currentLevel }: { code: string; currentLevel: number }) {
