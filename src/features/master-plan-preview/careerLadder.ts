@@ -138,6 +138,14 @@ export function pacForCareerStep(library: Library, ladder: CareerLadder, stepId:
     .sort((a, b) => a.capabilityCode.localeCompare(b.capabilityCode));
 }
 
+export function newPacRequirementsForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): PacRequirement[] {
+  const targetIndex = ladder.steps.findIndex((step) => step.id === stepId);
+  const current = pacForCareerStep(library, ladder, stepId);
+  if (targetIndex <= 0) return current;
+  const previous = new Map(pacForCareerStep(library, ladder, ladder.steps[targetIndex - 1].id).map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
+  return current.filter((requirement) => requirement.minimumLevel > (previous.get(requirement.capabilityCode) ?? 0));
+}
+
 export function capabilityPoints(requirements: PacRequirement[]) {
   return requirements.reduce((total, requirement) => total + requirement.minimumLevel, 0);
 }
