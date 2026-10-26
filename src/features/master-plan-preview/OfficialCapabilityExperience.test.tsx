@@ -128,7 +128,7 @@ describe("official capability library", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Concedidas (0)" }));
     expect(screen.getByRole("heading", { name: "Responsabilidades concedidas" })).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "Escada de cargo" }));
-    expect(screen.getByRole("heading", { name: "Escada padrão · Processos e Órgãos" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Escada de promoção · Núcleo Técnico" })).toBeTruthy();
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
   });
 

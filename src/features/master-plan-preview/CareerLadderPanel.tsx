@@ -1,32 +1,22 @@
 import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
 import { capabilityLevelNames } from "./capabilityJourney";
-import { careerLadders, careerStepReadiness } from "./careerLadder";
+import { careerStepReadiness, nucleoTecnicoCareerLadder } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
 
 type Go = (view: "capacitacoes" | "responsabilidade", id?: string, tab?: string, mode?: string) => void;
 
 export function CareerLadderPanel({ library, certifiedLevels, claims, collaboratorId, go }: { library: Library; certifiedLevels: Map<string, number>; claims: ResponsibilityClaim[]; collaboratorId: string; go: Go }) {
-  const [ladderId, setLadderId] = useState(careerLadders[0].id);
-  const ladder = careerLadders.find((item) => item.id === ladderId) ?? careerLadders[0];
+  const ladder = nucleoTecnicoCareerLadder;
   const steps = ladder.steps.map((step) => ({ step, readiness: careerStepReadiness(library, ladder, step.id, certifiedLevels, claims, collaboratorId) }));
   const next = steps.find(({ readiness }) => !readiness.eligible);
 
   return <section className="border bg-white">
     <div className="border-b p-4">
       <p className="text-xs font-semibold uppercase text-violet-700">Matriz de jornada</p>
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">{ladder.title}</h2>
-          <p className="mt-1 max-w-3xl text-sm text-zinc-600">{ladder.summary} Cada degrau soma o PAC e as responsabilidades dos degraus anteriores. A elegibilidade só acontece em 100% nos dois requisitos.</p>
-        </div>
-        <label className="grid gap-1 text-xs font-semibold text-zinc-700">Setor da escada
-          <select aria-label="Setor da escada" value={ladder.id} onChange={(event) => setLadderId(event.target.value)} className="min-w-72 border bg-white px-3 py-2 text-sm font-normal text-zinc-900">
-            {careerLadders.map((item) => <option key={item.id} value={item.id}>{item.sector}</option>)}
-          </select>
-        </label>
-      </div>
+      <h2 className="mt-2 text-lg font-semibold">{ladder.title}</h2>
+      <p className="mt-1 max-w-3xl text-sm text-zinc-600">{ladder.summary} Cada degrau soma o PAC e as responsabilidades dos degraus anteriores. A elegibilidade só acontece em 100% nos dois requisitos.</p>
+      <p className="mt-3 text-xs font-semibold uppercase text-violet-800">Escopo integrado: {ladder.scope}</p>
       {next && <p className="mt-3 text-sm font-semibold text-violet-900">Próximo cargo: {next.step.title}</p>}
     </div>
     <div className="divide-y">
@@ -40,7 +30,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
             <p className={`mt-3 text-xs font-semibold ${readiness.eligible ? "text-emerald-800" : "text-amber-800"}`}>{readiness.eligible ? "Elegível para solicitação administrativa" : "Em desenvolvimento"}</p>
           </div>
           <div className="grid min-w-48 grid-cols-2 gap-2 text-right text-xs">
-            <div><strong className="block text-base">{readiness.completedCapabilities}/{readiness.pac.length}</strong><span className="text-zinc-600">PAC completo</span></div>
+            <div><strong className="block text-base">{readiness.completedCapabilityPoints}/{readiness.capabilityPoints}</strong><span className="text-zinc-600">pontos do PAC</span></div>
             <div><strong className="block text-base">{readiness.grantedResponsibilities}/{readiness.responsibilities.length}</strong><span className="text-zinc-600">responsabilidades</span></div>
           </div>
         </div>
