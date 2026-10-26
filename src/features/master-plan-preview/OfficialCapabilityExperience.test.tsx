@@ -149,7 +149,7 @@ describe("official capability library", () => {
     expect(screen.getByRole("heading", { name: "Escada de promoção · Núcleo Técnico" })).toBeTruthy();
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Competências para compor o cenário").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Capacidades do cenário").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Capacidades necessárias para este perfil").length).toBeGreaterThan(0);
     const responsibility = library.responsibilities.find((item) => item.title === "Documentação Oficial dos Processos")!;
     fireEvent.click(screen.getAllByRole("button", { name: new RegExp(responsibility.title) })[0]);
     expect(screen.getAllByText("No plano").length).toBeGreaterThan(0);
