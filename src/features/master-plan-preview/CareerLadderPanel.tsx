@@ -81,7 +81,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
     const inherited = inheritedPlanByStep.get(step.id);
     inherited?.changes.forEach((level, code) => next.set(code, Math.max(next.get(code) ?? 0, level)));
     inherited?.requirements.forEach((level, code) => next.set(code, Math.max(next.get(code) ?? 0, level)));
-    scenarioChangesByStep.get(step.id)?.forEach((level, code) => next.set(code, level));
+    scenarioChangesByStep.get(step.id)?.forEach((level, code) => next.set(code, Math.max(next.get(code) ?? 0, level)));
     selectedRequirementsByStep.get(step.id)?.forEach((level, code) => next.set(code, Math.max(next.get(code) ?? 0, level)));
     return [step.id, next] as const;
   })), [certifiedLevels, inheritedPlanByStep, scenarioChangesByStep, selectedRequirementsByStep]);
@@ -174,9 +174,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
         const isActivePersonalizationStep = step.id === firstIncompleteStep.id;
         const simulationConsolidated = consolidatedSimulationSteps.has(step.id);
         const stepConsolidated = step.id === baselineConsolidatedStepId || simulationConsolidated;
-        const hasSelectedCompetencies = selectedResponsibilityIds.size > 0;
-        const readyToConsolidate =
-          readiness.eligible && hasSelectedCompetencies && !stepConsolidated;
+        const readyToConsolidate = readiness.eligible && !stepConsolidated;
         const selectedCapabilityPoints = [...selectedRequirements.values()].reduce((total, level) => total + level, 0);
         const competenciesAtStep = competenciesIntroducedForCareerStep(library, ladder, step.id)
           .map((responsibility) => competencyReadiness(responsibility, scenarioLevels))
@@ -193,7 +191,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2"><span className={`grid h-7 w-7 place-items-center border text-xs font-bold ${stepConsolidated ? "border-emerald-600 bg-emerald-50 text-emerald-800" : "border-violet-300 bg-violet-50 text-violet-800"}`}>{stepConsolidated ? <CheckCircle2 className="h-4 w-4" /> : index + 1}</span><div><h3 className="text-base font-semibold">{step.title}</h3><p className="text-xs text-zinc-600">{step.function}</p></div></div>
-              <p className={`mt-3 text-xs font-semibold ${stepConsolidated ? "text-emerald-800" : readyToConsolidate ? "text-sky-800" : "text-amber-800"}`}>{stepConsolidated ? "Consolidado no cenário" : !hasSelectedCompetencies ? "Escolha competências para compor esta etapa" : readyToConsolidate ? "Pronto para consolidar a simulação" : isCrossNucleus ? `Requer cobertura de ${step.nucleiRequired} núcleos` : "Em desenvolvimento"}</p>
+              <p className={`mt-3 text-xs font-semibold ${stepConsolidated ? "text-emerald-800" : readyToConsolidate ? "text-sky-800" : "text-amber-800"}`}>{stepConsolidated ? "Consolidado no cenário" : readyToConsolidate ? "Pronto para consolidar a simulação" : isCrossNucleus ? `Requer cobertura de ${step.nucleiRequired} núcleos` : "Em desenvolvimento"}</p>
             </div>
             <div className="grid min-w-48 grid-cols-2 gap-2 text-right text-xs"><div><strong className="block text-base">{displayedCapabilityPoints}/{readiness.capabilityPoints}</strong><span className="text-zinc-600">pontos no cenário</span></div><div><strong className="block text-base">{competenciesInPlan}</strong><span className="text-zinc-600">competências no plano</span></div></div>
           </div>
@@ -218,7 +216,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><div><p className="text-xs font-semibold uppercase text-zinc-500">Capacidades do cenário</p><p className="mt-1 text-xs text-zinc-600">As competências escolhidas já preenchem os níveis necessários abaixo. Você pode ajustar outras capacidades para testar cenários adicionais; o contorno azul identifica o que entrou pelo plano de competências.</p></div><span className="text-xs font-semibold text-sky-800">{readiness.certifiedCapabilityCount} certificadas</span></div>
               <CapabilityScenarioGrid requirements={scenarioCapabilities} certifiedLevels={certifiedLevels} scenarioLevels={scenarioLevels} scenarioChanges={plannedChanges} onSelect={(capabilityCode, level) => setScenarioLevel(step.id, capabilityCode, level)} />
               {readiness.missingCapabilityPoints > 0 && <p className="mt-3 text-xs text-amber-800">Faltam {readiness.missingCapabilityPoints} pontos no cenário para este cargo.</p>}
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><p className={`text-xs ${readyToConsolidate ? "text-emerald-800" : "text-zinc-600"}`}>{!hasSelectedCompetencies ? "Escolha competências para personalizar esta jornada." : readyToConsolidate ? "O cenário atingiu os pontos necessários deste cargo." : "Para consolidar, complete os pontos necessários deste cargo."}</p><button type="button" disabled={!readyToConsolidate} onClick={() => consolidateSimulation(step.id)} className="border border-emerald-700 bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:border-zinc-300 disabled:bg-zinc-200 disabled:text-zinc-500">Consolidar simulação</button></div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><p className={`text-xs ${readyToConsolidate ? "text-emerald-800" : "text-zinc-600"}`}>{readyToConsolidate ? "O cenário atingiu os pontos necessários deste cargo." : "Para consolidar, complete os pontos necessários deste cargo."}</p><button type="button" disabled={!readyToConsolidate} onClick={() => consolidateSimulation(step.id)} className="border border-emerald-700 bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:border-zinc-300 disabled:bg-zinc-200 disabled:text-zinc-500">Consolidar simulação</button></div>
             </div>
           </div>}
         </article>;
