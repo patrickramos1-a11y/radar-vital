@@ -51,17 +51,19 @@ export function CapabilityQueueThumb({ code }: { code: string }) {
 
 const stickerLevelCopy = ["Ainda não iniciada", "Assistido", "Autônomo", "Multiplicador"] as const;
 
-export function CapabilityStickerCard({ item, certifiedLevel = 0, trainingLevel = 0, onOpen, onRequestLevel }: {
+export function CapabilityStickerCard({ item, certifiedLevel = 0, trainingLevel = 0, missingLevel, onOpen, onRequestLevel }: {
   item: CapabilityRecord;
   certifiedLevel?: number;
   trainingLevel?: number;
+  missingLevel?: CapabilityLevel;
   onOpen: () => void;
   onRequestLevel?: (level: CapabilityLevel) => void;
 }) {
   const currentLevel = Math.max(certifiedLevel, 0);
   const nextLevel = currentLevel < 3 ? Math.max(1, currentLevel + 1) as CapabilityLevel : null;
   const isInDevelopment = trainingLevel > currentLevel;
-  return <article className={`cap-sticker-card ${currentLevel === 0 ? "cap-sticker-card-locked" : ""}`} style={capabilityVisualStyle(item.code)}>
+  const visibleLevels = missingLevel ? ([1, 2, 3] as CapabilityLevel[]).filter((level) => level < missingLevel) : [1, 2, 3] as CapabilityLevel[];
+  return <article className={`cap-sticker-card ${currentLevel === 0 ? "cap-sticker-card-locked" : ""} ${missingLevel ? "cap-sticker-card-missing" : ""}`} style={capabilityVisualStyle(item.code)}>
     <button type="button" className="cap-sticker-open" onClick={onOpen}>
       <div className="cap-sticker-art"><img src={`/capability-stickers/posters/${item.code}.png`} alt={`Figurinha ${item.code}: ${item.title}`} loading="lazy" decoding="async" /></div>
       <div className="cap-sticker-body">
@@ -69,7 +71,7 @@ export function CapabilityStickerCard({ item, certifiedLevel = 0, trainingLevel 
         <strong className="cap-sticker-title">{item.title}</strong>
         <span className="cap-sticker-level-copy">Nível atual <strong>{stickerLevelCopy[currentLevel]}</strong></span>
         <span className="cap-sticker-levels" aria-label={`Níveis de ${item.title}`}>
-          {([1, 2, 3] as CapabilityLevel[]).map((level) => <span key={level} className={level <= currentLevel ? "cap-sticker-level-earned" : ""} title={stickerLevelCopy[level]}><img src={`/capability-stickers/levels/NIVEL_${level}.png`} alt="" loading="lazy" decoding="async" /></span>)}
+          {visibleLevels.map((level) => <span key={level} className={level <= currentLevel ? "cap-sticker-level-earned" : ""} title={stickerLevelCopy[level]}><img src={`/capability-stickers/levels/NIVEL_${level}.png`} alt="" loading="lazy" decoding="async" /></span>)}
         </span>
       </div>
     </button>
