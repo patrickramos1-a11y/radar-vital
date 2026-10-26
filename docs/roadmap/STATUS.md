@@ -4,8 +4,14 @@ Atualizado em: 2026-10-25
 
 ## Entrega recente
 
-- Plano Mestre: release D-022 EM ANDAMENTO; fundacao e jornada autenticada em
-  preparacao, sem corte do acesso publico operacional.
+- Plano Mestre: base D-022 aplicada e verificada em 2026-10-26: 28 capacidades,
+  56 responsabilidades e 1 metadata com hash original. Documento existente
+  preservado na revisao 7; 11 colaboradores preservados. Jornada oficial com
+  RPCs autenticadas, revisao administrativa por papel de servidor e protecao
+  de vinculos de identidade. 26 testes aprovados; pagina atual abre sem erros.
+  `auth_enforced=false`: nao existem colaboradores ativos vinculados nem conta
+  administrativa. Interface atual continua usando o documento versionado;
+  o fluxo oficial autenticado ainda nao esta integrado nem validado.
 - Entregaveis semanais concluidos: implementacao concluida em 2026-10-21.
 - Prioridades concluidas geram entregas automaticamente; 37 entregaveis
   historicos abertos ou em andamento foram convertidos em prioridades.
