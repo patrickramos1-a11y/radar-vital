@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
 import { OfficialCapabilityExperience } from "./OfficialCapabilityExperience";
+import { capabilityLevelPalette } from "./capabilityJourney";
 import { applyTeamCertifications, fetchAssessments, fetchRequests, requestResponsibility, requestTeamTraining } from "./journeyRemote";
 import type { Library } from "./journeyRemote";
 
@@ -80,6 +81,14 @@ describe("official capability library", () => {
     expect(screen.getByRole("img", { name: "Insígnia do nível Assistido" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_ASSISTIDO.png");
     expect(screen.getByRole("img", { name: "Insígnia do nível Autônomo" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
     expect(screen.getByRole("img", { name: "Insígnia do nível Multiplicador" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_MULTIPLICADOR.png");
+  });
+
+  it("keeps the standard palette for every certification level", () => {
+    expect(capabilityLevelPalette).toEqual({
+      1: { primary: "#25533F", secondary: "#4E8B59", highlight: "#AACC96" },
+      2: { primary: "#876029", secondary: "#5A3B1E", highlight: "#B47A32" },
+      3: { primary: "#D99A21", secondary: "#A86713", highlight: "#EFCE7B" },
+    });
   });
 
   it("uses the selected collaborator profile without requesting an email login", async () => {

@@ -138,9 +138,9 @@
 .cap-level-choice-active { border-color: #168274; background: #e2f3ee; color: #145b53; }
 .cap-level-choice:disabled { cursor: not-allowed; opacity: .45; }
 .cap-level-badge { display: inline-flex; align-items: center; gap: 5px; border: 1px solid; border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-.cap-level-badge-1 { border-color: #7dd3fc; background: #f0f9ff; color: #0369a1; }
-.cap-level-badge-2 { border-color: #5eead4; background: #f0fdfa; color: #0f766e; }
-.cap-level-badge-3 { border-color: #c4b5fd; background: #f5f3ff; color: #6d28d9; }
+.cap-level-badge-1 { border-color: #4E8B59; background: #AACC9633; color: #25533F; }
+.cap-level-badge-2 { border-color: #5A3B1E; background: #B47A3233; color: #876029; }
+.cap-level-badge-3 { border-color: #A86713; background: #EFCE7B66; color: #D99A21; }
 
 .cap-team-availability { margin: 0 0 18px; border: 1px solid #dfe8e4; background: #fbfdfc; }
 .cap-team-availability-title { display: flex; align-items: end; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #dfe8e4; }
