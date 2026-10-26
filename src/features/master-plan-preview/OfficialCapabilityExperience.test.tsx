@@ -150,10 +150,10 @@ describe("official capability library", () => {
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Responsabilidades disponíveis").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/até \d+/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Competências da jornada pessoal").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Capacidades disponíveis para este cargo").length).toBeGreaterThan(0);
     const responsibility = library.responsibilities.find((item) => item.requiredCapabilities.some((requirement) => requirement.capabilityCode === "F01") && item.requiredCapabilities.every((requirement) => requirement.minimumLevel < 3))!;
     fireEvent.click(screen.getAllByRole("button", { name: new RegExp(responsibility.title) })[0]);
-    expect(screen.getAllByText("No percurso").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("No plano").length).toBeGreaterThan(0);
     const f01Levels = screen.getAllByRole("group", { name: /Nível simulado para Gestão de Demandas e Fluxo Operacional/ })
       .find((group) => within(group).queryByRole("button", { name: "Autônomo" }));
     expect(f01Levels).toBeTruthy();
