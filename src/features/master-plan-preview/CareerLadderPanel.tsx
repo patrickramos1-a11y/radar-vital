@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel } from "./capabilityJourney";
-import { careerStepReadiness, competenciesIntroducedForCareerStep, maximumCapabilityLevelForCareerStep, nucleoTecnicoCareerLadder } from "./careerLadder";
+import { careerStepReadiness, competenciesForCareerTrack, competenciesIntroducedForCareerStep, maximumCapabilityLevelForCareerStep, nucleoTecnicoCareerLadder } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import { competencyReadiness, competencyRequirements, type ResponsibilityClaim } from "./responsibilityJourney";
 
@@ -116,7 +116,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
           .sort((left, right) => left.code.localeCompare(right.code))
           .map((capability) => ({ capability: capabilityByCode.get(capability.code), maximumLevel, requiredLevel: selectedRequirements.get(capability.code) ?? 0 }))
           .filter((item): item is { capability: Capability; maximumLevel: CapabilityLevel; requiredLevel: CapabilityLevel | 0 } => Boolean(item.capability));
-        const responsibilityOptions = competenciesIntroducedForCareerStep(library, ladder, step.id)
+        const responsibilityOptions = competenciesForCareerTrack(library, ladder, step.id)
           .map((responsibility) => competencyReadiness(responsibility, scenarioLevels))
           .sort((left, right) => {
             const leftSelected = selectedResponsibilityIds.has(left.responsibility.sourceId);
@@ -153,7 +153,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
           {stepConsolidated ? <div className="mt-4"><div className="flex flex-wrap items-center justify-between gap-2 border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900"><p>Marco consolidado com {competenciesAtStep.length} competências deste patamar. O próximo cargo fica disponível para personalizar a evolução.</p><button type="button" aria-expanded={consolidationExpanded} onClick={() => toggleConsolidation(step.id)} className="inline-flex shrink-0 items-center gap-1 font-semibold underline decoration-emerald-400 underline-offset-2 hover:text-emerald-950">{consolidationExpanded ? "Ocultar consolidação" : "Ver consolidação"}{consolidationExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}</button></div>{consolidationExpanded && <div className="border-x border-b border-emerald-200 bg-white p-3"><div className="grid gap-4 lg:grid-cols-2"><div><p className="text-xs font-semibold uppercase text-zinc-500">Capacidades consideradas no cenário</p><p className="mt-1 text-xs text-zinc-600">{consolidatedCapabilities.length} certificadas, somando {readiness.completedCapabilityPoints} pontos.</p><div className="mt-2 flex max-h-40 flex-wrap gap-1 overflow-y-auto pr-1">{consolidatedCapabilities.map((capability) => <span key={capability.code} className="border border-emerald-300 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-900">{capability.code} · {capabilityLevelNames[scenarioLevels.get(capability.code) as CapabilityLevel]}</span>)}</div></div><div><p className="text-xs font-semibold uppercase text-zinc-500">Competências consolidadas neste patamar</p><p className="mt-1 text-xs text-zinc-600">Apenas competências que entraram nesta etapa da escada.</p><div className="mt-2 grid max-h-40 gap-1 overflow-y-auto pr-1 sm:grid-cols-2">{competenciesAtStep.map((item) => <span key={item.responsibility.sourceId} className="border border-emerald-300 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-900">{item.responsibility.title}</span>)}</div></div></div></div>}</div> : !isActivePersonalizationStep ? <p className="mt-4 border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">Este marco será aberto para personalização quando o cargo anterior estiver consolidado.</p> : <div className="mt-4 space-y-4">
             <div className="border bg-zinc-50 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-zinc-500">Competências para compor o cenário</p><span className="text-xs font-semibold text-violet-800">{selectedResponsibilityIds.size} no plano · {selectedRequirements.size} capacidades</span></div>
-              <p className="mt-1 text-xs text-zinc-600">Marque as competências que quer compor. As capacidades e os níveis exigidos por elas entram automaticamente no cenário e somam os pontos deste cargo.</p>
+              <p className="mt-1 text-xs text-zinc-600">Marque as competências que quer compor. Este catálogo reúne todas as competências possíveis para esta trilha; as capacidades e os níveis exigidos entram automaticamente no cenário e somam os pontos deste cargo.</p>
               <div className="mt-3 grid max-h-40 gap-1 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{responsibilityOptions.map((item) => {
                 const selected = selectedResponsibilityIds.has(item.responsibility.sourceId);
                 const status = selected ? "No plano" : item.unmet.length === 0 ? "Consolidada" : `${item.unmet.length} capacidade(s) pendente(s)`;

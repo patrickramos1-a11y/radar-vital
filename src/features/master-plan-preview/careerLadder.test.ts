@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
-import { capabilitiesForCareerStep, capabilityPoints, careerStepReadiness, competenciesIntroducedForCareerStep, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilitiesForCareerStep, technicalResponsibilities } from "./careerLadder";
+import { capabilitiesForCareerStep, capabilityPoints, careerStepReadiness, competenciesForCareerTrack, competenciesIntroducedForCareerStep, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilitiesForCareerStep, technicalResponsibilities } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
 import { competencyRequirements } from "./responsibilityJourney";
@@ -46,6 +46,12 @@ describe("Núcleo Técnico career ladder", () => {
       "Produção de Relatórios e Memoriais",
       "Registros Fotográficos",
     ]);
+  });
+
+  it("offers the accumulated competency catalogue for each career track", () => {
+    expect(competenciesForCareerTrack(library, nucleoTecnicoCareerLadder, "operador_junior")).toHaveLength(37);
+    expect(competenciesForCareerTrack(library, nucleoTecnicoCareerLadder, "gestao_junior")).toHaveLength(48);
+    expect(competenciesForCareerTrack(library, nucleoTecnicoCareerLadder, "estrategico_junior")).toHaveLength(52);
   });
 
   it("requires a correlated sector foundation before consolidating field competencies", () => {

@@ -142,6 +142,21 @@ export function competenciesIntroducedForCareerStep(library: Library, ladder: Ca
   });
 }
 
+/**
+ * A career track offers the accumulated competency catalogue for its level of
+ * practice. This keeps the scenario personal: an operator can choose among
+ * every operational competency, while management and strategy expand that
+ * same catalogue with their additional scope.
+ */
+export function competenciesForCareerTrack(library: Library, ladder: CareerLadder, stepId: CareerStepId): SourceResponsibility[] {
+  const stepIndex = ladder.steps.findIndex((step) => step.id === stepId);
+  if (stepIndex < 0) return [];
+  const trackEndIndex = stepIndex <= 2 ? 2 : stepIndex <= 5 ? 5 : ladder.steps.length - 1;
+  return ladder.steps
+    .slice(0, trackEndIndex + 1)
+    .flatMap((step) => competenciesIntroducedForCareerStep(library, ladder, step.id));
+}
+
 function competencyCandidates(responsibilities: SourceResponsibility[], levels: Map<string, number>): CompetencyReadiness[] {
   return responsibilities
     .map((responsibility) => competencyReadiness(responsibility, levels))
