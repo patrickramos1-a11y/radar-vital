@@ -84,9 +84,18 @@ describe("official capability library", () => {
     expect(fetchRequests).toHaveBeenCalledWith("collaborator-1", false);
   });
 
-  it("opens Capacitações with the collaborator journey and next recommendations", async () => {
+  it("opens Capacitações with the collaborator journey", async () => {
     open("capacitacoes");
     await waitFor(() => expect(screen.getByRole("heading", { name: "Minhas capacitações" })).toBeTruthy());
+    expect(screen.getByRole("tab", { name: "Minha jornada" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Acervo e disponibilidade" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Próximas recomendações" })).toBeNull();
+  });
+
+  it("shows the capability collection in its own Capacitações tab", async () => {
+    open("capacitacoes", "", "acervo");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy());
+    expect(screen.getByRole("tab", { name: "Acervo e disponibilidade" }).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy();
     expect(screen.getAllByRole("button", { name: /Solicitar Assistido/ }).length).toBeGreaterThan(0);
     expect(screen.getByRole("img", { name: /Figurinha T01/ }).getAttribute("src")).toBe("/capability-stickers/posters/T01.png");
@@ -116,7 +125,7 @@ describe("official capability library", () => {
   it("opens the certified capabilities from the personal journey summary", async () => {
     fixture.certifications = [{ collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
     const go = open("capacitacoes");
-    const summary = await screen.findByRole("button", { name: /Ver certificações/ });
+    const summary = await screen.findByRole("button", { name: /Certificadas.*1.*capacidades com nível reconhecido/ });
     fireEvent.click(summary);
     expect(screen.getByRole("heading", { name: "Certificações de Gabi" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /T01.*Gestão de Informações e Acervo/ }));
