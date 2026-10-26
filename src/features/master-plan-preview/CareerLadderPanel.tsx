@@ -9,14 +9,17 @@ type Go = (view: "responsabilidade", id?: string, tab?: string, mode?: string) =
 type Capability = Library["capabilities"][number];
 
 const levels: CapabilityLevel[] = [1, 2, 3];
+const capabilityPoints = (scenarioLevels: Map<string, number>) => [...scenarioLevels.values()].reduce((total, level) => total + Math.min(level, 3), 0);
 
-function CapabilityScenarioGrid({ requirements, certifiedLevels, scenarioLevels, scenarioChanges, onSelect }: {
+function CapabilityScenarioGrid({ requirements, certifiedLevels, scenarioLevels, scenarioChanges, capabilityTarget, onSelect }: {
   requirements: Array<{ capability: Capability; maximumLevel: CapabilityLevel; requiredLevel: CapabilityLevel | 0 }>;
   certifiedLevels: Map<string, number>;
   scenarioLevels: Map<string, number>;
   scenarioChanges: Map<string, CapabilityLevel>;
+  capabilityTarget: number;
   onSelect: (capabilityCode: string, level: CapabilityLevel) => void;
 }) {
+  const scenarioPoints = capabilityPoints(scenarioLevels);
   return <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">{requirements.map(({ capability, maximumLevel, requiredLevel }) => {
     const certified = certifiedLevels.get(capability.code) ?? 0;
     const selected = scenarioLevels.get(capability.code) ?? 0;
@@ -27,7 +30,10 @@ function CapabilityScenarioGrid({ requirements, certifiedLevels, scenarioLevels,
         const achieved = level <= selected;
         const certifiedLevel = level <= certified;
         const neededForPlan = level <= requiredLevel && level > certified;
-        return <button key={level} type="button" disabled={level < certified} aria-pressed={selected === level} title={certifiedLevel ? `Certificado: ${capabilityLevelNames[level]}` : neededForPlan ? `Necessário para a competência no plano: ${capabilityLevelNames[level]}` : achieved ? `Simulado: ${capabilityLevelNames[level]}` : `Simular ${capabilityLevelNames[level]}`} onClick={() => onSelect(capability.code, level)} className={`grid h-8 place-items-center border ${certifiedLevel ? "border-emerald-600 bg-emerald-50" : neededForPlan || achieved ? "border-sky-600 bg-sky-50" : "border-zinc-200 bg-white opacity-35 grayscale hover:opacity-100 hover:grayscale-0"} disabled:cursor-not-allowed`}><img src={capabilityLevelInsignia[level]} alt={capabilityLevelNames[level]} className="h-6 w-6 object-contain" loading="lazy" decoding="async" /></button>;
+        const projectedPoints = scenarioPoints + Math.max(0, level - selected);
+        const exceedsTarget = !achieved && projectedPoints > capabilityTarget;
+        const disabled = level < certified || exceedsTarget;
+        return <button key={level} type="button" disabled={disabled} aria-pressed={selected === level} title={certifiedLevel ? `Certificado: ${capabilityLevelNames[level]}` : exceedsTarget ? `Ultrapassa a meta de ${capabilityTarget} pontos deste cargo` : neededForPlan ? `Necessário para a competência no plano: ${capabilityLevelNames[level]}` : achieved ? `Simulado: ${capabilityLevelNames[level]}` : `Simular ${capabilityLevelNames[level]}`} onClick={() => onSelect(capability.code, level)} className={`grid h-8 place-items-center border ${certifiedLevel ? "border-emerald-600 bg-emerald-50" : neededForPlan || achieved ? "border-sky-600 bg-sky-50" : "border-zinc-200 bg-white opacity-35 grayscale hover:opacity-100 hover:grayscale-0"} disabled:cursor-not-allowed`}><img src={capabilityLevelInsignia[level]} alt={capabilityLevelNames[level]} className="h-6 w-6 object-contain" loading="lazy" decoding="async" /></button>;
       })}</div>
     </div>;
   })}</div>;
@@ -175,7 +181,6 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
         const simulationConsolidated = consolidatedSimulationSteps.has(step.id);
         const stepConsolidated = step.id === baselineConsolidatedStepId || simulationConsolidated;
         const readyToConsolidate = readiness.eligible && !stepConsolidated;
-        const selectedCapabilityPoints = [...selectedRequirements.values()].reduce((total, level) => total + level, 0);
         const competenciesAtStep = competenciesIntroducedForCareerStep(library, ladder, step.id)
           .map((responsibility) => competencyReadiness(responsibility, scenarioLevels))
           .filter((item) => item.status === "consolidada");
@@ -183,6 +188,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
           ? competenciesAtStep.length
           : inheritedPlan.competencyIds.size + selectedResponsibilityIds.size;
         const displayedCapabilityPoints = Math.min(readiness.completedCapabilityPoints, readiness.capabilityPoints);
+        const scenarioPoints = capabilityPoints(scenarioLevels);
         const consolidationExpanded = expandedConsolidations.has(step.id);
         const consolidatedCapabilities = library.capabilities
           .filter((capability) => (scenarioLevels.get(capability.code) ?? 0) > 0)
@@ -203,18 +209,21 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
               <div className="mt-3 grid max-h-40 gap-1 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{responsibilityOptions.map((item) => {
                 const selected = selectedResponsibilityIds.has(item.responsibility.sourceId);
                 const inherited = inheritedPlan.competencyIds.has(item.responsibility.sourceId);
-                const disabled = inherited;
-                const status = inherited ? "No plano anterior" : selected ? "No plano" : item.unmet.length === 0 ? "Consolidada" : `${item.unmet.length} capacidade(s) pendente(s)`;
+                const projectedLevels = new Map(scenarioLevels);
+                competencyRequirements(item.responsibility).forEach((requirement) => projectedLevels.set(requirement.capabilityCode, Math.max(projectedLevels.get(requirement.capabilityCode) ?? 0, requirement.minimumLevel)));
+                const exceedsTarget = !selected && capabilityPoints(projectedLevels) > readiness.capabilityPoints;
+                const atTarget = !selected && scenarioPoints >= readiness.capabilityPoints;
+                const disabled = inherited || exceedsTarget || atTarget;
+                const status = inherited ? "No plano anterior" : selected ? "No plano" : exceedsTarget ? `Ultrapassa ${readiness.capabilityPoints} pontos` : atTarget ? "Meta de capacidades atingida" : item.unmet.length === 0 ? "Consolidada" : `${item.unmet.length} capacidade(s) pendente(s)`;
                 return <button key={item.responsibility.sourceId} type="button" disabled={disabled} aria-pressed={selected || inherited} onClick={() => toggleResponsibility(step.id, item.responsibility.sourceId)} title={inherited ? `${item.responsibility.title} já faz parte do plano anterior` : `${selected ? "Remover" : "Adicionar"} ${item.responsibility.title} ${selected ? "do" : "ao"} plano`} className={`min-h-11 border px-2 py-1.5 text-left text-[10px] font-medium disabled:cursor-not-allowed ${selected || inherited ? "border-sky-600 bg-sky-50 text-sky-950" : item.unmet.length === 0 ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-zinc-200 bg-white text-zinc-700 hover:border-sky-400 hover:bg-sky-50"}`}><span className="block leading-tight">{item.responsibility.title}</span><span className="mt-0.5 block text-[9px] font-normal opacity-80">{status}</span></button>;
               })}</div>
               {inheritedPlan.competencyIds.size > 0 && <p className="mt-3 text-xs text-sky-800">Plano anterior: {inheritedPlan.competencyIds.size} competências e {inheritedPlan.requirements.size} capacidades. Nesta etapa: {selectedResponsibilityIds.size} novas competências e {selectedRequirements.size} novas capacidades.</p>}
-              {selectedResponsibilityIds.size > 0 && <p className="mt-3 text-xs text-sky-800">As competências novas selecionadas compõem {selectedCapabilityPoints} pontos de capacidades exigidas.</p>}
-              {readiness.earnedCompetencies > 0 && <p className="mt-3 text-xs text-zinc-600">{readiness.earnedCompetencies} competências já formadas são um indicador da evolução construída até aqui.</p>}
+              {selectedResponsibilityIds.size > 0 && <p className="mt-3 text-xs text-sky-800">O cenário formado pelas competências selecionadas soma {displayedCapabilityPoints}/{readiness.capabilityPoints} pontos de capacidades.</p>}
               {isCrossNucleus && <p className="mt-3 text-xs text-violet-800">Depois da maturidade total do Núcleo Técnico, este marco depende da cobertura dos demais núcleos.</p>}
             </div>
             <div>
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><div><p className="text-xs font-semibold uppercase text-zinc-500">Capacidades do cenário</p><p className="mt-1 text-xs text-zinc-600">As competências escolhidas já preenchem os níveis necessários abaixo. Você pode ajustar outras capacidades para testar cenários adicionais; o contorno azul identifica o que entrou pelo plano de competências.</p></div><span className="text-xs font-semibold text-sky-800">{readiness.certifiedCapabilityCount} certificadas</span></div>
-              <CapabilityScenarioGrid requirements={scenarioCapabilities} certifiedLevels={certifiedLevels} scenarioLevels={scenarioLevels} scenarioChanges={plannedChanges} onSelect={(capabilityCode, level) => setScenarioLevel(step.id, capabilityCode, level)} />
+              <CapabilityScenarioGrid requirements={scenarioCapabilities} certifiedLevels={certifiedLevels} scenarioLevels={scenarioLevels} scenarioChanges={plannedChanges} capabilityTarget={readiness.capabilityPoints} onSelect={(capabilityCode, level) => setScenarioLevel(step.id, capabilityCode, level)} />
               {readiness.missingCapabilityPoints > 0 && <p className="mt-3 text-xs text-amber-800">Faltam {readiness.missingCapabilityPoints} pontos no cenário para este cargo.</p>}
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><p className={`text-xs ${readyToConsolidate ? "text-emerald-800" : "text-zinc-600"}`}>{readyToConsolidate ? "O cenário atingiu os pontos necessários deste cargo." : "Para consolidar, complete os pontos necessários deste cargo."}</p><button type="button" disabled={!readyToConsolidate} onClick={() => consolidateSimulation(step.id)} className="border border-emerald-700 bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:border-zinc-300 disabled:bg-zinc-200 disabled:text-zinc-500">Consolidar simulação</button></div>
             </div>
