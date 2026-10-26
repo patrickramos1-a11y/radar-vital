@@ -13,12 +13,13 @@ import { CapabilityPrerequisites, CapabilityPurpose } from "./capabilityPresenta
 import { capabilitySummary, firstLetterUpper } from "./capabilityPresentationData";
 import { criterionPrompt, criterionResponsePrompt } from "./criterionGuidance";
 import { CapabilityTeamMatrix } from "./CapabilityTeamMatrix";
+import { ResponsibilityJourneyPanel } from "./ResponsibilityJourneyPanel";
 import { approvedLevels } from "./responsibilityEligibility";
 import type { PreviewResponsibility } from "./model";
 import type { Unit } from "./data";
 import {
-  applyTeamCertifications, createRemoteAssessment, fetchAssessments, fetchRequests, fetchTeamCertifications, requestTeamTraining,
-  fetchTeamTrainingRequests, reviewRequest, saveRequest,
+  applyTeamCertifications, createRemoteAssessment, fetchAssessments, fetchRequests, fetchResponsibilityClaims, fetchTeamCertifications, requestResponsibility, requestTeamTraining,
+  fetchTeamTrainingRequests, reviewRequest, reviewResponsibilityClaim, saveRequest,
   type Library, type RequestRow, type TeamTrainingRequestRow,
 } from "./journeyRemote";
 import "./capability-experience.css";
@@ -49,11 +50,13 @@ function EvidenceReference({ name, location }: { name?: string; location: string
 
 export function OfficialCapabilityExperience({ view, code, tab, mode, go, library, people, mappedResponsibilities = [], sectors = [], openSector = () => {}, capabilityPlans = {}, onDeactivateCollaborator }: Props) {
   const { currentUser, loading } = useAuth();
+  const queryClient = useQueryClient();
   const isAdmin = currentUser?.role === "admin";
   const assessments = useQuery({ queryKey: ["master-plan-assessments", currentUser?.id], queryFn: () => fetchAssessments(currentUser!.id), enabled: !!currentUser });
   const requests = useQuery({ queryKey: ["master-plan-requests", currentUser?.id, isAdmin], queryFn: () => fetchRequests(currentUser!.id, isAdmin), enabled: !!currentUser });
   const teamCertifications = useQuery({ queryKey: ["master-plan-team-certifications"], queryFn: fetchTeamCertifications, enabled: !!currentUser, retry: false });
   const teamTrainingRequests = useQuery({ queryKey: ["master-plan-team-training-requests"], queryFn: fetchTeamTrainingRequests, enabled: !!currentUser, retry: false });
+  const responsibilityClaims = useQuery({ queryKey: ["master-plan-responsibility-claims"], queryFn: fetchResponsibilityClaims, enabled: !!currentUser, retry: false });
   const selected = library.capabilities.find((item) => item.code === code);
   const ownRequests = requests.data?.filter((request) => request.collaborator_id === currentUser?.id) ?? [];
   const ownCertifiedLevels = currentUser ? approvedLevels(requests.data ?? [], currentUser.id, teamCertifications.data ?? []) : new Map<string, number>();
@@ -61,9 +64,29 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   const approved = selected ? ownCertifiedLevels.get(selected.code) ?? 0 : 0;
   const certifiedLevels = new Map([...ownCertifiedLevels].filter(([, level]) => level > 0)) as Map<string, CapabilityLevel>;
   const selectedAssessments = assessments.data?.filter((assessment) => assessment.capability_code === selected?.code && assessment.collaborator_id === currentUser?.id) ?? [];
+  const submitResponsibilityClaim = async (responsibilitySourceId: string) => {
+    try {
+      await requestResponsibility(responsibilitySourceId);
+      await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
+      toast.success("Responsabilidade solicitada para avaliação.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a responsabilidade.");
+      throw error;
+    }
+  };
+  const decideResponsibilityClaim = async (claimId: string, decision: "approved" | "rejected") => {
+    try {
+      await reviewResponsibilityClaim(claimId, decision);
+      await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
+      toast.success(decision === "approved" ? "Responsabilidade concedida." : "Solicitação devolvida.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível avaliar a responsabilidade.");
+      throw error;
+    }
+  };
   return <div className="cap-experience cap-themed relative min-w-0" style={selected ? capabilityVisualStyle(selected.code) : undefined} data-testid="official-capability-experience">
     {view === "capacidades" && <Catalog library={library} go={go} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} />}
-    {view === "capacitacoes" && !selected && <TrainingOverview library={library} go={go} currentUser={currentUser} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} />}
+    {view === "capacitacoes" && !selected && <TrainingOverview library={library} go={go} currentUser={currentUser} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} claims={responsibilityClaims.data ?? []} isAdmin={isAdmin} onRequestResponsibility={submitResponsibilityClaim} onReviewResponsibility={decideResponsibilityClaim} />}
     {view === "capacidade" && !selected && <div className="cap-empty">Capacidade não encontrada.<Button variant="outline" onClick={() => go("capacidades")}>Voltar ao catálogo</Button></div>}
     {view === "capacidade" && selected && <Sheet item={selected} library={library} approved={approved} certifiedLevels={certifiedLevels} assessmentLevel={selectedAssessments[0]?.indicated_level} go={go} tab={tab} mappedResponsibilities={mappedResponsibilities} sectors={sectors} openSector={openSector} />}
     {view === "capacitacoes" && selected && <>
@@ -73,7 +96,7 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
       {isAdmin && <div className="mb-4 flex flex-wrap gap-1 border-b pb-3" role="group" aria-label="Visão de capacitações"><button type="button" onClick={() => go("capacitacoes", selected.code, "autoavaliacao", "colaborador")} className="cap-mode">Colaborador</button><button type="button" onClick={() => go("capacitacoes", selected.code, "retorno", "administrador")} className={`cap-mode ${mode === "administrador" ? "cap-mode-active" : ""}`}>Avaliar pedidos</button><button type="button" onClick={() => go("capacitacoes", selected.code, "mapa", "administrador")} className="cap-mode">Mapa da equipe</button></div>}
       {!(mode === "administrador" && isAdmin) && <CapabilityIdentityStrip item={selected} />}
       <p className="mb-4 border-l-2 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-950">Os registros são atribuídos ao perfil selecionado no Radar Vital. Este perfil pode ser trocado no aplicativo e não comprova identidade individual.</p>
-      {loading ? <div className="cap-empty">Carregando perfil...</div> : !currentUser ? <div className="cap-empty">Selecione seu perfil no Radar Vital para iniciar a jornada.</div> : requests.error || assessments.error || teamCertifications.error || teamTrainingRequests.error ? <div className="cap-empty">Não foi possível carregar sua jornada. Verifique a conexão e tente atualizar.</div> : requests.isLoading || assessments.isLoading || teamCertifications.isLoading || teamTrainingRequests.isLoading ? <div className="cap-empty">Carregando histórico...</div> : mode === "administrador" && isAdmin ? <Reviewer library={library} requests={requests.data ?? []} people={people} reviewerId={currentUser.id} /> : <Journey item={selected} tab={tab} go={go} collaboratorId={currentUser.id} collaboratorName={currentUser.name} approved={approved} trainingLevel={ownTrainingRequests.find((request) => request.capability_code === selected.code && request.target_level > approved)?.target_level} assessments={selectedAssessments} requests={ownRequests.filter((request) => request.capability_code === selected.code)} canReview={isAdmin} />}
+      {loading ? <div className="cap-empty">Carregando perfil...</div> : !currentUser ? <div className="cap-empty">Selecione seu perfil no Radar Vital para iniciar a jornada.</div> : requests.error || assessments.error || teamCertifications.error || teamTrainingRequests.error || responsibilityClaims.error ? <div className="cap-empty">Não foi possível carregar sua jornada. Verifique a conexão e tente atualizar.</div> : requests.isLoading || assessments.isLoading || teamCertifications.isLoading || teamTrainingRequests.isLoading || responsibilityClaims.isLoading ? <div className="cap-empty">Carregando histórico...</div> : mode === "administrador" && isAdmin ? <Reviewer library={library} requests={requests.data ?? []} people={people} reviewerId={currentUser.id} /> : <Journey item={selected} tab={tab} go={go} collaboratorId={currentUser.id} collaboratorName={currentUser.name} approved={approved} trainingLevel={ownTrainingRequests.find((request) => request.capability_code === selected.code && request.target_level > approved)?.target_level} assessments={selectedAssessments} requests={ownRequests.filter((request) => request.capability_code === selected.code)} canReview={isAdmin} />}
       </>}
     </>}
   </div>;
@@ -95,7 +118,7 @@ function Catalog({ library, go, certifiedLevels, trainingRequests, compact = fal
   </>;
 }
 
-function TrainingOverview({ library, go, currentUser, certifiedLevels, trainingRequests }: { library: Library; go: Go; currentUser: { id: string; name: string } | null; certifiedLevels: Map<string, number>; trainingRequests: TeamTrainingRequestRow[] }) {
+function TrainingOverview({ library, go, currentUser, certifiedLevels, trainingRequests, claims, isAdmin, onRequestResponsibility, onReviewResponsibility }: { library: Library; go: Go; currentUser: { id: string; name: string } | null; certifiedLevels: Map<string, number>; trainingRequests: TeamTrainingRequestRow[]; claims: import("./responsibilityJourney").ResponsibilityClaim[]; isAdmin: boolean; onRequestResponsibility: (responsibilitySourceId: string) => Promise<void>; onReviewResponsibility: (claimId: string, decision: "approved" | "rejected") => Promise<void> }) {
   const [showCertified, setShowCertified] = useState(false);
   const [showInDevelopment, setShowInDevelopment] = useState(false);
   if (!currentUser) return <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar suas capacitações.</div>;
@@ -117,6 +140,7 @@ function TrainingOverview({ library, go, currentUser, certifiedLevels, trainingR
     </div>
     {showCertified && <section className="mb-7 border-t-4 border-emerald-600 bg-white p-4"><div className="mb-4 flex flex-wrap items-baseline justify-between gap-3"><div><h2 className="text-lg font-semibold">Certificações de {currentUser.name}</h2><p className="mt-1 text-sm text-zinc-600">Capacidades com nível oficialmente reconhecido.</p></div><span className="text-sm font-semibold text-emerald-800">{certified.length} certificadas</span></div><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{certified.map((item) => { const level = certifiedLevels.get(item.code) as CapabilityLevel; return <button key={item.code} type="button" onClick={() => go("capacidade", item.code)} className="flex items-center justify-between gap-3 border px-3 py-3 text-left hover:bg-emerald-50"><span className="min-w-0"><strong className="block text-sm">{item.code} · {item.title}</strong><span className="mt-1 block text-xs text-zinc-600">Nível consolidado: {capabilityLevelNames[level]}</span></span><ArrowRight className="h-4 w-4 shrink-0 text-emerald-700" /></button>; })}</div>{!certified.length && <p className="text-sm text-zinc-600">Nenhuma capacidade certificada neste perfil.</p>}</section>}
     {showInDevelopment && <section className="mb-7 border-t-4 border-sky-500 bg-white p-4"><div className="mb-4 flex flex-wrap items-baseline justify-between gap-3"><div><h2 className="text-lg font-semibold">Capacitações em desenvolvimento</h2><p className="mt-1 text-sm text-zinc-600">Solicitações abertas para ampliar a atuação do perfil.</p></div><span className="text-sm font-semibold text-sky-800">{inDevelopment.length} em desenvolvimento</span></div><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{inDevelopment.map((request) => { const item = library.capabilities.find((capability) => capability.code === request.capability_code); const currentLevel = certifiedLevels.get(request.capability_code) ?? 0; if (!item) return null; return <button key={item.code} type="button" onClick={() => go("capacitacoes", item.code, "criterios", "colaborador")} className="flex items-center justify-between gap-3 border px-3 py-3 text-left hover:bg-sky-50"><span className="min-w-0"><strong className="block text-sm">{item.code} · {item.title}</strong><span className="mt-1 block text-xs text-zinc-600">{currentLevel ? `Nível atual: ${capabilityLevelNames[currentLevel]}` : "Nível atual: ainda não certificado"} · Em desenvolvimento: {capabilityLevelNames[request.target_level]}</span></span><ArrowRight className="h-4 w-4 shrink-0 text-sky-700" /></button>; })}</div>{!inDevelopment.length && <p className="text-sm text-zinc-600">Nenhuma capacitação em desenvolvimento neste perfil.</p>}</section>}
+    <ResponsibilityJourneyPanel library={library} certifiedLevels={certifiedLevels} claims={claims} collaboratorId={currentUser.id} isAdmin={isAdmin} onRequest={onRequestResponsibility} onReview={onReviewResponsibility} go={go} />
     <section className="mb-7"><div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-semibold">Próximas recomendações</h2><p className="mt-1 text-sm text-zinc-600">Priorize o próximo nível de capacidades já reconhecidas ou inicie uma nova jornada.</p></div></div><div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">{recommendations.map((item) => { const certifiedLevel = certifiedLevels.get(item.code) ?? 0; const targetLevel = Math.max(1, certifiedLevel + 1) as CapabilityLevel; const requested = inDevelopment.find((request) => request.capability_code === item.code); return <article key={item.code} className="border bg-white p-4"><p className="text-xs font-semibold uppercase text-teal-700">{item.code} · {item.nature}</p><h3 className="mt-1 text-sm font-semibold">{item.title}</h3><p className="mt-2 line-clamp-2 text-xs leading-relaxed text-zinc-600">{capabilitySummary(item)}</p><p className="mt-3 text-xs text-zinc-600">{requested ? <>Em desenvolvimento: <strong>{capabilityLevelNames[requested.target_level]}</strong></> : certifiedLevel > 0 ? <>Certificado: <strong>{capabilityLevelNames[certifiedLevel]}</strong> · Próximo: <strong>{capabilityLevelNames[targetLevel]}</strong></> : <>Próximo passo: <strong>iniciar no nível Assistido</strong></>}</p><div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => go("capacitacoes", item.code, "criterios", "colaborador")} className="text-xs font-semibold text-teal-700 hover:text-teal-900">{requested ? "Acompanhar capacitação" : `Solicitar ${capabilityLevelNames[targetLevel]}`}</button><button type="button" onClick={() => go("capacidade", item.code)} className="text-xs font-semibold text-zinc-700 hover:text-zinc-950">Ver capacidade</button></div></article>; })}</div></section>
     <Catalog library={library} go={go} certifiedLevels={certifiedLevels} trainingRequests={trainingRequests} compact />
   </>;

@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
 import { OfficialCapabilityExperience } from "./OfficialCapabilityExperience";
-import { applyTeamCertifications, fetchAssessments, fetchRequests, requestTeamTraining } from "./journeyRemote";
+import { applyTeamCertifications, fetchAssessments, fetchRequests, requestResponsibility, requestTeamTraining } from "./journeyRemote";
 import type { Library } from "./journeyRemote";
 
 const fixture = vi.hoisted(() => ({
@@ -12,6 +12,7 @@ const fixture = vi.hoisted(() => ({
   requests: [] as Array<Record<string, unknown>>,
   certifications: [] as Array<Record<string, unknown>>,
   trainingRequests: [] as Array<Record<string, unknown>>,
+  responsibilityClaims: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("@/contexts/AuthContext", () => ({
@@ -22,8 +23,11 @@ vi.mock("./journeyRemote", () => ({
   fetchRequests: vi.fn(async () => fixture.requests),
   fetchTeamCertifications: vi.fn(async () => fixture.certifications),
   fetchTeamTrainingRequests: vi.fn(async () => fixture.trainingRequests),
+  fetchResponsibilityClaims: vi.fn(async () => fixture.responsibilityClaims),
   applyTeamCertifications: vi.fn(async () => undefined),
   requestTeamTraining: vi.fn(async () => ({ status: "requested" })),
+  requestResponsibility: vi.fn(async () => ({ id: "claim-1", status: "requested" })),
+  reviewResponsibilityClaim: vi.fn(async () => ({ id: "claim-1", status: "approved" })),
   createRemoteAssessment: vi.fn(async () => ({ id: "assessment-1" })),
 }));
 
@@ -40,7 +44,7 @@ function open(view: "capacidades" | "capacidade" | "capacitacoes", code = "", ta
   return go;
 }
 
-afterEach(() => { cleanup(); fixture.profile = { id: "collaborator-1", name: "Gabi", role: "colaborador" }; fixture.requests = []; fixture.certifications = []; fixture.trainingRequests = []; });
+afterEach(() => { cleanup(); fixture.profile = { id: "collaborator-1", name: "Gabi", role: "colaborador" }; fixture.requests = []; fixture.certifications = []; fixture.trainingRequests = []; fixture.responsibilityClaims = []; });
 
 describe("official capability library", () => {
   it("shows all 28 published cards and filters by the source title", () => {
@@ -114,6 +118,22 @@ describe("official capability library", () => {
     fireEvent.click(screen.getByRole("button", { name: "Falta Multiplicador" }));
     await waitFor(() => expect(screen.getByText("1 de 28")).toBeTruthy());
     expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ })).toBeTruthy();
+  });
+
+  it("shows responsibility readiness from the complete mixed-level capability matrix", async () => {
+    fixture.certifications = [
+      { collaborator_id: "collaborator-1", capability_code: "T02", certified_level: 3, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+      { collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+      { collaborator_id: "collaborator-1", capability_code: "T08", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+    ];
+    open("capacitacoes");
+    await screen.findByRole("heading", { name: "Disponibilidade para assumir" });
+    expect(screen.getByText("SISRAMOS")).toBeTruthy();
+    await waitFor(() => expect(screen.getByText("7 de 7 pontos")).toBeTruthy());
+    const row = screen.getByText("SISRAMOS").closest("article");
+    expect(row).toBeTruthy();
+    fireEvent.click(within(row!).getByRole("button", { name: "Solicitar responsabilidade" }));
+    await waitFor(() => expect(requestResponsibility).toHaveBeenCalledWith("resp-413535e8de506f6a"));
   });
 
   it("does not offer the administrative queue to a collaborator", async () => {

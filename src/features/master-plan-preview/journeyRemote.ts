@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { CapabilityLevel, CapabilityRecord, CriterionResponse, CriterionReview } from "./capabilityJourney";
 import type { SourceResponsibility } from "./capabilityDemo";
+import type { ResponsibilityClaim } from "./responsibilityJourney";
 import curatedSource from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
 
 export const journeySupabase = supabase as unknown as SupabaseClient;
@@ -124,6 +125,29 @@ export async function requestTeamTraining(actorId: string, collaboratorId: strin
     p_target_level: level,
   });
   return result(data, error) as TeamTrainingRequestRow;
+}
+
+export async function fetchResponsibilityClaims(): Promise<ResponsibilityClaim[]> {
+  const { data, error } = await journeySupabase.from("master_plan_responsibility_claims")
+    .select("id,collaborator_id,responsibility_source_id,status,requested_at,decided_at,decided_by,decision_note")
+    .order("requested_at", { ascending: false });
+  return result(data, error) as ResponsibilityClaim[];
+}
+
+export async function requestResponsibility(responsibilitySourceId: string): Promise<ResponsibilityClaim> {
+  const { data, error } = await journeySupabase.rpc("master_plan_request_responsibility", {
+    p_responsibility_source_id: responsibilitySourceId,
+  });
+  return result(data, error) as ResponsibilityClaim;
+}
+
+export async function reviewResponsibilityClaim(claimId: string, decision: "approved" | "rejected", note = ""): Promise<ResponsibilityClaim> {
+  const { data, error } = await journeySupabase.rpc("master_plan_review_responsibility_claim", {
+    p_claim_id: claimId,
+    p_decision: decision,
+    p_note: note,
+  });
+  return result(data, error) as ResponsibilityClaim;
 }
 
 export async function saveRequest(collaboratorId: string, id: string | null, code: string, level: CapabilityLevel,
