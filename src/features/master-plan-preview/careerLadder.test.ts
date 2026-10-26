@@ -1,12 +1,24 @@
 import { describe, expect, it } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
-import { capabilityPoints, careerStepReadiness, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep } from "./careerLadder";
+import { capabilityPoints, careerStepReadiness, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilityClaimAllowance, technicalResponsibilities } from "./careerLadder";
 import type { Library } from "./journeyRemote";
+import type { ResponsibilityClaim } from "./responsibilityJourney";
 
 const library: Library = { capabilities: source.capabilities, responsibilities: source.responsibilities, sourceSha256: source.source.sha256 };
 
+const claimsFor = (personId: string, ids: string[]): ResponsibilityClaim[] => ids.map((responsibilityId) => ({
+  id: `claim-${responsibilityId}`,
+  collaborator_id: personId,
+  responsibility_source_id: responsibilityId,
+  status: "approved" as const,
+  requested_at: "2026-10-26T00:00:00.000Z",
+  decided_at: "2026-10-26T00:00:00.000Z",
+  decided_by: "admin",
+  decision_note: "Concedida",
+}));
+
 describe("Núcleo Técnico career ladder", () => {
-  it("has the seven corporate promotion milestones with the approved point targets", () => {
+  it("has the nine corporate milestones with the agreed capability and responsibility targets", () => {
     expect(nucleoTecnicoCareerLadder.steps.map((step) => step.title)).toEqual([
       "Operador Júnior",
       "Operador Pleno",
@@ -15,51 +27,66 @@ describe("Núcleo Técnico career ladder", () => {
       "Gestão Pleno",
       "Gestão Master",
       "Estratégico Júnior",
+      "Estratégico Pleno",
+      "Estratégico Master",
     ]);
-    expect(nucleoTecnicoCareerLadder.steps.map((step) => capabilityPoints(pacForCareerStep(library, nucleoTecnicoCareerLadder, step.id)))).toEqual([26, 42, 55, 63, 72, 80, 84]);
+    expect(nucleoTecnicoCareerLadder.steps.map((step) => step.capabilityTarget)).toEqual([26, 42, 55, 63, 72, 80, 84, 84, 84]);
+    expect(nucleoTecnicoCareerLadder.steps.map((step) => step.responsibilityTarget)).toEqual([3, 8, 16, 26, 34, 44, 52, 52, 52]);
   });
 
-  it("closes Estratégico Júnior with every Núcleo Técnico capability at Multiplicador", () => {
+  it("keeps the standard PAC on the approved point targets and closes Estratégico Júnior at Multiplicador", () => {
+    expect(nucleoTecnicoCareerLadder.steps.map((step) => capabilityPoints(pacForCareerStep(library, nucleoTecnicoCareerLadder, step.id)))).toEqual([26, 42, 55, 63, 72, 80, 84, 84, 84]);
     const pac = pacForCareerStep(library, nucleoTecnicoCareerLadder, "estrategico_junior");
     expect(pac).toHaveLength(28);
     expect(pac.every((requirement) => requirement.minimumLevel === 3)).toBe(true);
-    expect(capabilityPoints(pac)).toBe(84);
   });
 
-  it("covers every technical and transversal responsibility once, without grouping the promotion by sector", () => {
-    const technicalIds = source.responsibilities.filter((responsibility) => responsibility.sourceSector !== "Fora do Núcleo Técnico").map((responsibility) => responsibility.sourceId).sort();
-    const assignedIds = nucleoTecnicoCareerLadder.steps.flatMap((step) => step.responsibilityIds).sort();
-    expect(assignedIds).toEqual(technicalIds);
+  it("uses the 52 responsibilities inside the Núcleo Técnico and leaves external sectors outside this ladder", () => {
+    expect(technicalResponsibilities(library)).toHaveLength(52);
+    expect(technicalResponsibilities(library).every((responsibility) => responsibility.sourceSector !== "Fora do Núcleo Técnico")).toBe(true);
   });
 
-  it("only assigns a responsibility after its technical requirements are present in the milestone PAC", () => {
-    nucleoTecnicoCareerLadder.steps.forEach((step) => {
-      const levels = new Map(step.capabilityRequirements.map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
-      const responsibilities = library.responsibilities.filter((responsibility) => step.responsibilityIds.includes(responsibility.sourceId));
-      responsibilities.forEach((responsibility) => responsibility.requiredCapabilities.forEach((requirement) => {
-        expect(levels.get(requirement.capabilityCode)).toBeGreaterThanOrEqual(requirement.minimumLevel);
-      }));
-    });
-  });
-
-  it("requires both the full PAC and all cumulative responsibility grants for a promotion", () => {
+  it("requires both certified points and the three enabled responsibility grants for Operador Júnior", () => {
     const pac = pacForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior");
-    const allLevels = new Map(pac.map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
-    const pending = careerStepReadiness(library, nucleoTecnicoCareerLadder, "operador_junior", allLevels, [], "gabi");
+    const levels = new Map(pac.map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
+    const pending = careerStepReadiness(library, nucleoTecnicoCareerLadder, "operador_junior", levels, [], "gabi");
     expect(pending.completedCapabilityPoints).toBe(26);
     expect(pending.capabilityPoints).toBe(26);
+    expect(pending.responsibilityTarget).toBe(3);
+    expect(pending.responsibilityCandidates).toHaveLength(3);
     expect(pending.eligible).toBe(false);
-    const claims = pending.responsibilities.map((responsibility) => ({ id: `claim-${responsibility.sourceId}`, collaborator_id: "gabi", responsibility_source_id: responsibility.sourceId, status: "approved" as const, requested_at: "2026-10-26T00:00:00.000Z", decided_at: "2026-10-26T00:00:00.000Z", decided_by: "admin", decision_note: "Concedida" }));
-    expect(careerStepReadiness(library, nucleoTecnicoCareerLadder, "operador_junior", allLevels, claims, "gabi").eligible).toBe(true);
+    const claims = claimsFor("gabi", pending.responsibilityCandidates.map((item) => item.responsibility.sourceId));
+    expect(careerStepReadiness(library, nucleoTecnicoCareerLadder, "operador_junior", levels, claims, "gabi").eligible).toBe(true);
   });
 
-  it("separates each role's new capability requirements from the accumulated PAC", () => {
+  it("derives different responsibility paths from different certified capabilities with the same point total", () => {
+    const standardPac = pacForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior");
+    const standardLevels = new Map(standardPac.map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
+    const alternativeLevels = new Map(standardLevels);
+    alternativeLevels.set("F05", 1);
+    alternativeLevels.set("E04", 1);
+    const standard = careerStepReadiness(library, nucleoTecnicoCareerLadder, "operador_junior", standardLevels, [], "celine");
+    const alternative = careerStepReadiness(library, nucleoTecnicoCareerLadder, "operador_junior", alternativeLevels, [], "gabi");
+    expect([...alternativeLevels.values()].reduce((sum, level) => sum + level, 0)).toBe(26);
+    expect(standard.responsibilityCandidates.map((item) => item.responsibility.sourceId)).not.toEqual(alternative.responsibilityCandidates.map((item) => item.responsibility.sourceId));
+  });
+
+  it("limits responsibility requests to the current career target and opens the next quota after promotion", () => {
+    const juniorPac = pacForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior");
+    const juniorLevels = new Map(juniorPac.map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
+    const candidates = careerStepReadiness(library, nucleoTecnicoCareerLadder, "operador_junior", juniorLevels, [], "gabi").responsibilityCandidates;
+    expect(responsibilityClaimAllowance(library, nucleoTecnicoCareerLadder, juniorLevels, [], "gabi")).toMatchObject({ limit: 3, allowed: true });
+    const juniorClaims = claimsFor("gabi", candidates.map((item) => item.responsibility.sourceId));
+    expect(responsibilityClaimAllowance(library, nucleoTecnicoCareerLadder, juniorLevels, juniorClaims, "gabi")).toMatchObject({ limit: 8, allowed: true });
+  });
+
+  it("separates the new recommendations from the accumulated PAC", () => {
     const juniorPac = pacForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior");
     expect(newPacRequirementsForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior")).toEqual(juniorPac);
     const additions = newPacRequirementsForCareerStep(library, nucleoTecnicoCareerLadder, "operador_pleno");
     const prior = new Map(juniorPac.map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
     expect(additions).not.toHaveLength(0);
     expect(additions.every((requirement) => requirement.minimumLevel > (prior.get(requirement.capabilityCode) ?? 0))).toBe(true);
-    expect(additions).toContainEqual({ capabilityCode: "T04", minimumLevel: 2 });
+    expect(additions).toContainEqual({ capabilityCode: "E01", minimumLevel: 1 });
   });
 });

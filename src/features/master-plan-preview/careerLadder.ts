@@ -1,16 +1,28 @@
 import type { CapabilityLevel } from "./capabilityJourney";
 import type { SourceResponsibility } from "./capabilityDemo";
 import type { Library } from "./journeyRemote";
-import type { ResponsibilityClaim } from "./responsibilityJourney";
+import { globalCapabilityMaturity, responsibilityReadiness, type ResponsibilityClaim, type ResponsibilityReadiness } from "./responsibilityJourney";
 
-export type CareerStepId = "operador_junior" | "operador_pleno" | "operador_master" | "gestao_junior" | "gestao_pleno" | "gestao_master" | "estrategico_junior";
+export type CareerStepId =
+  | "operador_junior"
+  | "operador_pleno"
+  | "operador_master"
+  | "gestao_junior"
+  | "gestao_pleno"
+  | "gestao_master"
+  | "estrategico_junior"
+  | "estrategico_pleno"
+  | "estrategico_master";
+
 export type PacRequirement = { capabilityCode: string; minimumLevel: CapabilityLevel };
 
 export type CareerLadderStep = {
   id: CareerStepId;
   title: string;
   function: string;
-  responsibilityIds: string[];
+  capabilityTarget: number;
+  responsibilityTarget: number;
+  nucleiRequired: number;
   capabilityRequirements: PacRequirement[];
 };
 
@@ -24,117 +36,54 @@ export type CareerLadder = {
 
 const requirements = (...groups: Array<[CapabilityLevel, string[]]>): PacRequirement[] => groups.flatMap(([minimumLevel, codes]) => codes.map((capabilityCode) => ({ capabilityCode, minimumLevel })));
 
+// O PAC abaixo e a trilha recomendada. A promoção mede os pontos certificados reais;
+// as responsabilidades elegíveis continuam variando conforme os pré-requisitos de cada pessoa.
 const operatorJunior = requirements(
-  [2, ["T01", "T02", "T03", "T05", "T06", "T08", "F01", "F03", "F05", "F07", "F11"]],
-  [1, ["T04", "F04", "F09", "F10"]],
+  [2, ["T05", "F05", "F07", "F11"]],
+  [1, ["T01", "T02", "T03", "T04", "T06", "T07", "T08", "T09", "F01", "F02", "F03", "F04", "F06", "F08", "F09", "F10", "F12", "F13"]],
 );
-
 const operatorPleno = requirements(
-  [2, ["T01", "T02", "T03", "T04", "T05", "T06", "T08", "F01", "F03", "F04", "F05", "F07", "F09", "F10", "F11"]],
-  [1, ["T07", "T09", "F02", "F06", "F08", "F12", "F13", "E01", "E02", "E03", "E04", "E05"]],
+  [2, ["T01", "T02", "T03", "T06", "T08", "F01", "F03", "F04", "F09", "F10"]],
+  [1, ["T10", "E01", "E02", "E03", "E04", "E05"]],
 );
-
 const operatorMaster = requirements(
-  [2, ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09", "F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11", "F12", "F13", "E01", "E02", "E03", "E04", "E05"]],
-  [1, ["T10"]],
+  [3, ["T05"]],
+  [2, ["T04", "T07", "T09", "T10", "F02", "F06", "F08", "F12", "F13", "E01", "E02", "E03"]],
 );
+const gestaoJunior = requirements([3, ["T02", "F01", "F02", "F07", "F08", "T07", "T08", "T09"]]);
+const gestaoPleno = requirements([3, ["F03", "F04", "F06", "F09", "F10", "F11", "F12", "F13", "E02"]]);
+const gestaoMaster = requirements([3, ["T01", "T03", "T04", "T06", "T10", "F05", "E01", "E03"]]);
+const estrategicoJunior = requirements([3, ["E04", "E05"]]);
 
-const gestaoJunior = requirements(
-  [3, ["T01", "T02", "T03", "T04", "F01", "F02", "F03", "F04"]],
-  [2, ["T05", "T06", "T07", "T08", "T09", "F05", "F06", "F07", "F08", "F09", "F10", "F11", "F12", "F13", "E01", "E02", "E03", "E04", "E05"]],
-  [1, ["T10"]],
-);
-
-const gestaoPleno = requirements(
-  [3, ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09"]],
-  [2, ["T09", "F10", "F11", "F12", "F13", "E01", "E02", "E03", "E04", "E05"]],
-  [1, ["T10"]],
-);
-
-const gestaoMaster = requirements(
-  [3, ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09", "T10", "F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11", "F12", "F13", "E01"]],
-  [2, ["E02", "E03", "E04", "E05"]],
-);
-
-const estrategicoJunior = requirements([3, ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09", "T10", "F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11", "F12", "F13", "E01", "E02", "E03", "E04", "E05"]]);
-
-// A promoção é única para o Núcleo Técnico. Os setores fornecem as responsabilidades de cada degrau, mas não criam escadas paralelas.
+// A promoção é única para o Núcleo Técnico. O PAC é comum, enquanto as responsabilidades
+// são habilitadas pela combinação de capacidades certificadas de cada colaborador.
 export const nucleoTecnicoCareerLadder: CareerLadder = {
   id: "nucleo-tecnico",
   title: "Escada de promoção · Núcleo Técnico",
   scope: "Gestão Interna, Processos e Órgãos, Projetos, Serviços, Visitas e Levantamentos e eixo Transversal",
-  summary: "Jornada corporativa que integra todos os setores do Núcleo Técnico. Cada cargo acrescenta capacidade certificada e responsabilidades formalmente concedidas.",
+  summary: "A operação começa com um PAC intenso e poucas responsabilidades. À medida que a maturidade aumenta, cada pessoa passa a assumir mais responsabilidades que suas próprias capacitações habilitam.",
   steps: [
-    {
-      id: "operador_junior",
-      title: "Operador Júnior",
-      function: "Operação técnica inicial: execução assistida das rotinas fundamentais.",
-      responsibilityIds: ["resp-20ec4169bc18b765", "resp-120793b1ab70f27f", "resp-081f67ce20624f10", "resp-5f1871e1b6525e77", "resp-e5223a2478ca72c3", "resp-c68df2f40518fac4", "resp-4dd92f1c60eda23a", "resp-7ee340a49d0a642d", "resp-86c5f2467c78720f", "resp-41cf3b43523cb0ef", "resp-1913147672bb7a52"],
-      capabilityRequirements: operatorJunior,
-    },
-    {
-      id: "operador_pleno",
-      title: "Operador Pleno",
-      function: "Operação técnica: autonomia nas rotinas, interfaces e entregas de campo.",
-      responsibilityIds: ["resp-f72ce1f247aa74a5", "resp-5c1513a1727ab1c0", "resp-cebd28c338d58c87", "resp-b181ab438992374a", "resp-3e5f9813d6ea2e00", "resp-ae657ade32ce39f5", "resp-8f3d9f33a0ace333", "resp-33a0dc8426a5bef7"],
-      capabilityRequirements: operatorPleno,
-    },
-    {
-      id: "operador_master",
-      title: "Operador Master",
-      function: "Referência técnica: domínio autônomo de processos, projetos e entregas integradas.",
-      responsibilityIds: ["resp-666ad73388099239", "resp-0fe0bd77b979a4c7", "resp-3376143e484680cd", "resp-5739697c18dc0409", "resp-c8acd5b15614702d", "resp-528f059535ff98fe", "resp-8331ab727331f248", "resp-cd8e3bd71528599c", "resp-8fbf76ed9b58fa01", "resp-50598130bbab746a", "resp-2695cdecf9c9b11e", "resp-bd61f92819faef63", "resp-039396162eda6b88", "resp-880672d1e6d112eb", "resp-e33a3300530ad946", "resp-e831fbee278cc093", "resp-d951ff65c1cc2e15"],
-      capabilityRequirements: operatorMaster,
-    },
-    {
-      id: "gestao_junior",
-      title: "Gestão Júnior",
-      function: "Gestão de setor: cobertura, fluxo e desenvolvimento de uma frente.",
-      responsibilityIds: ["resp-413535e8de506f6a", "resp-1f7bb0d450478ca0", "resp-0fa4b35b63f9e668"],
-      capabilityRequirements: gestaoJunior,
-    },
-    {
-      id: "gestao_pleno",
-      title: "Gestão Pleno",
-      function: "Gestão integrada: coordenação de interfaces e qualidade técnica entre setores.",
-      responsibilityIds: ["resp-52bf82768bc346ce", "resp-8b44d63feacd900f", "resp-b43f2b48f3f7879f"],
-      capabilityRequirements: gestaoPleno,
-    },
-    {
-      id: "gestao_master",
-      title: "Gestão Master",
-      function: "Gestão de núcleo: capacidade, método, formação e resultado técnico.",
-      responsibilityIds: ["resp-110899f0def6ffdf", "resp-de82e5ddf1f340a4", "resp-4b295723549fd51c", "resp-2fe313509a5667cc", "resp-b0265ad877673096"],
-      capabilityRequirements: gestaoMaster,
-    },
-    {
-      id: "estrategico_junior",
-      title: "Estratégico Júnior",
-      function: "Estratégia do Núcleo Técnico: atuação integrada em frentes especializadas e responsabilidade pelo escopo.",
-      responsibilityIds: ["resp-f94c2de51a67dde6", "resp-a00d80a50f58c7c4", "resp-0bd03c2b4f974fe3", "resp-c10a48eab7725515", "resp-441026a65a3ddd4a"],
-      capabilityRequirements: estrategicoJunior,
-    },
+    { id: "operador_junior", title: "Operador Júnior", function: "Operação técnica inicial: execução assistida das rotinas fundamentais.", capabilityTarget: 26, responsibilityTarget: 3, nucleiRequired: 1, capabilityRequirements: operatorJunior },
+    { id: "operador_pleno", title: "Operador Pleno", function: "Operação técnica: autonomia nas rotinas, interfaces e entregas de campo.", capabilityTarget: 42, responsibilityTarget: 8, nucleiRequired: 1, capabilityRequirements: operatorPleno },
+    { id: "operador_master", title: "Operador Master", function: "Referência técnica: domínio autônomo de processos, projetos e entregas integradas.", capabilityTarget: 55, responsibilityTarget: 16, nucleiRequired: 1, capabilityRequirements: operatorMaster },
+    { id: "gestao_junior", title: "Gestão Júnior", function: "Gestão de setor: cobertura, fluxo e desenvolvimento de uma frente.", capabilityTarget: 63, responsibilityTarget: 26, nucleiRequired: 1, capabilityRequirements: gestaoJunior },
+    { id: "gestao_pleno", title: "Gestão Pleno", function: "Gestão integrada: coordenação de interfaces e qualidade técnica entre setores.", capabilityTarget: 72, responsibilityTarget: 34, nucleiRequired: 1, capabilityRequirements: gestaoPleno },
+    { id: "gestao_master", title: "Gestão Master", function: "Gestão de núcleo: capacidade, método, formação e resultado técnico.", capabilityTarget: 80, responsibilityTarget: 44, nucleiRequired: 1, capabilityRequirements: gestaoMaster },
+    { id: "estrategico_junior", title: "Estratégico Júnior", function: "Estratégia do Núcleo Técnico: capacidades multiplicadoras e cobertura integral do escopo.", capabilityTarget: 84, responsibilityTarget: 52, nucleiRequired: 1, capabilityRequirements: estrategicoJunior },
+    { id: "estrategico_pleno", title: "Estratégico Pleno", function: "Estratégia integrada: expansão da cobertura para dois núcleos definidos.", capabilityTarget: 84, responsibilityTarget: 52, nucleiRequired: 2, capabilityRequirements: [] },
+    { id: "estrategico_master", title: "Estratégico Master", function: "Direção estratégica: expansão da cobertura para três núcleos definidos.", capabilityTarget: 84, responsibilityTarget: 52, nucleiRequired: 3, capabilityRequirements: [] },
   ],
 };
-
-export function cumulativeResponsibilityIds(ladder: CareerLadder, stepId: CareerStepId) {
-  const targetIndex = ladder.steps.findIndex((step) => step.id === stepId);
-  return ladder.steps.slice(0, targetIndex + 1).flatMap((step) => step.responsibilityIds);
-}
-
-export function responsibilitiesForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): SourceResponsibility[] {
-  const ids = new Set(cumulativeResponsibilityIds(ladder, stepId));
-  return library.responsibilities.filter((responsibility) => ids.has(responsibility.sourceId));
-}
 
 export function pacForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): PacRequirement[] {
   const targetIndex = ladder.steps.findIndex((step) => step.id === stepId);
   const requirementsByCapability = new Map<string, CapabilityLevel>();
-  const include = (requirement: PacRequirement) => requirementsByCapability.set(requirement.capabilityCode, Math.max(requirementsByCapability.get(requirement.capabilityCode) ?? 0, requirement.minimumLevel) as CapabilityLevel);
-  ladder.steps.slice(0, targetIndex + 1).forEach((step) => step.capabilityRequirements.forEach(include));
-  responsibilitiesForCareerStep(library, ladder, stepId).forEach((responsibility) => responsibility.requiredCapabilities.forEach(include));
+  ladder.steps.slice(0, targetIndex + 1).forEach((step) => step.capabilityRequirements.forEach((requirement) => {
+    requirementsByCapability.set(requirement.capabilityCode, Math.max(requirementsByCapability.get(requirement.capabilityCode) ?? 0, requirement.minimumLevel) as CapabilityLevel);
+  }));
   return [...requirementsByCapability.entries()]
     .map(([capabilityCode, minimumLevel]) => ({ capabilityCode, minimumLevel }))
+    .filter((requirement) => library.capabilities.some((capability) => capability.code === requirement.capabilityCode))
     .sort((a, b) => a.capabilityCode.localeCompare(b.capabilityCode));
 }
 
@@ -150,26 +99,55 @@ export function capabilityPoints(requirements: PacRequirement[]) {
   return requirements.reduce((total, requirement) => total + requirement.minimumLevel, 0);
 }
 
+export function technicalResponsibilities(library: Library): SourceResponsibility[] {
+  return library.responsibilities.filter((responsibility) => responsibility.sourceSector !== "Fora do Núcleo Técnico");
+}
+
+function responsibilityCandidates(library: Library, levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string): ResponsibilityReadiness[] {
+  const ownClaims = claims.filter((claim) => claim.collaborator_id === collaboratorId);
+  const rank = (item: ResponsibilityReadiness) => item.status === "concedida" ? 0 : item.status === "solicitada" ? 1 : 2;
+  return technicalResponsibilities(library)
+    .map((responsibility) => responsibilityReadiness(responsibility, levels, ownClaims))
+    .filter((item) => item.unmet.length === 0)
+    .sort((left, right) => rank(left) - rank(right) || left.pointsRequired - right.pointsRequired || left.responsibility.title.localeCompare(right.responsibility.title, "pt-BR"));
+}
+
+export function responsibilityClaimAllowance(library: Library, ladder: CareerLadder, levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string) {
+  const pendingStep = ladder.steps.find((step) => !careerStepReadiness(library, ladder, step.id, levels, claims, collaboratorId).eligible) ?? ladder.steps.at(-1)!;
+  const current = responsibilityCandidates(library, levels, claims, collaboratorId)
+    .filter((item) => item.status === "concedida" || item.status === "solicitada").length;
+  return { step: pendingStep, current, limit: pendingStep.responsibilityTarget, allowed: current < pendingStep.responsibilityTarget };
+}
+
 export function careerStepReadiness(library: Library, ladder: CareerLadder, stepId: CareerStepId, levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string) {
-  const responsibilities = responsibilitiesForCareerStep(library, ladder, stepId);
+  const step = ladder.steps.find((item) => item.id === stepId);
+  if (!step) throw new Error(`Cargo não encontrado: ${stepId}`);
   const pac = pacForCareerStep(library, ladder, stepId);
-  const grantedIds = new Set(claims.filter((claim) => claim.collaborator_id === collaboratorId && claim.status === "approved").map((claim) => claim.responsibility_source_id));
-  const completedCapabilities = pac.filter((requirement) => (levels.get(requirement.capabilityCode) ?? 0) >= requirement.minimumLevel).length;
-  const completedCapabilityPoints = pac.reduce((total, requirement) => total + Math.min(levels.get(requirement.capabilityCode) ?? 0, requirement.minimumLevel), 0);
-  const grantedResponsibilities = responsibilities.filter((responsibility) => grantedIds.has(responsibility.sourceId)).length;
+  const maturity = globalCapabilityMaturity(library.capabilities.map((capability) => capability.code), levels);
+  const candidates = responsibilityCandidates(library, levels, claims, collaboratorId);
+  const grantedResponsibilities = candidates.filter((item) => item.status === "concedida").length;
+  const fullTechnicalMaturity = step.id === "estrategico_junior" || step.id === "estrategico_pleno" || step.id === "estrategico_master"
+    ? library.capabilities.every((capability) => (levels.get(capability.code) ?? 0) >= 3)
+    : true;
   const missingCapabilities = pac.filter((requirement) => (levels.get(requirement.capabilityCode) ?? 0) < requirement.minimumLevel);
-  const missingResponsibilities = responsibilities.filter((responsibility) => !grantedIds.has(responsibility.sourceId));
+  const missingCapabilityPoints = Math.max(0, step.capabilityTarget - maturity.pointsEarned);
+  const missingResponsibilityCount = Math.max(0, step.responsibilityTarget - grantedResponsibilities);
+  const scopeReady = step.nucleiRequired === 1;
   return {
-    responsibilities,
+    step,
     pac,
-    capabilityPoints: capabilityPoints(pac),
-    completedCapabilities,
-    completedCapabilityPoints,
+    capabilityPoints: step.capabilityTarget,
+    completedCapabilities: pac.filter((requirement) => (levels.get(requirement.capabilityCode) ?? 0) >= requirement.minimumLevel).length,
+    completedCapabilityPoints: Math.min(maturity.pointsEarned, step.capabilityTarget),
     grantedResponsibilities,
+    responsibilityTarget: step.responsibilityTarget,
+    responsibilityCandidates: candidates.slice(0, step.responsibilityTarget),
     missingCapabilities,
-    missingResponsibilities,
-    capabilityPercent: pac.length ? Math.round(completedCapabilities / pac.length * 1000) / 10 : 100,
-    responsibilityPercent: responsibilities.length ? Math.round(grantedResponsibilities / responsibilities.length * 1000) / 10 : 100,
-    eligible: missingCapabilities.length === 0 && missingResponsibilities.length === 0,
+    missingCapabilityPoints,
+    missingResponsibilityCount,
+    capabilityPercent: Math.round(Math.min(maturity.pointsEarned / step.capabilityTarget, 1) * 1000) / 10,
+    responsibilityPercent: Math.round(Math.min(grantedResponsibilities / step.responsibilityTarget, 1) * 1000) / 10,
+    scopeReady,
+    eligible: maturity.pointsEarned >= step.capabilityTarget && fullTechnicalMaturity && grantedResponsibilities >= step.responsibilityTarget && scopeReady,
   };
 }

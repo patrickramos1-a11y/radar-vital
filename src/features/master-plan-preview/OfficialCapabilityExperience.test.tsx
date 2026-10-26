@@ -148,8 +148,8 @@ describe("official capability library", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Escada de cargo" }));
     expect(screen.getByRole("heading", { name: "Escada de promoção · Núcleo Técnico" })).toBeTruthy();
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Responsabilidades deste cargo").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Responsabilidades acumuladas · \d+/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Caminhos de responsabilidade").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/até \d+/).length).toBeGreaterThan(0);
     const firstF01 = screen.getAllByRole("button", { name: /^F01.*Autônomo/ })[0];
     expect(firstF01.querySelector("img")?.getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
     fireEvent.click(firstF01);
