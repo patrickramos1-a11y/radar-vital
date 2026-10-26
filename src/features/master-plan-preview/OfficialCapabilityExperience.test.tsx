@@ -212,8 +212,10 @@ describe("official capability library", () => {
     fireEvent.click(summary);
     const developmentPanel = screen.getByRole("heading", { name: "Capacitações em desenvolvimento" }).closest("section");
     expect(developmentPanel).toBeTruthy();
+    expect(within(developmentPanel!).getByRole("img", { name: "Figurinha T01: Gestão de Informações e Acervo" })).toHaveAttribute("src", "/capability-stickers/posters/T01.png");
+    expect(within(developmentPanel!).getByText("Solicitação para Assistido em andamento. Este será seu primeiro nível certificado.")).toBeTruthy();
     fireEvent.click(within(developmentPanel!).getByRole("button", { name: /T01.*Gestão de Informações e Acervo/ }));
-    expect(go).toHaveBeenCalledWith("capacitacoes", "T01", "criterios", "colaborador");
+    expect(go).toHaveBeenCalledWith("capacidade", "T01");
   });
 
   it("filters the full map by the missing next level", async () => {
