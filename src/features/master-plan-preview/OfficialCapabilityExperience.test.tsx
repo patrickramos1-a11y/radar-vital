@@ -150,10 +150,13 @@ describe("official capability library", () => {
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Caminhos de responsabilidade").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/até \d+/).length).toBeGreaterThan(0);
-    const firstF01 = screen.getAllByRole("button", { name: /^F01.*Autônomo/ })[0];
-    expect(firstF01.querySelector("img")?.getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
-    fireEvent.click(firstF01);
-    expect(go).toHaveBeenCalledWith("capacidade", "F01");
+    expect(screen.getByRole("heading", { name: "Simule escolhas de capacitação" })).toBeTruthy();
+    const f01Levels = screen.getByRole("group", { name: /Nível simulado para Gestão de Demandas e Fluxo Operacional/ });
+    const autonomous = within(f01Levels).getByRole("button", { name: "Autônomo" });
+    expect(within(autonomous).getByRole("img", { name: "Autônomo" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
+    fireEvent.click(autonomous);
+    expect(autonomous.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByText("1 alteração(ões)")).toBeTruthy();
   });
 
   it("links responsibility, sector, and missing capability from the professional journey", async () => {

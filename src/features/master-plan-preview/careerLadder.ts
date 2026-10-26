@@ -142,6 +142,7 @@ export function careerStepReadiness(library: Library, ladder: CareerLadder, step
     grantedResponsibilities,
     responsibilityTarget: step.responsibilityTarget,
     responsibilityCandidates: candidates.slice(0, step.responsibilityTarget),
+    allResponsibilityCandidates: candidates,
     missingCapabilities,
     missingCapabilityPoints,
     missingResponsibilityCount,
