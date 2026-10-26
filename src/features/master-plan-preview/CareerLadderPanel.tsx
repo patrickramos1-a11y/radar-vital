@@ -97,19 +97,19 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
             <div className="grid min-w-48 grid-cols-2 gap-2 text-right text-xs"><div><strong className="block text-base">{readiness.completedCapabilityPoints}/{readiness.capabilityPoints}</strong><span className="text-zinc-600">pontos no cenário</span></div><div><strong className="block text-base">{readiness.grantedResponsibilities}/{readiness.responsibilityTarget}</strong><span className="text-zinc-600">responsabilidades</span></div></div>
           </div>
 
-          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(290px,0.55fr)]">
+          <div className="mt-4 space-y-4">
+            <div className="border bg-zinc-50 p-3">
+              <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-zinc-500">Responsabilidades disponíveis</p><span className="text-xs font-semibold text-violet-800">até {readiness.responsibilityTarget}</span></div>
+              <p className="mt-1 text-xs text-zinc-600">Clique em uma responsabilidade para marcar, no cenário, as capacidades e os níveis que ela exige.</p>
+              <div className="mt-3 grid gap-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{responsibilityOptions.map((item) => <button key={item.responsibility.sourceId} type="button" onClick={() => simulateResponsibility(item)} title={`${item.responsibility.title}: ${item.unmet.length === 0 ? "habilitada no cenário" : `${item.unmet.length} requisito(s) para simular`}`} className={`min-h-11 border px-2 py-1.5 text-left text-[10px] font-medium ${item.unmet.length === 0 ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-zinc-200 bg-white text-zinc-700 hover:border-sky-400 hover:bg-sky-50"}`}><span className="block leading-tight">{item.responsibility.title}</span><span className="mt-0.5 block text-[9px] font-normal opacity-80">{item.unmet.length === 0 ? "Habilitada" : `${item.unmet.length} requisito(s)`}</span></button>)}</div>
+              {readiness.allResponsibilityCandidates.length > readiness.responsibilityTarget && <p className="mt-3 text-xs text-zinc-600">{readiness.allResponsibilityCandidates.length - readiness.responsibilityTarget} caminhos já habilitados ficam para os próximos marcos.</p>}
+              {readiness.missingResponsibilityCount > 0 && <p className="mt-3 text-xs text-amber-800">Faltam {readiness.missingResponsibilityCount} responsabilidades concedidas entre as que suas capacidades habilitam.</p>}
+              {isCrossNucleus && <p className="mt-3 text-xs text-violet-800">Depois da maturidade total do Núcleo Técnico, este marco depende da cobertura dos demais núcleos.</p>}
+            </div>
             <div>
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><div><p className="text-xs font-semibold uppercase text-zinc-500">Capacidades disponíveis para este cargo</p><p className="mt-1 text-xs text-zinc-600">{step.capabilityTarget} pontos são exigidos. As insígnias acesas já foram consolidadas; marque um nível apagado para simular a próxima evolução.</p></div><span className="text-xs font-semibold text-sky-800">{readiness.certifiedCapabilityCount} consolidadas</span></div>
               <CapabilityScenarioGrid requirements={scenarioCapabilities} certifiedLevels={certifiedLevels} scenarioLevels={scenarioLevels} scenarioChanges={scenarioChanges} onSelect={setScenarioLevel} />
               {readiness.missingCapabilityPoints > 0 && <p className="mt-3 text-xs text-amber-800">Faltam {readiness.missingCapabilityPoints} pontos no cenário para este cargo.</p>}
-            </div>
-            <div className="border bg-zinc-50 p-3">
-              <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-zinc-500">Responsabilidades disponíveis</p><span className="text-xs font-semibold text-violet-800">até {readiness.responsibilityTarget}</span></div>
-              <p className="mt-1 text-xs text-zinc-600">Clique em uma responsabilidade para marcar, no cenário, as capacidades e os níveis que ela exige.</p>
-              <div className="mt-3 max-h-72 space-y-1 overflow-y-auto pr-1">{responsibilityOptions.map((item) => <button key={item.responsibility.sourceId} type="button" onClick={() => simulateResponsibility(item)} title={`Simular requisitos de ${item.responsibility.title}`} className={`block w-full border px-2 py-1.5 text-left text-[11px] font-medium ${item.unmet.length === 0 ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-zinc-200 bg-white text-zinc-700 hover:border-sky-400 hover:bg-sky-50"}`}><span>{item.responsibility.title}</span><span className="mt-0.5 block text-[10px] font-normal opacity-80">{item.unmet.length === 0 ? "Habilitada no cenário" : `${item.unmet.length} requisito(s) para simular`}</span></button>)}</div>
-              {readiness.allResponsibilityCandidates.length > readiness.responsibilityTarget && <p className="mt-3 text-xs text-zinc-600">{readiness.allResponsibilityCandidates.length - readiness.responsibilityTarget} caminhos já habilitados ficam para os próximos marcos.</p>}
-              {readiness.missingResponsibilityCount > 0 && <p className="mt-3 text-xs text-amber-800">Faltam {readiness.missingResponsibilityCount} responsabilidades concedidas entre as que suas capacidades habilitam.</p>}
-              {isCrossNucleus && <p className="mt-3 text-xs text-violet-800">Depois da maturidade total do Núcleo Técnico, este marco depende da cobertura dos demais núcleos.</p>}
             </div>
           </div>
         </article>;
