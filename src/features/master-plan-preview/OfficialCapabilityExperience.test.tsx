@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
 import { OfficialCapabilityExperience } from "./OfficialCapabilityExperience";
@@ -93,5 +93,18 @@ describe("official capability library", () => {
     open("capacitacoes", "T01", "retorno", "administrador");
     await waitFor(() => expect(screen.getByText("Aguardando avaliação · 0")).toBeTruthy());
     expect(fetchRequests).toHaveBeenCalledWith("admin-1", true);
+  });
+
+  it("uses level buttons in the team training panel and shows the capability identity", async () => {
+    fixture.profile = { id: "admin-1", name: "Patrick", role: "admin" };
+    const onPlanChange = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacitacoes" code="E01" tab="mapa" mode="administrador" go={vi.fn()} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} onCapabilityPlanChange={onPlanChange} onDeactivateCollaborator={async () => {}} /></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Painel de capacitação" })).toBeTruthy());
+    const controls = screen.getByRole("group", { name: /Capacitação planejada de Engenharia de Sistemas de Saneamento para Gabi/ });
+    fireEvent.click(within(controls).getByRole("button", { name: "Autônomo" }));
+    expect(onPlanChange).toHaveBeenCalledWith("E01", "collaborator-1", 2);
+    expect(screen.getAllByText("Finalidade:").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Desativar Gabi" })).toBeTruthy();
   });
 });

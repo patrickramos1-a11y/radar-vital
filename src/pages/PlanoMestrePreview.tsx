@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { CapabilityExperience } from "@/features/master-plan-preview/CapabilityExperience";
 import { OfficialCapabilityExperience } from "@/features/master-plan-preview/OfficialCapabilityExperience";
@@ -36,7 +37,7 @@ import {
   parseMasterPlanDraft, saveMasterPlanDraft,
   type MasterPlanDraft, type RequestPlan,
 } from "@/features/master-plan-preview/storage";
-import { fetchRemoteMasterPlanDraft, updateRemoteMasterPlanDraft } from "@/features/master-plan-preview/remote";
+import { deactivateMasterPlanCollaborator, fetchRemoteMasterPlanDraft, updateRemoteMasterPlanDraft } from "@/features/master-plan-preview/remote";
 import { integrateSourceLibrary, sourceResponsibilities } from "@/features/master-plan-preview/libraryIntegration";
 
 type MainView = "empresa" | "nucleos" | "setores" | "responsabilidades" | "capacidades" | "capacitacoes" | "solicitacoes" | "cronologia" | "jornada" | "cobertura";
@@ -116,6 +117,7 @@ function RequestKanban({ context, requests, requestPlans, go }: { context: Maste
 
 export default function PlanoMestrePreview() {
   const queryClient = useQueryClient();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const rawView = params.get("view") ?? "empresa";
@@ -311,9 +313,37 @@ export default function PlanoMestrePreview() {
   };
 
   const officialReady = officialLibrary?.capabilities?.length === 28 && officialLibrary?.responsibilities?.length === 56;
+  const deactivateCollaborator = async (collaboratorId: string) => {
+    if (!currentUser || currentUser.role !== "admin") {
+      toast.error("Selecione o perfil Patrick para desativar um colaborador.");
+      return;
+    }
+    if (currentUser.id === collaboratorId) {
+      toast.error("O perfil administrador não pode ser desativado por este painel.");
+      return;
+    }
+    const saved = await updateWorkspace((current) => ({
+      ...current,
+      capabilityPlans: Object.fromEntries(Object.entries(current.capabilityPlans).map(([code, assignments]) => [code, Object.fromEntries(Object.entries(assignments).filter(([personId]) => personId !== collaboratorId))])),
+      claims: current.claims.filter((claim) => claim.personId !== collaboratorId),
+      trainingRequests: current.trainingRequests.filter((request) => request.personId !== collaboratorId),
+      responsibilities: current.responsibilities.map((responsibility) => ({ ...responsibility, holderId: responsibility.holderId === collaboratorId ? null : responsibility.holderId, substituteId: responsibility.substituteId === collaboratorId ? null : responsibility.substituteId })),
+      responsibilityOverrides: Object.fromEntries(Object.entries(current.responsibilityOverrides).map(([responsibilityId, override]) => [responsibilityId, { ...override, holderId: override.holderId === collaboratorId ? null : override.holderId, substituteId: override.substituteId === collaboratorId ? null : override.substituteId }])),
+      requestPlans: Object.fromEntries(Object.entries(current.requestPlans).map(([requestId, plan]) => [requestId, plan.assigneeId === collaboratorId ? { ...plan, assigneeId: "" } : plan])),
+    }));
+    if (!saved) return;
+    try {
+      await deactivateMasterPlanCollaborator(currentUser.id, collaboratorId);
+      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ["master-plan-requests"] });
+      toast.success("Colaborador desativado. Planos e responsabilidades vinculadas voltaram a ficar pendentes.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Não foi possível desativar o colaborador.");
+    }
+  };
   const page = isDemoView
     ? officialReady
-      ? <OfficialCapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes"} code={id} tab={tab} mode={mode} go={go} library={officialLibrary} people={data?.collaborators ?? []} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} capabilityPlans={workspace.capabilityPlans ?? {}} onCapabilityPlanChange={(capabilityCode, collaboratorId, level) => { void updateWorkspace((current) => ({ ...current, capabilityPlans: { ...current.capabilityPlans, [capabilityCode]: { ...current.capabilityPlans?.[capabilityCode], [collaboratorId]: level } } })); }} />
+      ? <OfficialCapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes"} code={id} tab={tab} mode={mode} go={go} library={officialLibrary} people={data?.collaborators ?? []} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} capabilityPlans={workspace.capabilityPlans ?? {}} onCapabilityPlanChange={(capabilityCode, collaboratorId, level) => { void updateWorkspace((current) => ({ ...current, capabilityPlans: { ...current.capabilityPlans, [capabilityCode]: { ...current.capabilityPlans?.[capabilityCode], [collaboratorId]: level } } })); }} onDeactivateCollaborator={deactivateCollaborator} />
       : <CapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes"} code={id} tab={tab} mode={mode} go={go} store={demoStore} setStore={setDemoStore} registeredCapabilities={capabilities} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} people={data?.collaborators ?? []} capabilityPlans={workspace.capabilityPlans ?? {}} onCapabilityPlanChange={(capabilityCode, collaboratorId, level) => { void updateWorkspace((current) => ({ ...current, capabilityPlans: { ...current.capabilityPlans, [capabilityCode]: { ...current.capabilityPlans?.[capabilityCode], [collaboratorId]: level } } })); }} />
     : data && remoteDraft ? <WorkspaceContent context={data} view={view} id={id} tab={tab} go={go} openDraft={setDraft} nucleiOf={nucleusOf} setNucleus={(sectorId, nucleusId) => { void updateWorkspace((value) => ({ ...value, nucleusOverrides: { ...value.nucleusOverrides, [sectorId]: nucleusId } })); }} nucleusThresholds={workspace.nucleusThresholds} setNucleusThreshold={(nucleusId, threshold) => { void updateWorkspace((value) => ({ ...value, nucleusThresholds: { ...value.nucleusThresholds, [nucleusId]: threshold } })); }} capabilities={capabilities} responsibilities={responsibilities} requests={requests} requestPlans={workspace.requestPlans} setResponsibility={(responsibilityId, patch) => { void updateWorkspace((value) => ({ ...value, responsibilityOverrides: { ...value.responsibilityOverrides, [responsibilityId]: { ...value.responsibilityOverrides[responsibilityId], ...patch } } })); }} trainingRequests={workspace.trainingRequests} claims={workspace.claims} personId={personId} setPersonId={setSelectedPerson} /> : null;
   const navigationTools = <DropdownMenu>

@@ -35,3 +35,14 @@ export async function updateRemoteMasterPlanDraft(
   }
   throw new Error("Outro usuário atualizou o Plano Mestre ao mesmo tempo. Atualize e tente novamente.");
 }
+
+export async function deactivateMasterPlanCollaborator(
+  actorId: string,
+  collaboratorId: string,
+): Promise<void> {
+  const { error } = await client.rpc("master_plan_deactivate_collaborator", {
+    p_actor_id: actorId,
+    p_collaborator_id: collaboratorId,
+  });
+  if (error) throw new Error(error.message);
+}

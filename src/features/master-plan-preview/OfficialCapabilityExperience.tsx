@@ -24,7 +24,7 @@ import "./capability-experience.css";
 
 type Screen = "capacidades" | "capacidade" | "capacitacoes";
 type Go = (view: Screen | "responsabilidade", id?: string, tab?: string, mode?: string) => void;
-type Props = { view: Screen; code: string; tab: string; mode: string; go: Go; library: Library; people: Array<{ id: string; name: string }>; mappedResponsibilities?: PreviewResponsibility[]; sectors?: Unit[]; openSector?: (sectorId: string) => void; capabilityPlans?: Record<string, Record<string, 0 | CapabilityLevel>>; onCapabilityPlanChange?: (capabilityCode: string, collaboratorId: string, level: 0 | CapabilityLevel) => void };
+type Props = { view: Screen; code: string; tab: string; mode: string; go: Go; library: Library; people: Array<{ id: string; name: string }>; mappedResponsibilities?: PreviewResponsibility[]; sectors?: Unit[]; openSector?: (sectorId: string) => void; capabilityPlans?: Record<string, Record<string, 0 | CapabilityLevel>>; onCapabilityPlanChange?: (capabilityCode: string, collaboratorId: string, level: 0 | CapabilityLevel) => void; onDeactivateCollaborator?: (collaboratorId: string) => Promise<void> };
 const kinds = ["Todas", "Transversal", "Funcional", "Especializada"];
 const answerLabels = ["Preciso de ajuda", "Com apoio", "Sozinho", "Consigo ensinar"];
 const emptyResponse = (): CriterionResponse => ({ complete: false, explanation: "", evidenceName: "", reference: "", files: [] });
@@ -45,7 +45,7 @@ function EvidenceReference({ name, location }: { name?: string; location: string
   return <p className="mt-2 break-all text-xs text-zinc-600"><strong>{name?.trim() || "Evidência registrada"}:</strong> {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-teal-700 underline">{trimmed}</a> : trimmed}</p>;
 }
 
-export function OfficialCapabilityExperience({ view, code, tab, mode, go, library, people, mappedResponsibilities = [], sectors = [], openSector = () => {}, capabilityPlans = {}, onCapabilityPlanChange = () => {} }: Props) {
+export function OfficialCapabilityExperience({ view, code, tab, mode, go, library, people, mappedResponsibilities = [], sectors = [], openSector = () => {}, capabilityPlans = {}, onCapabilityPlanChange = () => {}, onDeactivateCollaborator }: Props) {
   const { currentUser, loading } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const assessments = useQuery({ queryKey: ["master-plan-assessments", currentUser?.id], queryFn: () => fetchAssessments(currentUser!.id), enabled: !!currentUser });
@@ -57,12 +57,11 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   const certifiedLevels = new Map(library.capabilities.map((capability) => [capability.code, ownRequests.filter((request) => request.capability_code === capability.code && request.status === "approved").reduce((level, request) => Math.max(level, request.target_level), 0)] as const).filter(([, level]) => level > 0));
   const selectedAssessments = assessments.data?.filter((assessment) => assessment.capability_code === selected?.code && assessment.collaborator_id === currentUser?.id) ?? [];
   return <div className="cap-experience cap-themed relative min-w-0" style={selected ? capabilityVisualStyle(selected.code) : undefined} data-testid="official-capability-experience">
-    <div className="cap-demo-flag"><ShieldCheck className="h-4 w-4 shrink-0" /><span><strong>Biblioteca no banco.</strong> {library.capabilities.length} capacidades e {library.responsibilities.length} responsabilidades da planilha. {mappedResponsibilities.filter((item) => item.id.startsWith("resp-")).length} vínculo(s) com setores salvo(s) no Plano Mestre.</span></div>
     {view === "capacidades" && <Catalog library={library} go={go} />}
     {view !== "capacidades" && !selected && <div className="cap-empty">Capacidade não encontrada.<Button variant="outline" onClick={() => go("capacidades")}>Voltar ao catálogo</Button></div>}
     {view === "capacidade" && selected && <Sheet item={selected} library={library} approved={approved} certifiedLevels={certifiedLevels} assessmentLevel={selectedAssessments[0]?.indicated_level} go={go} tab={tab} mappedResponsibilities={mappedResponsibilities} sectors={sectors} openSector={openSector} />}
     {view === "capacitacoes" && selected && <>
-      {mode === "administrador" && isAdmin && tab === "mapa" ? <CapabilityTeamMatrix library={library} people={people} plans={capabilityPlans} onPlanChange={onCapabilityPlanChange} /> : <>
+      {mode === "administrador" && isAdmin && tab === "mapa" ? <CapabilityTeamMatrix library={library} people={people} plans={capabilityPlans} onPlanChange={onCapabilityPlanChange} onDeactivatePerson={onDeactivateCollaborator} /> : <>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><button type="button" onClick={() => go("capacidade", selected.code)} className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700"><ArrowLeft className="h-4 w-4" /> Voltar à ficha</button>{currentUser && <span className="text-xs text-zinc-600">Perfil atual: <strong>{currentUser.name}</strong></span>}</div>
       <Heading eyebrow={`Jornada / ${selected.code}`} title={mode === "administrador" && isAdmin ? "Avaliação de capacitações" : `Capacitação · ${selected.title}`}>{selected.summary}</Heading>
       {isAdmin && <div className="mb-4 flex flex-wrap gap-1 border-b pb-3" role="group" aria-label="Visão de capacitações"><button type="button" onClick={() => go("capacitacoes", selected.code, "autoavaliacao", "colaborador")} className="cap-mode">Colaborador</button><button type="button" onClick={() => go("capacitacoes", selected.code, "retorno", "administrador")} className={`cap-mode ${mode === "administrador" ? "cap-mode-active" : ""}`}>Avaliar pedidos</button><button type="button" onClick={() => go("capacitacoes", selected.code, "mapa", "administrador")} className="cap-mode">Mapa da equipe</button></div>}
