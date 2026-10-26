@@ -11,6 +11,7 @@ const fixture = vi.hoisted(() => ({
   profile: { id: "collaborator-1", name: "Gabi", role: "colaborador" },
   requests: [] as Array<Record<string, unknown>>,
   certifications: [] as Array<Record<string, unknown>>,
+  trainingRequests: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("@/contexts/AuthContext", () => ({
@@ -20,7 +21,7 @@ vi.mock("./journeyRemote", () => ({
   fetchAssessments: vi.fn(async () => []),
   fetchRequests: vi.fn(async () => fixture.requests),
   fetchTeamCertifications: vi.fn(async () => fixture.certifications),
-  fetchTeamTrainingRequests: vi.fn(async () => []),
+  fetchTeamTrainingRequests: vi.fn(async () => fixture.trainingRequests),
   applyTeamCertifications: vi.fn(async () => undefined),
   requestTeamTraining: vi.fn(async () => ({ status: "requested" })),
   createRemoteAssessment: vi.fn(async () => ({ id: "assessment-1" })),
@@ -39,7 +40,7 @@ function open(view: "capacidades" | "capacidade" | "capacitacoes", code = "", ta
   return go;
 }
 
-afterEach(() => { cleanup(); fixture.profile = { id: "collaborator-1", name: "Gabi", role: "colaborador" }; fixture.requests = []; fixture.certifications = []; });
+afterEach(() => { cleanup(); fixture.profile = { id: "collaborator-1", name: "Gabi", role: "colaborador" }; fixture.requests = []; fixture.certifications = []; fixture.trainingRequests = []; });
 
 describe("official capability library", () => {
   it("shows all 28 published cards and filters by the source title", () => {
@@ -94,6 +95,25 @@ describe("official capability library", () => {
     expect(screen.getByRole("heading", { name: "Certificações de Gabi" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /T01.*Gestão de Informações e Acervo/ }));
     expect(go).toHaveBeenCalledWith("capacidade", "T01");
+  });
+
+  it("opens training in development from the personal journey summary", async () => {
+    fixture.trainingRequests = [{ collaborator_id: "collaborator-1", capability_code: "T01", target_level: 1, status: "requested", requested_by: "admin-1", requested_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
+    const go = open("capacitacoes");
+    const summary = await screen.findByRole("button", { name: /Em desenvolvimento.*1.*capacitações solicitadas/ });
+    fireEvent.click(summary);
+    const developmentPanel = screen.getByRole("heading", { name: "Capacitações em desenvolvimento" }).closest("section");
+    expect(developmentPanel).toBeTruthy();
+    fireEvent.click(within(developmentPanel!).getByRole("button", { name: /T01.*Gestão de Informações e Acervo/ }));
+    expect(go).toHaveBeenCalledWith("capacitacoes", "T01", "criterios", "colaborador");
+  });
+
+  it("filters the full map by the missing next level", async () => {
+    fixture.certifications = [{ collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
+    open("capacidades");
+    fireEvent.click(screen.getByRole("button", { name: "Falta Multiplicador" }));
+    await waitFor(() => expect(screen.getByText("1 de 28")).toBeTruthy());
+    expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ })).toBeTruthy();
   });
 
   it("does not offer the administrative queue to a collaborator", async () => {
