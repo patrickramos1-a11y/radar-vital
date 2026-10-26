@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, CircleX, FilterX, Save, Users, UserX } from "lucide-react";
+import { CheckCircle2, CircleX, FilterX, GraduationCap, Save, Users, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { capabilityLevelNames, type CapabilityLevel } from "./capabilityJourney";
 import { capabilityCoverPath, capabilityVisual } from "./capabilityVisuals";
-import { fetchRequests, fetchTeamCertifications, type Library, type TeamCertificationUpdate } from "./journeyRemote";
+import { fetchRequests, fetchTeamCertifications, fetchTeamTrainingRequests, type Library, type TeamCertificationUpdate } from "./journeyRemote";
 import { approvedLevels } from "./responsibilityEligibility";
 
 type PlanLevel = 0 | CapabilityLevel;
@@ -15,6 +15,7 @@ type Props = {
   people: Array<{ id: string; name: string }>;
   plans: Record<string, Record<string, PlanLevel>>;
   onApplyUpdates: (updates: TeamCertificationUpdate[]) => Promise<void>;
+  onRequestTraining: (collaboratorId: string, capabilityCode: string, level: CapabilityLevel) => Promise<void>;
   onDeactivatePerson?: (collaboratorId: string) => Promise<void>;
 };
 
@@ -26,16 +27,18 @@ const levelStyles: Record<CapabilityLevel, { idle: string; active: string }> = {
 
 const assignmentKey = (capabilityCode: string, collaboratorId: string) => `${capabilityCode}:${collaboratorId}`;
 
-export function CapabilityTeamMatrix({ library, people, plans, onApplyUpdates, onDeactivatePerson }: Props) {
+export function CapabilityTeamMatrix({ library, people, plans, onApplyUpdates, onRequestTraining, onDeactivatePerson }: Props) {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const requests = useQuery({ queryKey: ["master-plan-requests", currentUser?.id, true], queryFn: () => fetchRequests(currentUser!.id, true), enabled: !!currentUser, retry: false });
   const teamCertifications = useQuery({ queryKey: ["master-plan-team-certifications"], queryFn: fetchTeamCertifications, enabled: !!currentUser, retry: false });
+  const teamTrainingRequests = useQuery({ queryKey: ["master-plan-team-training-requests"], queryFn: fetchTeamTrainingRequests, enabled: !!currentUser, retry: false });
   const [query, setQuery] = useState("");
   const [nature, setNature] = useState("Todas");
   const [filter, setFilter] = useState<"todas" | "planejadas" | "sem-certificacao">("todas");
   const [draft, setDraft] = useState<Record<string, PlanLevel>>({});
   const [applying, setApplying] = useState(false);
+  const [requestingKey, setRequestingKey] = useState("");
   const [deactivatingId, setDeactivatingId] = useState("");
   const approvedByPerson = useMemo(() => new Map(people.map((person) => [person.id, approvedLevels(requests.data ?? [], person.id, teamCertifications.data ?? [])])), [people, requests.data, teamCertifications.data]);
   const selectedLevel = (capabilityCode: string, collaboratorId: string): PlanLevel => {
@@ -84,9 +87,23 @@ export function CapabilityTeamMatrix({ library, people, plans, onApplyUpdates, o
     }
   };
 
+  const requestTraining = async (collaboratorId: string, capabilityCode: string, level: CapabilityLevel) => {
+    const key = assignmentKey(capabilityCode, collaboratorId);
+    setRequestingKey(key);
+    try {
+      await onRequestTraining(collaboratorId, capabilityCode, level);
+      await queryClient.invalidateQueries({ queryKey: ["master-plan-team-training-requests"] });
+      toast.success("Capacitação solicitada para o colaborador.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a capacitação.");
+    } finally {
+      setRequestingKey("");
+    }
+  };
+
   if (!currentUser) return <div className="cap-empty">Selecione um perfil de administrador para montar o mapa da equipe.</div>;
-  if (requests.isLoading || teamCertifications.isLoading) return <div className="cap-empty">Carregando certificações...</div>;
-  if (requests.error || teamCertifications.error) return <div className="cap-empty">Não foi possível carregar as certificações. O painel de capacitação fica bloqueado até a consulta voltar a funcionar.</div>;
+  if (requests.isLoading || teamCertifications.isLoading || teamTrainingRequests.isLoading) return <div className="cap-empty">Carregando certificações...</div>;
+  if (requests.error || teamCertifications.error || teamTrainingRequests.error) return <div className="cap-empty">Não foi possível carregar as certificações. O painel de capacitação fica bloqueado até a consulta voltar a funcionar.</div>;
   const natures = ["Todas", ...new Set(library.capabilities.map((item) => item.nature))];
 
   return <section>
@@ -113,7 +130,10 @@ export function CapabilityTeamMatrix({ library, people, plans, onApplyUpdates, o
           return <tr key={capability.code} className="border-b last:border-0"><th scope="row" className="sticky left-0 z-10 bg-white px-4 py-3 align-top"><div className="flex gap-3"><img src={capabilityCoverPath(capability.code)} alt="" className="h-16 w-24 shrink-0 border object-cover" loading="lazy" /><div className="min-w-0"><span className="block text-[11px] font-semibold text-teal-700">{capability.code} · {capability.nature}</span><span className="mt-1 block text-sm font-semibold">{capability.title}</span><p className="mt-1 text-xs leading-relaxed text-zinc-600">{capability.summary}</p><p className="mt-1 text-xs leading-relaxed text-zinc-700"><strong>Finalidade:</strong> {visual?.concept ?? capability.summary}</p></div></div></th>{people.map((person) => {
             const approved = approvedByPerson.get(person.id)?.get(capability.code) ?? 0;
             const selected = selectedLevel(capability.code, person.id);
-            return <td key={person.id} className="px-2 py-3 align-top"><p className={`text-xs ${approved ? "text-emerald-700" : "text-zinc-500"}`}>Certificado: <strong>{approved ? capabilityLevelNames[approved] : "Nenhum"}</strong></p><div className="mt-2" role="group" aria-label={`Capacitação planejada de ${capability.title} para ${person.name}`}><p className="mb-1 text-[11px] font-medium text-zinc-600">Nível a aplicar</p><div className="grid grid-cols-2 gap-1">{([1, 2, 3] as CapabilityLevel[]).map((level) => <button key={level} type="button" aria-pressed={selected === level} onClick={() => setDraft((current) => ({ ...current, [assignmentKey(capability.code, person.id)]: level }))} className={`min-h-7 border px-1 text-[10px] font-semibold leading-tight ${selected === level ? levelStyles[level].active : levelStyles[level].idle} ${level === 3 ? "col-span-2" : ""}`}>{capabilityLevelNames[level]}</button>)}</div>{selected > 0 && selected !== approved && <button type="button" onClick={() => setDraft((current) => ({ ...current, [assignmentKey(capability.code, person.id)]: approved as PlanLevel }))} aria-label={`Descartar mudança de ${capability.title} para ${person.name}`} title="Descartar mudança" className="mt-1 inline-flex h-6 w-6 items-center justify-center text-zinc-500 hover:text-rose-700"><CircleX className="h-4 w-4" /></button>}</div></td>;
+            const key = assignmentKey(capability.code, person.id);
+            const trainingRequest = (teamTrainingRequests.data ?? []).find((request) => request.collaborator_id === person.id && request.capability_code === capability.code);
+            const needsInitialJourney = approved === 0 && selected > 0;
+            return <td key={person.id} className="px-2 py-3 align-top"><p className={`text-xs ${approved ? "text-emerald-700" : "text-zinc-500"}`}>Certificado: <strong>{approved ? capabilityLevelNames[approved] : "Nenhum"}</strong></p><div className="mt-2" role="group" aria-label={`Capacitação planejada de ${capability.title} para ${person.name}`}><p className="mb-1 text-[11px] font-medium text-zinc-600">Nível a aplicar</p><div className="grid grid-cols-2 gap-1">{([1, 2, 3] as CapabilityLevel[]).map((level) => <button key={level} type="button" aria-pressed={selected === level} onClick={() => setDraft((current) => ({ ...current, [key]: level }))} className={`min-h-7 border px-1 text-[10px] font-semibold leading-tight ${selected === level ? levelStyles[level].active : levelStyles[level].idle} ${level === 3 ? "col-span-2" : ""}`}>{capabilityLevelNames[level]}</button>)}</div>{needsInitialJourney && <button type="button" disabled={requestingKey === key || trainingRequest?.status === "requested" || trainingRequest?.status === "started"} onClick={() => void requestTraining(person.id, capability.code, selected as CapabilityLevel)} className="mt-2 flex min-h-7 w-full items-center justify-center gap-1 border border-teal-600 bg-teal-50 px-1 text-[10px] font-semibold text-teal-800 hover:bg-teal-100 disabled:cursor-default disabled:border-teal-200 disabled:text-teal-700"><GraduationCap className="h-3.5 w-3.5" />{trainingRequest?.status === "requested" || trainingRequest?.status === "started" ? "Capacitação solicitada" : requestingKey === key ? "Solicitando..." : "Solicitar capacitação"}</button>}{selected > 0 && selected !== approved && <button type="button" onClick={() => setDraft((current) => ({ ...current, [key]: approved as PlanLevel }))} aria-label={`Descartar mudança de ${capability.title} para ${person.name}`} title="Descartar mudança" className="mt-1 inline-flex h-6 w-6 items-center justify-center text-zinc-500 hover:text-rose-700"><CircleX className="h-4 w-4" /></button>}</div></td>;
           })}</tr>;
         })}</tbody>
       </table>

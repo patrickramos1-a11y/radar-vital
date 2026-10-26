@@ -30,6 +30,15 @@ export type TeamCertificationUpdate = {
   capabilityCode: string;
   level: CapabilityLevel;
 };
+export type TeamTrainingRequestRow = {
+  collaborator_id: string;
+  capability_code: string;
+  target_level: CapabilityLevel;
+  status: "requested" | "started" | "completed" | "cancelled";
+  requested_by: string;
+  requested_at: string;
+  updated_at: string;
+};
 
 function result<T>(data: T | null, error: { message: string } | null): T {
   if (error) throw new Error(error.message);
@@ -98,6 +107,23 @@ export async function applyTeamCertifications(actorId: string, updates: TeamCert
     p_updates: updates,
   });
   if (error) throw new Error(error.message);
+}
+
+export async function fetchTeamTrainingRequests(): Promise<TeamTrainingRequestRow[]> {
+  const { data, error } = await journeySupabase.from("master_plan_team_training_requests")
+    .select("collaborator_id,capability_code,target_level,status,requested_by,requested_at,updated_at")
+    .order("updated_at", { ascending: false });
+  return result(data, error) as TeamTrainingRequestRow[];
+}
+
+export async function requestTeamTraining(actorId: string, collaboratorId: string, capabilityCode: string, level: CapabilityLevel): Promise<TeamTrainingRequestRow> {
+  const { data, error } = await journeySupabase.rpc("master_plan_request_team_training", {
+    p_actor_id: actorId,
+    p_collaborator_id: collaboratorId,
+    p_capability_code: capabilityCode,
+    p_target_level: level,
+  });
+  return result(data, error) as TeamTrainingRequestRow;
 }
 
 export async function saveRequest(collaboratorId: string, id: string | null, code: string, level: CapabilityLevel,

@@ -17,7 +17,7 @@ import { approvedLevels } from "./responsibilityEligibility";
 import type { PreviewResponsibility } from "./model";
 import type { Unit } from "./data";
 import {
-  applyTeamCertifications, createRemoteAssessment, fetchAssessments, fetchRequests, fetchTeamCertifications,
+  applyTeamCertifications, createRemoteAssessment, fetchAssessments, fetchRequests, fetchTeamCertifications, requestTeamTraining,
   reviewRequest, saveRequest,
   type Library, type RequestRow,
 } from "./journeyRemote";
@@ -63,7 +63,7 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
     {view !== "capacidades" && !selected && <div className="cap-empty">Capacidade não encontrada.<Button variant="outline" onClick={() => go("capacidades")}>Voltar ao catálogo</Button></div>}
     {view === "capacidade" && selected && <Sheet item={selected} library={library} approved={approved} certifiedLevels={certifiedLevels} assessmentLevel={selectedAssessments[0]?.indicated_level} go={go} tab={tab} mappedResponsibilities={mappedResponsibilities} sectors={sectors} openSector={openSector} />}
     {view === "capacitacoes" && selected && <>
-      {mode === "administrador" && isAdmin && tab === "mapa" ? <CapabilityTeamMatrix library={library} people={people} plans={capabilityPlans} onApplyUpdates={(updates) => applyTeamCertifications(currentUser!.id, updates)} onDeactivatePerson={onDeactivateCollaborator} /> : <>
+      {mode === "administrador" && isAdmin && tab === "mapa" ? <CapabilityTeamMatrix library={library} people={people} plans={capabilityPlans} onApplyUpdates={(updates) => applyTeamCertifications(currentUser!.id, updates)} onRequestTraining={(collaboratorId, capabilityCode, level) => requestTeamTraining(currentUser!.id, collaboratorId, capabilityCode, level)} onDeactivatePerson={onDeactivateCollaborator} /> : <>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><button type="button" onClick={() => go("capacidade", selected.code)} className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700"><ArrowLeft className="h-4 w-4" /> Voltar à ficha</button>{currentUser && <span className="text-xs text-zinc-600">Perfil atual: <strong>{currentUser.name}</strong></span>}</div>
       <Heading eyebrow={`Jornada / ${selected.code}`} title={mode === "administrador" && isAdmin ? "Avaliação de capacitações" : `Capacitação · ${selected.title}`}>{selected.summary}</Heading>
       {isAdmin && <div className="mb-4 flex flex-wrap gap-1 border-b pb-3" role="group" aria-label="Visão de capacitações"><button type="button" onClick={() => go("capacitacoes", selected.code, "autoavaliacao", "colaborador")} className="cap-mode">Colaborador</button><button type="button" onClick={() => go("capacitacoes", selected.code, "retorno", "administrador")} className={`cap-mode ${mode === "administrador" ? "cap-mode-active" : ""}`}>Avaliar pedidos</button><button type="button" onClick={() => go("capacitacoes", selected.code, "mapa", "administrador")} className="cap-mode">Mapa da equipe</button></div>}

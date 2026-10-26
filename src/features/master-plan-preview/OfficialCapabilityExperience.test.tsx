@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
 import { OfficialCapabilityExperience } from "./OfficialCapabilityExperience";
-import { applyTeamCertifications, fetchAssessments, fetchRequests } from "./journeyRemote";
+import { applyTeamCertifications, fetchAssessments, fetchRequests, requestTeamTraining } from "./journeyRemote";
 import type { Library } from "./journeyRemote";
 
 const fixture = vi.hoisted(() => ({
@@ -19,7 +19,9 @@ vi.mock("./journeyRemote", () => ({
   fetchAssessments: vi.fn(async () => []),
   fetchRequests: vi.fn(async () => fixture.requests),
   fetchTeamCertifications: vi.fn(async () => []),
+  fetchTeamTrainingRequests: vi.fn(async () => []),
   applyTeamCertifications: vi.fn(async () => undefined),
+  requestTeamTraining: vi.fn(async () => ({ status: "requested" })),
   createRemoteAssessment: vi.fn(async () => ({ id: "assessment-1" })),
 }));
 
@@ -106,6 +108,8 @@ describe("official capability library", () => {
     expect(screen.getByRole("columnheader", { name: "Gabi" }).className).toContain("top-0");
     const controls = screen.getByRole("group", { name: /Capacitação planejada de Engenharia de Sistemas de Saneamento para Gabi/ });
     fireEvent.click(within(controls).getByRole("button", { name: "Autônomo" }));
+    fireEvent.click(within(controls).getByRole("button", { name: "Solicitar capacitação" }));
+    await waitFor(() => expect(requestTeamTraining).toHaveBeenCalledWith("admin-1", "collaborator-1", "E01", 2));
     expect(screen.getByRole("button", { name: "Aplicar atualizações" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Aplicar atualizações" }));
     await waitFor(() => expect(applyTeamCertifications).toHaveBeenCalledWith("admin-1", [{ collaboratorId: "collaborator-1", capabilityCode: "E01", level: 2 }]));
