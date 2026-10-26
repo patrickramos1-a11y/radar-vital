@@ -4,6 +4,8 @@ Atualizado em: 2026-10-25
 
 ## Entrega recente
 
+- Plano Mestre: release D-022 EM ANDAMENTO; fundacao e jornada autenticada em
+  preparacao, sem corte do acesso publico operacional.
 - Entregaveis semanais concluidos: implementacao concluida em 2026-10-21.
 - Prioridades concluidas geram entregas automaticamente; 37 entregaveis
   historicos abertos ou em andamento foram convertidos em prioridades.
