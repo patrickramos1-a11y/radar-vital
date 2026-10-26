@@ -45,8 +45,8 @@ export function CapabilityIdentityStrip({ item }: { item: CapabilityRecord }) {
   </div>;
 }
 
-export function CapabilityQueueThumb({ code }: { code: string }) {
-  return <img className="cap-queue-thumb" src={capabilityCoverPath(code)} alt="" width={1600} height={900} loading="lazy" decoding="async" />;
+export function CapabilityQueueThumb({ code, alt = "" }: { code: string; alt?: string }) {
+  return <img className="cap-queue-thumb" src={capabilityCoverPath(code)} alt={alt} width={1600} height={900} loading="lazy" decoding="async" />;
 }
 
 const stickerLevelCopy = ["Ainda não iniciada", "Assistido", "Autônomo", "Multiplicador"] as const;

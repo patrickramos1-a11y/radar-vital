@@ -106,11 +106,20 @@ describe("official capability library", () => {
   });
 
   it("shows the professional journey with capabilities, responsibilities, and career evolution", async () => {
-    fixture.certifications = [{ collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
+    fixture.certifications = [
+      { collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+      { collaborator_id: "collaborator-1", capability_code: "E01", certified_level: 1, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+    ];
     open("jornada");
-    await waitFor(() => expect(screen.getByText(/2 de 84 pontos/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/3 de 84 pontos/)).toBeTruthy());
+    const capability = screen.getByRole("button", { name: /E01.*Engenharia de Sistemas de Saneamento/ });
+    expect(within(capability).getByRole("img", { name: "Figurinha E01: Engenharia de Sistemas de Saneamento" })).toBeTruthy();
+    expect(within(capability).getByRole("img", { name: "Nível habilitado: Assistido" })).toBeTruthy();
+    expect(within(capability).getByRole("img", { name: "Nível a desenvolver: Autônomo" })).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "Responsabilidades" }));
-    expect(screen.getByRole("heading", { name: "Responsabilidades do escopo técnico" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Responsabilidades em evolução" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Concedidas (0)" }));
+    expect(screen.getByRole("heading", { name: "Responsabilidades concedidas" })).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "Evolução de cargo" }));
     expect(screen.getByRole("heading", { name: "Trilha de cargos e funções" })).toBeTruthy();
     expect(screen.getByText("Estratégico Júnior")).toBeTruthy();
@@ -130,6 +139,26 @@ describe("official capability library", () => {
     expect(go).toHaveBeenCalledWith("setor", "sector-1");
     fireEvent.click(within(row!).getByRole("button", { name: /T02 · Atual: Não certificado · Exigido: Multiplicador/ }));
     expect(go).toHaveBeenCalledWith("capacitacoes", "T02", "autoavaliacao", "colaborador");
+  });
+
+  it("separates granted responsibilities from the evolution queue", async () => {
+    fixture.responsibilityClaims = [{
+      id: "claim-1",
+      collaborator_id: "collaborator-1",
+      responsibility_source_id: "resp-413535e8de506f6a",
+      status: "approved",
+      requested_at: "2026-10-25T00:00:00.000Z",
+      decided_at: "2026-10-26T00:00:00.000Z",
+      decided_by: "admin-1",
+      decision_note: "Concedida",
+    }];
+    open("jornada");
+    await screen.findByRole("tab", { name: "Concedidas (1)" });
+    fireEvent.click(screen.getByRole("tab", { name: "Responsabilidades" }));
+    expect(screen.queryByText("SISRAMOS")).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "Concedidas (1)" }));
+    expect(screen.getByRole("heading", { name: "Responsabilidades concedidas" })).toBeTruthy();
+    expect(screen.getByText("SISRAMOS")).toBeTruthy();
   });
 
   it("shows the administrative architecture of careers and functions to Patrick", async () => {
