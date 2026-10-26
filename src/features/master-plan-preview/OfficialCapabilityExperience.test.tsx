@@ -37,7 +37,7 @@ const library: Library = {
   sourceSha256: source.source.sha256,
 };
 
-function open(view: "capacidades" | "capacidade" | "capacitacoes", code = "", tab = "visao", mode = "") {
+function open(view: "capacidades" | "capacidade" | "capacitacoes" | "jornada" | "cargos-funcoes", code = "", tab = "visao", mode = "") {
   const go = vi.fn();
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(<QueryClientProvider client={client}><OfficialCapabilityExperience view={view} code={code} tab={tab} mode={mode} go={go} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} /></QueryClientProvider>);
@@ -89,6 +89,27 @@ describe("official capability library", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Minhas capacitações" })).toBeTruthy());
     expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy();
     expect(screen.getAllByRole("button", { name: /Solicitar Assistido/ }).length).toBeGreaterThan(0);
+  });
+
+  it("shows the professional journey with capabilities, responsibilities, and career evolution", async () => {
+    fixture.certifications = [{ collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
+    open("jornada");
+    await waitFor(() => expect(screen.getByText(/2 de 84 pontos/)).toBeTruthy());
+    fireEvent.click(screen.getByRole("tab", { name: "Responsabilidades" }));
+    expect(screen.getByRole("heading", { name: "Responsabilidades do escopo técnico" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Evolução de cargo" }));
+    expect(screen.getByRole("heading", { name: "Trilha de cargos e funções" })).toBeTruthy();
+    expect(screen.getByText("Estratégico Júnior")).toBeTruthy();
+  });
+
+  it("shows the administrative architecture of careers and functions to Patrick", async () => {
+    fixture.profile = { id: "admin-1", name: "Patrick", role: "admin" };
+    fixture.certifications = [{ collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 3, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
+    open("cargos-funcoes");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Cargos e funções" })).toBeTruthy());
+    expect(screen.getByRole("heading", { name: "Arquitetura de cargos e funções" })).toBeTruthy();
+    expect(screen.getByText("Estratégia do Núcleo Técnico")).toBeTruthy();
+    expect(screen.getByRole("cell", { name: "Gabi" })).toBeTruthy();
   });
 
   it("opens the certified capabilities from the personal journey summary", async () => {

@@ -14,6 +14,7 @@ import { capabilitySummary, firstLetterUpper } from "./capabilityPresentationDat
 import { criterionPrompt, criterionResponsePrompt } from "./criterionGuidance";
 import { CapabilityTeamMatrix } from "./CapabilityTeamMatrix";
 import { ResponsibilityJourneyPanel } from "./ResponsibilityJourneyPanel";
+import { CareerJourneyExperience, CareerStructureExperience } from "./CareerJourneyExperience";
 import { approvedLevels } from "./responsibilityEligibility";
 import type { PreviewResponsibility } from "./model";
 import type { Unit } from "./data";
@@ -24,7 +25,7 @@ import {
 } from "./journeyRemote";
 import "./capability-experience.css";
 
-type Screen = "capacidades" | "capacidade" | "capacitacoes";
+type Screen = "capacidades" | "capacidade" | "capacitacoes" | "jornada" | "cargos-funcoes";
 type Go = (view: Screen | "responsabilidade", id?: string, tab?: string, mode?: string) => void;
 type Props = { view: Screen; code: string; tab: string; mode: string; go: Go; library: Library; people: Array<{ id: string; name: string }>; mappedResponsibilities?: PreviewResponsibility[]; sectors?: Unit[]; openSector?: (sectorId: string) => void; capabilityPlans?: Record<string, Record<string, 0 | CapabilityLevel>>; onDeactivateCollaborator?: (collaboratorId: string) => Promise<void> };
 const kinds = ["Todas", "Transversal", "Funcional", "Especializada"];
@@ -63,6 +64,10 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   const ownTrainingRequests = teamTrainingRequests.data?.filter((request) => request.collaborator_id === currentUser?.id && request.status !== "cancelled") ?? [];
   const approved = selected ? ownCertifiedLevels.get(selected.code) ?? 0 : 0;
   const certifiedLevels = new Map([...ownCertifiedLevels].filter(([, level]) => level > 0)) as Map<string, CapabilityLevel>;
+  const teamLevels = useMemo(() => new Map(people.map((person) => [
+    person.id,
+    approvedLevels(requests.data ?? [], person.id, teamCertifications.data ?? []),
+  ])), [people, requests.data, teamCertifications.data]);
   const selectedAssessments = assessments.data?.filter((assessment) => assessment.capability_code === selected?.code && assessment.collaborator_id === currentUser?.id) ?? [];
   const submitResponsibilityClaim = async (responsibilitySourceId: string) => {
     try {
@@ -86,6 +91,8 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   };
   return <div className="cap-experience cap-themed relative min-w-0" style={selected ? capabilityVisualStyle(selected.code) : undefined} data-testid="official-capability-experience">
     {view === "capacidades" && <Catalog library={library} go={go} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} />}
+    {view === "jornada" && (currentUser ? <CareerJourneyExperience library={library} certifiedLevels={ownCertifiedLevels} claims={responsibilityClaims.data ?? []} collaboratorId={currentUser.id} collaboratorName={currentUser.name} isAdmin={isAdmin} people={people} teamLevels={teamLevels} go={go} /> : <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar sua jornada.</div>)}
+    {view === "cargos-funcoes" && <CareerStructureExperience library={library} people={people} teamLevels={teamLevels} claims={responsibilityClaims.data ?? []} isAdmin={isAdmin} go={go} />}
     {view === "capacitacoes" && !selected && <TrainingOverview library={library} go={go} currentUser={currentUser} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} claims={responsibilityClaims.data ?? []} isAdmin={isAdmin} onRequestResponsibility={submitResponsibilityClaim} onReviewResponsibility={decideResponsibilityClaim} />}
     {view === "capacidade" && !selected && <div className="cap-empty">Capacidade não encontrada.<Button variant="outline" onClick={() => go("capacidades")}>Voltar ao catálogo</Button></div>}
     {view === "capacidade" && selected && <Sheet item={selected} library={library} approved={approved} certifiedLevels={certifiedLevels} assessmentLevel={selectedAssessments[0]?.indicated_level} go={go} tab={tab} mappedResponsibilities={mappedResponsibilities} sectors={sectors} openSector={openSector} />}

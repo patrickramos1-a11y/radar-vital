@@ -40,7 +40,7 @@ import {
 import { deactivateMasterPlanCollaborator, fetchRemoteMasterPlanDraft, updateRemoteMasterPlanDraft } from "@/features/master-plan-preview/remote";
 import { integrateSourceLibrary, sourceResponsibilities } from "@/features/master-plan-preview/libraryIntegration";
 
-type MainView = "empresa" | "nucleos" | "setores" | "responsabilidades" | "capacidades" | "capacitacoes" | "solicitacoes" | "cronologia" | "jornada" | "cobertura";
+type MainView = "empresa" | "nucleos" | "setores" | "responsabilidades" | "capacidades" | "capacitacoes" | "solicitacoes" | "cronologia" | "jornada" | "cargos-funcoes" | "cobertura";
 type DetailView = "nucleo" | "setor" | "responsabilidade" | "capacidade" | "pessoa" | "solicitacao";
 type View = MainView | DetailView;
 type DraftKind = "responsabilidade" | "capacidade" | "solicitacao" | "editarResponsabilidade" | "editarCapacidade" | "editarSolicitacao" | "capacitacao" | "assumir" | "planejamento";
@@ -57,6 +57,7 @@ const navItems: Array<{ view: MainView; label: string; icon: LucideIcon }> = [
   { view: "solicitacoes", label: "Solicitações", icon: ClipboardList },
   { view: "cronologia", label: "Cronologia", icon: CalendarDays },
   { view: "jornada", label: "Minha jornada", icon: Users },
+  { view: "cargos-funcoes", label: "Cargos e funções", icon: BriefcaseBusiness },
   { view: "cobertura", label: "Cobertura e sucessão", icon: GitBranch },
 ];
 type TrailItem = { view: View; id: string; tab: string };
@@ -127,7 +128,8 @@ export default function PlanoMestrePreview() {
   const mode = params.get("mode") ?? "";
   const isDemoView = (view === "capacidades" && mode !== "atual")
     || (view === "capacidade" && mode !== "atual" && /^[TFE]\d{2}$/.test(id))
-    || (view === "capacitacoes" && mode !== "atual");
+    || (view === "capacitacoes" && mode !== "atual")
+    || view === "jornada" || view === "cargos-funcoes";
   const [showDataInfo, setShowDataInfo] = useState(false);
   const [trail, setTrail] = useState<TrailItem[]>([]);
   const [draft, setDraft] = useState<Draft>(null);
@@ -343,7 +345,7 @@ export default function PlanoMestrePreview() {
   };
   const page = isDemoView
     ? officialReady
-      ? <OfficialCapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes"} code={id} tab={tab} mode={mode} go={go} library={officialLibrary} people={data?.collaborators ?? []} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} capabilityPlans={workspace.capabilityPlans ?? {}} onDeactivateCollaborator={deactivateCollaborator} />
+      ? <OfficialCapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes" | "jornada" | "cargos-funcoes"} code={id} tab={tab} mode={mode} go={go} library={officialLibrary} people={data?.collaborators ?? []} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} capabilityPlans={workspace.capabilityPlans ?? {}} onDeactivateCollaborator={deactivateCollaborator} />
       : <CapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes"} code={id} tab={tab} mode={mode} go={go} store={demoStore} setStore={setDemoStore} registeredCapabilities={capabilities} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} people={data?.collaborators ?? []} capabilityPlans={workspace.capabilityPlans ?? {}} onCapabilityPlanChange={(capabilityCode, collaboratorId, level) => { void updateWorkspace((current) => ({ ...current, capabilityPlans: { ...current.capabilityPlans, [capabilityCode]: { ...current.capabilityPlans?.[capabilityCode], [collaboratorId]: level } } })); }} />
     : data && remoteDraft ? <WorkspaceContent context={data} view={view} id={id} tab={tab} go={go} openDraft={setDraft} nucleiOf={nucleusOf} setNucleus={(sectorId, nucleusId) => { void updateWorkspace((value) => ({ ...value, nucleusOverrides: { ...value.nucleusOverrides, [sectorId]: nucleusId } })); }} nucleusThresholds={workspace.nucleusThresholds} setNucleusThreshold={(nucleusId, threshold) => { void updateWorkspace((value) => ({ ...value, nucleusThresholds: { ...value.nucleusThresholds, [nucleusId]: threshold } })); }} capabilities={capabilities} responsibilities={responsibilities} requests={requests} requestPlans={workspace.requestPlans} setResponsibility={(responsibilityId, patch) => { void updateWorkspace((value) => ({ ...value, responsibilityOverrides: { ...value.responsibilityOverrides, [responsibilityId]: { ...value.responsibilityOverrides[responsibilityId], ...patch } } })); }} trainingRequests={workspace.trainingRequests} claims={workspace.claims} personId={personId} setPersonId={setSelectedPerson} /> : null;
   const navigationTools = <DropdownMenu>

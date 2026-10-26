@@ -64,6 +64,7 @@ export const navigationModules: NavigationModule[] = [
       { key: "solicitacoes", label: "Solicitações", href: masterPlan("solicitacoes"), icon: ClipboardList },
       { key: "cronologia", label: "Cronologia", href: masterPlan("cronologia"), icon: CalendarDays },
       { key: "jornada", label: "Minha jornada", href: masterPlan("jornada"), icon: Users },
+      { key: "cargos-funcoes", label: "Cargos e funções", href: masterPlan("cargos-funcoes"), icon: BriefcaseBusiness },
       { key: "cobertura", label: "Cobertura", href: masterPlan("cobertura"), icon: GitBranch },
     ],
   },
