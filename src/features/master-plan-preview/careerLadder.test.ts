@@ -46,12 +46,11 @@ describe("Núcleo Técnico career ladder", () => {
     expect(technicalResponsibilities(library).every((responsibility) => responsibility.sourceSector !== "Fora do Núcleo Técnico")).toBe(true);
   });
 
-  it("limits Operador Júnior to its own PAC levels and responsibility paths", () => {
+  it("opens all Operador Júnior responsibility paths that do not require Multiplicador", () => {
     const capabilities = capabilitiesForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior");
-    const levelsByCapability = new Map(capabilities.map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
     expect(capabilities.every((requirement) => requirement.minimumLevel < 3)).toBe(true);
-    expect(responsibilitiesForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior")).toHaveLength(4);
-    expect(responsibilitiesForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior").every((responsibility) => responsibility.requiredCapabilities.every((requirement) => (levelsByCapability.get(requirement.capabilityCode) ?? 0) >= requirement.minimumLevel))).toBe(true);
+    expect(responsibilitiesForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior")).toHaveLength(41);
+    expect(responsibilitiesForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior").every((responsibility) => responsibility.requiredCapabilities.every((requirement) => requirement.minimumLevel < 3))).toBe(true);
   });
 
   it("requires both certified points and the three enabled responsibility grants for Operador Júnior", () => {

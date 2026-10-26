@@ -112,9 +112,13 @@ export function capabilitiesForCareerStep(library: Library, ladder: CareerLadder
   return pacForCareerStep(library, ladder, stepId);
 }
 
+export function maximumCapabilityLevelForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): CapabilityLevel {
+  return Math.max(...capabilitiesForCareerStep(library, ladder, stepId).map((requirement) => requirement.minimumLevel)) as CapabilityLevel;
+}
+
 export function responsibilitiesForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): SourceResponsibility[] {
-  const availableLevels = new Map(capabilitiesForCareerStep(library, ladder, stepId).map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
-  return technicalResponsibilities(library).filter((responsibility) => responsibility.requiredCapabilities.every((requirement) => (availableLevels.get(requirement.capabilityCode) ?? 0) >= requirement.minimumLevel));
+  const maximumLevel = maximumCapabilityLevelForCareerStep(library, ladder, stepId);
+  return technicalResponsibilities(library).filter((responsibility) => responsibility.requiredCapabilities.every((requirement) => requirement.minimumLevel <= maximumLevel));
 }
 
 function responsibilityCandidates(responsibilities: SourceResponsibility[], levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string): ResponsibilityReadiness[] {
