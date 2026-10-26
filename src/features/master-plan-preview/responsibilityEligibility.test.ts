@@ -17,4 +17,11 @@ describe("responsibility eligibility", () => {
     const requirements = responsibilityRequirements({ id: "resp-2", title: "Responsabilidade", sectorId: "setor", capabilityIds: ["T04"], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" }, undefined);
     expect(requirements).toEqual([{ capabilityCode: "T04", minimumLevel: 1 }]);
   });
+
+  it("never lets a lower direct certification reduce an approved level", () => {
+    const levels = approvedLevels([{ collaborator_id: "gabi", capability_code: "T01", target_level: 3, status: "approved" }] as never, "gabi", [
+      { collaborator_id: "gabi", capability_code: "T01", certified_level: 1 },
+    ] as never);
+    expect(levels.get("T01")).toBe(3);
+  });
 });

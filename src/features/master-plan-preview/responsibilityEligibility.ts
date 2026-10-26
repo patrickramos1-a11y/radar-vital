@@ -19,7 +19,7 @@ export function approvedLevels(requests: RequestRow[], collaboratorId: string, t
   }
   for (const certification of Array.isArray(teamCertifications) ? teamCertifications : []) {
     if (certification.collaborator_id !== collaboratorId) continue;
-    levels.set(certification.capability_code, certification.certified_level);
+    levels.set(certification.capability_code, Math.max(levels.get(certification.capability_code) ?? 0, certification.certified_level));
   }
   return levels;
 }

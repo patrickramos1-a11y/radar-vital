@@ -11,6 +11,7 @@ export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, traini
 }) {
   const visual = capabilityVisual(item.code);
   const nextLevel = certifiedLevel < 3 ? Math.max(1, certifiedLevel + 1) as CapabilityLevel : null;
+  const activeTrainingLevel = trainingLevel > certifiedLevel ? trainingLevel as CapabilityLevel : null;
   return <article className="cap-catalog-item group cap-themed" style={capabilityVisualStyle(item.code)}>
     <button type="button" className="block w-full text-left" onClick={onOpen}>
       <img className="cap-catalog-cover" src={capabilityCoverPath(item.code)} alt={`Capa ilustrada de ${item.code}: ${item.title}`} width={1600} height={900} loading="lazy" decoding="async" />
@@ -21,8 +22,8 @@ export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, traini
       </span>
     </button>
     <div className="border-t px-3 py-2 text-xs">
-      {certifiedLevel > 0 ? <p className="text-emerald-800">Possui: <strong>{capabilityLevelNames[certifiedLevel]}</strong>{nextLevel && <span className="text-zinc-600"> · Próximo: {capabilityLevelNames[nextLevel]}</span>}</p> : trainingLevel > 0 ? <p className="text-sky-800">Em desenvolvimento: <strong>{capabilityLevelNames[trainingLevel]}</strong></p> : <p className="text-amber-800">Falta iniciar: <strong>Assistido</strong></p>}
-      {nextLevel && onRequestLevel && <button type="button" onClick={() => onRequestLevel(nextLevel)} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-900"><ArrowRight className="h-3.5 w-3.5" /> Solicitar {capabilityLevelNames[nextLevel]}</button>}
+      {certifiedLevel > 0 ? <p className="text-emerald-800">Capacidade atual: <strong>{capabilityLevelNames[certifiedLevel]}</strong>{activeTrainingLevel ? <span className="text-sky-800"> · Em desenvolvimento: {capabilityLevelNames[activeTrainingLevel]}</span> : nextLevel && <span className="text-zinc-600"> · Próximo: {capabilityLevelNames[nextLevel]}</span>}</p> : trainingLevel > 0 ? <p className="text-sky-800">Em desenvolvimento: <strong>{capabilityLevelNames[trainingLevel]}</strong></p> : <p className="text-amber-800">Falta iniciar: <strong>Assistido</strong></p>}
+      {nextLevel && onRequestLevel && <button type="button" onClick={() => onRequestLevel(nextLevel)} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-900"><ArrowRight className="h-3.5 w-3.5" /> {activeTrainingLevel ? `Acompanhar ${capabilityLevelNames[activeTrainingLevel]}` : `Solicitar ${capabilityLevelNames[nextLevel]}`}</button>}
     </div>
   </article>;
 }
