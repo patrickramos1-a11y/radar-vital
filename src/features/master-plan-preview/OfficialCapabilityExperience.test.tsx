@@ -172,15 +172,29 @@ describe("official capability library", () => {
     const go = open("capacitacoes");
     await screen.findByRole("heading", { name: "Disponibilidade para assumir" });
     expect(screen.queryByRole("heading", { name: "Como ler uma responsabilidade" })).toBeNull();
-    expect(screen.getAllByText("Capacitações exigidas").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Capacitações necessárias e níveis").length).toBeGreaterThan(0);
     expect(screen.getByText("SISRAMOS")).toBeTruthy();
     await waitFor(() => expect(screen.getByText("7 de 7 pontos")).toBeTruthy());
     const row = screen.getByText("SISRAMOS").closest("article");
     expect(row).toBeTruthy();
-    fireEvent.click(within(row!).getByRole("button", { name: /Abrir responsabilidades do setor/ }));
-    expect(go).toHaveBeenCalledWith("responsabilidades");
+    fireEvent.click(within(row!).getByRole("button", { name: /Abrir responsabilidade Gestão Interna/ }));
+    expect(go).toHaveBeenCalledWith("responsabilidade", "resp-413535e8de506f6a");
     fireEvent.click(within(row!).getByRole("button", { name: "Solicitar responsabilidade" }));
     await waitFor(() => expect(requestResponsibility).toHaveBeenCalledWith("collaborator-1", "resp-413535e8de506f6a"));
+  });
+
+  it("opens the mapped sector from a responsibility row in the journey", async () => {
+    fixture.certifications = [
+      { collaborator_id: "collaborator-1", capability_code: "T02", certified_level: 3, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+      { collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+      { collaborator_id: "collaborator-1", capability_code: "T08", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+    ];
+    const go = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacitacoes" code="" tab="jornada" mode="" go={go} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} mappedResponsibilities={[{ id: "resp-413535e8de506f6a", title: "SISRAMOS", sectorId: "sector-1", capabilityIds: ["T01", "T02", "T08"], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" }]} /></QueryClientProvider>);
+    const row = await screen.findByText("SISRAMOS");
+    fireEvent.click(within(row.closest("article")!).getByRole("button", { name: "Abrir setor SISRAMOS" }));
+    expect(go).toHaveBeenCalledWith("setor", "sector-1");
   });
 
   it("shows the capabilities and responsibility impact behind the next steps summary", async () => {

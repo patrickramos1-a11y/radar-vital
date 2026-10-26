@@ -119,6 +119,18 @@ describe("Plano Mestre organizational preview", () => {
     expect(catalog().queryByText("Controle de Informações")).toBeNull();
   });
 
+  it("moves granted responsibilities from available items to the personal tab", () => {
+    remote.document = {
+      version: 1, savedAt: "2026-10-25T20:00:00Z", nucleusOverrides: {}, capabilities: [], requests: [], responsibilityOverrides: {}, requestPlans: {}, trainingRequests: [], claims: [], nucleusThresholds: {},
+      responsibilities: [{ id: "resp-concedida", title: "Conferir qualidade", sectorId: "projects", capabilityIds: [], sourceChallengeIds: [], holderId: "person-1", substituteId: null, status: "local" }],
+    };
+    openPreview("/universo-ramos/plano-mestre?view=responsabilidades&tab=minhas");
+    expect(main().getByRole("heading", { name: "Minhas responsabilidades" })).toBeTruthy();
+    expect(main().getByRole("button", { name: /Conferir qualidade/ })).toBeTruthy();
+    fireEvent.click(main().getByRole("tab", { name: "Disponíveis para mim" }));
+    expect(main().queryByRole("button", { name: /Conferir qualidade/ })).toBeNull();
+  });
+
   it("opens a source capability directly and returns to the 28-item catalog", () => {
     openPreview("/universo-ramos/plano-mestre?view=capacidade&id=F04");
     expect(main().getByTestId("capability-experience")).toBeTruthy();

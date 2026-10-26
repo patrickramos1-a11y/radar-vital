@@ -37,19 +37,21 @@ type AvailabilityProps = {
   responsibilities: PreviewResponsibility[];
   capabilities: PreviewCapability[];
   sourceRequirements: SourceRequirements;
+  grantedResponsibilityIds?: ReadonlySet<string>;
   onOpen: (id: string) => void;
   onRequest: (id: string) => void;
 };
 
-export function ResponsibilityAvailability({ responsibilities, capabilities, sourceRequirements, onOpen, onRequest }: AvailabilityProps) {
+export function ResponsibilityAvailability({ responsibilities, capabilities, sourceRequirements, grantedResponsibilityIds = new Set(), onOpen, onRequest }: AvailabilityProps) {
   const names = new Map(capabilities.map((item) => [item.id, item.title]));
   const { currentUser, requests, teamCertifications } = useEligibility([]);
   const levels = currentUser ? approvedLevels(requests.data ?? [], currentUser.id, teamCertifications.data ?? []) : new Map<string, number>();
   if (!currentUser) return <div className="border bg-white p-4 text-sm text-muted-foreground">Selecione um perfil no Radar Vital para ver quais responsabilidades já pode solicitar.</div>;
   if (requests.isLoading || teamCertifications.isLoading) return <div className="border bg-white p-4 text-sm text-muted-foreground">Conferindo capacitações aprovadas...</div>;
   if (requests.error || teamCertifications.error) return <div className="border bg-amber-50 p-4 text-sm text-amber-950">Não foi possível consultar as capacitações aprovadas. Nenhuma responsabilidade é liberada sem essa confirmação.</div>;
-  const available = responsibilities.filter((item) => !unmetRequirements(responsibilityRequirements(item, sourceRequirements[item.id]), levels).length);
-  const pending = responsibilities.filter((item) => !available.includes(item));
+  const eligible = responsibilities.filter((item) => !unmetRequirements(responsibilityRequirements(item, sourceRequirements[item.id]), levels).length);
+  const available = eligible.filter((item) => !grantedResponsibilityIds.has(item.id));
+  const pending = responsibilities.filter((item) => !eligible.includes(item) && !grantedResponsibilityIds.has(item.id));
   const render = (item: PreviewResponsibility, ready: boolean) => {
     const requirements = responsibilityRequirements(item, sourceRequirements[item.id]);
     const missing = unmetRequirements(requirements, levels);
