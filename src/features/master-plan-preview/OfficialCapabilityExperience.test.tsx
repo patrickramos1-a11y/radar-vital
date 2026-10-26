@@ -127,9 +127,9 @@ describe("official capability library", () => {
     expect(screen.getByRole("heading", { name: "Responsabilidades em evolução" })).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "Concedidas (0)" }));
     expect(screen.getByRole("heading", { name: "Responsabilidades concedidas" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("tab", { name: "Evolução de cargo" }));
-    expect(screen.getByRole("heading", { name: "Trilha de cargos e funções" })).toBeTruthy();
-    expect(screen.getByText("Estratégico Júnior")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Escada de cargo" }));
+    expect(screen.getByRole("heading", { name: "Escada padrão · Processos e Órgãos" })).toBeTruthy();
+    expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
   });
 
   it("links responsibility, sector, and missing capability from the professional journey", async () => {
