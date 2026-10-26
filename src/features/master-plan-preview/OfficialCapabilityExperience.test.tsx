@@ -107,6 +107,9 @@ describe("official capability library", () => {
     expect(screen.getByRole("button", { name: "Aplicar atualizações" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Aplicar atualizações" }));
     await waitFor(() => expect(applyTeamCertifications).toHaveBeenCalledWith("admin-1", [{ collaboratorId: "collaborator-1", capabilityCode: "E01", level: 2 }]));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Aplicar atualizações" })).toBeNull());
+    fireEvent.click(within(controls).getByRole("button", { name: "Multiplicador" }));
+    expect(screen.getByRole("button", { name: "Aplicar atualizações" })).toBeTruthy();
     expect(screen.getAllByText("Finalidade:").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Desativar Gabi" })).toBeTruthy();
   });
