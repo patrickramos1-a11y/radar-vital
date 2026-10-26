@@ -6,7 +6,7 @@ import { competencyReadiness, globalCapabilityMaturity, type CompetencyReadiness
 import type { PreviewResponsibility } from "./model";
 import { CapabilityQueueThumb } from "./CapabilityVisualIdentity";
 import { capabilityVisualStyle } from "./capabilityVisuals";
-import { CareerLadderPanel } from "./CareerLadderPanel";
+import { CapabilityOnlyLadderPanel, CareerLadderPanel } from "./CareerLadderPanel";
 import { careerStepReadiness, nucleoTecnicoCareerLadder } from "./careerLadder";
 
 type Go = (view: "capacidade" | "capacidades" | "capacitacoes" | "cargos-funcoes" | "jornada" | "perfil-profissional" | "responsabilidade" | "responsabilidades" | "setor", id?: string, tab?: string, mode?: string) => void;
@@ -93,6 +93,7 @@ export function CareerJourneyExperience({ library, certifiedLevels, claims, coll
   go: Go;
 }) {
   const [tab, setTab] = useState<Tab>("capacidades");
+  const [careerSimulationMode, setCareerSimulationMode] = useState<"competencias" | "capacidades">("competencias");
   const metrics = useMemo(() => journeyMetrics(library, certifiedLevels, claims, collaboratorId), [library, certifiedLevels, claims, collaboratorId]);
   const selectedLevel = (code: string) => certifiedLevels.get(code) ?? 0;
   const evolvingResponsibilities = metrics.items.filter((item) => item.status !== "consolidada");
@@ -117,7 +118,7 @@ export function CareerJourneyExperience({ library, certifiedLevels, claims, coll
     {tab === "capacidades" && <section className="border bg-white"><div className="flex flex-wrap items-end justify-between gap-3 border-b p-4"><div><h2 className="text-lg font-semibold">Capacidades consolidadas</h2><p className="mt-1 text-sm text-zinc-600">A pontuação usa Assistido = 1, Autônomo = 2 e Multiplicador = 3. O teto da jornada do Núcleo Técnico é 84 pontos.</p></div><button type="button" onClick={() => go("capacitacoes")} className="inline-flex items-center gap-1 text-xs font-semibold text-teal-800 hover:underline">Abrir capacitações <ArrowRight className="h-4 w-4" /></button></div><div className="grid divide-y md:grid-cols-2 md:divide-x md:divide-y-0">{library.capabilities.map((capability) => { const level = selectedLevel(capability.code); return <button key={capability.code} type="button" onClick={() => go("capacidade", capability.code)} style={{ ...capabilityVisualStyle(capability.code), borderLeftColor: "var(--cap-accent, #176f68)" }} className="flex min-w-0 items-center gap-3 border-l-4 px-4 py-3 text-left hover:bg-zinc-50"><CapabilityQueueThumb code={capability.code} alt={`Figurinha ${capability.code}: ${capability.title}`} /><span className="min-w-0 flex-1"><strong className="block text-sm" style={{ color: "var(--cap-ink, #172824)" }}>{capability.code} · {capability.title}</strong><span className="mt-1 block text-xs text-zinc-600">{level ? `Nível consolidado: ${capabilityLevelNames[level as 1 | 2 | 3]}` : "Ainda não certificado"}</span><span className="mt-2 block"><CapabilityLevelSeals code={capability.code} currentLevel={level} /></span></span><ArrowRight className="h-4 w-4 shrink-0" style={{ color: "var(--cap-ink, #176f68)" }} /></button>; })}</div></section>}
     {tab === "competencias" && <ResponsibilityList items={evolvingResponsibilities} mappedResponsibilities={mappedResponsibilities} selectedLevel={selectedLevel} go={go} granted={false} />}
     {tab === "consolidadas" && <ResponsibilityList items={grantedResponsibilities} mappedResponsibilities={mappedResponsibilities} selectedLevel={selectedLevel} go={go} granted />}
-    {tab === "evolucao" && <CareerLadderPanel library={library} certifiedLevels={certifiedLevels} claims={claims} collaboratorId={collaboratorId} go={go} />}
+    {tab === "evolucao" && <><div className="mb-4 flex flex-wrap items-center justify-between gap-3 border bg-zinc-50 p-3"><div><p className="text-xs font-semibold uppercase text-zinc-500">Forma de compor a jornada</p><p className="mt-1 text-sm text-zinc-600">Escolha se este cenário será montado por competências ou diretamente pelas capacidades.</p></div><div className="inline-flex border bg-white" role="group" aria-label="Forma de simular a jornada"><button type="button" aria-pressed={careerSimulationMode === "competencias"} onClick={() => setCareerSimulationMode("competencias")} className={`px-3 py-2 text-xs font-semibold ${careerSimulationMode === "competencias" ? "bg-teal-700 text-white" : "text-zinc-700 hover:bg-zinc-50"}`}>Por competências</button><button type="button" aria-pressed={careerSimulationMode === "capacidades"} onClick={() => setCareerSimulationMode("capacidades")} className={`px-3 py-2 text-xs font-semibold ${careerSimulationMode === "capacidades" ? "bg-sky-700 text-white" : "text-zinc-700 hover:bg-zinc-50"}`}>Por capacidades</button></div></div>{careerSimulationMode === "competencias" ? <CareerLadderPanel library={library} certifiedLevels={certifiedLevels} claims={claims} collaboratorId={collaboratorId} go={go} /> : <CapabilityOnlyLadderPanel library={library} certifiedLevels={certifiedLevels} />}</>}
   </>;
 }
 

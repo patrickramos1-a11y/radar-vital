@@ -161,7 +161,11 @@ describe("official capability library", () => {
     fireEvent.click(autonomous);
     expect(autonomous.getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "Limpar marcações" })).toBeTruthy();
-  });
+    fireEvent.click(screen.getByRole("button", { name: "Por capacidades" }));
+    expect(screen.getByRole("heading", { name: "Monte o cargo pelas capacidades e níveis" })).toBeTruthy();
+    expect(screen.getAllByRole("group", { name: /Nível simulado para/ }).length).toBe(28);
+    expect(screen.getByRole("button", { name: "Por competências" }).getAttribute("aria-pressed")).toBe("false");
+  }, 15_000);
 
   it("links responsibility, sector, and missing capability from the professional journey", async () => {
     const go = vi.fn();
