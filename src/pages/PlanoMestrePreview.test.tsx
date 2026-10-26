@@ -99,6 +99,26 @@ describe("Plano Mestre organizational preview", () => {
     expect(main().getByText("Este setor ainda não recebeu responsabilidades da biblioteca.")).toBeTruthy();
   });
 
+  it("filters responsibilities by the highest capability level required", () => {
+    remote.document = {
+      version: 1, savedAt: "2026-10-25T20:00:00Z", nucleusOverrides: {}, capabilities: [], requests: [], responsibilityOverrides: {}, requestPlans: {}, trainingRequests: [], claims: [], nucleusThresholds: {},
+      responsibilities: [
+        { id: "resp-471106dc089e627c", title: "Administrativo / Marketing", sectorId: "projects", capabilityIds: [], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" },
+        { id: "resp-20ec4169bc18b765", title: "Controle de Informações", sectorId: "projects", capabilityIds: [], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" },
+        { id: "resp-413535e8de506f6a", title: "SISRAMOS", sectorId: "projects", capabilityIds: [], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" },
+      ],
+    };
+    openPreview("/universo-ramos/plano-mestre?view=responsabilidades");
+    const catalog = () => within(main().getByTestId("responsibility-catalog"));
+    expect(main().getByText("3")).toBeTruthy();
+    fireEvent.click(main().getByRole("button", { name: "Autônomo" }));
+    expect(catalog().getByText("Controle de Informações")).toBeTruthy();
+    expect(catalog().queryByText("SISRAMOS")).toBeNull();
+    fireEvent.click(main().getByRole("button", { name: "Multiplicador" }));
+    expect(catalog().getByText("SISRAMOS")).toBeTruthy();
+    expect(catalog().queryByText("Controle de Informações")).toBeNull();
+  });
+
   it("opens a source capability directly and returns to the 28-item catalog", () => {
     openPreview("/universo-ramos/plano-mestre?view=capacidade&id=F04");
     expect(main().getByTestId("capability-experience")).toBeTruthy();
