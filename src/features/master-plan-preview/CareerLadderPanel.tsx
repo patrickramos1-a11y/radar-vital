@@ -9,7 +9,10 @@ type Go = (view: "capacidade" | "capacitacoes" | "cargos-funcoes" | "jornada" | 
 type Capability = Library["capabilities"][number];
 
 const levels: CapabilityLevel[] = [1, 2, 3];
-const capabilityPoints = (scenarioLevels: Map<string, number>) => [...scenarioLevels.values()].reduce((total, level) => total + Math.min(level, 3), 0);
+const capabilityPoints = (scenarioLevels: Map<string, number>) => [...scenarioLevels.values()].reduce((total, level) => {
+  const numericLevel = Number(level);
+  return total + (Number.isFinite(numericLevel) ? Math.min(Math.max(numericLevel, 0), 3) : 0);
+}, 0);
 
 function ConsolidatedCapabilityPill({ capability, level, certifiedLevel }: { capability: Capability; level: CapabilityLevel; certifiedLevel: number }) {
   const alreadyCertified = certifiedLevel >= level;

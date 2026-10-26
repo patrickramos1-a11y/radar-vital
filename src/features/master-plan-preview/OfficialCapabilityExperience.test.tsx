@@ -163,6 +163,7 @@ describe("official capability library", () => {
     expect(screen.getByRole("button", { name: "Limpar marcações" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Por capacidades" }));
     expect(screen.getByRole("heading", { name: "Monte o cargo pelas capacidades e níveis" })).toBeTruthy();
+    expect(screen.getByText("3/26")).toBeTruthy();
     const capabilityGroups = screen.getAllByRole("group", { name: /Nível simulado para/ });
     expect(capabilityGroups.length).toBe(28);
     expect(within(capabilityGroups[0]).getByRole("button", { name: "Assistido" })).toBeTruthy();
