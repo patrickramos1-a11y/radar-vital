@@ -14,16 +14,27 @@ export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, traini
   const activeTrainingLevel = trainingLevel > certifiedLevel ? trainingLevel as CapabilityLevel : null;
   return <article className="cap-catalog-item group cap-themed" style={capabilityVisualStyle(item.code)}>
     <button type="button" className="block w-full text-left" onClick={onOpen}>
-      <img className="cap-catalog-cover" src={capabilityCoverPath(item.code)} alt={`Capa ilustrada de ${item.code}: ${item.title}`} width={1600} height={900} loading="lazy" decoding="async" />
-      <span className="cap-catalog-detail">
-        <span className="cap-catalog-kicker"><span className="cap-catalog-nature">{item.nature}</span><ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
-        <strong className="cap-catalog-title">{item.title}</strong>
-        <span className="cap-catalog-concept">{visual?.concept ?? item.summary}</span>
+      <span className="cap-catalog-main">
+        <img className="cap-catalog-sticker" src={`/capability-stickers/posters/${item.code}.png`} alt={`Figurinha ${item.code}: ${item.title}`} width={384} height={384} loading="lazy" decoding="async" />
+        <span className="cap-catalog-detail">
+          <span className="cap-catalog-kicker"><span className="cap-catalog-nature">{item.nature} · {item.code}</span><ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
+          <strong className="cap-catalog-title">{item.title}</strong>
+          <span className="cap-catalog-concept">{visual?.concept ?? item.summary}</span>
+        </span>
       </span>
     </button>
-    <div className="border-t px-3 py-2 text-xs">
-      {certifiedLevel > 0 ? <p className="text-emerald-800">Capacidade atual: <strong>{capabilityLevelNames[certifiedLevel]}</strong>{activeTrainingLevel ? <span className="text-sky-800"> · Capacitação solicitada: <strong>{capabilityLevelNames[activeTrainingLevel]}</strong></span> : nextLevel && <span className="text-zinc-600"> · Próximo nível: {capabilityLevelNames[nextLevel]}</span>}</p> : activeTrainingLevel ? <p className="text-sky-800">Capacitação solicitada: <strong>{capabilityLevelNames[activeTrainingLevel]}</strong></p> : <p className="text-amber-800">Falta iniciar: <strong>Assistido</strong></p>}
-      {activeTrainingLevel && <p className="mt-1 text-[11px] text-sky-800">Próximo passo: concluir os critérios do nível solicitado e aguardar a validação.</p>}
+    <div className="cap-catalog-status">
+      <div className="cap-catalog-levels" aria-label={`Níveis de ${item.title}`}>
+        {([1, 2, 3] as CapabilityLevel[]).map((level) => {
+          const state = level <= certifiedLevel ? "earned" : level === activeTrainingLevel ? "requested" : "missing";
+          const label = state === "earned" ? `Habilitado: ${capabilityLevelNames[level]}` : state === "requested" ? `Solicitado: ${capabilityLevelNames[level]}` : `Falta: ${capabilityLevelNames[level]}`;
+          return <span key={level} className={`cap-catalog-level cap-catalog-level-${state}`} title={label}><img src={capabilityLevelInsignia[level]} alt={label} loading="lazy" decoding="async" /></span>;
+        })}
+      </div>
+      <div className="min-w-0 flex-1 text-xs">
+        {certifiedLevel > 0 ? <p className="text-emerald-800">Habilitada até: <strong>{capabilityLevelNames[certifiedLevel]}</strong></p> : <p className="text-zinc-600">Ainda não habilitada</p>}
+        {activeTrainingLevel ? <p className="mt-1 text-sky-800">Solicitada: <strong>{capabilityLevelNames[activeTrainingLevel]}</strong></p> : nextLevel ? <p className="mt-1 text-zinc-600">Falta: <strong>{capabilityLevelNames[nextLevel]}</strong></p> : <p className="mt-1 text-emerald-800">Todos os níveis habilitados</p>}
+      </div>
       {nextLevel && onRequestLevel && <button type="button" onClick={() => onRequestLevel(nextLevel)} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-900"><ArrowRight className="h-3.5 w-3.5" /> {activeTrainingLevel ? "Ver solicitação e critérios" : `Solicitar ${capabilityLevelNames[nextLevel]}`}</button>}
     </div>
   </article>;

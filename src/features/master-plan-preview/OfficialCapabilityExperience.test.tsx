@@ -51,10 +51,10 @@ describe("official capability library", () => {
   it("shows all 28 published cards and filters by the source title", () => {
     const go = open("capacidades");
     expect(screen.getByText("28 de 28")).toBeTruthy();
-    expect(screen.getAllByRole("img", { name: /^Capa ilustrada de / })).toHaveLength(28);
+    expect(screen.getAllByRole("img", { name: /^Figurinha / })).toHaveLength(28);
     fireEvent.change(screen.getByRole("textbox", { name: "Buscar capacidades" }), { target: { value: "Gestão de Informações e Acervo" } });
     expect(screen.getByText("1 de 28")).toBeTruthy();
-    expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ }).getAttribute("src")).toBe("/universe-capabilities/T01.png");
+    expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ }).getAttribute("src")).toBe("/capability-stickers/posters/T01.png");
     fireEvent.click(screen.getByRole("button", { name: /T01.*Gestão de Informações e Acervo/ }));
     expect(go).toHaveBeenCalledWith("capacidade", "T01");
   });
@@ -222,12 +222,14 @@ describe("official capability library", () => {
     expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ })).toBeTruthy();
   });
 
-  it("explains the requested training level and next step on a capability card", async () => {
+  it("shows the requested level with its sticker and filters requested training", async () => {
     fixture.trainingRequests = [{ collaborator_id: "collaborator-1", capability_code: "T01", target_level: 1, status: "requested", requested_by: "admin-1", requested_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
     open("capacidades");
-    await waitFor(() => expect(screen.getByText("Capacitação solicitada:")).toBeTruthy());
-    expect(screen.getByText("Próximo passo: concluir os critérios do nível solicitado e aguardar a validação.")).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(/Solicitada:/)).toBeTruthy());
+    expect(screen.getByRole("img", { name: "Solicitado: Assistido" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Ver solicitação e critérios" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Capacitações solicitadas" }));
+    await waitFor(() => expect(screen.getByText("1 de 28")).toBeTruthy());
   });
 
   it("shows responsibility readiness from the complete mixed-level capability matrix", async () => {

@@ -85,16 +85,25 @@
 .cap-filter-active { border-color: #176f68; background: #176f68; color: #fff; }
 .cap-filter-active:hover { color: #fff; }
 
-.cap-catalog-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.cap-catalog-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .cap-catalog-item { display: block; min-width: 0; overflow: hidden; border: 1px solid #e3e9e6; border-top: 3px solid var(--cap-accent, #168274); border-radius: 6px; background: #fff; text-align: left; box-shadow: 0 1px 5px rgb(22 45 39 / 3%); transition: border-color 150ms, box-shadow 150ms, transform 150ms; }
 .cap-catalog-item:hover { border-color: var(--cap-accent, #5fa89b); box-shadow: 0 7px 20px rgb(22 45 39 / 8%); transform: translateY(-2px); }
 .cap-catalog-item:focus-visible { outline: 3px solid #176f68; outline-offset: 2px; }
-.cap-catalog-cover { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; background: #fff; }
-.cap-catalog-detail { display: block; padding: 13px 15px 16px; }
+.cap-catalog-main { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 10px; min-height: 116px; padding: 10px; }
+.cap-catalog-sticker { display: block; width: 84px; height: 84px; align-self: center; object-fit: contain; filter: drop-shadow(0 3px 4px rgb(22 45 39 / 12%)); }
+.cap-catalog-detail { display: block; min-width: 0; padding: 2px 0; }
 .cap-catalog-kicker { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--cap-ink, #176f68); }
 .cap-catalog-nature { font-size: 11px; font-weight: 700; text-transform: uppercase; }
 .cap-catalog-title { display: block; margin-top: 5px; color: #172824; font-size: 15px; line-height: 1.35; }
-.cap-catalog-concept { display: block; margin-top: 5px; color: #59635f; font-size: 12px; line-height: 1.45; }
+.cap-catalog-concept { display: -webkit-box; margin-top: 5px; overflow: hidden; color: #59635f; font-size: 12px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.cap-catalog-status { display: flex; min-height: 66px; flex-wrap: wrap; align-items: center; gap: 8px; border-top: 1px solid #e3ebe7; padding: 8px 10px; }
+.cap-catalog-levels { display: flex; flex: none; gap: 3px; }
+.cap-catalog-level { display: grid; width: 26px; height: 26px; place-items: center; }
+.cap-catalog-level img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.cap-catalog-level-missing { opacity: .2; filter: grayscale(1); }
+.cap-catalog-level-requested { filter: drop-shadow(0 2px 3px rgb(19 115 158 / 22%)); }
+.cap-catalog-level-requested img { outline: 1px solid #38bdf8; outline-offset: 1px; }
+.cap-catalog-status > button { width: 100%; margin-top: 0; }
 .cap-identity-hero { width: min(100%, 470px); margin: 0 0 22px; border-bottom: 3px solid var(--cap-accent, #168274); background: #fff; }
 .cap-identity-hero img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; }
 .cap-sheet-identity { display: grid; gap: 20px; align-items: center; }
@@ -183,7 +192,6 @@
 
 @media (min-width: 1024px) {
   .cap-catalog-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-  .cap-catalog-detail { padding: 11px 12px 13px; }
   .cap-catalog-title { font-size: 14px; }
   .cap-catalog-concept { font-size: 11px; }
   .cap-sticker-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -196,7 +204,15 @@
 @keyframes cap-intro-content { 0% { opacity: .25; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 760px) {
-  .cap-catalog-grid { grid-template-columns: minmax(0, 1fr); }
+  .cap-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .cap-catalog-main { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 6px; padding: 8px; }
+  .cap-catalog-sticker { width: 66px; height: 66px; justify-self: center; }
+  .cap-catalog-detail { padding: 0; }
+  .cap-catalog-nature { font-size: 10px; }
+  .cap-catalog-title { font-size: 12px; }
+  .cap-catalog-concept { font-size: 10px; }
+  .cap-catalog-status { align-items: flex-start; padding: 7px 8px; }
+  .cap-catalog-level { width: 23px; height: 23px; }
   .cap-sheet-identity { gap: 18px; }
   .cap-identity-strip img { width: 105px; }
   .cap-identity-strip p { display: none; }
