@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
-import { careerStepReadiness, pacForCareerStep, processosEOrgaosLadder } from "./careerLadder";
+import { careerLadders, careerStepReadiness, pacForCareerStep, processosEOrgaosLadder } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 
 const library: Library = { capabilities: source.capabilities, responsibilities: source.responsibilities, sourceSha256: source.source.sha256 };
@@ -9,12 +9,23 @@ describe("Processos e Órgãos career ladder", () => {
   it("builds each PAC cumulatively from the real responsibility requirements", () => {
     const juniorPac = pacForCareerStep(library, processosEOrgaosLadder, "operador_junior");
     const plenoPac = pacForCareerStep(library, processosEOrgaosLadder, "operador_pleno");
-    const masterPac = pacForCareerStep(library, processosEOrgaosLadder, "operador_master");
+    const masterPac = pacForCareerStep(library, processosEOrgaosLadder, "estrategico_junior");
     expect(juniorPac).toEqual(expect.arrayContaining([{ capabilityCode: "F03", minimumLevel: 2 }, { capabilityCode: "T01", minimumLevel: 2 }]));
     expect(plenoPac).toEqual(expect.arrayContaining([{ capabilityCode: "T08", minimumLevel: 2 }, { capabilityCode: "F04", minimumLevel: 2 }]));
     expect(masterPac).toEqual(expect.arrayContaining([{ capabilityCode: "F02", minimumLevel: 3 }, { capabilityCode: "E02", minimumLevel: 2 }, { capabilityCode: "E04", minimumLevel: 2 }]));
     expect(masterPac.length).toBeGreaterThan(plenoPac.length);
     expect(plenoPac.length).toBeGreaterThan(juniorPac.length);
+  });
+
+  it("offers a mapped ladder for every responsibility sector", () => {
+    expect(careerLadders.map((ladder) => ladder.sector)).toEqual(expect.arrayContaining([
+      "Gestão Interna",
+      "Processos e Órgãos",
+      "Projetos",
+      "Serviços, Visitas e Levantamentos",
+      "Transversal (todos os setores)",
+      "Fora do Núcleo Técnico",
+    ]));
   });
 
   it("requires both the full PAC and all cumulative responsibility grants", () => {
