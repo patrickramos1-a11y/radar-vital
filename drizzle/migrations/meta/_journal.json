@@ -43,6 +43,13 @@
       "when": 1792941318274,
       "tag": "0005_create_master_plan_versioned_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792973214908,
+      "tag": "0006_master_plan_auth_foundation_compatible",
+      "breakpoints": true
     }
   ]
 }

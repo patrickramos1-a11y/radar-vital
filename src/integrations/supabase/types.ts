@@ -1923,6 +1923,30 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       task_dependencies: {
         Row: {
           created_at: string
@@ -2243,6 +2267,7 @@ export type Database = {
         Returns: undefined
       }
       backfill_star_sources: { Args: { p_actor_name?: string }; Returns: Json }
+      bootstrap_current_profile: { Args: never; Returns: string }
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
       clear_challenge_completion_conditions: {
         Args: { p_actor_name?: string; p_challenge_id: string }
@@ -2301,6 +2326,7 @@ export type Database = {
         Args: { p_actor_name?: string; p_rating_id: string; p_version: string }
         Returns: undefined
       }
+      current_collaborator_id: { Args: never; Returns: string }
       delete_audit: {
         Args: { p_actor_name?: string; p_audit_id: string }
         Returns: undefined
@@ -2373,6 +2399,8 @@ export type Database = {
         }
         Returns: string
       }
+      is_admin: { Args: never; Returns: boolean }
+      is_auth_enforced: { Args: never; Returns: boolean }
       open_audit: {
         Args: {
           p_actor_name?: string
@@ -2456,6 +2484,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_auth_enforced: { Args: { p_enabled: boolean }; Returns: undefined }
       set_challenge_completion_condition: {
         Args: {
           p_actor_name?: string
