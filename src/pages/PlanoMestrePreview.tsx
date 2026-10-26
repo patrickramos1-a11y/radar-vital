@@ -23,7 +23,8 @@ import { responsibilityRequirements } from "@/features/master-plan-preview/respo
 import { firstLetterUpper } from "@/features/master-plan-preview/capabilityPresentationData";
 import { createDemoStore } from "@/features/master-plan-preview/capabilityDemo";
 import { capabilityCatalogue } from "@/features/master-plan-preview/capabilityJourney";
-import { fetchLibrary } from "@/features/master-plan-preview/journeyRemote";
+import { fetchLibrary, fetchResponsibilityClaims, reviewResponsibilityClaim } from "@/features/master-plan-preview/journeyRemote";
+import type { ResponsibilityClaim } from "@/features/master-plan-preview/responsibilityJourney";
 import {
   countsForUnit, ensureMasterPlanSectors, fetchMasterPlanContext, sectorRecords, sectorUnits,
   type Challenge, type MasterPlanContext, type Unit,
@@ -76,6 +77,14 @@ const findSector = (context: MasterPlanContext, id: string | null) => context.un
 const sectorName = (context: MasterPlanContext, id: string | null) => findSector(context, id)?.name ?? "Setor não localizado";
 const personName = (context: MasterPlanContext, id: string | null | undefined) => context.collaborators.find((item) => item.id === id)?.name ?? "Não definido";
 const textMatch = (value: string, search: string) => value.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR"));
+
+function linkedResponsibilityPeople(context: MasterPlanContext, responsibility: PreviewResponsibility, officialClaims: ResponsibilityClaim[]) {
+  const ids = new Set<string>();
+  if (responsibility.holderId) ids.add(responsibility.holderId);
+  officialClaims.filter((claim) => claim.responsibility_source_id === responsibility.id && claim.status === "approved")
+    .forEach((claim) => ids.add(claim.collaborator_id));
+  return [...ids].map((personId) => ({ id: personId, name: personName(context, personId) }));
+}
 
 function Badge({ kind }: { kind: "real" | "proposal" | "local" | "undefined" }) {
   const styles = { real: "border-emerald-200 bg-emerald-50 text-emerald-800", proposal: "border-amber-200 bg-amber-50 text-amber-900", local: "border-sky-200 bg-sky-50 text-sky-800", undefined: "border-zinc-200 bg-zinc-100 text-zinc-600" };
@@ -502,31 +511,53 @@ function SectorDetail({ context, go, id, tab, nucleiOf, capabilities, responsibi
 }
 
 function Responsibilities({ context, go, id, tab, responsibilities, capabilities, openDraft, claims }: WorkspaceProps) {
+  const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const [sectorId, setSectorId] = useState(id || "all");
   const [search, setSearch] = useState("");
   const [requiredLevel, setRequiredLevel] = useState<"all" | "1" | "2" | "3">("all");
+  const [reviewingClaimId, setReviewingClaimId] = useState<string | null>(null);
   useEffect(() => setSectorId(id || "all"), [id]);
-  const activeTab = tab === "disponiveis" ? "disponiveis" : "biblioteca";
+  const activeTab = tab === "disponiveis" || tab === "solicitacoes" ? tab : "biblioteca";
+  const officialClaimsQuery = useQuery({ queryKey: ["master-plan-responsibility-claims"], queryFn: fetchResponsibilityClaims, enabled: !!currentUser, retry: false });
+  const officialClaims = Array.isArray(officialClaimsQuery.data) ? officialClaimsQuery.data : [];
+  const pendingClaims = officialClaims.filter((claim) => claim.status === "requested");
+  const isAdmin = currentUser?.role === "admin";
   const sourceRequirements = Object.fromEntries(sourceResponsibilities.map((item) => [item.sourceId, item.requiredCapabilities.map(({ capabilityCode, minimumLevel }) => ({ capabilityCode, minimumLevel }))]));
   const responsibilityLevel = (item: PreviewResponsibility) => Math.max(...(sourceRequirements[item.id] ?? item.capabilityIds.map((capabilityCode) => ({ capabilityCode, minimumLevel: 1 }))).map((requirement) => requirement.minimumLevel), 1);
   const levelLabel = (level: number) => level === 3 ? "Multiplicador" : level === 2 ? "Autônomo" : "Assistido";
   const list = responsibilities.filter((item) => (sectorId === "all" || item.sectorId === sectorId)
     && (requiredLevel === "all" || responsibilityLevel(item) === Number(requiredLevel))
     && textMatch(`${item.title} ${sectorName(context, item.sectorId)}`, search));
+  const reviewClaim = async (claimId: string, decision: "approved" | "rejected") => {
+    setReviewingClaimId(claimId);
+    try {
+      await reviewResponsibilityClaim(claimId, decision);
+      await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
+      toast.success(decision === "approved" ? "Responsabilidade concedida e vínculo atualizado." : "Solicitação devolvida para revisão.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível avaliar a solicitação.");
+    } finally {
+      setReviewingClaimId(null);
+    }
+  };
   return <>
-    <Heading title="Responsabilidades" subtitle="O trabalho contínuo que precisa ter titular, substituto e capacidades claras." action={<Button size="sm" onClick={() => openDraft({ kind: "responsabilidade" })}><Plus className="h-4 w-4" /> Nova responsabilidade</Button>} />
-    <div className="mb-5 flex gap-1 overflow-x-auto border-b" role="tablist" aria-label="Visões de responsabilidades"><button type="button" role="tab" aria-selected={activeTab === "biblioteca"} onClick={() => go("responsabilidades")} className={`cap-section-tab ${activeTab === "biblioteca" ? "cap-section-tab-active" : ""}`}>Biblioteca e vínculos</button><button type="button" role="tab" aria-selected={activeTab === "disponiveis"} onClick={() => go("responsabilidades", undefined, "disponiveis")} className={`cap-section-tab ${activeTab === "disponiveis" ? "cap-section-tab-active" : ""}`}>Disponíveis para mim</button></div>
-    {activeTab === "disponiveis" ? <ResponsibilityAvailability responsibilities={responsibilities} capabilities={capabilities} sourceRequirements={sourceRequirements} onOpen={(responsibilityId) => go("responsabilidade", responsibilityId)} onRequest={(responsibilityId) => openDraft({ kind: "assumir", responsibilityId })} /> : <>
+    <Heading title="Responsabilidades" subtitle="Gerencie vínculos concedidos, solicitações para avaliação e os requisitos técnicos de cada responsabilidade." action={<Button size="sm" onClick={() => openDraft({ kind: "responsabilidade" })}><Plus className="h-4 w-4" /> Nova responsabilidade</Button>} />
+    <div className="mb-5 flex gap-1 overflow-x-auto border-b" role="tablist" aria-label="Visões de responsabilidades"><button type="button" role="tab" aria-selected={activeTab === "biblioteca"} onClick={() => go("responsabilidades")} className={`cap-section-tab ${activeTab === "biblioteca" ? "cap-section-tab-active" : ""}`}>Biblioteca e vínculos</button><button type="button" role="tab" aria-selected={activeTab === "disponiveis"} onClick={() => go("responsabilidades", undefined, "disponiveis")} className={`cap-section-tab ${activeTab === "disponiveis" ? "cap-section-tab-active" : ""}`}>Disponíveis para mim</button>{isAdmin && <button type="button" role="tab" aria-selected={activeTab === "solicitacoes"} onClick={() => go("responsabilidades", undefined, "solicitacoes")} className={`cap-section-tab ${activeTab === "solicitacoes" ? "cap-section-tab-active" : ""}`}>Solicitações para aprovar{pendingClaims.length ? ` (${pendingClaims.length})` : ""}</button>}</div>
+    {activeTab === "disponiveis" ? <ResponsibilityAvailability responsibilities={responsibilities} capabilities={capabilities} sourceRequirements={sourceRequirements} onOpen={(responsibilityId) => go("responsabilidade", responsibilityId)} onRequest={(responsibilityId) => openDraft({ kind: "assumir", responsibilityId })} /> : activeTab === "solicitacoes" && isAdmin ? <section className="border bg-white"><div className="border-b p-4"><h2 className="text-lg font-semibold">Solicitações de responsabilidade</h2><p className="mt-1 text-sm text-zinc-600">Conceda apenas quando a jornada estiver conferida. Ao conceder, a pessoa passa a constar como vinculada na responsabilidade, junto com todas as demais pessoas já concedidas.</p></div><div className="divide-y">{pendingClaims.map((claim) => { const item = responsibilities.find((responsibility) => responsibility.id === claim.responsibility_source_id); return <article key={claim.id} className="flex flex-wrap items-center justify-between gap-4 p-4"><div className="min-w-0"><p className="text-xs font-semibold uppercase text-teal-700">{item ? sectorName(context, item.sectorId) : "Responsabilidade oficial"}</p><h3 className="mt-1 text-sm font-semibold">{item?.title ?? "Responsabilidade não localizada"}</h3><p className="mt-1 text-xs text-zinc-600">Solicitada por <strong>{personName(context, claim.collaborator_id)}</strong> em {dateLabel(claim.requested_at)}</p></div><div className="flex shrink-0 gap-2"><Button size="sm" variant="outline" disabled={reviewingClaimId === claim.id} onClick={() => void reviewClaim(claim.id, "rejected")}>Devolver</Button><Button size="sm" disabled={reviewingClaimId === claim.id} onClick={() => void reviewClaim(claim.id, "approved")}>{reviewingClaimId === claim.id ? "Atualizando..." : "Conceder responsabilidade"}</Button></div></article>; })}{!pendingClaims.length && <Empty>Nenhuma solicitação de responsabilidade aguardando avaliação.</Empty>}</div></section> : <>
     <div className="mb-3 flex flex-wrap gap-2"><SearchBox value={search} setValue={setSearch} placeholder="Buscar responsabilidade ou setor" /><select aria-label="Filtrar responsabilidades por setor" value={sectorId} onChange={(event) => setSectorId(event.target.value)} className="h-9 border bg-white px-2 text-xs"><option value="all">Todos os setores</option>{sectorUnits(context).map((sector) => <option key={sector.id} value={sector.id}>{sector.name}</option>)}</select></div>
     <div className="mb-5 flex flex-wrap gap-1" role="group" aria-label="Filtrar responsabilidades por nível exigido"><span className="self-center pr-2 text-xs font-semibold text-muted-foreground">Nível exigido</span>{(["all", "1", "2", "3"] as const).map((level) => <button type="button" key={level} aria-pressed={requiredLevel === level} onClick={() => setRequiredLevel(level)} className={`cap-filter ${requiredLevel === level ? "cap-filter-active" : ""}`}>{level === "all" ? "Todos" : levelLabel(Number(level))}</button>)}</div>
-    <div className="mb-3 flex items-center gap-3 text-xs text-muted-foreground"><strong className="text-sm text-foreground">{list.length}</strong> responsabilidades nesta visão <span className="h-1.5 w-1.5 rounded-full bg-orange-500" /> <span>{list.filter((item) => !item.holderId).length} sem titular</span></div>
-    <div data-testid="responsibility-catalog" className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{list.map((item) => { const sector = findSector(context, item.sectorId); const firstCapability = capabilities.find((capability) => item.capabilityIds.includes(capability.id)); const level = responsibilityLevel(item); return <button key={item.id} type="button" onClick={() => go("responsabilidade", item.id)} className="flex min-h-44 min-w-0 flex-col border-l-4 border-orange-500 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><span className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground"><span className="min-w-0 truncate">{sector?.name ?? "Setor a definir"}</span><ShieldAlert className="h-4 w-4 shrink-0 text-orange-600" /></span><strong className="mt-3 min-w-0 break-words text-sm leading-snug">{item.title}</strong><span className="mt-2 flex flex-wrap items-center gap-2"><span className="min-w-0 break-words text-xs text-violet-700">{firstCapability?.title ?? "Capacidade a definir"}</span><span className={`border px-1.5 py-0.5 text-[10px] font-semibold ${level === 3 ? "border-violet-300 bg-violet-50 text-violet-800" : level === 2 ? "border-amber-300 bg-amber-50 text-amber-800" : "border-sky-300 bg-sky-50 text-sky-800"}`}>{levelLabel(level)}</span></span><span className="mt-auto flex items-center justify-between gap-2 border-t pt-3 text-xs"><span className={item.holderId ? "text-emerald-700" : "text-orange-700"}>{item.holderId ? personName(context, item.holderId) : "Titular pendente"}</span><ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" /></span></button>; })}</div>
+    <div className="mb-3 flex items-center gap-3 text-xs text-muted-foreground"><strong className="text-sm text-foreground">{list.length}</strong> responsabilidades nesta visão <span className="h-1.5 w-1.5 rounded-full bg-orange-500" /> <span>{list.filter((item) => !linkedResponsibilityPeople(context, item, officialClaims).length).length} sem pessoa vinculada</span></div>
+    <div data-testid="responsibility-catalog" className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{list.map((item) => { const sector = findSector(context, item.sectorId); const firstCapability = capabilities.find((capability) => item.capabilityIds.includes(capability.id)); const level = responsibilityLevel(item); const linkedPeople = linkedResponsibilityPeople(context, item, officialClaims); return <button key={item.id} type="button" onClick={() => go("responsabilidade", item.id)} className="flex min-h-44 min-w-0 flex-col border-l-4 border-orange-500 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><span className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground"><span className="min-w-0 truncate">{sector?.name ?? "Setor a definir"}</span><ShieldAlert className="h-4 w-4 shrink-0 text-orange-600" /></span><strong className="mt-3 min-w-0 break-words text-sm leading-snug">{item.title}</strong><span className="mt-2 flex flex-wrap items-center gap-2"><span className="min-w-0 break-words text-xs text-violet-700">{firstCapability?.title ?? "Capacidade a definir"}</span><span className={`border px-1.5 py-0.5 text-[10px] font-semibold ${level === 3 ? "border-violet-300 bg-violet-50 text-violet-800" : level === 2 ? "border-amber-300 bg-amber-50 text-amber-800" : "border-sky-300 bg-sky-50 text-sky-800"}`}>{levelLabel(level)}</span></span><span className="mt-auto flex items-center justify-between gap-2 border-t pt-3 text-xs"><span className={linkedPeople.length ? "text-emerald-700" : "text-orange-700"}>{linkedPeople.length ? `Vinculadas: ${linkedPeople.map((person) => person.name).join(", ")}` : "Nenhuma pessoa vinculada"}</span><ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" /></span></button>; })}</div>
     {list.length === 0 && <div className="border-l-4 border-orange-500 bg-orange-50 px-4 py-5 text-sm text-orange-950"><strong className="block">O mapeamento começa vazio.</strong><p className="mt-1">Defina o trabalho contínuo de cada setor e vincule as capacidades necessárias.</p><div className="mt-4 flex flex-wrap gap-2"><Button size="sm" onClick={() => openDraft({ kind: "responsabilidade", sectorId: sectorId === "all" ? undefined : sectorId })}><Plus className="h-4 w-4" /> Cadastrar responsabilidade</Button><Button size="sm" variant="outline" onClick={() => go("capacidades")}>Ver capacidades <ArrowRight className="h-4 w-4" /></Button></div></div>}
     </>}
   </>;
 }
 
 function ResponsibilityDetail({ context, go, id, responsibilities, capabilities, requests, openDraft, setResponsibility, claims }: WorkspaceProps) {
+  const { currentUser } = useAuth();
+  const officialClaimsQuery = useQuery({ queryKey: ["master-plan-responsibility-claims"], queryFn: fetchResponsibilityClaims, enabled: !!currentUser, retry: false });
+  const officialClaims = Array.isArray(officialClaimsQuery.data) ? officialClaimsQuery.data : [];
   const item = responsibilities.find((candidate) => candidate.id === id);
   if (!item) return <div className="border-l-4 border-orange-500 bg-orange-50 p-5 text-sm">
     <h2 className="font-semibold">Responsabilidade indisponível</h2>
@@ -537,6 +568,7 @@ function ResponsibilityDetail({ context, go, id, responsibilities, capabilities,
   const source = sourceResponsibilities.find((candidate) => candidate.sourceId === id);
   const relatedRequests = requests.filter((request) => item.sourceChallengeIds.includes(request.id));
   const relatedClaims = claims.filter((claim) => claim.responsibilityId === id);
+  const linkedPeople = linkedResponsibilityPeople(context, item, officialClaims);
   const linkedCapabilities = capabilities.filter((capability) => item.capabilityIds.includes(capability.id));
   const minimumLevels = Object.fromEntries(
     source?.requiredCapabilities.map((entry) => [entry.capabilityCode, entry.minimumLevelLabel]) ?? [],
@@ -557,7 +589,7 @@ function ResponsibilityDetail({ context, go, id, responsibilities, capabilities,
     <div className="mb-5 flex flex-wrap gap-x-6 gap-y-2 border-b pb-4 text-xs text-muted-foreground">
       <span><strong className="text-foreground">{item.capabilityIds.length}</strong> capacidade(s)</span>
       <span><strong className="text-foreground">{relatedRequests.length}</strong> solicitação(ões) relacionadas</span>
-      <span>Titular: <strong className="text-foreground">{personName(context, item.holderId)}</strong></span>
+      <span><strong className="text-foreground">{linkedPeople.length}</strong> pessoa(s) vinculada(s)</span>
       <span>Substituto: <strong className="text-foreground">{personName(context, item.substituteId)}</strong></span>
     </div>
     <div className="mt-5 grid gap-6 lg:grid-cols-2">
@@ -586,9 +618,10 @@ function ResponsibilityDetail({ context, go, id, responsibilities, capabilities,
         <Button size="sm" variant="outline" className="mt-2" onClick={() => openDraft({ kind: "capacidade", sectorId: item.sectorId })}><Plus className="h-4 w-4" /> Cadastrar nova capacidade</Button>
       </section>
       <section>
-        <SectionTitle>Pessoas e sucessão</SectionTitle>
+        <SectionTitle>Pessoas vinculadas e sucessão</SectionTitle>
         <div className="space-y-3 border bg-white p-4">
-          <label className="block text-xs font-medium">Titular (salvo no Plano Mestre)
+          <div className="border-l-2 border-emerald-600 bg-emerald-50 px-3 py-3 text-xs text-emerald-950"><strong className="block">Vínculos oficialmente concedidos</strong><p className="mt-1">{linkedPeople.length ? linkedPeople.map((person) => person.name).join(", ") : "Nenhuma pessoa recebeu esta responsabilidade ainda."}</p></div>
+          <label className="block text-xs font-medium">Responsável de referência (opcional)
             <select aria-label="Titular da responsabilidade" value={item.holderId ?? ""} onChange={(event) => setResponsibility(id, { holderId: event.target.value || null })} className="mt-1 h-9 w-full border bg-white px-2 text-xs">
               <option value="">A definir</option>
               {context.collaborators.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
@@ -600,7 +633,7 @@ function ResponsibilityDetail({ context, go, id, responsibilities, capabilities,
               {context.collaborators.filter((person) => person.id !== item.holderId).map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
             </select>
           </label>
-          <p className="text-xs text-muted-foreground">Indicar titular ou substituto não comprova certificação nem delega esta responsabilidade no sistema atual.</p>
+          <p className="text-xs text-muted-foreground">A referência e o substituto ajudam na sucessão, mas não substituem os vínculos concedidos pela aprovação da solicitação.</p>
           {relatedClaims.map((claim, index) => <p key={claim.personId + index} className="text-xs text-sky-800">Pedido registrado: {personName(context, claim.personId)} quer assumir esta responsabilidade.</p>)}
           <ResponsibilityClaimControl requirements={capabilityRequirements} capabilityNames={capabilityNames} requestedBy={relatedClaims.map((claim) => claim.personId)} onRequest={() => openDraft({ kind: "assumir", responsibilityId: id })} />
         </div>

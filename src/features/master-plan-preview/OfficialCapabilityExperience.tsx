@@ -26,7 +26,7 @@ import {
 import "./capability-experience.css";
 
 type Screen = "capacidades" | "capacidade" | "capacitacoes" | "jornada" | "cargos-funcoes";
-type Go = (view: Screen | "responsabilidade", id?: string, tab?: string, mode?: string) => void;
+type Go = (view: Screen | "responsabilidade" | "responsabilidades", id?: string, tab?: string, mode?: string) => void;
 type Props = { view: Screen; code: string; tab: string; mode: string; go: Go; library: Library; people: Array<{ id: string; name: string }>; mappedResponsibilities?: PreviewResponsibility[]; sectors?: Unit[]; openSector?: (sectorId: string) => void; capabilityPlans?: Record<string, Record<string, 0 | CapabilityLevel>>; onDeactivateCollaborator?: (collaboratorId: string) => Promise<void> };
 const kinds = ["Todas", "Transversal", "Funcional", "Especializada"];
 const journeyFilters = ["Todas", "Em desenvolvimento", "Falta Assistido", "Falta Autônomo", "Falta Multiplicador", "Com certificação"];
