@@ -78,6 +78,13 @@ describe("official capability library", () => {
     expect(fetchRequests).toHaveBeenCalledWith("collaborator-1", false);
   });
 
+  it("opens Capacitações with the collaborator journey and next recommendations", async () => {
+    open("capacitacoes");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Minhas capacitações" })).toBeTruthy());
+    expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /Solicitar Assistido/ }).length).toBeGreaterThan(0);
+  });
+
   it("does not offer the administrative queue to a collaborator", async () => {
     open("capacitacoes", "T01", "autoavaliacao", "administrador");
     await waitFor(() => expect(screen.getByRole("button", { name: "Registrar autoavaliação" })).toBeTruthy());

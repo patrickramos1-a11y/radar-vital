@@ -18,8 +18,8 @@ import type { PreviewResponsibility } from "./model";
 import type { Unit } from "./data";
 import {
   applyTeamCertifications, createRemoteAssessment, fetchAssessments, fetchRequests, fetchTeamCertifications, requestTeamTraining,
-  reviewRequest, saveRequest,
-  type Library, type RequestRow,
+  fetchTeamTrainingRequests, reviewRequest, saveRequest,
+  type Library, type RequestRow, type TeamTrainingRequestRow,
 } from "./journeyRemote";
 import "./capability-experience.css";
 
@@ -52,15 +52,18 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   const assessments = useQuery({ queryKey: ["master-plan-assessments", currentUser?.id], queryFn: () => fetchAssessments(currentUser!.id), enabled: !!currentUser });
   const requests = useQuery({ queryKey: ["master-plan-requests", currentUser?.id, isAdmin], queryFn: () => fetchRequests(currentUser!.id, isAdmin), enabled: !!currentUser });
   const teamCertifications = useQuery({ queryKey: ["master-plan-team-certifications"], queryFn: fetchTeamCertifications, enabled: !!currentUser, retry: false });
-  const selected = library.capabilities.find((item) => item.code === code) ?? (view === "capacitacoes" ? library.capabilities[0] : undefined);
+  const teamTrainingRequests = useQuery({ queryKey: ["master-plan-team-training-requests"], queryFn: fetchTeamTrainingRequests, enabled: !!currentUser, retry: false });
+  const selected = library.capabilities.find((item) => item.code === code);
   const ownRequests = requests.data?.filter((request) => request.collaborator_id === currentUser?.id) ?? [];
   const ownCertifiedLevels = currentUser ? approvedLevels(requests.data ?? [], currentUser.id, teamCertifications.data ?? []) : new Map<string, number>();
+  const ownTrainingRequests = teamTrainingRequests.data?.filter((request) => request.collaborator_id === currentUser?.id && request.status !== "cancelled") ?? [];
   const approved = selected ? ownCertifiedLevels.get(selected.code) ?? 0 : 0;
   const certifiedLevels = new Map([...ownCertifiedLevels].filter(([, level]) => level > 0)) as Map<string, CapabilityLevel>;
   const selectedAssessments = assessments.data?.filter((assessment) => assessment.capability_code === selected?.code && assessment.collaborator_id === currentUser?.id) ?? [];
   return <div className="cap-experience cap-themed relative min-w-0" style={selected ? capabilityVisualStyle(selected.code) : undefined} data-testid="official-capability-experience">
-    {view === "capacidades" && <Catalog library={library} go={go} />}
-    {view !== "capacidades" && !selected && <div className="cap-empty">Capacidade não encontrada.<Button variant="outline" onClick={() => go("capacidades")}>Voltar ao catálogo</Button></div>}
+    {view === "capacidades" && <Catalog library={library} go={go} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} />}
+    {view === "capacitacoes" && !selected && <TrainingOverview library={library} go={go} currentUser={currentUser} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} />}
+    {view === "capacidade" && !selected && <div className="cap-empty">Capacidade não encontrada.<Button variant="outline" onClick={() => go("capacidades")}>Voltar ao catálogo</Button></div>}
     {view === "capacidade" && selected && <Sheet item={selected} library={library} approved={approved} certifiedLevels={certifiedLevels} assessmentLevel={selectedAssessments[0]?.indicated_level} go={go} tab={tab} mappedResponsibilities={mappedResponsibilities} sectors={sectors} openSector={openSector} />}
     {view === "capacitacoes" && selected && <>
       {mode === "administrador" && isAdmin && tab === "mapa" ? <CapabilityTeamMatrix library={library} people={people} plans={capabilityPlans} onApplyUpdates={(updates) => applyTeamCertifications(currentUser!.id, updates)} onRequestTraining={(collaboratorId, capabilityCode, level) => requestTeamTraining(currentUser!.id, collaboratorId, capabilityCode, level)} onDeactivatePerson={onDeactivateCollaborator} /> : <>
@@ -69,22 +72,45 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
       {isAdmin && <div className="mb-4 flex flex-wrap gap-1 border-b pb-3" role="group" aria-label="Visão de capacitações"><button type="button" onClick={() => go("capacitacoes", selected.code, "autoavaliacao", "colaborador")} className="cap-mode">Colaborador</button><button type="button" onClick={() => go("capacitacoes", selected.code, "retorno", "administrador")} className={`cap-mode ${mode === "administrador" ? "cap-mode-active" : ""}`}>Avaliar pedidos</button><button type="button" onClick={() => go("capacitacoes", selected.code, "mapa", "administrador")} className="cap-mode">Mapa da equipe</button></div>}
       {!(mode === "administrador" && isAdmin) && <CapabilityIdentityStrip item={selected} />}
       <p className="mb-4 border-l-2 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-950">Os registros são atribuídos ao perfil selecionado no Radar Vital. Este perfil pode ser trocado no aplicativo e não comprova identidade individual.</p>
-      {loading ? <div className="cap-empty">Carregando perfil...</div> : !currentUser ? <div className="cap-empty">Selecione seu perfil no Radar Vital para iniciar a jornada.</div> : requests.error || assessments.error || teamCertifications.error ? <div className="cap-empty">Não foi possível carregar sua jornada. Verifique a conexão e tente atualizar.</div> : requests.isLoading || assessments.isLoading || teamCertifications.isLoading ? <div className="cap-empty">Carregando histórico...</div> : mode === "administrador" && isAdmin ? <Reviewer library={library} requests={requests.data ?? []} people={people} reviewerId={currentUser.id} /> : <Journey item={selected} tab={tab} go={go} collaboratorId={currentUser.id} collaboratorName={currentUser.name} approved={approved} assessments={selectedAssessments} requests={ownRequests.filter((request) => request.capability_code === selected.code)} canReview={isAdmin} />}
+      {loading ? <div className="cap-empty">Carregando perfil...</div> : !currentUser ? <div className="cap-empty">Selecione seu perfil no Radar Vital para iniciar a jornada.</div> : requests.error || assessments.error || teamCertifications.error || teamTrainingRequests.error ? <div className="cap-empty">Não foi possível carregar sua jornada. Verifique a conexão e tente atualizar.</div> : requests.isLoading || assessments.isLoading || teamCertifications.isLoading || teamTrainingRequests.isLoading ? <div className="cap-empty">Carregando histórico...</div> : mode === "administrador" && isAdmin ? <Reviewer library={library} requests={requests.data ?? []} people={people} reviewerId={currentUser.id} /> : <Journey item={selected} tab={tab} go={go} collaboratorId={currentUser.id} collaboratorName={currentUser.name} approved={approved} assessments={selectedAssessments} requests={ownRequests.filter((request) => request.capability_code === selected.code)} canReview={isAdmin} />}
       </>}
     </>}
   </div>;
 }
 
-function Catalog({ library, go }: { library: Library; go: Go }) {
+function Catalog({ library, go, certifiedLevels, trainingRequests, compact = false }: { library: Library; go: Go; certifiedLevels: Map<string, number>; trainingRequests: TeamTrainingRequestRow[]; compact?: boolean }) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState("Todas");
   const list = useMemo(() => library.capabilities.filter((item) => (kind === "Todas" || item.nature === kind)
     && `${item.code} ${item.title} ${item.summary} ${item.originLabel}`.toLocaleLowerCase("pt-BR").includes(query.toLocaleLowerCase("pt-BR"))), [library, kind, query]);
-  return <><Heading eyebrow="Plano Mestre / Capacidades" title="Banco de capacidades">Domínios extraídos da planilha de responsabilidades, com fichas completas e critérios de certificação.</Heading>
+  return <>{compact ? <div className="mb-4 border-t pt-6"><h2 className="text-lg font-semibold">Mapa completo de capacidades</h2><p className="mt-1 text-sm text-zinc-600">Consulte cada capacidade, seu nível atual e o próximo passo possível.</p></div> : <Heading eyebrow="Plano Mestre / Capacidades" title="Banco de capacidades">Veja as capacidades já certificadas, as que estão em desenvolvimento e as próximas etapas do seu perfil.</Heading>}
     <div className="cap-search-shell mb-4"><Search className="h-5 w-5 text-teal-700" /><input aria-label="Buscar capacidades" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar capacidade, código ou atividade" className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none" />{query && <button type="button" aria-label="Limpar busca" onClick={() => setQuery("")}><X className="h-4 w-4" /></button>}</div>
     <div className="mb-4 flex flex-wrap gap-1" role="group" aria-label="Natureza da capacidade">{kinds.map((value) => <button type="button" key={value} aria-pressed={kind === value} onClick={() => setKind(value)} className={`cap-filter ${kind === value ? "cap-filter-active" : ""}`}>{value}</button>)}<span className="ml-auto self-center text-xs text-zinc-500">{list.length} de {library.capabilities.length}</span></div>
-    <div className="cap-catalog-grid">{list.map((item) => <CapabilityCatalogCard key={item.code} item={item} onOpen={() => go("capacidade", item.code)} />)}</div>
+    <div className="cap-catalog-grid">{list.map((item) => <CapabilityCatalogCard key={item.code} item={item} certifiedLevel={certifiedLevels.get(item.code) ?? 0} trainingLevel={trainingRequests.find((request) => request.capability_code === item.code)?.target_level ?? 0} onOpen={() => go("capacidade", item.code)} onRequestLevel={() => go("capacitacoes", item.code, "criterios", "colaborador")} />)}</div>
     {!list.length && <div className="cap-empty">Nenhuma capacidade encontrada.</div>}
+  </>;
+}
+
+function TrainingOverview({ library, go, currentUser, certifiedLevels, trainingRequests }: { library: Library; go: Go; currentUser: { id: string; name: string } | null; certifiedLevels: Map<string, number>; trainingRequests: TeamTrainingRequestRow[] }) {
+  if (!currentUser) return <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar suas capacitações.</div>;
+  const certified = library.capabilities.filter((item) => (certifiedLevels.get(item.code) ?? 0) > 0);
+  const inDevelopment = trainingRequests.filter((request) => (certifiedLevels.get(request.capability_code) ?? 0) < request.target_level);
+  const recommendations = library.capabilities
+    .filter((item) => (certifiedLevels.get(item.code) ?? 0) < 3)
+    .sort((a, b) => {
+      const aTraining = inDevelopment.some((request) => request.capability_code === a.code);
+      const bTraining = inDevelopment.some((request) => request.capability_code === b.code);
+      return Number(bTraining) - Number(aTraining) || (certifiedLevels.get(a.code) ?? 0) - (certifiedLevels.get(b.code) ?? 0) || a.code.localeCompare(b.code);
+    })
+    .slice(0, 6);
+  return <><Heading eyebrow={`Jornada de ${currentUser.name}`} title="Minhas capacitações">Acompanhe o que já está certificado, o que está em desenvolvimento e os próximos níveis recomendados para sua evolução.</Heading>
+    <div className="mb-7 grid gap-3 sm:grid-cols-3">
+      <div className="border-t-4 border-emerald-600 bg-white p-4"><p className="text-xs font-semibold uppercase text-zinc-500">Certificadas</p><strong className="mt-1 block text-2xl">{certified.length}</strong><p className="mt-1 text-xs text-zinc-600">capacidades com nível reconhecido</p></div>
+      <div className="border-t-4 border-sky-500 bg-white p-4"><p className="text-xs font-semibold uppercase text-zinc-500">Em desenvolvimento</p><strong className="mt-1 block text-2xl">{inDevelopment.length}</strong><p className="mt-1 text-xs text-zinc-600">capacitações solicitadas</p></div>
+      <div className="border-t-4 border-amber-500 bg-white p-4"><p className="text-xs font-semibold uppercase text-zinc-500">Próximos passos</p><strong className="mt-1 block text-2xl">{recommendations.length}</strong><p className="mt-1 text-xs text-zinc-600">oportunidades para iniciar ou evoluir</p></div>
+    </div>
+    <section className="mb-7"><div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-semibold">Próximas recomendações</h2><p className="mt-1 text-sm text-zinc-600">Priorize o próximo nível de capacidades já reconhecidas ou inicie uma nova jornada.</p></div></div><div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">{recommendations.map((item) => { const certifiedLevel = certifiedLevels.get(item.code) ?? 0; const targetLevel = Math.max(1, certifiedLevel + 1) as CapabilityLevel; const requested = inDevelopment.find((request) => request.capability_code === item.code); return <article key={item.code} className="border bg-white p-4"><p className="text-xs font-semibold uppercase text-teal-700">{item.code} · {item.nature}</p><h3 className="mt-1 text-sm font-semibold">{item.title}</h3><p className="mt-2 line-clamp-2 text-xs leading-relaxed text-zinc-600">{capabilitySummary(item)}</p><p className="mt-3 text-xs text-zinc-600">{requested ? <>Em desenvolvimento: <strong>{capabilityLevelNames[requested.target_level]}</strong></> : certifiedLevel > 0 ? <>Certificado: <strong>{capabilityLevelNames[certifiedLevel]}</strong> · Próximo: <strong>{capabilityLevelNames[targetLevel]}</strong></> : <>Próximo passo: <strong>iniciar no nível Assistido</strong></>}</p><div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => go("capacitacoes", item.code, "criterios", "colaborador")} className="text-xs font-semibold text-teal-700 hover:text-teal-900">{requested ? "Acompanhar capacitação" : `Solicitar ${capabilityLevelNames[targetLevel]}`}</button><button type="button" onClick={() => go("capacidade", item.code)} className="text-xs font-semibold text-zinc-700 hover:text-zinc-950">Ver capacidade</button></div></article>; })}</div></section>
+    <Catalog library={library} go={go} certifiedLevels={certifiedLevels} trainingRequests={trainingRequests} compact />
   </>;
 }
 
