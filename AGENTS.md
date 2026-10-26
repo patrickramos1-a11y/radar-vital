@@ -16,6 +16,7 @@ Antes de alterar codigo relacionado ao roadmap:
 
 ## Regras de trabalho
 
+- Master Plan personal-record RPCs require verified session identity and server-side roles; preserve operational public access until an explicitly validated cutover.
 - Executar uma fase por vez, respeitando suas dependencias.
 - As fases sao etapas internas de construcao, nao publicacoes independentes.
 - Desenvolver todo o roadmap em uma branch de integracao separada de `main`.
