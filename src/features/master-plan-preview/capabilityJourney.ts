@@ -5,6 +5,11 @@ import { guidanceFor } from "./criterionGuidance";
 export const JOURNEY_STORAGE_KEY = "radar-vital:plano-mestre:jornada-capacidades:local:v1";
 
 export type CapabilityLevel = 1 | 2 | 3;
+export const capabilityLevelInsignia: Record<CapabilityLevel, string> = {
+  1: "/capability-stickers/levels/INSIGNIA_ASSISTIDO.png",
+  2: "/capability-stickers/levels/INSIGNIA_AUTONOMO.png",
+  3: "/capability-stickers/levels/INSIGNIA_MULTIPLICADOR.png",
+};
 export type Criterion = { id: string; level: 0 | CapabilityLevel; text: string; kind: "performance" | "evidence"; guidance?: string; reviewCheck?: string };
 export type CapabilityRecord = (typeof sourceCatalog.capabilities)[number];
 export type CriterionResponse = {

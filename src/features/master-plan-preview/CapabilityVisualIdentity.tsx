@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { capabilityLevelNames, type CapabilityLevel, type CapabilityRecord } from "./capabilityJourney";
+import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel, type CapabilityRecord } from "./capabilityJourney";
 import { capabilityCoverPath, capabilityVisual, capabilityVisualStyle } from "./capabilityVisuals";
 
 export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, trainingLevel = 0, onRequestLevel }: {
@@ -71,7 +71,7 @@ export function CapabilityStickerCard({ item, certifiedLevel = 0, trainingLevel 
         <strong className="cap-sticker-title">{item.title}</strong>
         <span className="cap-sticker-level-copy">Nível atual <strong>{stickerLevelCopy[currentLevel]}</strong></span>
         <span className="cap-sticker-levels" aria-label={`Níveis de ${item.title}`}>
-          {visibleLevels.map((level) => <span key={level} className={level <= currentLevel ? "cap-sticker-level-earned" : ""} title={stickerLevelCopy[level]}><img src={`/capability-stickers/levels/NIVEL_${level}.png`} alt="" loading="lazy" decoding="async" /></span>)}
+          {visibleLevels.map((level) => <span key={level} className={level <= currentLevel ? "cap-sticker-level-earned" : ""} title={stickerLevelCopy[level]}><img src={capabilityLevelInsignia[level]} alt="" loading="lazy" decoding="async" /></span>)}
         </span>
       </div>
     </button>

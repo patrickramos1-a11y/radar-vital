@@ -77,9 +77,9 @@ describe("official capability library", () => {
 
   it("shows the corresponding sticker for every capability level", () => {
     open("capacidade", "T04", "niveis");
-    expect(screen.getByRole("img", { name: "Insígnia do nível Assistido" }).getAttribute("src")).toBe("/capability-stickers/levels/NIVEL_1.png");
-    expect(screen.getByRole("img", { name: "Insígnia do nível Autônomo" }).getAttribute("src")).toBe("/capability-stickers/levels/NIVEL_2.png");
-    expect(screen.getByRole("img", { name: "Insígnia do nível Multiplicador" }).getAttribute("src")).toBe("/capability-stickers/levels/NIVEL_3.png");
+    expect(screen.getByRole("img", { name: "Insígnia do nível Assistido" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_ASSISTIDO.png");
+    expect(screen.getByRole("img", { name: "Insígnia do nível Autônomo" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
+    expect(screen.getByRole("img", { name: "Insígnia do nível Multiplicador" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_MULTIPLICADOR.png");
   });
 
   it("uses the selected collaborator profile without requesting an email login", async () => {
@@ -117,7 +117,7 @@ describe("official capability library", () => {
       { collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
       { collaborator_id: "collaborator-1", capability_code: "E01", certified_level: 1, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
     ];
-    open("jornada");
+    const go = open("jornada");
     await waitFor(() => expect(screen.getByText(/3 de 84 pontos/)).toBeTruthy());
     const capability = screen.getByRole("button", { name: /E01.*Engenharia de Sistemas de Saneamento/ });
     expect(within(capability).getByRole("img", { name: "Figurinha E01: Engenharia de Sistemas de Saneamento" })).toBeTruthy();
@@ -130,6 +130,10 @@ describe("official capability library", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Escada de cargo" }));
     expect(screen.getByRole("heading", { name: "Escada de promoção · Núcleo Técnico" })).toBeTruthy();
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Responsabilidades deste cargo").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Responsabilidades acumuladas · \d+/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getAllByRole("button", { name: /F01 · Autônomo/ })[0]);
+    expect(go).toHaveBeenCalledWith("capacidade", "F01");
   });
 
   it("links responsibility, sector, and missing capability from the professional journey", async () => {
@@ -145,7 +149,7 @@ describe("official capability library", () => {
     fireEvent.click(within(row!).getByRole("button", { name: "Abrir setor SISRAMOS" }));
     expect(go).toHaveBeenCalledWith("setor", "sector-1");
     fireEvent.click(within(row!).getByRole("button", { name: /T02 · Atual: Não certificado · Exigido: Multiplicador/ }));
-    expect(go).toHaveBeenCalledWith("capacitacoes", "T02", "autoavaliacao", "colaborador");
+    expect(go).toHaveBeenCalledWith("capacidade", "T02");
   });
 
   it("separates granted responsibilities from the evolution queue", async () => {
