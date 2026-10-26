@@ -148,8 +148,8 @@ describe("official capability library", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Escada de cargo" }));
     expect(screen.getByRole("heading", { name: "Escada de promoção · Núcleo Técnico" })).toBeTruthy();
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Competências possíveis").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Capacidades disponíveis para este cargo").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Competências para compor o cenário").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Capacidades do cenário").length).toBeGreaterThan(0);
     const responsibility = library.responsibilities.find((item) => item.requiredCapabilities.some((requirement) => requirement.capabilityCode === "F01") && item.requiredCapabilities.every((requirement) => requirement.minimumLevel < 3))!;
     fireEvent.click(screen.getAllByRole("button", { name: new RegExp(responsibility.title) })[0]);
     expect(screen.getAllByText("No plano").length).toBeGreaterThan(0);
