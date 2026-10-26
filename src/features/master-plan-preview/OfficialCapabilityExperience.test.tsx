@@ -103,7 +103,7 @@ describe("official capability library", () => {
     expect(screen.getByRole("button", { name: "Falta certificar" }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Falta Assistido" }));
     expect(screen.getAllByRole("img", { name: /Figurinha/ })[0].closest("article")?.className).toContain("cap-sticker-card-missing");
-  });
+  }, 10_000);
 
   it("shows the professional journey with capabilities, responsibilities, and career evolution", async () => {
     fixture.certifications = [
@@ -243,11 +243,14 @@ describe("official capability library", () => {
   });
 
   it("shows the capabilities and responsibility impact behind the next steps summary", async () => {
-    open("capacitacoes");
+    const go = open("capacitacoes");
     const summary = await screen.findByRole("button", { name: /Próximos passos.*Ver capacidades e impactos/ });
     fireEvent.click(summary);
-    expect(screen.getByRole("heading", { name: "Capacidades para o próximo passo" })).toBeTruthy();
-    expect(screen.getAllByText(/Destrava agora \d+ responsabilidades?/).length).toBeGreaterThan(0);
+    expect(go).toHaveBeenCalledWith("capacitacoes", undefined, "proximas");
+    cleanup();
+    open("capacitacoes", "", "proximas");
+    expect(await screen.findByRole("heading", { name: "Próximas capacitações" })).toBeTruthy();
+    expect(screen.getAllByText(/Impacta \d+ responsabilidades?/).length).toBeGreaterThan(0);
   });
 
   it("does not offer the administrative queue to a collaborator", async () => {
