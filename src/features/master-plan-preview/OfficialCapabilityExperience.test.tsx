@@ -86,6 +86,16 @@ describe("official capability library", () => {
     expect(screen.getAllByRole("button", { name: /Solicitar Assistido/ }).length).toBeGreaterThan(0);
   });
 
+  it("opens the certified capabilities from the personal journey summary", async () => {
+    fixture.certifications = [{ collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
+    const go = open("capacitacoes");
+    const summary = await screen.findByRole("button", { name: /Ver certificações/ });
+    fireEvent.click(summary);
+    expect(screen.getByRole("heading", { name: "Certificações de Gabi" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /T01.*Gestão de Informações e Acervo/ }));
+    expect(go).toHaveBeenCalledWith("capacidade", "T01");
+  });
+
   it("does not offer the administrative queue to a collaborator", async () => {
     open("capacitacoes", "T01", "autoavaliacao", "administrador");
     await waitFor(() => expect(screen.getByRole("button", { name: "Registrar autoavaliação" })).toBeTruthy());
