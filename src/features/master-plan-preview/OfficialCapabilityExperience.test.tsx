@@ -102,6 +102,8 @@ describe("official capability library", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacitacoes" code="E01" tab="mapa" mode="administrador" go={vi.fn()} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} onDeactivateCollaborator={async () => {}} /></QueryClientProvider>);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Painel de capacitação" })).toBeTruthy());
+    expect(screen.getByRole("columnheader", { name: "Gabi" }).className).toContain("sticky");
+    expect(screen.getByRole("columnheader", { name: "Gabi" }).className).toContain("top-0");
     const controls = screen.getByRole("group", { name: /Capacitação planejada de Engenharia de Sistemas de Saneamento para Gabi/ });
     fireEvent.click(within(controls).getByRole("button", { name: "Autônomo" }));
     expect(screen.getByRole("button", { name: "Aplicar atualizações" })).toBeTruthy();
