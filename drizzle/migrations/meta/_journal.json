@@ -57,6 +57,13 @@
       "when": 1792973247474,
       "tag": "0007_master_plan_capability_journey_secure",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792973276279,
+      "tag": "0008_master_plan_official_journey_secure",
+      "breakpoints": true
     }
   ]
 }

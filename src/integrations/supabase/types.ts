@@ -1309,6 +1309,83 @@ export type Database = {
           },
         ]
       }
+      master_plan_capability_development_plans: {
+        Row: {
+          capability_code: string
+          collaborator_id: string
+          created_at: string
+          target_level: number
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          capability_code: string
+          collaborator_id: string
+          created_at?: string
+          target_level: number
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          capability_code?: string
+          collaborator_id?: string
+          created_at?: string
+          target_level?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_capability_development_plans_capability_code_fkey"
+            columns: ["capability_code"]
+            isOneToOne: false
+            referencedRelation: "master_plan_capability_library"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "master_plan_capability_development_plans_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_capability_development_plans_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_capability_development_plans_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_capability_development_plans_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_capability_development_plans_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_capability_development_plans_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_plan_capability_library: {
         Row: {
           code: string
@@ -1534,6 +1611,52 @@ export type Database = {
           },
         ]
       }
+      master_plan_journey_settings: {
+        Row: {
+          initial_self_assessment_target: number
+          self_assessment_interval_days: number
+          settings_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          initial_self_assessment_target?: number
+          self_assessment_interval_days?: number
+          settings_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          initial_self_assessment_target?: number
+          self_assessment_interval_days?: number
+          settings_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_journey_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_journey_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_journey_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_plan_library_metadata: {
         Row: {
           created_at: string
@@ -1554,6 +1677,89 @@ export type Database = {
           source_sha256?: string
         }
         Relationships: []
+      }
+      master_plan_responsibility_claims: {
+        Row: {
+          collaborator_id: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string
+          id: string
+          requested_at: string
+          responsibility_source_id: string
+          status: string
+        }
+        Insert: {
+          collaborator_id: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string
+          id?: string
+          requested_at?: string
+          responsibility_source_id: string
+          status?: string
+        }
+        Update: {
+          collaborator_id?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string
+          id?: string
+          requested_at?: string
+          responsibility_source_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_responsibility_claims_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_responsibility_claims_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_responsibility_claims_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_responsibility_claims_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_responsibility_claims_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_responsibility_claims_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_responsibility_claims_responsibility_source_id_fkey"
+            columns: ["responsibility_source_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_responsibility_library"
+            referencedColumns: ["source_id"]
+          },
+        ]
       }
       master_plan_responsibility_library: {
         Row: {
@@ -2704,6 +2910,25 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      master_plan_request_responsibility: {
+        Args: { p_responsibility_source_id: string }
+        Returns: {
+          collaborator_id: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string
+          id: string
+          requested_at: string
+          responsibility_source_id: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "master_plan_responsibility_claims"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       master_plan_review_certification_request: {
         Args: {
           p_decision: string
@@ -2728,6 +2953,25 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "master_plan_certification_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      master_plan_review_responsibility_claim: {
+        Args: { p_claim_id: string; p_decision: string; p_note?: string }
+        Returns: {
+          collaborator_id: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string
+          id: string
+          requested_at: string
+          responsibility_source_id: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "master_plan_responsibility_claims"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -2758,6 +3002,27 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "master_plan_certification_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      master_plan_set_capability_development_plan: {
+        Args: {
+          p_capability_code: string
+          p_collaborator_id: string
+          p_target_level: number
+        }
+        Returns: {
+          capability_code: string
+          collaborator_id: string
+          created_at: string
+          target_level: number
+          updated_at: string
+          updated_by: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "master_plan_capability_development_plans"
           isOneToOne: true
           isSetofReturn: false
         }
