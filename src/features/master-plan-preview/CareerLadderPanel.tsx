@@ -1,5 +1,5 @@
 import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { capabilityLevelNames } from "./capabilityJourney";
+import { capabilityLevelInsignia, capabilityLevelNames } from "./capabilityJourney";
 import { careerStepReadiness, nucleoTecnicoCareerLadder } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
@@ -47,7 +47,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
               <div className="flex flex-wrap gap-1">{readiness.pac.map((requirement) => {
                 const level = certifiedLevels.get(requirement.capabilityCode) ?? 0;
                 const complete = level >= requirement.minimumLevel;
-                return <button key={requirement.capabilityCode} type="button" onClick={() => go("capacidade", requirement.capabilityCode)} className={`border px-2 py-1 text-[11px] font-medium ${complete ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-amber-300 bg-amber-50 text-amber-900"}`}>{requirement.capabilityCode} · {capabilityLevelNames[requirement.minimumLevel]}</button>;
+                return <button key={requirement.capabilityCode} type="button" onClick={() => go("capacidade", requirement.capabilityCode)} aria-label={`${requirement.capabilityCode} · ${capabilityLevelNames[requirement.minimumLevel]}`} title={capabilityLevelNames[requirement.minimumLevel]} className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] font-medium ${complete ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-amber-300 bg-amber-50 text-amber-900"}`}><span>{requirement.capabilityCode}</span><img src={capabilityLevelInsignia[requirement.minimumLevel]} alt="" className="h-4 w-4 object-contain" loading="lazy" decoding="async" /></button>;
               })}</div>
               {readiness.missingCapabilities.length > 0 && <p className="mt-2 text-xs text-amber-800">Faltam {readiness.missingCapabilities.length} capacidades ou níveis para completar o PAC.</p>}
             </div>

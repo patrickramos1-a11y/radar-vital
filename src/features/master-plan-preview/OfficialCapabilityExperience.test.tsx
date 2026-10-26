@@ -141,7 +141,9 @@ describe("official capability library", () => {
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Responsabilidades deste cargo").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Responsabilidades acumuladas · \d+/).length).toBeGreaterThan(0);
-    fireEvent.click(screen.getAllByRole("button", { name: /F01 · Autônomo/ })[0]);
+    const firstF01 = screen.getAllByRole("button", { name: /F01 · Autônomo/ })[0];
+    expect(firstF01.querySelector("img")?.getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
+    fireEvent.click(firstF01);
     expect(go).toHaveBeenCalledWith("capacidade", "F01");
   });
 
