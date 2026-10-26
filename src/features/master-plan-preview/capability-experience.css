@@ -89,9 +89,10 @@
 .cap-catalog-item { display: block; min-width: 0; overflow: hidden; border: 1px solid #e3e9e6; border-top: 3px solid var(--cap-accent, #168274); border-radius: 6px; background: #fff; text-align: left; box-shadow: 0 1px 5px rgb(22 45 39 / 3%); transition: border-color 150ms, box-shadow 150ms, transform 150ms; }
 .cap-catalog-item:hover { border-color: var(--cap-accent, #5fa89b); box-shadow: 0 7px 20px rgb(22 45 39 / 8%); transform: translateY(-2px); }
 .cap-catalog-item:focus-visible { outline: 3px solid #176f68; outline-offset: 2px; }
-.cap-catalog-main { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 10px; min-height: 132px; padding: 10px; }
-.cap-catalog-sticker { display: block; width: 108px; height: 108px; align-self: center; object-fit: contain; filter: drop-shadow(0 3px 4px rgb(22 45 39 / 12%)); }
-.cap-catalog-detail { display: block; min-width: 0; padding: 2px 0; }
+.cap-catalog-cover { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; background: #fff; }
+.cap-catalog-main { display: block; min-height: 102px; padding: 11px 12px 12px; }
+.cap-catalog-sticker { display: none; width: 108px; height: 108px; align-self: center; object-fit: contain; filter: drop-shadow(0 3px 4px rgb(22 45 39 / 12%)); }
+.cap-catalog-detail { display: block; min-width: 0; }
 .cap-catalog-kicker { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--cap-ink, #176f68); }
 .cap-catalog-nature { font-size: 11px; font-weight: 700; text-transform: uppercase; }
 .cap-catalog-title { display: block; margin-top: 5px; color: #172824; font-size: 15px; line-height: 1.35; }
@@ -205,8 +206,10 @@
 
 @media (max-width: 760px) {
   .cap-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .cap-catalog-cover { display: none; }
   .cap-catalog-main { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 6px; padding: 8px; }
-  .cap-catalog-sticker { width: 66px; height: 66px; justify-self: center; }
+  .cap-catalog-main { display: grid; }
+  .cap-catalog-sticker { display: block; width: 66px; height: 66px; justify-self: center; }
   .cap-catalog-detail { padding: 0; }
   .cap-catalog-nature { font-size: 10px; }
   .cap-catalog-title { font-size: 12px; }

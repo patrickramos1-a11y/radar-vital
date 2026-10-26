@@ -14,6 +14,7 @@ export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, traini
   const activeTrainingLevel = trainingLevel > certifiedLevel ? trainingLevel as CapabilityLevel : null;
   return <article className="cap-catalog-item group cap-themed" style={capabilityVisualStyle(item.code)}>
     <button type="button" className="block w-full text-left" onClick={onOpen}>
+      <img className="cap-catalog-cover" src={capabilityCoverPath(item.code)} alt={`Capa ilustrada de ${item.code}: ${item.title}`} width={1600} height={900} loading="lazy" decoding="async" />
       <span className="cap-catalog-main">
         <img className="cap-catalog-sticker" src={`/capability-stickers/posters/${item.code}.png`} alt={`Figurinha ${item.code}: ${item.title}`} width={384} height={384} loading="lazy" decoding="async" />
         <span className="cap-catalog-detail">

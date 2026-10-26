@@ -52,16 +52,18 @@ describe("official capability library", () => {
     const go = open("capacidades");
     expect(screen.getByText("28 de 28")).toBeTruthy();
     expect(screen.getAllByRole("img", { name: /^Figurinha / })).toHaveLength(28);
+    expect(screen.getAllByRole("img", { name: /^Capa ilustrada de / })).toHaveLength(28);
     fireEvent.change(screen.getByRole("textbox", { name: "Buscar capacidades" }), { target: { value: "Gestão de Informações e Acervo" } });
     expect(screen.getByText("1 de 28")).toBeTruthy();
-    expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ }).getAttribute("src")).toBe("/capability-stickers/posters/T01.png");
+    expect(screen.getByRole("img", { name: "Capa ilustrada de T01: Gestão de Informações e Acervo" }).getAttribute("src")).toBe("/universe-capabilities/T01.png");
+    expect(screen.getByRole("img", { name: "Figurinha T01: Gestão de Informações e Acervo" }).getAttribute("src")).toBe("/capability-stickers/posters/T01.png");
     fireEvent.click(screen.getByRole("button", { name: /T01.*Gestão de Informações e Acervo/ }));
     expect(go).toHaveBeenCalledWith("capacidade", "T01");
   });
 
   it("uses complete source text and keeps unmapped responsibilities visibly pending", () => {
     open("capacidade", "T01", "responsabilidades");
-    expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Capa ilustrada de T01: Gestão de Informações e Acervo" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Gestão de Informações e Acervo" })).toBeTruthy();
     expect(screen.getByText(/Estas responsabilidades exigem a capacidade/)).toBeTruthy();
     expect(screen.getAllByText("Vínculo com setor pendente; ficha ainda indisponível").length).toBeGreaterThan(0);
@@ -219,7 +221,7 @@ describe("official capability library", () => {
     open("capacidades");
     fireEvent.click(screen.getByRole("button", { name: "Falta Multiplicador" }));
     await waitFor(() => expect(screen.getByText("1 de 28")).toBeTruthy());
-    expect(screen.getByRole("img", { name: /T01: Gestão de Informações e Acervo/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Capa ilustrada de T01: Gestão de Informações e Acervo" })).toBeTruthy();
   });
 
   it("shows the requested level with its sticker and filters requested training", async () => {
