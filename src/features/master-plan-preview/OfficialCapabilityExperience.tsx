@@ -15,7 +15,6 @@ import { criterionPrompt, criterionResponsePrompt } from "./criterionGuidance";
 import { CapabilityTeamMatrix } from "./CapabilityTeamMatrix";
 import { ResponsibilityJourneyPanel } from "./ResponsibilityJourneyPanel";
 import { CareerJourneyExperience, CareerStructureExperience } from "./CareerJourneyExperience";
-import { nucleoTecnicoCareerLadder, responsibilityClaimAllowance } from "./careerLadder";
 import { approvedLevels } from "./responsibilityEligibility";
 import type { PreviewResponsibility } from "./model";
 import type { Unit } from "./data";
@@ -74,8 +73,6 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   const selectedAssessments = assessments.data?.filter((assessment) => assessment.capability_code === selected?.code && assessment.collaborator_id === currentUser?.id) ?? [];
   const submitResponsibilityClaim = async (responsibilitySourceId: string) => {
     try {
-      const allowance = responsibilityClaimAllowance(library, nucleoTecnicoCareerLadder, ownCertifiedLevels, allResponsibilityClaims, currentUser!.id);
-      if (!allowance.allowed) throw new Error(`O limite atual é de ${allowance.limit} responsabilidades para ${allowance.step.title}. Conclua a promoção deste cargo antes de abrir novos caminhos.`);
       await requestResponsibility(currentUser!.id, responsibilitySourceId);
       await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
       toast.success("Responsabilidade solicitada para avaliação.");

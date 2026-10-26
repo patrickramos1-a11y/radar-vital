@@ -164,12 +164,6 @@ function competencyCandidates(responsibilities: SourceResponsibility[], levels: 
     .sort((left, right) => left.pointsRequired - right.pointsRequired || left.responsibility.title.localeCompare(right.responsibility.title, "pt-BR"));
 }
 
-export function responsibilityClaimAllowance(library: Library, ladder: CareerLadder, levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string) {
-  const pendingStep = ladder.steps.find((step) => !careerStepReadiness(library, ladder, step.id, levels, claims, collaboratorId).eligible) ?? ladder.steps.at(-1)!;
-  const current = competencyCandidates(responsibilitiesForCareerStep(library, ladder, pendingStep.id), levels).length;
-  return { step: pendingStep, current, limit: pendingStep.responsibilityTarget, allowed: current < pendingStep.responsibilityTarget };
-}
-
 export function careerStepReadiness(library: Library, ladder: CareerLadder, stepId: CareerStepId, levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string) {
   const step = ladder.steps.find((item) => item.id === stepId);
   if (!step) throw new Error(`Cargo não encontrado: ${stepId}`);
