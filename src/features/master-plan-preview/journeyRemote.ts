@@ -17,6 +17,19 @@ export type RequestRow = {
   responses: Record<string, CriterionResponse>; reviews: Record<string, CriterionReview>;
   created_at: string; updated_at: string; submitted_at: string | null; decided_at: string | null;
 };
+export type TeamCertificationRow = {
+  collaborator_id: string;
+  capability_code: string;
+  certified_level: CapabilityLevel;
+  certified_by: string;
+  certified_at: string;
+  updated_at: string;
+};
+export type TeamCertificationUpdate = {
+  collaboratorId: string;
+  capabilityCode: string;
+  level: CapabilityLevel;
+};
 
 function result<T>(data: T | null, error: { message: string } | null): T {
   if (error) throw new Error(error.message);
@@ -70,6 +83,21 @@ export async function fetchRequests(collaboratorId: string, includeAll: boolean)
   const { data, error } = await (includeAll ? query : query.eq("collaborator_id", collaboratorId))
     .order("updated_at", { ascending: false });
   return result(data, error) as RequestRow[];
+}
+
+export async function fetchTeamCertifications(): Promise<TeamCertificationRow[]> {
+  const { data, error } = await journeySupabase.from("master_plan_team_certifications")
+    .select("collaborator_id,capability_code,certified_level,certified_by,certified_at,updated_at")
+    .order("updated_at", { ascending: false });
+  return result(data, error) as TeamCertificationRow[];
+}
+
+export async function applyTeamCertifications(actorId: string, updates: TeamCertificationUpdate[]): Promise<void> {
+  const { error } = await journeySupabase.rpc("master_plan_apply_team_certifications", {
+    p_actor_id: actorId,
+    p_updates: updates,
+  });
+  if (error) throw new Error(error.message);
 }
 
 export async function saveRequest(collaboratorId: string, id: string | null, code: string, level: CapabilityLevel,

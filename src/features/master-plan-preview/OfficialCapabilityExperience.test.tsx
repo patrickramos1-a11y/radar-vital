@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
 import { OfficialCapabilityExperience } from "./OfficialCapabilityExperience";
-import { fetchAssessments, fetchRequests } from "./journeyRemote";
+import { applyTeamCertifications, fetchAssessments, fetchRequests } from "./journeyRemote";
 import type { Library } from "./journeyRemote";
 
 const fixture = vi.hoisted(() => ({
@@ -18,6 +18,8 @@ vi.mock("@/contexts/AuthContext", () => ({
 vi.mock("./journeyRemote", () => ({
   fetchAssessments: vi.fn(async () => []),
   fetchRequests: vi.fn(async () => fixture.requests),
+  fetchTeamCertifications: vi.fn(async () => []),
+  applyTeamCertifications: vi.fn(async () => undefined),
   createRemoteAssessment: vi.fn(async () => ({ id: "assessment-1" })),
 }));
 
@@ -97,13 +99,14 @@ describe("official capability library", () => {
 
   it("uses level buttons in the team training panel and shows the capability identity", async () => {
     fixture.profile = { id: "admin-1", name: "Patrick", role: "admin" };
-    const onPlanChange = vi.fn();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacitacoes" code="E01" tab="mapa" mode="administrador" go={vi.fn()} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} onCapabilityPlanChange={onPlanChange} onDeactivateCollaborator={async () => {}} /></QueryClientProvider>);
+    render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacitacoes" code="E01" tab="mapa" mode="administrador" go={vi.fn()} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} onDeactivateCollaborator={async () => {}} /></QueryClientProvider>);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Painel de capacitação" })).toBeTruthy());
     const controls = screen.getByRole("group", { name: /Capacitação planejada de Engenharia de Sistemas de Saneamento para Gabi/ });
     fireEvent.click(within(controls).getByRole("button", { name: "Autônomo" }));
-    expect(onPlanChange).toHaveBeenCalledWith("E01", "collaborator-1", 2);
+    expect(screen.getByRole("button", { name: "Aplicar atualizações" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Aplicar atualizações" }));
+    await waitFor(() => expect(applyTeamCertifications).toHaveBeenCalledWith("admin-1", [{ collaboratorId: "collaborator-1", capabilityCode: "E01", level: 2 }]));
     expect(screen.getAllByText("Finalidade:").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Desativar Gabi" })).toBeTruthy();
   });

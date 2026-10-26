@@ -3,7 +3,7 @@ import { ArrowRight, GraduationCap, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import type { PreviewCapability, PreviewResponsibility } from "./model";
-import { fetchRequests } from "./journeyRemote";
+import { fetchRequests, fetchTeamCertifications } from "./journeyRemote";
 import { approvedLevels, responsibilityRequirements, unmetRequirements, type ResponsibilityRequirement } from "./responsibilityEligibility";
 
 type SourceRequirements = Record<string, ResponsibilityRequirement[]>;
@@ -16,17 +16,18 @@ function useEligibility(requirements: ResponsibilityRequirement[]) {
     enabled: !!currentUser,
     retry: false,
   });
-  const levels = currentUser ? approvedLevels(requests.data ?? [], currentUser.id) : new Map<string, number>();
-  return { currentUser, requests, unmet: unmetRequirements(requirements, levels) };
+  const teamCertifications = useQuery({ queryKey: ["master-plan-team-certifications"], queryFn: fetchTeamCertifications, enabled: !!currentUser, retry: false });
+  const levels = currentUser ? approvedLevels(requests.data ?? [], currentUser.id, teamCertifications.data ?? []) : new Map<string, number>();
+  return { currentUser, requests, teamCertifications, unmet: unmetRequirements(requirements, levels) };
 }
 
 type ClaimProps = { requirements: ResponsibilityRequirement[]; capabilityNames: Map<string, string>; onRequest: () => void; requestedBy: string[] };
 
 export function ResponsibilityClaimControl({ requirements, capabilityNames, onRequest, requestedBy }: ClaimProps) {
-  const { currentUser, requests, unmet } = useEligibility(requirements);
+  const { currentUser, requests, teamCertifications, unmet } = useEligibility(requirements);
   if (!currentUser) return <p className="text-xs text-muted-foreground">Selecione um perfil para confirmar as capacitações exigidas.</p>;
-  if (requests.isLoading) return <p className="text-xs text-muted-foreground">Conferindo capacitações aprovadas...</p>;
-  if (requests.error) return <p className="text-xs text-amber-800">Não foi possível confirmar as capacitações. A solicitação permanece bloqueada até a consulta voltar a funcionar.</p>;
+  if (requests.isLoading || teamCertifications.isLoading) return <p className="text-xs text-muted-foreground">Conferindo capacitações aprovadas...</p>;
+  if (requests.error || teamCertifications.error) return <p className="text-xs text-amber-800">Não foi possível confirmar as capacitações. A solicitação permanece bloqueada até a consulta voltar a funcionar.</p>;
   if (requestedBy.includes(currentUser.id)) return <p className="text-xs text-sky-800">Pedido de responsabilidade já registrado para este perfil.</p>;
   if (unmet.length) return <><p className="text-xs text-muted-foreground">Disponível depois de concluir: {unmet.map((item) => `${capabilityNames.get(item.capabilityCode) ?? item.capabilityCode} (${item.minimumLevel})`).join(", ")}.</p><Button size="sm" variant="outline" disabled>Solicitar responsabilidade</Button></>;
   return <><p className="flex items-center gap-1 text-xs text-emerald-800"><ShieldCheck className="h-3.5 w-3.5" /> Todas as capacitações mínimas foram concluídas.</p><Button size="sm" variant="outline" onClick={onRequest}>Solicitar responsabilidade</Button></>;
@@ -42,11 +43,11 @@ type AvailabilityProps = {
 
 export function ResponsibilityAvailability({ responsibilities, capabilities, sourceRequirements, onOpen, onRequest }: AvailabilityProps) {
   const names = new Map(capabilities.map((item) => [item.id, item.title]));
-  const { currentUser, requests } = useEligibility([]);
-  const levels = currentUser ? approvedLevels(requests.data ?? [], currentUser.id) : new Map<string, number>();
+  const { currentUser, requests, teamCertifications } = useEligibility([]);
+  const levels = currentUser ? approvedLevels(requests.data ?? [], currentUser.id, teamCertifications.data ?? []) : new Map<string, number>();
   if (!currentUser) return <div className="border bg-white p-4 text-sm text-muted-foreground">Selecione um perfil no Radar Vital para ver quais responsabilidades já pode solicitar.</div>;
-  if (requests.isLoading) return <div className="border bg-white p-4 text-sm text-muted-foreground">Conferindo capacitações aprovadas...</div>;
-  if (requests.error) return <div className="border bg-amber-50 p-4 text-sm text-amber-950">Não foi possível consultar as capacitações aprovadas. Nenhuma responsabilidade é liberada sem essa confirmação.</div>;
+  if (requests.isLoading || teamCertifications.isLoading) return <div className="border bg-white p-4 text-sm text-muted-foreground">Conferindo capacitações aprovadas...</div>;
+  if (requests.error || teamCertifications.error) return <div className="border bg-amber-50 p-4 text-sm text-amber-950">Não foi possível consultar as capacitações aprovadas. Nenhuma responsabilidade é liberada sem essa confirmação.</div>;
   const available = responsibilities.filter((item) => !unmetRequirements(responsibilityRequirements(item, sourceRequirements[item.id]), levels).length);
   const pending = responsibilities.filter((item) => !available.includes(item));
   const render = (item: PreviewResponsibility, ready: boolean) => {
