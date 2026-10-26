@@ -123,6 +123,13 @@ describe("official capability library", () => {
     expect(screen.getAllByRole("img", { name: /Figurinha/ })[0].closest("article")?.className).toContain("cap-sticker-card-missing");
   }, 10_000);
 
+  it("shows the certification matrix in the collection tab for Patrick", async () => {
+    fixture.profile = { id: "admin-1", name: "Patrick", role: "admin" };
+    open("capacitacoes", "", "acervo");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Painel de capacitação" })).toBeTruthy());
+    expect(screen.getByRole("columnheader", { name: "Gabi" })).toBeTruthy();
+  }, 10_000);
+
   it("shows the professional journey with capabilities, responsibilities, and career evolution", async () => {
     fixture.certifications = [
       { collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
