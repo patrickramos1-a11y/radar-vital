@@ -163,8 +163,12 @@ describe("official capability library", () => {
     expect(screen.getByRole("button", { name: "Limpar marcações" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Por capacidades" }));
     expect(screen.getByRole("heading", { name: "Monte o cargo pelas capacidades e níveis" })).toBeTruthy();
-    expect(screen.getAllByRole("group", { name: /Nível simulado para/ }).length).toBe(28);
-    expect(screen.getByRole("button", { name: "Por competências" }).getAttribute("aria-pressed")).toBe("false");
+    const capabilityGroups = screen.getAllByRole("group", { name: /Nível simulado para/ });
+    expect(capabilityGroups.length).toBe(28);
+    expect(within(capabilityGroups[0]).getByRole("button", { name: "Assistido" })).toBeTruthy();
+    expect(within(capabilityGroups[0]).getByRole("button", { name: "Autônomo" })).toBeTruthy();
+    expect(within(capabilityGroups[0]).getByRole("button", { name: "Multiplicador" })).toBeTruthy();
+    expect(within(screen.getByRole("group", { name: "Forma de simular a jornada" })).getByRole("button", { name: /Por competências/ }).getAttribute("aria-pressed")).toBe("false");
   }, 15_000);
 
   it("links responsibility, sector, and missing capability from the professional journey", async () => {
