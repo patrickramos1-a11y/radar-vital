@@ -6,11 +6,12 @@ import { ResponsibilityCapabilityCoverage } from "./ResponsibilityCapabilityCove
 const fixture = vi.hoisted(() => ({
   profile: { id: "patrick", name: "Patrick", role: "admin" },
   requests: [{ collaborator_id: "gabi", capability_code: "T04", target_level: 2, status: "approved" }],
+  teamCertifications: [] as Array<{ collaborator_id: string; capability_code: string; certified_level: number }> ,
   error: null as Error | null,
 }));
 
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ currentUser: fixture.profile }) }));
-vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: fixture.requests, error: fixture.error, isLoading: false }) }));
+vi.mock("@tanstack/react-query", () => ({ useQuery: ({ queryKey }: { queryKey: string[] }) => ({ data: queryKey[0] === "master-plan-team-certifications" ? fixture.teamCertifications : fixture.requests, error: fixture.error, isLoading: false }) }));
 
 function open() {
   const onOpen = vi.fn();
@@ -29,6 +30,7 @@ afterEach(() => {
   cleanup();
   fixture.profile = { id: "patrick", name: "Patrick", role: "admin" };
   fixture.requests = [{ collaborator_id: "gabi", capability_code: "T04", target_level: 2, status: "approved" }];
+  fixture.teamCertifications = [];
   fixture.error = null;
 });
 
@@ -51,6 +53,15 @@ describe("capability coverage on a responsibility", () => {
     expect(screen.getByText(/Seu nível:/)).toBeTruthy();
     expect(screen.getByText("Autônomo")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Avaliar pedidos" })).toBeNull();
+  });
+
+  it("uses a certification applied by the team in the responsibility detail", () => {
+    fixture.profile = { id: "gabi", name: "Gabi", role: "colaborador" };
+    fixture.requests = [];
+    fixture.teamCertifications = [{ collaborator_id: "gabi", capability_code: "T04", certified_level: 2 }];
+    open();
+    expect(screen.getByText(/Seu nível:/)).toBeTruthy();
+    expect(screen.getByText("Autônomo")).toBeTruthy();
   });
 
   it("does not invent a certified level when the official read fails", () => {

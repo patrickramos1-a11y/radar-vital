@@ -4,8 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { capabilityLevelNames } from "./capabilityJourney";
 import type { Collaborator } from "./data";
-import { fetchRequests } from "./journeyRemote";
+import { fetchRequests, fetchTeamCertifications } from "./journeyRemote";
 import type { PreviewCapability } from "./model";
+import { approvedLevels } from "./responsibilityEligibility";
 
 type Props = {
   capabilities: PreviewCapability[];
@@ -26,16 +27,19 @@ export function ResponsibilityCapabilityCoverage({ capabilities, collaborators, 
     enabled: !!currentUser,
     retry: false,
   });
-  const certified = requests.data?.filter((request) => request.status === "approved") ?? [];
+  const teamCertifications = useQuery({ queryKey: ["master-plan-team-certifications"], queryFn: fetchTeamCertifications, enabled: !!currentUser, retry: false });
+  const levelsByPerson = new Map(collaborators.map((person) => [
+    person.id,
+    approvedLevels(requests.data ?? [], person.id, teamCertifications.data ?? []),
+  ]));
 
   return <div className="divide-y border bg-white">
     {capabilities.map((capability) => {
-      const byPerson = new Map<string, number>();
-      for (const request of certified.filter((entry) => entry.capability_code === capability.id)) {
-        byPerson.set(request.collaborator_id, Math.max(byPerson.get(request.collaborator_id) ?? 0, request.target_level));
-      }
-      const holders = [...byPerson].map(([id, level]) => ({ id, level, name: collaborators.find((person) => person.id === id)?.name ?? "Colaborador não localizado" }));
-      const ownLevel = currentUser ? byPerson.get(currentUser.id) : undefined;
+      const holders = collaborators.flatMap((person) => {
+        const level = levelsByPerson.get(person.id)?.get(capability.id);
+        return level ? [{ id: person.id, level, name: person.name }] : [];
+      });
+      const ownLevel = currentUser ? levelsByPerson.get(currentUser.id)?.get(capability.id) : undefined;
       return <article key={capability.id} className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -46,8 +50,8 @@ export function ResponsibilityCapabilityCoverage({ capabilities, collaborators, 
         </div>
         <div className="mt-3 border-l-2 border-teal-200 pl-3 text-xs">
           {!currentUser ? <p className="text-zinc-600">Selecione um perfil para consultar a capacitação.</p>
-            : requests.isLoading ? <p className="text-zinc-600">Consultando níveis registrados...</p>
-              : requests.error ? <p className="text-amber-800">Níveis certificados indisponíveis. A biblioteca e a prévia visual podem ser consultadas, mas não há confirmação oficial nesta tela.</p>
+            : requests.isLoading || teamCertifications.isLoading ? <p className="text-zinc-600">Consultando níveis registrados...</p>
+              : requests.error || teamCertifications.error ? <p className="text-amber-800">Níveis certificados indisponíveis. A biblioteca e a prévia visual podem ser consultadas, mas não há confirmação oficial nesta tela.</p>
                 : isAdmin ? <><p className="flex items-center gap-1 font-semibold text-zinc-700"><Users className="h-3.5 w-3.5" /> Colaboradores certificados: {holders.length}</p>
                   {holders.length > 0 && <ul className="mt-2 space-y-1">{holders.map((holder) => <li key={holder.id}>{holder.name} · <strong>{capabilityLevelNames[holder.level]}</strong></li>)}</ul>}</>
                   : <p className="flex items-center gap-1 text-zinc-700"><ShieldCheck className="h-3.5 w-3.5" /> Seu nível: <strong>{ownLevel ? capabilityLevelNames[ownLevel] : "Nenhum aprovado"}</strong></p>}
