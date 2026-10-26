@@ -52,6 +52,10 @@ describe("capability coverage on a responsibility", () => {
     open();
     expect(screen.getByText(/Seu nível:/)).toBeTruthy();
     expect(screen.getByText("Autônomo")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Figurinha T04: Gestão de Prazos e Prioridades" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Selo Autônomo" })).toBeTruthy();
+    expect(screen.getByText("Capacitação concluída no nível exigido")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Solicitar capacitação" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Avaliar pedidos" })).toBeNull();
   });
 
