@@ -89,6 +89,7 @@ describe("official capability library", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Minhas capacitações" })).toBeTruthy());
     expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy();
     expect(screen.getAllByRole("button", { name: /Solicitar Assistido/ }).length).toBeGreaterThan(0);
+    expect(screen.getByRole("img", { name: /Figurinha T01/ }).getAttribute("src")).toBe("/capability-stickers/posters/T01.png");
   });
 
   it("shows the professional journey with capabilities, responsibilities, and career evolution", async () => {

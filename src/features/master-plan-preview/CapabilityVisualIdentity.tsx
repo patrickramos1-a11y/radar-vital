@@ -48,3 +48,34 @@ export function CapabilityIdentityStrip({ item }: { item: CapabilityRecord }) {
 export function CapabilityQueueThumb({ code }: { code: string }) {
   return <img className="cap-queue-thumb" src={capabilityCoverPath(code)} alt="" width={1600} height={900} loading="lazy" decoding="async" />;
 }
+
+const stickerLevelCopy = ["Ainda não iniciada", "Assistido", "Autônomo", "Multiplicador"] as const;
+
+export function CapabilityStickerCard({ item, certifiedLevel = 0, trainingLevel = 0, onOpen, onRequestLevel }: {
+  item: CapabilityRecord;
+  certifiedLevel?: number;
+  trainingLevel?: number;
+  onOpen: () => void;
+  onRequestLevel?: (level: CapabilityLevel) => void;
+}) {
+  const currentLevel = Math.max(certifiedLevel, 0);
+  const nextLevel = currentLevel < 3 ? Math.max(1, currentLevel + 1) as CapabilityLevel : null;
+  const isInDevelopment = trainingLevel > currentLevel;
+  return <article className={`cap-sticker-card ${currentLevel === 0 ? "cap-sticker-card-locked" : ""}`} style={capabilityVisualStyle(item.code)}>
+    <button type="button" className="cap-sticker-open" onClick={onOpen}>
+      <div className="cap-sticker-art"><img src={`/capability-stickers/posters/${item.code}.png`} alt={`Figurinha ${item.code}: ${item.title}`} loading="lazy" decoding="async" /></div>
+      <div className="cap-sticker-body">
+        <span className="cap-sticker-kicker"><span>{item.nature}</span><strong>{item.code}</strong></span>
+        <strong className="cap-sticker-title">{item.title}</strong>
+        <span className="cap-sticker-level-copy">Nível atual <strong>{stickerLevelCopy[currentLevel]}</strong></span>
+        <span className="cap-sticker-levels" aria-label={`Níveis de ${item.title}`}>
+          {([1, 2, 3] as CapabilityLevel[]).map((level) => <span key={level} className={level <= currentLevel ? "cap-sticker-level-earned" : ""} title={stickerLevelCopy[level]}><img src={`/capability-stickers/levels/NIVEL_${level}.png`} alt="" loading="lazy" decoding="async" /></span>)}
+        </span>
+      </div>
+    </button>
+    <div className="cap-sticker-status">
+      {isInDevelopment ? <p>Solicitada para <strong>{stickerLevelCopy[trainingLevel]}</strong></p> : currentLevel === 3 ? <p className="text-emerald-800">Jornada concluída</p> : <p>{nextLevel ? <>Próximo nível: <strong>{stickerLevelCopy[nextLevel]}</strong></> : ""}</p>}
+      {nextLevel && onRequestLevel && <button type="button" onClick={() => onRequestLevel(nextLevel)}>{isInDevelopment ? "Acompanhar solicitação" : `Solicitar ${stickerLevelCopy[nextLevel]}`}</button>}
+    </div>
+  </article>;
+}
