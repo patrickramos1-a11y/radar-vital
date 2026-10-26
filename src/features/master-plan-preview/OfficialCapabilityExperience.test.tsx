@@ -264,7 +264,7 @@ describe("official capability library", () => {
     await waitFor(() => expect(screen.getByText("10 de 10 pontos")).toBeTruthy());
     const row = screen.getByText("SISRAMOS").closest("article");
     expect(row).toBeTruthy();
-    fireEvent.click(within(row!).getByRole("button", { name: /Gestão Interna · Multiplicador/ }));
+    fireEvent.click(within(row!).getByRole("button", { name: "SISRAMOS" }));
     expect(go).toHaveBeenCalledWith("responsabilidade", "resp-413535e8de506f6a");
     expect(within(row!).getByText("Competência consolidada automaticamente")).toBeTruthy();
   });
@@ -279,7 +279,7 @@ describe("official capability library", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacitacoes" code="" tab="jornada" mode="" go={go} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} mappedResponsibilities={[{ id: "resp-413535e8de506f6a", title: "SISRAMOS", sectorId: "sector-1", capabilityIds: ["T01", "T02", "T08"], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" }]} /></QueryClientProvider>);
     const row = await screen.findByText("SISRAMOS");
-    fireEvent.click(within(row.closest("article")!).getByRole("button", { name: "SISRAMOS" }));
+    fireEvent.click(within(row.closest("article")!).getByRole("button", { name: "Gestão Interna" }));
     expect(go).toHaveBeenCalledWith("setor", "sector-1");
   });
 

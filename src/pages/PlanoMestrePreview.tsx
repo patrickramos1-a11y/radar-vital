@@ -52,7 +52,7 @@ const navItems: Array<{ view: MainView; label: string; icon: LucideIcon }> = [
   { view: "empresa", label: "Visão geral", icon: Building2 },
   { view: "nucleos", label: "Núcleos", icon: Layers3 },
   { view: "setores", label: "Setores", icon: BriefcaseBusiness },
-  { view: "responsabilidades", label: "Responsabilidades", icon: ShieldAlert },
+  { view: "responsabilidades", label: "Competências", icon: ShieldAlert },
   { view: "capacidades", label: "Capacidades", icon: BookOpen },
   { view: "capacitacoes", label: "Capacitações", icon: GraduationCap },
   { view: "solicitacoes", label: "Solicitações", icon: ClipboardList },
@@ -142,6 +142,7 @@ export default function PlanoMestrePreview() {
   const isDemoView = (view === "capacidades" && mode !== "atual")
     || (view === "capacidade" && mode !== "atual" && /^[TFE]\d{2}$/.test(id))
     || (view === "capacitacoes" && mode !== "atual")
+    || view === "responsabilidades"
     || view === "jornada" || view === "cargos-funcoes";
   const [showDataInfo, setShowDataInfo] = useState(false);
   const [trail, setTrail] = useState<TrailItem[]>([]);
@@ -358,8 +359,8 @@ export default function PlanoMestrePreview() {
   };
   const workspacePage = data && remoteDraft ? <WorkspaceContent context={data} view={view} id={id} tab={tab} go={go} openDraft={setDraft} nucleiOf={nucleusOf} setNucleus={(sectorId, nucleusId) => { void updateWorkspace((value) => ({ ...value, nucleusOverrides: { ...value.nucleusOverrides, [sectorId]: nucleusId } })); }} nucleusThresholds={workspace.nucleusThresholds} setNucleusThreshold={(nucleusId, threshold) => { void updateWorkspace((value) => ({ ...value, nucleusThresholds: { ...value.nucleusThresholds, [nucleusId]: threshold } })); }} capabilities={capabilities} responsibilities={responsibilities} requests={requests} requestPlans={workspace.requestPlans} setResponsibility={(responsibilityId, patch) => { void updateWorkspace((value) => ({ ...value, responsibilityOverrides: { ...value.responsibilityOverrides, [responsibilityId]: { ...value.responsibilityOverrides[responsibilityId], ...patch } } })); }} trainingRequests={workspace.trainingRequests} claims={workspace.claims} saveLocalClaim={(personId, responsibilityId) => { void updateWorkspace((current) => ({ ...current, claims: [...current.claims.filter((claim) => !(claim.personId === personId && claim.responsibilityId === responsibilityId && claim.status === "requested")), { personId, responsibilityId, status: "requested", requestedAt: new Date().toISOString() }] })); }} reviewLocalClaim={(personId, responsibilityId, status) => { void updateWorkspace((current) => ({ ...current, claims: current.claims.map((claim) => claim.personId === personId && claim.responsibilityId === responsibilityId && claim.status === "requested" ? { ...claim, status, decidedAt: new Date().toISOString() } : claim) })); }} personId={personId} setPersonId={setSelectedPerson} /> : null;
   const page = isDemoView && officialReady
-    ? <OfficialCapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes" | "jornada" | "cargos-funcoes"} code={id} tab={tab} mode={mode} go={go} library={officialLibrary} people={data?.collaborators ?? []} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} capabilityPlans={workspace.capabilityPlans ?? {}} localClaims={workspace.claims} onDeactivateCollaborator={deactivateCollaborator} />
-    : isDemoView && view !== "jornada" && view !== "cargos-funcoes"
+    ? <OfficialCapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes" | "responsabilidades" | "jornada" | "cargos-funcoes"} code={id} tab={tab} mode={mode} go={go} library={officialLibrary} people={data?.collaborators ?? []} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} capabilityPlans={workspace.capabilityPlans ?? {}} localClaims={workspace.claims} onDeactivateCollaborator={deactivateCollaborator} />
+    : isDemoView && view !== "responsabilidades" && view !== "jornada" && view !== "cargos-funcoes"
       ? <CapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes"} code={id} tab={tab} mode={mode} go={go} store={demoStore} setStore={setDemoStore} registeredCapabilities={capabilities} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} people={data?.collaborators ?? []} capabilityPlans={workspace.capabilityPlans ?? {}} onCapabilityPlanChange={(capabilityCode, collaboratorId, level) => { void updateWorkspace((current) => ({ ...current, capabilityPlans: { ...current.capabilityPlans, [capabilityCode]: { ...current.capabilityPlans?.[capabilityCode], [collaboratorId]: level } } })); }} />
       : workspacePage;
   const navigationTools = <DropdownMenu>
@@ -384,7 +385,7 @@ export default function PlanoMestrePreview() {
         {!isDemoView && (isLoading || isLoadingDraft) && <Empty>Carregando o Universo Ramos...</Empty>}
         {!isDemoView && error && <div role="alert" className="border-l-2 border-rose-600 bg-white p-4 text-sm">Não foi possível ler os dados atuais: {error instanceof Error ? error.message : "erro desconhecido"}. <Button variant="outline" size="sm" onClick={() => refetch()}>Tentar novamente</Button></div>}
         {!isDemoView && remoteError && <div role="alert" className="border-l-2 border-rose-600 bg-white p-4 text-sm">Plano Mestre indisponível no banco: {remoteError instanceof Error ? remoteError.message : "erro desconhecido"}. A migração SQL precisa ser aplicada antes do uso. <Button variant="outline" size="sm" onClick={() => refetchDraft()}>Tentar novamente</Button></div>}
-        {view === "responsabilidades" && data && remoteDraft && <LibraryIntegrationPanel context={data} workspace={workspace} focusSectorId={id} busy={integrationBusy} createSectors={createMissingSectors} integrate={integrateLibrary} />}
+        {view === "responsabilidades" && (!isDemoView || !officialReady) && data && remoteDraft && <LibraryIntegrationPanel context={data} workspace={workspace} focusSectorId={id} busy={integrationBusy} createSectors={createMissingSectors} integrate={integrateLibrary} />}
         {page}
       </div></main>
     <DraftDialog draft={draft} close={() => setDraft(null)} submit={submitDraft} context={data} capabilities={capabilities} responsibilities={responsibilities} requests={requests} requestPlans={workspace.requestPlans} personId={personId} />
