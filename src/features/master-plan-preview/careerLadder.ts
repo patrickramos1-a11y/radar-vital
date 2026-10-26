@@ -63,7 +63,7 @@ export const nucleoTecnicoCareerLadder: CareerLadder = {
   scope: "Gestão Interna, Processos e Órgãos, Projetos, Serviços, Visitas e Levantamentos e eixo Transversal",
   summary: "A operação começa com um PAC intenso e poucas competências consolidadas. À medida que a maturidade aumenta, cada pessoa forma mais competências a partir das próprias capacidades.",
   steps: [
-    { id: "operador_junior", title: "Operador Júnior", function: "Operação técnica inicial: execução assistida das rotinas fundamentais.", capabilityTarget: 26, responsibilityTarget: 3, nucleiRequired: 1, capabilityRequirements: operatorJunior },
+    { id: "operador_junior", title: "Operador Júnior", function: "Operação técnica inicial: execução assistida das rotinas fundamentais.", capabilityTarget: 26, responsibilityTarget: 4, nucleiRequired: 1, capabilityRequirements: operatorJunior },
     { id: "operador_pleno", title: "Operador Pleno", function: "Operação técnica: autonomia nas rotinas, interfaces e entregas de campo.", capabilityTarget: 42, responsibilityTarget: 8, nucleiRequired: 1, capabilityRequirements: operatorPleno },
     { id: "operador_master", title: "Operador Master", function: "Referência técnica: domínio autônomo de processos, projetos e entregas integradas.", capabilityTarget: 55, responsibilityTarget: 16, nucleiRequired: 1, capabilityRequirements: operatorMaster },
     { id: "gestao_junior", title: "Gestão Júnior", function: "Gestão de setor: cobertura, fluxo e desenvolvimento de uma frente.", capabilityTarget: 63, responsibilityTarget: 26, nucleiRequired: 1, capabilityRequirements: gestaoJunior },

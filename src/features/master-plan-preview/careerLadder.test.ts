@@ -21,7 +21,7 @@ describe("Núcleo Técnico career ladder", () => {
       "Estratégico Master",
     ]);
     expect(nucleoTecnicoCareerLadder.steps.map((step) => step.capabilityTarget)).toEqual([26, 42, 55, 63, 72, 80, 84, 84, 84]);
-    expect(nucleoTecnicoCareerLadder.steps.map((step) => step.responsibilityTarget)).toEqual([3, 8, 16, 26, 34, 44, 52, 52, 52]);
+    expect(nucleoTecnicoCareerLadder.steps.map((step) => step.responsibilityTarget)).toEqual([4, 8, 16, 26, 34, 44, 52, 52, 52]);
   });
 
   it("keeps the standard PAC on the approved point targets and closes Estratégico Júnior at Multiplicador", () => {
@@ -80,15 +80,15 @@ describe("Núcleo Técnico career ladder", () => {
     expect(responsibilitiesForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior").every((responsibility) => responsibility.requiredCapabilities.every((requirement) => requirement.minimumLevel < 3))).toBe(true);
   });
 
-  it("automatically recognizes the three competencies needed by Operador Júnior", () => {
+  it("automatically recognizes the four competencies needed by Operador Júnior", () => {
     const pac = pacForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior");
     const levels = new Map(pac.map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
     const pending = careerStepReadiness(library, nucleoTecnicoCareerLadder, "operador_junior", levels, [], "gabi");
     expect(pending.completedCapabilityPoints).toBe(26);
     expect(pending.capabilityPoints).toBe(26);
-    expect(pending.competencyTarget).toBe(3);
-    expect(pending.competencyCandidates).toHaveLength(3);
-    expect(pending.earnedCompetencies).toBeGreaterThanOrEqual(3);
+    expect(pending.competencyTarget).toBe(4);
+    expect(pending.competencyCandidates).toHaveLength(4);
+    expect(pending.earnedCompetencies).toBeGreaterThanOrEqual(4);
     expect(pending.eligible).toBe(true);
   });
 
