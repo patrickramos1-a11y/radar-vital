@@ -3,7 +3,7 @@ import { CheckCircle2, RotateCcw } from "lucide-react";
 import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel } from "./capabilityJourney";
 import { careerStepReadiness, maximumCapabilityLevelForCareerStep, nucleoTecnicoCareerLadder, responsibilitiesForCareerStep } from "./careerLadder";
 import type { Library } from "./journeyRemote";
-import { responsibilityReadiness, type ResponsibilityClaim, type ResponsibilityReadiness } from "./responsibilityJourney";
+import { competencyReadiness, type ResponsibilityClaim } from "./responsibilityJourney";
 
 type Go = (view: "responsabilidade", id?: string, tab?: string, mode?: string) => void;
 type Capability = Library["capabilities"][number];
@@ -80,7 +80,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
       <div>
         <p className="text-xs font-semibold uppercase text-violet-700">Matriz de jornada</p>
         <h2 className="mt-2 text-lg font-semibold">{ladder.title}</h2>
-        <p className="mt-1 max-w-3xl text-sm text-zinc-600">{ladder.summary} A promoção exige os dois requisitos: pontos certificados e responsabilidades formalmente concedidas.</p>
+        <p className="mt-1 max-w-3xl text-sm text-zinc-600">{ladder.summary} A promoção exige pontos certificados e competências consolidadas automaticamente.</p>
         <p className="mt-3 text-xs font-semibold uppercase text-violet-800">Escopo integrado: {ladder.scope}</p>
         <p className="mt-3 text-sm font-semibold text-violet-900">Próximo cargo: {firstIncompleteStep.title}</p>
       </div>
@@ -93,7 +93,6 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
         const selectedResponsibilityIds = selectedResponsibilityIdsByStep.get(step.id) ?? new Set<string>();
         const selectedRequirements = selectedRequirementsByStep.get(step.id) ?? new Map<string, CapabilityLevel>();
         const readiness = careerStepReadiness(library, ladder, step.id, scenarioLevels, claims, collaboratorId);
-        const ownClaims = claims.filter((claim) => claim.collaborator_id === collaboratorId);
         const capabilityByCode = new Map(library.capabilities.map((capability) => [capability.code, capability]));
         const maximumLevel = maximumCapabilityLevelForCareerStep(library, ladder, step.id);
         const scenarioCapabilities = [...library.capabilities]
@@ -101,7 +100,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
           .map((capability) => ({ capability: capabilityByCode.get(capability.code), maximumLevel, requiredLevel: selectedRequirements.get(capability.code) ?? 0 }))
           .filter((item): item is { capability: Capability; maximumLevel: CapabilityLevel; requiredLevel: CapabilityLevel | 0 } => Boolean(item.capability));
         const responsibilityOptions = responsibilitiesForCareerStep(library, ladder, step.id)
-          .map((responsibility) => responsibilityReadiness(responsibility, scenarioLevels, ownClaims))
+          .map((responsibility) => competencyReadiness(responsibility, scenarioLevels))
           .sort((left, right) => {
             const leftSelected = selectedResponsibilityIds.has(left.responsibility.sourceId);
             const rightSelected = selectedResponsibilityIds.has(right.responsibility.sourceId);
@@ -111,7 +110,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
               || left.responsibility.title.localeCompare(right.responsibility.title, "pt-BR");
           });
         const isCrossNucleus = step.nucleiRequired > 1;
-        const availableSelections = Math.max(0, readiness.responsibilityTarget - readiness.grantedResponsibilities);
+        const availableSelections = Math.max(0, readiness.competencyTarget - readiness.earnedCompetencies);
         const isActivePersonalizationStep = step.id === firstIncompleteStep.id;
         return <article key={step.id} className="px-4 py-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -119,25 +118,25 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
               <div className="flex items-center gap-2"><span className={`grid h-7 w-7 place-items-center border text-xs font-bold ${readiness.eligible ? "border-emerald-600 bg-emerald-50 text-emerald-800" : "border-violet-300 bg-violet-50 text-violet-800"}`}>{readiness.eligible ? <CheckCircle2 className="h-4 w-4" /> : index + 1}</span><div><h3 className="text-base font-semibold">{step.title}</h3><p className="text-xs text-zinc-600">{step.function}</p></div></div>
               <p className={`mt-3 text-xs font-semibold ${readiness.eligible ? "text-emerald-800" : "text-amber-800"}`}>{readiness.eligible ? "Elegível para solicitação administrativa" : isCrossNucleus ? `Requer cobertura de ${step.nucleiRequired} núcleos` : "Em desenvolvimento"}</p>
             </div>
-            <div className="grid min-w-48 grid-cols-2 gap-2 text-right text-xs"><div><strong className="block text-base">{readiness.completedCapabilityPoints}/{readiness.capabilityPoints}</strong><span className="text-zinc-600">pontos no cenário</span></div><div><strong className="block text-base">{readiness.grantedResponsibilities}/{readiness.responsibilityTarget}</strong><span className="text-zinc-600">responsabilidades</span></div></div>
+            <div className="grid min-w-48 grid-cols-2 gap-2 text-right text-xs"><div><strong className="block text-base">{readiness.completedCapabilityPoints}/{readiness.capabilityPoints}</strong><span className="text-zinc-600">pontos no cenário</span></div><div><strong className="block text-base">{readiness.earnedCompetencies}/{readiness.competencyTarget}</strong><span className="text-zinc-600">competências</span></div></div>
           </div>
 
-          {readiness.eligible ? <p className="mt-4 border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">Marco concluído com {readiness.grantedResponsibilities} responsabilidades concedidas. O próximo cargo fica disponível para personalizar a evolução.</p> : !isActivePersonalizationStep ? <p className="mt-4 border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">Este marco será aberto para personalização quando o cargo anterior estiver concluído.</p> : <div className="mt-4 space-y-4">
+          {readiness.eligible ? <p className="mt-4 border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">Marco concluído com {readiness.earnedCompetencies} competências consolidadas automaticamente. O próximo cargo fica disponível para personalizar a evolução.</p> : !isActivePersonalizationStep ? <p className="mt-4 border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">Este marco será aberto para personalização quando o cargo anterior estiver concluído.</p> : <div className="mt-4 space-y-4">
             <div className="border bg-zinc-50 p-3">
-              <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-zinc-500">Responsabilidades disponíveis</p><span className="text-xs font-semibold text-violet-800">{selectedResponsibilityIds.size}/{availableSelections} no plano</span></div>
-              <p className="mt-1 text-xs text-zinc-600">As já habilitadas aparecem primeiro. Marque até {availableSelections} oportunidades para compor seu plano; as demais continuam disponíveis conforme suas capacitações evoluem.</p>
+              <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-zinc-500">Competências possíveis</p><span className="text-xs font-semibold text-violet-800">{readiness.earnedCompetencies}/{readiness.competencyTarget} consolidadas</span></div>
+              <p className="mt-1 text-xs text-zinc-600">Cada competência é formada automaticamente quando todas as capacidades exigidas são alcançadas. Marque as que quer priorizar no seu plano.</p>
               <div className="mt-3 grid max-h-40 gap-1 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{responsibilityOptions.map((item) => {
                 const selected = selectedResponsibilityIds.has(item.responsibility.sourceId);
                 const locked = !selected && selectedResponsibilityIds.size >= availableSelections;
-                const status = selected ? "No plano" : item.unmet.length === 0 ? "Já habilitada" : `${item.unmet.length} requisito(s)`;
-                return <button key={item.responsibility.sourceId} type="button" disabled={locked} aria-pressed={selected} onClick={() => toggleResponsibility(step.id, item.responsibility.sourceId, availableSelections)} title={locked ? `Limite de ${availableSelections} responsabilidades no plano deste cargo` : `${selected ? "Remover" : "Adicionar"} ${item.responsibility.title} ${selected ? "do" : "ao"} plano`} className={`min-h-11 border px-2 py-1.5 text-left text-[10px] font-medium ${selected ? "border-sky-600 bg-sky-50 text-sky-950" : item.unmet.length === 0 ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-zinc-200 bg-white text-zinc-700 hover:border-sky-400 hover:bg-sky-50"} disabled:cursor-not-allowed disabled:opacity-45`}><span className="block leading-tight">{item.responsibility.title}</span><span className="mt-0.5 block text-[9px] font-normal opacity-80">{status}</span></button>;
+                const status = selected ? "No plano" : item.unmet.length === 0 ? "Consolidada" : `${item.unmet.length} capacidade(s) pendente(s)`;
+                return <button key={item.responsibility.sourceId} type="button" disabled={locked} aria-pressed={selected} onClick={() => toggleResponsibility(step.id, item.responsibility.sourceId, availableSelections)} title={locked ? `Limite de ${availableSelections} competências no plano deste cargo` : `${selected ? "Remover" : "Adicionar"} ${item.responsibility.title} ${selected ? "do" : "ao"} plano`} className={`min-h-11 border px-2 py-1.5 text-left text-[10px] font-medium ${selected ? "border-sky-600 bg-sky-50 text-sky-950" : item.unmet.length === 0 ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-zinc-200 bg-white text-zinc-700 hover:border-sky-400 hover:bg-sky-50"} disabled:cursor-not-allowed disabled:opacity-45`}><span className="block leading-tight">{item.responsibility.title}</span><span className="mt-0.5 block text-[9px] font-normal opacity-80">{status}</span></button>;
               })}</div>
-              {readiness.allResponsibilityCandidates.length > readiness.responsibilityTarget && <p className="mt-3 text-xs text-zinc-600">{readiness.allResponsibilityCandidates.length - readiness.responsibilityTarget} caminhos já habilitados ficam para os próximos marcos.</p>}
-              {readiness.missingResponsibilityCount > 0 && <p className="mt-3 text-xs text-amber-800">Faltam {readiness.missingResponsibilityCount} responsabilidades concedidas entre as que suas capacidades habilitam.</p>}
+              {readiness.allCompetencyCandidates.length > readiness.competencyTarget && <p className="mt-3 text-xs text-zinc-600">{readiness.allCompetencyCandidates.length - readiness.competencyTarget} competências já consolidadas também fortalecem os próximos marcos.</p>}
+              {readiness.missingCompetencyCount > 0 && <p className="mt-3 text-xs text-amber-800">Faltam {readiness.missingCompetencyCount} competências consolidadas para este marco.</p>}
               {isCrossNucleus && <p className="mt-3 text-xs text-violet-800">Depois da maturidade total do Núcleo Técnico, este marco depende da cobertura dos demais núcleos.</p>}
             </div>
             <div>
-              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><div><p className="text-xs font-semibold uppercase text-zinc-500">Capacidades disponíveis para este cargo</p><p className="mt-1 text-xs text-zinc-600">Escolha as capacidades e os níveis permitidos para este cargo. As responsabilidades acima são filtradas automaticamente; o contorno violeta identifica uma capacidade exigida por uma oportunidade incluída no plano.</p></div><span className="text-xs font-semibold text-sky-800">{readiness.certifiedCapabilityCount} consolidadas</span></div>
+              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><div><p className="text-xs font-semibold uppercase text-zinc-500">Capacidades disponíveis para este cargo</p><p className="mt-1 text-xs text-zinc-600">Escolha as capacidades e os níveis permitidos para este cargo. As competências acima se consolidam automaticamente quando seus requisitos são completados; o contorno violeta identifica uma capacidade exigida por uma competência incluída no plano.</p></div><span className="text-xs font-semibold text-sky-800">{readiness.certifiedCapabilityCount} certificadas</span></div>
               <CapabilityScenarioGrid requirements={scenarioCapabilities} certifiedLevels={certifiedLevels} scenarioLevels={scenarioLevels} scenarioChanges={scenarioChangesByStep.get(step.id) ?? new Map()} onSelect={(capabilityCode, level) => setScenarioLevel(step.id, capabilityCode, level)} />
               {readiness.missingCapabilityPoints > 0 && <p className="mt-3 text-xs text-amber-800">Faltam {readiness.missingCapabilityPoints} pontos no cenário para este cargo.</p>}
             </div>

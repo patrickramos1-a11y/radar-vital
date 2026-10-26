@@ -130,7 +130,7 @@ describe("official capability library", () => {
     expect(screen.getByRole("columnheader", { name: "Gabi" })).toBeTruthy();
   }, 10_000);
 
-  it("shows the professional journey with capabilities, responsibilities, and career evolution", async () => {
+  it("shows the professional journey with capabilities, competencies, and career evolution", async () => {
     fixture.certifications = [
       { collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
       { collaborator_id: "collaborator-1", capability_code: "E01", certified_level: 1, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
@@ -141,15 +141,14 @@ describe("official capability library", () => {
     expect(within(capability).getByRole("img", { name: "Figurinha E01: Engenharia de Sistemas de Saneamento" }).getAttribute("src")).toBe("/capability-stickers/posters/E01.png");
     expect(within(capability).getByRole("img", { name: "Nível habilitado: Assistido" })).toBeTruthy();
     expect(within(capability).getByRole("img", { name: "Nível a desenvolver: Autônomo" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("tab", { name: "Responsabilidades" }));
-    expect(screen.getByRole("heading", { name: "Responsabilidades em evolução" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("tab", { name: "Concedidas (0)" }));
-    expect(screen.getByRole("heading", { name: "Responsabilidades concedidas" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Competências" }));
+    expect(screen.getByRole("heading", { name: "Competências em formação" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /Consolidadas \(\d+\)/ }));
+    expect(screen.getByRole("heading", { name: "Competências consolidadas" })).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "Escada de cargo" }));
     expect(screen.getByRole("heading", { name: "Escada de promoção · Núcleo Técnico" })).toBeTruthy();
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Responsabilidades disponíveis").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/até \d+/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Competências possíveis").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Capacidades disponíveis para este cargo").length).toBeGreaterThan(0);
     const responsibility = library.responsibilities.find((item) => item.requiredCapabilities.some((requirement) => requirement.capabilityCode === "F01") && item.requiredCapabilities.every((requirement) => requirement.minimumLevel < 3))!;
     fireEvent.click(screen.getAllByRole("button", { name: new RegExp(responsibility.title) })[0]);
@@ -168,19 +167,19 @@ describe("official capability library", () => {
     const go = vi.fn();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="jornada" code="" tab="" mode="" go={go} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} mappedResponsibilities={[{ id: "resp-413535e8de506f6a", title: "SISRAMOS", sectorId: "sector-1", capabilityIds: ["T01", "T02", "T08"], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" }]} /></QueryClientProvider>);
-    fireEvent.click(await screen.findByRole("tab", { name: "Responsabilidades" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Competências" }));
     const row = screen.getByText("SISRAMOS").closest("article");
     expect(row).toBeTruthy();
-    expect(within(row!).getByText("Capacitações necessárias e níveis")).toBeTruthy();
-    fireEvent.click(within(row!).getByRole("button", { name: "Abrir responsabilidade Gestão Interna" }));
+    expect(within(row!).getByText("Capacidades necessárias e níveis")).toBeTruthy();
+    fireEvent.click(within(row!).getByRole("button", { name: "Abrir competência Gestão Interna" }));
     expect(go).toHaveBeenCalledWith("responsabilidade", "resp-413535e8de506f6a");
-    fireEvent.click(within(row!).getByRole("button", { name: "Abrir setor SISRAMOS" }));
+    fireEvent.click(within(row!).getByRole("button", { name: "SISRAMOS" }));
     expect(go).toHaveBeenCalledWith("setor", "sector-1");
     fireEvent.click(within(row!).getByRole("button", { name: /T02 · Atual: Não certificado · Exigido: Multiplicador/ }));
     expect(go).toHaveBeenCalledWith("capacidade", "T02");
   });
 
-  it("separates granted responsibilities from the evolution queue", async () => {
+  it("derives consolidated competencies from capabilities instead of historical claims", async () => {
     fixture.responsibilityClaims = [{
       id: "claim-1",
       collaborator_id: "collaborator-1",
@@ -192,12 +191,11 @@ describe("official capability library", () => {
       decision_note: "Concedida",
     }];
     open("jornada");
-    await screen.findByRole("tab", { name: "Concedidas (1)" });
-    fireEvent.click(screen.getByRole("tab", { name: "Responsabilidades" }));
-    expect(screen.queryByText("SISRAMOS")).toBeNull();
-    fireEvent.click(screen.getByRole("tab", { name: "Concedidas (1)" }));
-    expect(screen.getByRole("heading", { name: "Responsabilidades concedidas" })).toBeTruthy();
-    expect(screen.getByText("SISRAMOS")).toBeTruthy();
+    await screen.findByRole("tab", { name: /Consolidadas \(\d+\)/ });
+    fireEvent.click(screen.getByRole("tab", { name: "Competências" }));
+    expect(screen.getByRole("heading", { name: "Competências em formação" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /Consolidadas \(\d+\)/ }));
+    expect(screen.getByRole("heading", { name: "Competências consolidadas" })).toBeTruthy();
   });
 
   it("shows the administrative architecture of careers and functions to Patrick", async () => {
@@ -213,11 +211,9 @@ describe("official capability library", () => {
   it("opens the certified capabilities from the personal journey summary", async () => {
     fixture.certifications = [{ collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
     const go = open("capacitacoes");
-    const summary = await screen.findByRole("button", { name: /Certificadas.*1.*capacidades com nível reconhecido/ });
+    const summary = await screen.findByRole("button", { name: /Certificadas.*\d+.*capacidades com nível reconhecido/ });
     fireEvent.click(summary);
     expect(screen.getByRole("heading", { name: "Certificações de Gabi" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /T01.*Gestão de Informações e Acervo/ }));
-    expect(go).toHaveBeenCalledWith("capacidade", "T01");
   });
 
   it("opens training in development from the personal journey summary", async () => {
@@ -251,24 +247,23 @@ describe("official capability library", () => {
     await waitFor(() => expect(screen.getByText("1 de 28")).toBeTruthy());
   });
 
-  it("shows responsibility readiness from the complete mixed-level capability matrix", async () => {
+  it("shows automatic competency formation from the complete mixed-level capability matrix", async () => {
     fixture.certifications = [
       { collaborator_id: "collaborator-1", capability_code: "T02", certified_level: 3, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
       { collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
       { collaborator_id: "collaborator-1", capability_code: "T08", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
     ];
     const go = open("capacitacoes");
-    await screen.findByRole("heading", { name: "Disponibilidade para assumir" });
+    await screen.findByRole("heading", { name: "Competências formadas pelas capacidades" });
     expect(screen.queryByRole("heading", { name: "Como ler uma responsabilidade" })).toBeNull();
-    expect(screen.getAllByText("Capacitações necessárias e níveis").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Capacidades que formam esta competência").length).toBeGreaterThan(0);
     expect(screen.getByText("SISRAMOS")).toBeTruthy();
     await waitFor(() => expect(screen.getByText("7 de 7 pontos")).toBeTruthy());
     const row = screen.getByText("SISRAMOS").closest("article");
     expect(row).toBeTruthy();
-    fireEvent.click(within(row!).getByRole("button", { name: /Abrir responsabilidade Gestão Interna/ }));
+    fireEvent.click(within(row!).getByRole("button", { name: /Gestão Interna · Multiplicador/ }));
     expect(go).toHaveBeenCalledWith("responsabilidade", "resp-413535e8de506f6a");
-    fireEvent.click(within(row!).getByRole("button", { name: "Solicitar responsabilidade" }));
-    await waitFor(() => expect(requestResponsibility).toHaveBeenCalledWith("collaborator-1", "resp-413535e8de506f6a"));
+    expect(within(row!).getByText("Competência consolidada automaticamente")).toBeTruthy();
   });
 
   it("opens the mapped sector from a responsibility row in the journey", async () => {
@@ -281,7 +276,7 @@ describe("official capability library", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacitacoes" code="" tab="jornada" mode="" go={go} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} mappedResponsibilities={[{ id: "resp-413535e8de506f6a", title: "SISRAMOS", sectorId: "sector-1", capabilityIds: ["T01", "T02", "T08"], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" }]} /></QueryClientProvider>);
     const row = await screen.findByText("SISRAMOS");
-    fireEvent.click(within(row.closest("article")!).getByRole("button", { name: "Abrir setor SISRAMOS" }));
+    fireEvent.click(within(row.closest("article")!).getByRole("button", { name: "SISRAMOS" }));
     expect(go).toHaveBeenCalledWith("setor", "sector-1");
   });
 
