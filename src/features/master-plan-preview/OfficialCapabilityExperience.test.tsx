@@ -318,14 +318,15 @@ describe("official capability library", () => {
     expect(screen.getByRole("columnheader", { name: "Gabi" }).className).toContain("top-0");
     const controls = screen.getByRole("group", { name: /Capacidade de Engenharia de Sistemas de Saneamento para Gabi/ });
     expect(within(controls).getByRole("button", { name: "Solicitar Assistido" })).toBeTruthy();
-    fireEvent.click(within(controls).getByRole("button", { name: "Autônomo" }));
+    expect(screen.getByRole("img", { name: "Figurinha E01: Engenharia de Sistemas de Saneamento" }).getAttribute("src")).toBe("/capability-stickers/posters/E01.png");
+    fireEvent.click(within(controls).getByRole("button", { name: "Conceder Autônomo" }));
     fireEvent.click(within(controls).getByRole("button", { name: "Solicitar Autônomo" }));
     await waitFor(() => expect(requestTeamTraining).toHaveBeenCalledWith("admin-1", "collaborator-1", "E01", 2));
     expect(screen.getByRole("button", { name: "Aplicar atualizações" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Aplicar atualizações" }));
     await waitFor(() => expect(applyTeamCertifications).toHaveBeenCalledWith("admin-1", [{ collaboratorId: "collaborator-1", capabilityCode: "E01", level: 2 }]));
     await waitFor(() => expect(screen.queryByRole("button", { name: "Aplicar atualizações" })).toBeNull());
-    fireEvent.click(within(controls).getByRole("button", { name: "Multiplicador" }));
+    fireEvent.click(within(controls).getByRole("button", { name: "Conceder Multiplicador" }));
     expect(screen.getByRole("button", { name: "Aplicar atualizações" })).toBeTruthy();
     expect(screen.getAllByText("Finalidade:").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Desativar Gabi" })).toBeTruthy();
@@ -338,8 +339,8 @@ describe("official capability library", () => {
     render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacitacoes" code="E01" tab="mapa" mode="administrador" go={vi.fn()} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} /></QueryClientProvider>);
     const controls = await screen.findByRole("group", { name: /Capacidade de Engenharia de Sistemas de Saneamento para Gabi/ });
     expect(within(controls).getByText("Capacidade atual")).toBeTruthy();
-    expect(within(controls).getByText("Assistido")).toBeTruthy();
-    expect(within(controls).queryByRole("button", { name: "Assistido" })).toBeNull();
+    expect(within(controls).getByRole("img", { name: "Nível atual: Assistido" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_ASSISTIDO.png");
+    expect(within(controls).queryByRole("button", { name: "Conceder Assistido" })).toBeNull();
     expect(within(controls).getByRole("button", { name: "Conceder Autônomo" })).toBeTruthy();
   });
 });
