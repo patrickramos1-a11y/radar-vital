@@ -1,7 +1,7 @@
 import type { CapabilityLevel } from "./capabilityJourney";
 import type { SourceResponsibility } from "./capabilityDemo";
 import type { Library } from "./journeyRemote";
-import { competencyReadiness, globalCapabilityMaturity, type CompetencyReadiness, type ResponsibilityClaim } from "./responsibilityJourney";
+import { competencyReadiness, competencyRequirements, globalCapabilityMaturity, type CompetencyReadiness, type ResponsibilityClaim } from "./responsibilityJourney";
 
 export type CareerStepId =
   | "operador_junior"
@@ -118,7 +118,7 @@ export function maximumCapabilityLevelForCareerStep(library: Library, ladder: Ca
 
 export function responsibilitiesForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): SourceResponsibility[] {
   const maximumLevel = maximumCapabilityLevelForCareerStep(library, ladder, stepId);
-  return technicalResponsibilities(library).filter((responsibility) => responsibility.requiredCapabilities.every((requirement) => requirement.minimumLevel <= maximumLevel));
+  return technicalResponsibilities(library).filter((responsibility) => competencyRequirements(responsibility).every((requirement) => requirement.minimumLevel <= maximumLevel));
 }
 
 function competencyCandidates(responsibilities: SourceResponsibility[], levels: Map<string, number>): CompetencyReadiness[] {

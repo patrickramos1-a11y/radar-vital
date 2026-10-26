@@ -3,6 +3,7 @@ import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURAD
 import { capabilitiesForCareerStep, capabilityPoints, careerStepReadiness, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilitiesForCareerStep, technicalResponsibilities } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
+import { competencyRequirements } from "./responsibilityJourney";
 
 const library: Library = { capabilities: source.capabilities, responsibilities: source.responsibilities, sourceSha256: source.source.sha256 };
 
@@ -33,6 +34,25 @@ describe("Núcleo Técnico career ladder", () => {
   it("uses the 52 responsibilities inside the Núcleo Técnico and leaves external sectors outside this ladder", () => {
     expect(technicalResponsibilities(library)).toHaveLength(52);
     expect(technicalResponsibilities(library).every((responsibility) => responsibility.sourceSector !== "Fora do Núcleo Técnico")).toBe(true);
+  });
+
+  it("requires a correlated sector foundation before consolidating field competencies", () => {
+    const requirementsFor = (title: string) => competencyRequirements(library.responsibilities.find((responsibility) => responsibility.title === title)!);
+
+    expect(requirementsFor("Acompanhamento de Obras")).toEqual(expect.arrayContaining([
+      expect.objectContaining({ capabilityCode: "F10", minimumLevel: 2 }),
+      expect.objectContaining({ capabilityCode: "F11", minimumLevel: 2 }),
+      expect.objectContaining({ capabilityCode: "F07", minimumLevel: 1 }),
+      expect.objectContaining({ capabilityCode: "T07", minimumLevel: 1 }),
+    ]));
+    expect(requirementsFor("Georreferenciamento / Mapas")).toEqual(expect.arrayContaining([
+      expect.objectContaining({ capabilityCode: "F12", minimumLevel: 2 }),
+      expect.objectContaining({ capabilityCode: "F10", minimumLevel: 1 }),
+      expect.objectContaining({ capabilityCode: "F11", minimumLevel: 1 }),
+      expect.objectContaining({ capabilityCode: "F07", minimumLevel: 1 }),
+      expect.objectContaining({ capabilityCode: "T07", minimumLevel: 1 }),
+    ]));
+    expect(requirementsFor("CAR")).toHaveLength(7);
   });
 
   it("opens all Operador Júnior responsibility paths that do not require Multiplicador", () => {

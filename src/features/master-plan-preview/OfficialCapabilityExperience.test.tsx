@@ -252,13 +252,16 @@ describe("official capability library", () => {
       { collaborator_id: "collaborator-1", capability_code: "T02", certified_level: 3, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
       { collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
       { collaborator_id: "collaborator-1", capability_code: "T08", certified_level: 2, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+      { collaborator_id: "collaborator-1", capability_code: "T03", certified_level: 1, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+      { collaborator_id: "collaborator-1", capability_code: "T04", certified_level: 1, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
+      { collaborator_id: "collaborator-1", capability_code: "T09", certified_level: 1, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" },
     ];
     const go = open("capacitacoes");
     await screen.findByRole("heading", { name: "Competências formadas pelas capacidades" });
     expect(screen.queryByRole("heading", { name: "Como ler uma responsabilidade" })).toBeNull();
     expect(screen.getAllByText("Capacidades que formam esta competência").length).toBeGreaterThan(0);
     expect(screen.getByText("SISRAMOS")).toBeTruthy();
-    await waitFor(() => expect(screen.getByText("7 de 7 pontos")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("10 de 10 pontos")).toBeTruthy());
     const row = screen.getByText("SISRAMOS").closest("article");
     expect(row).toBeTruthy();
     fireEvent.click(within(row!).getByRole("button", { name: /Gestão Interna · Multiplicador/ }));

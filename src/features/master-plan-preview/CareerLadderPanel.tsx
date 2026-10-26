@@ -3,7 +3,7 @@ import { CheckCircle2, RotateCcw } from "lucide-react";
 import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel } from "./capabilityJourney";
 import { careerStepReadiness, maximumCapabilityLevelForCareerStep, nucleoTecnicoCareerLadder, responsibilitiesForCareerStep } from "./careerLadder";
 import type { Library } from "./journeyRemote";
-import { competencyReadiness, type ResponsibilityClaim } from "./responsibilityJourney";
+import { competencyReadiness, competencyRequirements, type ResponsibilityClaim } from "./responsibilityJourney";
 
 type Go = (view: "responsabilidade", id?: string, tab?: string, mode?: string) => void;
 type Capability = Library["capabilities"][number];
@@ -46,7 +46,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
     const requirements = new Map<string, CapabilityLevel>();
     const selectedIds = selectedResponsibilityIdsByStep.get(step.id) ?? new Set<string>();
     library.responsibilities.filter((responsibility) => selectedIds.has(responsibility.sourceId)).forEach((responsibility) => {
-      responsibility.requiredCapabilities.forEach((requirement) => requirements.set(requirement.capabilityCode, Math.max(requirements.get(requirement.capabilityCode) ?? 0, requirement.minimumLevel) as CapabilityLevel));
+      competencyRequirements(responsibility).forEach((requirement) => requirements.set(requirement.capabilityCode, Math.max(requirements.get(requirement.capabilityCode) ?? 0, requirement.minimumLevel) as CapabilityLevel));
     });
     return [step.id, requirements] as const;
   })), [library.responsibilities, selectedResponsibilityIdsByStep]);

@@ -33,6 +33,65 @@ export type CompetencyReadiness = Omit<ResponsibilityReadiness, "status" | "clai
   status: "bloqueada" | "em_formacao" | "consolidada";
 };
 
+type CompetencyRequirement = SourceResponsibility["requiredCapabilities"][number];
+
+/**
+ * A competência não é só uma atividade isolada: ela combina o requisito
+ * específico com uma base comum do respectivo núcleo de atuação.
+ */
+const competencyFoundations: Record<string, Array<{ capabilityCode: string; minimumLevel: CapabilityLevel }>> = {
+  "Gestão Interna": [
+    { capabilityCode: "T01", minimumLevel: 1 },
+    { capabilityCode: "T03", minimumLevel: 1 },
+    { capabilityCode: "T04", minimumLevel: 1 },
+    { capabilityCode: "T09", minimumLevel: 1 },
+  ],
+  "Processos e Órgãos": [
+    { capabilityCode: "F02", minimumLevel: 1 },
+    { capabilityCode: "F05", minimumLevel: 1 },
+    { capabilityCode: "T01", minimumLevel: 1 },
+    { capabilityCode: "T06", minimumLevel: 1 },
+  ],
+  Projetos: [
+    { capabilityCode: "F07", minimumLevel: 1 },
+    { capabilityCode: "T05", minimumLevel: 1 },
+    { capabilityCode: "T07", minimumLevel: 1 },
+    { capabilityCode: "F08", minimumLevel: 1 },
+  ],
+  "Serviços, Visitas e Levantamentos": [
+    { capabilityCode: "F10", minimumLevel: 1 },
+    { capabilityCode: "F11", minimumLevel: 1 },
+    { capabilityCode: "F07", minimumLevel: 1 },
+    { capabilityCode: "T07", minimumLevel: 1 },
+  ],
+  "Transversal (todos os setores)": [
+    { capabilityCode: "T05", minimumLevel: 1 },
+    { capabilityCode: "T07", minimumLevel: 1 },
+    { capabilityCode: "T09", minimumLevel: 1 },
+    { capabilityCode: "T10", minimumLevel: 1 },
+  ],
+};
+
+export function competencyRequirements(responsibility: SourceResponsibility): CompetencyRequirement[] {
+  const requirements = new Map(responsibility.requiredCapabilities.map((requirement) => [requirement.capabilityCode, requirement]));
+  for (const foundation of competencyFoundations[responsibility.sourceSector] ?? []) {
+    const current = requirements.get(foundation.capabilityCode);
+    if (!current || current.minimumLevel < foundation.minimumLevel) {
+      requirements.set(foundation.capabilityCode, {
+        capabilityCode: foundation.capabilityCode,
+        minimumLevel: foundation.minimumLevel,
+        minimumLevelLabel: capabilityLevelNames[foundation.minimumLevel],
+        sourceRef: "Matriz de jornada por competências",
+      });
+    }
+  }
+  return [...requirements.values()];
+}
+
+function withCompetencyRequirements(responsibility: SourceResponsibility): SourceResponsibility {
+  return { ...responsibility, requiredCapabilities: competencyRequirements(responsibility) };
+}
+
 export function responsibilityMode(responsibility: SourceResponsibility): CapabilityLevel {
   return Math.max(...responsibility.requiredCapabilities.map((requirement) => requirement.minimumLevel), 1) as CapabilityLevel;
 }
@@ -65,7 +124,8 @@ export function competencyReadiness(
   responsibility: SourceResponsibility,
   certifiedLevels: Map<string, number>,
 ): CompetencyReadiness {
-  const requirements = responsibility.requiredCapabilities;
+  const effectiveResponsibility = withCompetencyRequirements(responsibility);
+  const requirements = effectiveResponsibility.requiredCapabilities;
   const pointsRequired = requirements.reduce((total, requirement) => total + requirement.minimumLevel, 0);
   const pointsEarned = requirements.reduce((total, requirement) => total + Math.min(certifiedLevels.get(requirement.capabilityCode) ?? 0, requirement.minimumLevel), 0);
   const unmet = requirements
@@ -73,8 +133,8 @@ export function competencyReadiness(
     .map((requirement) => ({ capabilityCode: requirement.capabilityCode, minimumLevel: requirement.minimumLevel as CapabilityLevel }));
 
   return {
-    responsibility,
-    mode: responsibilityMode(responsibility),
+    responsibility: effectiveResponsibility,
+    mode: responsibilityMode(effectiveResponsibility),
     pointsEarned,
     pointsRequired,
     progress: pointsRequired ? Math.round(pointsEarned / pointsRequired * 1000) / 10 : 0,
