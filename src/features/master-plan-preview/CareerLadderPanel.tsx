@@ -6,13 +6,19 @@ import type { ResponsibilityClaim, ResponsibilityReadiness } from "./responsibil
 
 type Go = (view: "capacidade" | "responsabilidade", id?: string, tab?: string, mode?: string) => void;
 
+const orderRequirementsByLevel = (requirements: PacRequirement[]) =>
+  [...requirements].sort(
+    (left, right) =>
+      left.minimumLevel - right.minimumLevel || left.capabilityCode.localeCompare(right.capabilityCode),
+  );
+
 export function CareerLadderPanel({ library, certifiedLevels, claims, collaboratorId, go }: { library: Library; certifiedLevels: Map<string, number>; claims: ResponsibilityClaim[]; collaboratorId: string; go: Go }) {
   const ladder = nucleoTecnicoCareerLadder;
   const capabilityByCode = new Map(library.capabilities.map((capability) => [capability.code, capability]));
   const steps = ladder.steps.map((step) => ({
     step,
     readiness: careerStepReadiness(library, ladder, step.id, certifiedLevels, claims, collaboratorId),
-    addedRequirements: newPacRequirementsForCareerStep(library, ladder, step.id),
+    addedRequirements: orderRequirementsByLevel(newPacRequirementsForCareerStep(library, ladder, step.id)),
   }));
   const next = steps.find(({ readiness }) => !readiness.eligible);
   const capabilityChip = (requirement: PacRequirement) => {
@@ -21,7 +27,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
     const capability = capabilityByCode.get(requirement.capabilityCode);
     const levelName = capabilityLevelNames[requirement.minimumLevel];
     const label = capability?.title ?? requirement.capabilityCode;
-    return <button key={requirement.capabilityCode} type="button" onClick={() => go("capacidade", requirement.capabilityCode)} aria-label={`${requirement.capabilityCode} · ${label} · ${levelName}`} title={`${requirement.capabilityCode} · ${label} · ${levelName}`} className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] font-medium ${complete ? "border-emerald-500 bg-white text-emerald-900 hover:bg-emerald-50" : "border-zinc-300 bg-zinc-100 text-zinc-600 hover:bg-zinc-200"}`}><span>{label}</span><img src={capabilityLevelInsignia[requirement.minimumLevel]} alt="" className="h-4 w-4 object-contain" loading="lazy" decoding="async" /></button>;
+    return <button key={requirement.capabilityCode} type="button" onClick={() => go("capacidade", requirement.capabilityCode)} aria-label={`${requirement.capabilityCode} · ${label} · ${levelName}`} title={`${requirement.capabilityCode} · ${label} · ${levelName}`} className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] font-medium ${complete ? "border-emerald-500 bg-white text-emerald-900 hover:bg-emerald-50" : "border-transparent bg-transparent text-zinc-600 hover:bg-zinc-50"}`}><img src={capabilityLevelInsignia[requirement.minimumLevel]} alt="" className="h-4 w-4 shrink-0 object-contain" loading="lazy" decoding="async" /><span>{label}</span></button>;
   };
   const responsibilityChip = (item: ResponsibilityReadiness) => {
     const granted = item.status === "concedida";
@@ -61,8 +67,13 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
               <div className="flex flex-wrap gap-1">{addedRequirements.map(capabilityChip)}</div>
             </div>
             <div>
-              <div className="mb-2 flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-zinc-500">PAC acumulado</p><span className="text-xs font-semibold text-zinc-600">{readiness.pac.length} capacidades</span></div>
-              <div className="flex flex-wrap gap-1">{readiness.pac.map(capabilityChip)}</div>
+              <details aria-label={`PAC acumulado: ${readiness.pac.length} capacidades`}>
+                <summary className="flex cursor-pointer items-center justify-between gap-2 text-xs font-semibold uppercase text-zinc-500">
+                  <span>PAC acumulado</span>
+                  <span className="text-zinc-600">{readiness.pac.length} capacidades</span>
+                </summary>
+                <div className="mt-2 flex flex-wrap gap-1">{orderRequirementsByLevel(readiness.pac).map(capabilityChip)}</div>
+              </details>
               {readiness.missingCapabilityPoints > 0 && <p className="mt-2 text-xs text-amber-800">Faltam {readiness.missingCapabilityPoints} pontos certificados para este cargo.</p>}
             </div>
             <div>
