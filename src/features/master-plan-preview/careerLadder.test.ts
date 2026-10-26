@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
-import { capabilityPoints, careerStepReadiness, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilityClaimAllowance, technicalResponsibilities } from "./careerLadder";
+import { capabilitiesForCareerStep, capabilityPoints, careerStepReadiness, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilitiesForCareerStep, responsibilityClaimAllowance, technicalResponsibilities } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
 
@@ -44,6 +44,14 @@ describe("Núcleo Técnico career ladder", () => {
   it("uses the 52 responsibilities inside the Núcleo Técnico and leaves external sectors outside this ladder", () => {
     expect(technicalResponsibilities(library)).toHaveLength(52);
     expect(technicalResponsibilities(library).every((responsibility) => responsibility.sourceSector !== "Fora do Núcleo Técnico")).toBe(true);
+  });
+
+  it("limits Operador Júnior to its own PAC levels and responsibility paths", () => {
+    const capabilities = capabilitiesForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior");
+    const levelsByCapability = new Map(capabilities.map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
+    expect(capabilities.every((requirement) => requirement.minimumLevel < 3)).toBe(true);
+    expect(responsibilitiesForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior")).toHaveLength(4);
+    expect(responsibilitiesForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior").every((responsibility) => responsibility.requiredCapabilities.every((requirement) => (levelsByCapability.get(requirement.capabilityCode) ?? 0) >= requirement.minimumLevel))).toBe(true);
   });
 
   it("requires both certified points and the three enabled responsibility grants for Operador Júnior", () => {

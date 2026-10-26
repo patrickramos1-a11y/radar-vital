@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, RotateCcw } from "lucide-react";
 import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel } from "./capabilityJourney";
-import { careerStepReadiness, nucleoTecnicoCareerLadder, technicalResponsibilities } from "./careerLadder";
+import { capabilitiesForCareerStep, careerStepReadiness, nucleoTecnicoCareerLadder, responsibilitiesForCareerStep } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import { responsibilityReadiness, type ResponsibilityClaim, type ResponsibilityReadiness } from "./responsibilityJourney";
 
@@ -10,19 +10,19 @@ type Capability = Library["capabilities"][number];
 
 const levels: CapabilityLevel[] = [1, 2, 3];
 
-function CapabilityScenarioGrid({ capabilities, certifiedLevels, scenarioLevels, scenarioChanges, onSelect }: {
-  capabilities: Capability[];
+function CapabilityScenarioGrid({ requirements, certifiedLevels, scenarioLevels, scenarioChanges, onSelect }: {
+  requirements: Array<{ capability: Capability; maximumLevel: CapabilityLevel }>;
   certifiedLevels: Map<string, number>;
   scenarioLevels: Map<string, number>;
   scenarioChanges: Map<string, CapabilityLevel>;
   onSelect: (capabilityCode: string, level: CapabilityLevel) => void;
 }) {
-  return <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">{capabilities.map((capability) => {
+  return <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">{requirements.map(({ capability, maximumLevel }) => {
     const certified = certifiedLevels.get(capability.code) ?? 0;
     const selected = scenarioLevels.get(capability.code) ?? 0;
     return <div key={capability.code} className={`border bg-white p-2 ${scenarioChanges.has(capability.code) ? "border-sky-400" : "border-zinc-200"}`}>
       <div className="flex items-start justify-between gap-2"><p className="min-w-0 text-xs font-semibold text-zinc-900"><span className="text-sky-800">{capability.code}</span> · {capability.title}</p><span className="shrink-0 text-[10px] text-zinc-500">Real: {certified ? capabilityLevelNames[certified as CapabilityLevel] : "--"}</span></div>
-      <div className="mt-2 grid grid-cols-3 gap-1" role="group" aria-label={`Nível simulado para ${capability.title}`}>{levels.map((level) => {
+      <div className={`mt-2 grid gap-1 ${maximumLevel === 1 ? "grid-cols-1" : maximumLevel === 2 ? "grid-cols-2" : "grid-cols-3"}`} role="group" aria-label={`Nível simulado para ${capability.title}`}>{levels.filter((level) => level <= maximumLevel).map((level) => {
         const achieved = level <= selected;
         const certifiedLevel = level <= certified;
         return <button key={level} type="button" disabled={level < certified} aria-pressed={selected === level} title={certifiedLevel ? `Certificado: ${capabilityLevelNames[level]}` : achieved ? `Simulado: ${capabilityLevelNames[level]}` : `Simular ${capabilityLevelNames[level]}`} onClick={() => onSelect(capability.code, level)} className={`grid h-8 place-items-center border ${certifiedLevel ? "border-emerald-600 bg-emerald-50" : achieved ? "border-sky-600 bg-sky-50" : "border-zinc-200 bg-white opacity-35 grayscale hover:opacity-100 hover:grayscale-0"} disabled:cursor-not-allowed`}><img src={capabilityLevelInsignia[level]} alt={capabilityLevelNames[level]} className="h-6 w-6 object-contain" loading="lazy" decoding="async" /></button>;
@@ -39,7 +39,6 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
     scenarioChanges.forEach((level, code) => next.set(code, level));
     return next;
   }, [certifiedLevels, scenarioChanges]);
-  const sortedCapabilities = useMemo(() => [...library.capabilities].sort((left, right) => left.code.localeCompare(right.code)), [library.capabilities]);
   const firstIncompleteStep = ladder.steps.find((step) => !careerStepReadiness(library, ladder, step.id, certifiedLevels, claims, collaboratorId).eligible) ?? ladder.steps.at(-1)!;
 
   const setScenarioLevel = (capabilityCode: string, level: CapabilityLevel) => {
@@ -80,7 +79,12 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
       {ladder.steps.map((step, index) => {
         const readiness = careerStepReadiness(library, ladder, step.id, scenarioLevels, claims, collaboratorId);
         const ownClaims = claims.filter((claim) => claim.collaborator_id === collaboratorId);
-        const responsibilityOptions = technicalResponsibilities(library)
+        const capabilityByCode = new Map(library.capabilities.map((capability) => [capability.code, capability]));
+        const capabilityRequirements = capabilitiesForCareerStep(library, ladder, step.id);
+        const scenarioCapabilities = capabilityRequirements
+          .map((requirement) => ({ capability: capabilityByCode.get(requirement.capabilityCode), maximumLevel: requirement.minimumLevel }))
+          .filter((item): item is { capability: Capability; maximumLevel: CapabilityLevel } => Boolean(item.capability));
+        const responsibilityOptions = responsibilitiesForCareerStep(library, ladder, step.id)
           .map((responsibility) => responsibilityReadiness(responsibility, scenarioLevels, ownClaims))
           .sort((left, right) => left.unmet.length - right.unmet.length || left.responsibility.title.localeCompare(right.responsibility.title, "pt-BR"));
         const isCrossNucleus = step.nucleiRequired > 1;
@@ -96,7 +100,7 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
           <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(290px,0.55fr)]">
             <div>
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><div><p className="text-xs font-semibold uppercase text-zinc-500">Capacidades disponíveis para este cargo</p><p className="mt-1 text-xs text-zinc-600">{step.capabilityTarget} pontos são exigidos. As insígnias acesas já foram consolidadas; marque um nível apagado para simular a próxima evolução.</p></div><span className="text-xs font-semibold text-sky-800">{readiness.certifiedCapabilityCount} consolidadas</span></div>
-              <CapabilityScenarioGrid capabilities={sortedCapabilities} certifiedLevels={certifiedLevels} scenarioLevels={scenarioLevels} scenarioChanges={scenarioChanges} onSelect={setScenarioLevel} />
+              <CapabilityScenarioGrid requirements={scenarioCapabilities} certifiedLevels={certifiedLevels} scenarioLevels={scenarioLevels} scenarioChanges={scenarioChanges} onSelect={setScenarioLevel} />
               {readiness.missingCapabilityPoints > 0 && <p className="mt-3 text-xs text-amber-800">Faltam {readiness.missingCapabilityPoints} pontos no cenário para este cargo.</p>}
             </div>
             <div className="border bg-zinc-50 p-3">

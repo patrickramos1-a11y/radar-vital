@@ -103,10 +103,24 @@ export function technicalResponsibilities(library: Library): SourceResponsibilit
   return library.responsibilities.filter((responsibility) => responsibility.sourceSector !== "Fora do Núcleo Técnico");
 }
 
-function responsibilityCandidates(library: Library, levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string): ResponsibilityReadiness[] {
+/**
+ * Each career milestone has its own curated PAC. Its levels define both the
+ * capability controls that may be simulated and the responsibility paths that
+ * make sense at that stage; unrelated future requirements stay out of view.
+ */
+export function capabilitiesForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): PacRequirement[] {
+  return pacForCareerStep(library, ladder, stepId);
+}
+
+export function responsibilitiesForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): SourceResponsibility[] {
+  const availableLevels = new Map(capabilitiesForCareerStep(library, ladder, stepId).map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
+  return technicalResponsibilities(library).filter((responsibility) => responsibility.requiredCapabilities.every((requirement) => (availableLevels.get(requirement.capabilityCode) ?? 0) >= requirement.minimumLevel));
+}
+
+function responsibilityCandidates(responsibilities: SourceResponsibility[], levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string): ResponsibilityReadiness[] {
   const ownClaims = claims.filter((claim) => claim.collaborator_id === collaboratorId);
   const rank = (item: ResponsibilityReadiness) => item.status === "concedida" ? 0 : item.status === "solicitada" ? 1 : 2;
-  return technicalResponsibilities(library)
+  return responsibilities
     .map((responsibility) => responsibilityReadiness(responsibility, levels, ownClaims))
     .filter((item) => item.unmet.length === 0)
     .sort((left, right) => rank(left) - rank(right) || left.pointsRequired - right.pointsRequired || left.responsibility.title.localeCompare(right.responsibility.title, "pt-BR"));
@@ -114,7 +128,7 @@ function responsibilityCandidates(library: Library, levels: Map<string, number>,
 
 export function responsibilityClaimAllowance(library: Library, ladder: CareerLadder, levels: Map<string, number>, claims: ResponsibilityClaim[], collaboratorId: string) {
   const pendingStep = ladder.steps.find((step) => !careerStepReadiness(library, ladder, step.id, levels, claims, collaboratorId).eligible) ?? ladder.steps.at(-1)!;
-  const current = responsibilityCandidates(library, levels, claims, collaboratorId)
+  const current = responsibilityCandidates(responsibilitiesForCareerStep(library, ladder, pendingStep.id), levels, claims, collaboratorId)
     .filter((item) => item.status === "concedida" || item.status === "solicitada").length;
   return { step: pendingStep, current, limit: pendingStep.responsibilityTarget, allowed: current < pendingStep.responsibilityTarget };
 }
@@ -124,7 +138,7 @@ export function careerStepReadiness(library: Library, ladder: CareerLadder, step
   if (!step) throw new Error(`Cargo não encontrado: ${stepId}`);
   const pac = pacForCareerStep(library, ladder, stepId);
   const maturity = globalCapabilityMaturity(library.capabilities.map((capability) => capability.code), levels);
-  const candidates = responsibilityCandidates(library, levels, claims, collaboratorId);
+  const candidates = responsibilityCandidates(responsibilitiesForCareerStep(library, ladder, stepId), levels, claims, collaboratorId);
   const grantedResponsibilities = candidates.filter((item) => item.status === "concedida").length;
   const fullTechnicalMaturity = step.id === "estrategico_junior" || step.id === "estrategico_pleno" || step.id === "estrategico_master"
     ? library.capabilities.every((capability) => (levels.get(capability.code) ?? 0) >= 3)

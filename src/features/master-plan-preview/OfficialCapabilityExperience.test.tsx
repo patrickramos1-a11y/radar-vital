@@ -151,8 +151,10 @@ describe("official capability library", () => {
     expect(screen.getAllByText("Responsabilidades disponíveis").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/até \d+/).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Capacidades disponíveis para este cargo").length).toBeGreaterThan(0);
-    const f01Levels = screen.getAllByRole("group", { name: /Nível simulado para Gestão de Demandas e Fluxo Operacional/ })[0];
-    const autonomous = within(f01Levels).getByRole("button", { name: "Autônomo" });
+    const f01Levels = screen.getAllByRole("group", { name: /Nível simulado para Gestão de Demandas e Fluxo Operacional/ })
+      .find((group) => within(group).queryByRole("button", { name: "Autônomo" }));
+    expect(f01Levels).toBeTruthy();
+    const autonomous = within(f01Levels!).getByRole("button", { name: "Autônomo" });
     expect(within(autonomous).getByRole("img", { name: "Autônomo" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
     fireEvent.click(autonomous);
     expect(autonomous.getAttribute("aria-pressed")).toBe("true");
