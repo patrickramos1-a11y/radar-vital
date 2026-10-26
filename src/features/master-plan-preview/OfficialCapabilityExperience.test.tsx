@@ -150,13 +150,13 @@ describe("official capability library", () => {
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Competências para compor o cenário").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Capacidades do cenário").length).toBeGreaterThan(0);
-    const responsibility = library.responsibilities.find((item) => item.requiredCapabilities.some((requirement) => requirement.capabilityCode === "F01") && item.requiredCapabilities.every((requirement) => requirement.minimumLevel < 3))!;
+    const responsibility = library.responsibilities.find((item) => item.title === "Documentação Oficial dos Processos")!;
     fireEvent.click(screen.getAllByRole("button", { name: new RegExp(responsibility.title) })[0]);
     expect(screen.getAllByText("No plano").length).toBeGreaterThan(0);
-    const f01Levels = screen.getAllByRole("group", { name: /Nível simulado para Gestão de Demandas e Fluxo Operacional/ })
+    const f05Levels = screen.getAllByRole("group", { name: /Nível simulado para Gestão Documental Regulatória/ })
       .find((group) => within(group).queryByRole("button", { name: "Autônomo" }));
-    expect(f01Levels).toBeTruthy();
-    const autonomous = within(f01Levels!).getByRole("button", { name: "Autônomo" });
+    expect(f05Levels).toBeTruthy();
+    const autonomous = within(f05Levels!).getByRole("button", { name: "Autônomo" });
     expect(within(autonomous).getByRole("img", { name: "Autônomo" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
     fireEvent.click(autonomous);
     expect(autonomous.getAttribute("aria-pressed")).toBe("true");

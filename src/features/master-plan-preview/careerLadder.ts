@@ -121,6 +121,27 @@ export function responsibilitiesForCareerStep(library: Library, ladder: CareerLa
   return technicalResponsibilities(library).filter((responsibility) => competencyRequirements(responsibility).every((requirement) => requirement.minimumLevel <= maximumLevel));
 }
 
+/**
+ * The planning list advances with the PAC: a competency enters the first
+ * career step whose accumulated capacity levels cover all of its requirements.
+ * It then remains a consolidated indicator, rather than repeating as a new
+ * choice at every later role.
+ */
+export function competenciesIntroducedForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): SourceResponsibility[] {
+  const stepIndex = ladder.steps.findIndex((step) => step.id === stepId);
+  if (stepIndex < 0) return [];
+  const currentPac = new Map(pacForCareerStep(library, ladder, stepId).map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
+  const previousPac = stepIndex === 0
+    ? new Map<string, CapabilityLevel>()
+    : new Map(pacForCareerStep(library, ladder, ladder.steps[stepIndex - 1].id).map((requirement) => [requirement.capabilityCode, requirement.minimumLevel]));
+  return responsibilitiesForCareerStep(library, ladder, stepId).filter((responsibility) => {
+    const requirements = competencyRequirements(responsibility);
+    const availableNow = requirements.every((requirement) => (currentPac.get(requirement.capabilityCode) ?? 0) >= requirement.minimumLevel);
+    const availableBefore = requirements.every((requirement) => (previousPac.get(requirement.capabilityCode) ?? 0) >= requirement.minimumLevel);
+    return availableNow && !availableBefore;
+  });
+}
+
 function competencyCandidates(responsibilities: SourceResponsibility[], levels: Map<string, number>): CompetencyReadiness[] {
   return responsibilities
     .map((responsibility) => competencyReadiness(responsibility, levels))
@@ -165,6 +186,6 @@ export function careerStepReadiness(library: Library, ladder: CareerLadder, step
     capabilityPercent: Math.round(Math.min(maturity.pointsEarned / step.capabilityTarget, 1) * 1000) / 10,
     competencyPercent: Math.round(Math.min(earnedCompetencies / step.responsibilityTarget, 1) * 1000) / 10,
     scopeReady,
-    eligible: maturity.pointsEarned >= step.capabilityTarget && fullTechnicalMaturity && earnedCompetencies >= step.responsibilityTarget && scopeReady,
+    eligible: maturity.pointsEarned >= step.capabilityTarget && fullTechnicalMaturity && scopeReady,
   };
 }

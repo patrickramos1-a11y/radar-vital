@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
-import { capabilitiesForCareerStep, capabilityPoints, careerStepReadiness, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilitiesForCareerStep, technicalResponsibilities } from "./careerLadder";
+import { capabilitiesForCareerStep, capabilityPoints, careerStepReadiness, competenciesIntroducedForCareerStep, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilitiesForCareerStep, technicalResponsibilities } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
 import { competencyRequirements } from "./responsibilityJourney";
@@ -34,6 +34,18 @@ describe("Núcleo Técnico career ladder", () => {
   it("uses the 52 responsibilities inside the Núcleo Técnico and leaves external sectors outside this ladder", () => {
     expect(technicalResponsibilities(library)).toHaveLength(52);
     expect(technicalResponsibilities(library).every((responsibility) => responsibility.sourceSector !== "Fora do Núcleo Técnico")).toBe(true);
+  });
+
+  it("introduces every technical competency once in the first compatible career step", () => {
+    const introduced = nucleoTecnicoCareerLadder.steps.flatMap((step) => competenciesIntroducedForCareerStep(library, nucleoTecnicoCareerLadder, step.id));
+    expect(introduced).toHaveLength(52);
+    expect(new Set(introduced.map((responsibility) => responsibility.sourceId))).toHaveLength(52);
+    expect(competenciesIntroducedForCareerStep(library, nucleoTecnicoCareerLadder, "operador_junior").map((responsibility) => responsibility.title)).toEqual([
+      "Documentação Oficial dos Processos",
+      "Produção de Estudos, Planos e Projetos",
+      "Produção de Relatórios e Memoriais",
+      "Registros Fotográficos",
+    ]);
   });
 
   it("requires a correlated sector foundation before consolidating field competencies", () => {
