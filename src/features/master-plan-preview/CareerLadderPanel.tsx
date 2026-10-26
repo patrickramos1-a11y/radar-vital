@@ -4,6 +4,7 @@ import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel } f
 import { careerStepReadiness, competenciesForCareerTrack, competenciesIntroducedForCareerStep, maximumCapabilityLevelForCareerStep, nucleoTecnicoCareerLadder } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import { competencyReadiness, competencyRequirements, type ResponsibilityClaim } from "./responsibilityJourney";
+import type { CareerCapabilitySimulation } from "./storage";
 
 type Go = (view: "capacidade" | "capacitacoes" | "cargos-funcoes" | "jornada" | "perfil-profissional" | "responsabilidade" | "responsabilidades" | "setor", id?: string, tab?: string, mode?: string) => void;
 type Capability = Library["capabilities"][number];
@@ -243,10 +244,18 @@ export function CareerLadderPanel({ library, certifiedLevels, claims, collaborat
   </section>;
 }
 
-export function CapabilityOnlyLadderPanel({ library, certifiedLevels }: { library: Library; certifiedLevels: Map<string, number> }) {
+function changesFromSimulation(simulation?: CareerCapabilitySimulation) {
+  return new Map(Object.entries(simulation?.changesByStep ?? {}).map(([stepId, changes]) => [stepId, new Map(Object.entries(changes) as Array<[string, CapabilityLevel]>)]));
+}
+
+function changesForStorage(changesByStep: Map<string, Map<string, CapabilityLevel>>) {
+  return Object.fromEntries([...changesByStep].map(([stepId, changes]) => [stepId, Object.fromEntries(changes)]));
+}
+
+export function CapabilityOnlyLadderPanel({ library, certifiedLevels, simulation, onSaveSimulation }: { library: Library; certifiedLevels: Map<string, number>; simulation?: CareerCapabilitySimulation; onSaveSimulation?: (simulation: CareerCapabilitySimulation | null) => void }) {
   const ladder = nucleoTecnicoCareerLadder;
-  const [changesByStep, setChangesByStep] = useState<Map<string, Map<string, CapabilityLevel>>>(new Map());
-  const [consolidatedSteps, setConsolidatedSteps] = useState<Set<string>>(new Set());
+  const [changesByStep, setChangesByStep] = useState<Map<string, Map<string, CapabilityLevel>>>(() => changesFromSimulation(simulation));
+  const [consolidatedSteps, setConsolidatedSteps] = useState<Set<string>>(() => new Set(simulation?.consolidatedStepIds ?? []));
   const certifiedPoints = capabilityPoints(certifiedLevels);
   const baselineIndex = ladder.steps.reduce((lastIndex, step, index) => certifiedPoints >= step.capabilityTarget ? index : lastIndex, -1);
   const scenarios = useMemo(() => {
@@ -273,8 +282,20 @@ export function CapabilityOnlyLadderPanel({ library, certifiedLevels }: { librar
       return next;
     });
   };
+  const saveSimulation = (steps: Set<string>) => onSaveSimulation?.({ changesByStep: changesForStorage(changesByStep), consolidatedStepIds: [...steps], savedAt: new Date().toISOString() });
+  const consolidate = (stepId: string) => {
+    const next = new Set(consolidatedSteps).add(stepId);
+    setConsolidatedSteps(next);
+    saveSimulation(next);
+  };
+  const clearSimulation = () => {
+    setChangesByStep(new Map());
+    setConsolidatedSteps(new Set());
+    onSaveSimulation?.(null);
+  };
+  const hasSimulation = Boolean(simulation) || changesByStep.size > 0 || consolidatedSteps.size > 0;
   return <section className="border bg-white">
-    <div className="border-b p-4"><p className="text-xs font-semibold uppercase text-sky-700">Jornada de especialização por capacidades</p><h2 className="mt-2 text-lg font-semibold">Monte o cargo pelas capacidades e níveis</h2><p className="mt-1 max-w-3xl text-sm text-zinc-600">Todas as capacidades e os três níveis ficam disponíveis: Assistido vale 1 ponto, Autônomo vale 2 e Multiplicador vale 3. Componha diretamente o perfil especialista até alcançar a pontuação do patamar; competências não são exigidas nesta modalidade.</p></div>
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b p-4"><div><p className="text-xs font-semibold uppercase text-sky-700">Jornada de especialização por capacidades</p><h2 className="mt-2 text-lg font-semibold">Monte o cargo pelas capacidades e níveis</h2><p className="mt-1 max-w-3xl text-sm text-zinc-600">Todas as capacidades e os três níveis ficam disponíveis: Assistido vale 1 ponto, Autônomo vale 2 e Multiplicador vale 3. Componha diretamente o perfil especialista até alcançar a pontuação do patamar; competências não são exigidas nesta modalidade.</p>{simulation && <p className="mt-2 text-xs font-semibold text-emerald-800">Simulação salva em {new Date(simulation.savedAt).toLocaleString("pt-BR")}.</p>}</div>{hasSimulation && <button type="button" onClick={clearSimulation} className="inline-flex items-center gap-1 border border-sky-700 bg-white px-3 py-2 text-xs font-semibold text-sky-800 hover:bg-sky-50"><RotateCcw className="h-3.5 w-3.5" /> Limpar simulação</button>}</div>
     <div className="divide-y">{ladder.steps.map((step, index) => {
       const { base, scenario } = scenarios.get(step.id)!;
       const isConsolidated = index <= baselineIndex || consolidatedSteps.has(step.id);
@@ -283,7 +304,7 @@ export function CapabilityOnlyLadderPanel({ library, certifiedLevels }: { librar
       const points = capabilityPoints(scenario);
       const remaining = Math.max(0, step.capabilityTarget - points);
       const requirements = library.capabilities.slice().sort((left, right) => left.title.localeCompare(right.title, "pt-BR")).map((capability) => ({ capability, maximumLevel, requiredLevel: 0 as const }));
-      return <article key={step.id} className="px-4 py-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><span className={`grid h-7 w-7 place-items-center border text-xs font-bold ${isConsolidated ? "border-emerald-600 bg-emerald-50 text-emerald-800" : "border-sky-300 bg-sky-50 text-sky-800"}`}>{isConsolidated ? <CheckCircle2 className="h-4 w-4" /> : index + 1}</span><div><h3 className="text-base font-semibold">{step.title}</h3><p className="text-xs text-zinc-600">{step.function}</p></div></div><p className={`mt-3 text-xs font-semibold ${isConsolidated ? "text-emerald-800" : isActive ? "text-sky-800" : "text-zinc-600"}`}>{isConsolidated ? "Consolidado por capacidades" : isActive ? "Em personalização por capacidades" : "Aguardando o cargo anterior"}</p></div><div className="text-right text-xs"><strong className="block text-base">{Math.min(points, step.capabilityTarget)}/{step.capabilityTarget}</strong><span className="text-zinc-600">pontos por capacidades</span></div></div>{isConsolidated ? <p className="mt-4 border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">Este patamar foi concluído pelas capacidades certificadas ou consolidadas nesta simulação.</p> : !isActive ? <p className="mt-4 border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">Este patamar abre quando a simulação anterior for consolidada.</p> : <div className="mt-4 space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-zinc-600">Selecione a capacidade e depois o nível: <strong>Assistido +1</strong>, <strong>Autônomo +2</strong> ou <strong>Multiplicador +3</strong>. Faltam <strong className="text-sky-800">{remaining} pontos</strong> para consolidar.</p><span className="text-xs font-semibold text-sky-800">Todos os níveis disponíveis</span></div><CapabilityScenarioGrid requirements={requirements} certifiedLevels={base} scenarioLevels={scenario} scenarioChanges={changesByStep.get(step.id) ?? new Map()} capabilityTarget={step.capabilityTarget} onSelect={(code, level) => setLevel(step.id, code, level)} /><div className="flex justify-end border-t pt-4"><button type="button" disabled={remaining > 0} onClick={() => setConsolidatedSteps((current) => new Set(current).add(step.id))} className="border border-emerald-700 bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:border-zinc-300 disabled:bg-zinc-100 disabled:text-zinc-500">Consolidar simulação por capacidades</button></div></div>}</article>;
+      return <article key={step.id} className="px-4 py-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><span className={`grid h-7 w-7 place-items-center border text-xs font-bold ${isConsolidated ? "border-emerald-600 bg-emerald-50 text-emerald-800" : "border-sky-300 bg-sky-50 text-sky-800"}`}>{isConsolidated ? <CheckCircle2 className="h-4 w-4" /> : index + 1}</span><div><h3 className="text-base font-semibold">{step.title}</h3><p className="text-xs text-zinc-600">{step.function}</p></div></div><p className={`mt-3 text-xs font-semibold ${isConsolidated ? "text-emerald-800" : isActive ? "text-sky-800" : "text-zinc-600"}`}>{isConsolidated ? "Consolidado por capacidades" : isActive ? "Em personalização por capacidades" : "Aguardando o cargo anterior"}</p></div><div className="text-right text-xs"><strong className="block text-base">{Math.min(points, step.capabilityTarget)}/{step.capabilityTarget}</strong><span className="text-zinc-600">pontos por capacidades</span></div></div>{isConsolidated ? <p className="mt-4 border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">Este patamar foi concluído pelas capacidades certificadas ou consolidadas nesta simulação.</p> : !isActive ? <p className="mt-4 border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">Este patamar abre quando a simulação anterior for consolidada.</p> : <div className="mt-4 space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-zinc-600">Selecione a capacidade e depois o nível: <strong>Assistido +1</strong>, <strong>Autônomo +2</strong> ou <strong>Multiplicador +3</strong>. Faltam <strong className="text-sky-800">{remaining} pontos</strong> para consolidar.</p><span className="text-xs font-semibold text-sky-800">Todos os níveis disponíveis</span></div><CapabilityScenarioGrid requirements={requirements} certifiedLevels={base} scenarioLevels={scenario} scenarioChanges={changesByStep.get(step.id) ?? new Map()} capabilityTarget={step.capabilityTarget} onSelect={(code, level) => setLevel(step.id, code, level)} /><div className="flex justify-end border-t pt-4"><button type="button" disabled={remaining > 0} onClick={() => consolidate(step.id)} className="border border-emerald-700 bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:border-zinc-300 disabled:bg-zinc-100 disabled:text-zinc-500">Consolidar e salvar simulação</button></div></div>}</article>;
     })}</div>
   </section>;
 }
