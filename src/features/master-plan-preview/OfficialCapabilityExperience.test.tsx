@@ -162,7 +162,7 @@ describe("official capability library", () => {
     const row = screen.getByText("SISRAMOS").closest("article");
     expect(row).toBeTruthy();
     fireEvent.click(within(row!).getByRole("button", { name: "Solicitar responsabilidade" }));
-    await waitFor(() => expect(requestResponsibility).toHaveBeenCalledWith("resp-413535e8de506f6a"));
+    await waitFor(() => expect(requestResponsibility).toHaveBeenCalledWith("collaborator-1", "resp-413535e8de506f6a"));
   });
 
   it("does not offer the administrative queue to a collaborator", async () => {

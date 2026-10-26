@@ -134,15 +134,17 @@ export async function fetchResponsibilityClaims(): Promise<ResponsibilityClaim[]
   return result(data, error) as ResponsibilityClaim[];
 }
 
-export async function requestResponsibility(responsibilitySourceId: string): Promise<ResponsibilityClaim> {
+export async function requestResponsibility(collaboratorId: string, responsibilitySourceId: string): Promise<ResponsibilityClaim> {
   const { data, error } = await journeySupabase.rpc("master_plan_request_responsibility", {
+    p_collaborator_id: collaboratorId,
     p_responsibility_source_id: responsibilitySourceId,
   });
   return result(data, error) as ResponsibilityClaim;
 }
 
-export async function reviewResponsibilityClaim(claimId: string, decision: "approved" | "rejected", note = ""): Promise<ResponsibilityClaim> {
+export async function reviewResponsibilityClaim(reviewerId: string, claimId: string, decision: "approved" | "rejected", note = ""): Promise<ResponsibilityClaim> {
   const { data, error } = await journeySupabase.rpc("master_plan_review_responsibility_claim", {
+    p_reviewer_id: reviewerId,
     p_claim_id: claimId,
     p_decision: decision,
     p_note: note,

@@ -18,6 +18,7 @@ import { CareerJourneyExperience, CareerStructureExperience } from "./CareerJour
 import { approvedLevels } from "./responsibilityEligibility";
 import type { PreviewResponsibility } from "./model";
 import type { Unit } from "./data";
+import type { LocalResponsibilityClaim } from "./storage";
 import {
   applyTeamCertifications, createRemoteAssessment, fetchAssessments, fetchRequests, fetchResponsibilityClaims, fetchTeamCertifications, requestResponsibility, requestTeamTraining,
   fetchTeamTrainingRequests, reviewRequest, reviewResponsibilityClaim, saveRequest,
@@ -27,7 +28,7 @@ import "./capability-experience.css";
 
 type Screen = "capacidades" | "capacidade" | "capacitacoes" | "jornada" | "cargos-funcoes";
 type Go = (view: Screen | "responsabilidade" | "responsabilidades", id?: string, tab?: string, mode?: string) => void;
-type Props = { view: Screen; code: string; tab: string; mode: string; go: Go; library: Library; people: Array<{ id: string; name: string }>; mappedResponsibilities?: PreviewResponsibility[]; sectors?: Unit[]; openSector?: (sectorId: string) => void; capabilityPlans?: Record<string, Record<string, 0 | CapabilityLevel>>; onDeactivateCollaborator?: (collaboratorId: string) => Promise<void> };
+type Props = { view: Screen; code: string; tab: string; mode: string; go: Go; library: Library; people: Array<{ id: string; name: string }>; mappedResponsibilities?: PreviewResponsibility[]; sectors?: Unit[]; openSector?: (sectorId: string) => void; capabilityPlans?: Record<string, Record<string, 0 | CapabilityLevel>>; localClaims?: LocalResponsibilityClaim[]; onDeactivateCollaborator?: (collaboratorId: string) => Promise<void> };
 const kinds = ["Todas", "Transversal", "Funcional", "Especializada"];
 const journeyFilters = ["Todas", "Em desenvolvimento", "Falta Assistido", "Falta Autônomo", "Falta Multiplicador", "Com certificação"];
 const answerLabels = ["Preciso de ajuda", "Com apoio", "Sozinho", "Consigo ensinar"];
@@ -49,7 +50,7 @@ function EvidenceReference({ name, location }: { name?: string; location: string
   return <p className="mt-2 break-all text-xs text-zinc-600"><strong>{name?.trim() || "Evidência registrada"}:</strong> {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-teal-700 underline">{trimmed}</a> : trimmed}</p>;
 }
 
-export function OfficialCapabilityExperience({ view, code, tab, mode, go, library, people, mappedResponsibilities = [], sectors = [], openSector = () => {}, capabilityPlans = {}, onDeactivateCollaborator }: Props) {
+export function OfficialCapabilityExperience({ view, code, tab, mode, go, library, people, mappedResponsibilities = [], sectors = [], openSector = () => {}, capabilityPlans = {}, localClaims = [], onDeactivateCollaborator }: Props) {
   const { currentUser, loading } = useAuth();
   const queryClient = useQueryClient();
   const isAdmin = currentUser?.role === "admin";
@@ -58,6 +59,7 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   const teamCertifications = useQuery({ queryKey: ["master-plan-team-certifications"], queryFn: fetchTeamCertifications, enabled: !!currentUser, retry: false });
   const teamTrainingRequests = useQuery({ queryKey: ["master-plan-team-training-requests"], queryFn: fetchTeamTrainingRequests, enabled: !!currentUser, retry: false });
   const responsibilityClaims = useQuery({ queryKey: ["master-plan-responsibility-claims"], queryFn: fetchResponsibilityClaims, enabled: !!currentUser, retry: false });
+  const allResponsibilityClaims = [...(responsibilityClaims.data ?? []), ...localClaims.map((claim) => ({ id: `local:${claim.personId}:${claim.responsibilityId}`, collaborator_id: claim.personId, responsibility_source_id: claim.responsibilityId, status: claim.status, requested_at: claim.requestedAt ?? "", decided_at: claim.decidedAt ?? null, decided_by: null, decision_note: "" }))];
   const selected = library.capabilities.find((item) => item.code === code);
   const ownRequests = requests.data?.filter((request) => request.collaborator_id === currentUser?.id) ?? [];
   const ownCertifiedLevels = currentUser ? approvedLevels(requests.data ?? [], currentUser.id, teamCertifications.data ?? []) : new Map<string, number>();
@@ -71,7 +73,7 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   const selectedAssessments = assessments.data?.filter((assessment) => assessment.capability_code === selected?.code && assessment.collaborator_id === currentUser?.id) ?? [];
   const submitResponsibilityClaim = async (responsibilitySourceId: string) => {
     try {
-      await requestResponsibility(responsibilitySourceId);
+      await requestResponsibility(currentUser!.id, responsibilitySourceId);
       await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
       toast.success("Responsabilidade solicitada para avaliação.");
     } catch (error) {
@@ -81,7 +83,7 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   };
   const decideResponsibilityClaim = async (claimId: string, decision: "approved" | "rejected") => {
     try {
-      await reviewResponsibilityClaim(claimId, decision);
+      await reviewResponsibilityClaim(currentUser!.id, claimId, decision);
       await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
       toast.success(decision === "approved" ? "Responsabilidade concedida." : "Solicitação devolvida.");
     } catch (error) {
@@ -91,9 +93,9 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
   };
   return <div className="cap-experience cap-themed relative min-w-0" style={selected ? capabilityVisualStyle(selected.code) : undefined} data-testid="official-capability-experience">
     {view === "capacidades" && <Catalog library={library} go={go} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} />}
-    {view === "jornada" && (currentUser ? <CareerJourneyExperience library={library} certifiedLevels={ownCertifiedLevels} claims={responsibilityClaims.data ?? []} collaboratorId={currentUser.id} collaboratorName={currentUser.name} isAdmin={isAdmin} people={people} teamLevels={teamLevels} go={go} /> : <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar sua jornada.</div>)}
-    {view === "cargos-funcoes" && <CareerStructureExperience library={library} people={people} teamLevels={teamLevels} claims={responsibilityClaims.data ?? []} isAdmin={isAdmin} go={go} />}
-    {view === "capacitacoes" && !selected && <TrainingOverview library={library} go={go} currentUser={currentUser} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} claims={responsibilityClaims.data ?? []} isAdmin={isAdmin} onRequestResponsibility={submitResponsibilityClaim} onReviewResponsibility={decideResponsibilityClaim} />}
+    {view === "jornada" && (currentUser ? <CareerJourneyExperience library={library} certifiedLevels={ownCertifiedLevels} claims={allResponsibilityClaims} collaboratorId={currentUser.id} collaboratorName={currentUser.name} isAdmin={isAdmin} people={people} teamLevels={teamLevels} go={go} /> : <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar sua jornada.</div>)}
+    {view === "cargos-funcoes" && <CareerStructureExperience library={library} people={people} teamLevels={teamLevels} claims={allResponsibilityClaims} isAdmin={isAdmin} go={go} />}
+    {view === "capacitacoes" && !selected && <TrainingOverview library={library} go={go} currentUser={currentUser} certifiedLevels={ownCertifiedLevels} trainingRequests={ownTrainingRequests} claims={allResponsibilityClaims} isAdmin={isAdmin} onRequestResponsibility={submitResponsibilityClaim} onReviewResponsibility={decideResponsibilityClaim} />}
     {view === "capacidade" && !selected && <div className="cap-empty">Capacidade não encontrada.<Button variant="outline" onClick={() => go("capacidades")}>Voltar ao catálogo</Button></div>}
     {view === "capacidade" && selected && <Sheet item={selected} library={library} approved={approved} certifiedLevels={certifiedLevels} assessmentLevel={selectedAssessments[0]?.indicated_level} go={go} tab={tab} mappedResponsibilities={mappedResponsibilities} sectors={sectors} openSector={openSector} />}
     {view === "capacitacoes" && selected && <>

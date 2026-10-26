@@ -2911,7 +2911,7 @@ export type Database = {
         }
       }
       master_plan_request_responsibility: {
-        Args: { p_responsibility_source_id: string }
+        Args: { p_collaborator_id: string; p_responsibility_source_id: string }
         Returns: {
           collaborator_id: string
           decided_at: string | null
@@ -2958,7 +2958,7 @@ export type Database = {
         }
       }
       master_plan_review_responsibility_claim: {
-        Args: { p_claim_id: string; p_decision: string; p_note?: string }
+        Args: { p_claim_id: string; p_decision: string; p_note?: string; p_reviewer_id: string }
         Returns: {
           collaborator_id: string
           decided_at: string | null

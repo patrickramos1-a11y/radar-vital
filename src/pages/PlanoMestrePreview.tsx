@@ -36,7 +36,7 @@ import {
 import {
   emptyMasterPlanDraft, loadMasterPlanDraft, mergeMasterPlanDraft,
   parseMasterPlanDraft, saveMasterPlanDraft,
-  type MasterPlanDraft, type RequestPlan,
+  type LocalResponsibilityClaim, type MasterPlanDraft, type RequestPlan,
 } from "@/features/master-plan-preview/storage";
 import { deactivateMasterPlanCollaborator, fetchRemoteMasterPlanDraft, updateRemoteMasterPlanDraft } from "@/features/master-plan-preview/remote";
 import { integrateSourceLibrary, sourceResponsibilities } from "@/features/master-plan-preview/libraryIntegration";
@@ -315,7 +315,7 @@ export default function PlanoMestrePreview() {
     } else if (draft.kind === "capacitacao") {
       saved = await updateWorkspace((value) => ({ ...value, trainingRequests: [...value.trainingRequests, { personId: get("personId"), capabilityId: get("capabilityId") }] }));
     } else if (draft.kind === "assumir") {
-      saved = await updateWorkspace((value) => ({ ...value, claims: [...value.claims, { personId: get("personId"), responsibilityId: get("responsibilityId") }] }));
+      saved = await updateWorkspace((value) => ({ ...value, claims: [...value.claims, { personId: get("personId"), responsibilityId: get("responsibilityId"), status: "requested", requestedAt: new Date().toISOString() }] }));
     }
     if (!saved) return;
     if (destination) go(destination, localId);
@@ -352,9 +352,9 @@ export default function PlanoMestrePreview() {
       toast.error(cause instanceof Error ? cause.message : "Não foi possível desativar o colaborador.");
     }
   };
-  const workspacePage = data && remoteDraft ? <WorkspaceContent context={data} view={view} id={id} tab={tab} go={go} openDraft={setDraft} nucleiOf={nucleusOf} setNucleus={(sectorId, nucleusId) => { void updateWorkspace((value) => ({ ...value, nucleusOverrides: { ...value.nucleusOverrides, [sectorId]: nucleusId } })); }} nucleusThresholds={workspace.nucleusThresholds} setNucleusThreshold={(nucleusId, threshold) => { void updateWorkspace((value) => ({ ...value, nucleusThresholds: { ...value.nucleusThresholds, [nucleusId]: threshold } })); }} capabilities={capabilities} responsibilities={responsibilities} requests={requests} requestPlans={workspace.requestPlans} setResponsibility={(responsibilityId, patch) => { void updateWorkspace((value) => ({ ...value, responsibilityOverrides: { ...value.responsibilityOverrides, [responsibilityId]: { ...value.responsibilityOverrides[responsibilityId], ...patch } } })); }} trainingRequests={workspace.trainingRequests} claims={workspace.claims} personId={personId} setPersonId={setSelectedPerson} /> : null;
+  const workspacePage = data && remoteDraft ? <WorkspaceContent context={data} view={view} id={id} tab={tab} go={go} openDraft={setDraft} nucleiOf={nucleusOf} setNucleus={(sectorId, nucleusId) => { void updateWorkspace((value) => ({ ...value, nucleusOverrides: { ...value.nucleusOverrides, [sectorId]: nucleusId } })); }} nucleusThresholds={workspace.nucleusThresholds} setNucleusThreshold={(nucleusId, threshold) => { void updateWorkspace((value) => ({ ...value, nucleusThresholds: { ...value.nucleusThresholds, [nucleusId]: threshold } })); }} capabilities={capabilities} responsibilities={responsibilities} requests={requests} requestPlans={workspace.requestPlans} setResponsibility={(responsibilityId, patch) => { void updateWorkspace((value) => ({ ...value, responsibilityOverrides: { ...value.responsibilityOverrides, [responsibilityId]: { ...value.responsibilityOverrides[responsibilityId], ...patch } } })); }} trainingRequests={workspace.trainingRequests} claims={workspace.claims} saveLocalClaim={(personId, responsibilityId) => { void updateWorkspace((current) => ({ ...current, claims: [...current.claims.filter((claim) => !(claim.personId === personId && claim.responsibilityId === responsibilityId && claim.status === "requested")), { personId, responsibilityId, status: "requested", requestedAt: new Date().toISOString() }] })); }} reviewLocalClaim={(personId, responsibilityId, status) => { void updateWorkspace((current) => ({ ...current, claims: current.claims.map((claim) => claim.personId === personId && claim.responsibilityId === responsibilityId && claim.status === "requested" ? { ...claim, status, decidedAt: new Date().toISOString() } : claim) })); }} personId={personId} setPersonId={setSelectedPerson} /> : null;
   const page = isDemoView && officialReady
-    ? <OfficialCapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes" | "jornada" | "cargos-funcoes"} code={id} tab={tab} mode={mode} go={go} library={officialLibrary} people={data?.collaborators ?? []} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} capabilityPlans={workspace.capabilityPlans ?? {}} onDeactivateCollaborator={deactivateCollaborator} />
+    ? <OfficialCapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes" | "jornada" | "cargos-funcoes"} code={id} tab={tab} mode={mode} go={go} library={officialLibrary} people={data?.collaborators ?? []} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} capabilityPlans={workspace.capabilityPlans ?? {}} localClaims={workspace.claims} onDeactivateCollaborator={deactivateCollaborator} />
     : isDemoView && view !== "jornada" && view !== "cargos-funcoes"
       ? <CapabilityExperience view={view as "capacidades" | "capacidade" | "capacitacoes"} code={id} tab={tab} mode={mode} go={go} store={demoStore} setStore={setDemoStore} registeredCapabilities={capabilities} mappedResponsibilities={responsibilities} sectors={data ? sectorUnits(data) : []} openSector={(sectorId) => go("setor", sectorId)} people={data?.collaborators ?? []} capabilityPlans={workspace.capabilityPlans ?? {}} onCapabilityPlanChange={(capabilityCode, collaboratorId, level) => { void updateWorkspace((current) => ({ ...current, capabilityPlans: { ...current.capabilityPlans, [capabilityCode]: { ...current.capabilityPlans?.[capabilityCode], [collaboratorId]: level } } })); }} />
       : workspacePage;
@@ -393,7 +393,8 @@ interface WorkspaceProps {
   nucleusThresholds: Partial<Record<NucleusId, number>>; setNucleusThreshold: (nucleusId: NucleusId, threshold: number) => void;
   capabilities: PreviewCapability[]; responsibilities: PreviewResponsibility[]; requests: Challenge[];
   requestPlans: Record<string, RequestPlan>; setResponsibility: (id: string, patch: Partial<PreviewResponsibility>) => void;
-  trainingRequests: Array<{ personId: string; capabilityId: string }>; claims: Array<{ personId: string; responsibilityId: string }>;
+  trainingRequests: Array<{ personId: string; capabilityId: string }>; claims: LocalResponsibilityClaim[];
+  saveLocalClaim: (personId: string, responsibilityId: string) => void; reviewLocalClaim: (personId: string, responsibilityId: string, status: "approved" | "rejected") => void;
   personId: string; setPersonId: (id: string) => void;
 }
 
@@ -510,7 +511,7 @@ function SectorDetail({ context, go, id, tab, nucleiOf, capabilities, responsibi
   </>;
 }
 
-function Responsibilities({ context, go, id, tab, responsibilities, capabilities, openDraft, claims }: WorkspaceProps) {
+function Responsibilities({ context, go, id, tab, responsibilities, capabilities, openDraft, claims, saveLocalClaim, reviewLocalClaim }: WorkspaceProps) {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [sectorId, setSectorId] = useState(id || "all");
@@ -520,7 +521,9 @@ function Responsibilities({ context, go, id, tab, responsibilities, capabilities
   useEffect(() => setSectorId(id || "all"), [id]);
   const activeTab = tab === "disponiveis" || tab === "solicitacoes" ? tab : "biblioteca";
   const officialClaimsQuery = useQuery({ queryKey: ["master-plan-responsibility-claims"], queryFn: fetchResponsibilityClaims, enabled: !!currentUser, retry: false });
-  const officialClaims = Array.isArray(officialClaimsQuery.data) ? officialClaimsQuery.data : [];
+  const remoteClaims = Array.isArray(officialClaimsQuery.data) ? officialClaimsQuery.data : [];
+  const localClaims: ResponsibilityClaim[] = claims.map((claim) => ({ id: `local:${claim.personId}:${claim.responsibilityId}`, collaborator_id: claim.personId, responsibility_source_id: claim.responsibilityId, status: claim.status, requested_at: claim.requestedAt ?? "", decided_at: claim.decidedAt ?? null, decided_by: null, decision_note: "" }));
+  const officialClaims = [...remoteClaims, ...localClaims];
   const pendingClaims = officialClaims.filter((claim) => claim.status === "requested");
   const isAdmin = currentUser?.role === "admin";
   const sourceRequirements = Object.fromEntries(sourceResponsibilities.map((item) => [item.sourceId, item.requiredCapabilities.map(({ capabilityCode, minimumLevel }) => ({ capabilityCode, minimumLevel }))]));
@@ -532,8 +535,14 @@ function Responsibilities({ context, go, id, tab, responsibilities, capabilities
   const reviewClaim = async (claimId: string, decision: "approved" | "rejected") => {
     setReviewingClaimId(claimId);
     try {
-      await reviewResponsibilityClaim(claimId, decision);
-      await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
+      if (claimId.startsWith("local:")) {
+        const [, personId, responsibilityId] = claimId.split(":");
+        reviewLocalClaim(personId, responsibilityId, decision);
+      } else {
+        if (!currentUser) return;
+        await reviewResponsibilityClaim(currentUser.id, claimId, decision);
+        await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
+      }
       toast.success(decision === "approved" ? "Responsabilidade concedida e vínculo atualizado." : "Solicitação devolvida para revisão.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível avaliar a solicitação.");
@@ -543,11 +552,17 @@ function Responsibilities({ context, go, id, tab, responsibilities, capabilities
   };
   const requestClaim = async (responsibilityId: string) => {
     try {
-      await requestResponsibility(responsibilityId);
+      if (!currentUser) return;
+      await requestResponsibility(currentUser.id, responsibilityId);
       await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
       toast.success("Responsabilidade solicitada para avaliação administrativa.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a responsabilidade.");
+      if (currentUser) {
+        saveLocalClaim(currentUser.id, responsibilityId);
+        toast.success("Responsabilidade registrada no Plano Mestre para avaliação administrativa.");
+      } else {
+        toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a responsabilidade.");
+      }
     }
   };
   return <>
@@ -563,11 +578,12 @@ function Responsibilities({ context, go, id, tab, responsibilities, capabilities
   </>;
 }
 
-function ResponsibilityDetail({ context, go, id, responsibilities, capabilities, requests, openDraft, setResponsibility, claims }: WorkspaceProps) {
+function ResponsibilityDetail({ context, go, id, responsibilities, capabilities, requests, openDraft, setResponsibility, claims, saveLocalClaim }: WorkspaceProps) {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const officialClaimsQuery = useQuery({ queryKey: ["master-plan-responsibility-claims"], queryFn: fetchResponsibilityClaims, enabled: !!currentUser, retry: false });
-  const officialClaims = Array.isArray(officialClaimsQuery.data) ? officialClaimsQuery.data : [];
+  const remoteClaims = Array.isArray(officialClaimsQuery.data) ? officialClaimsQuery.data : [];
+  const officialClaims: ResponsibilityClaim[] = [...remoteClaims, ...claims.map((claim) => ({ id: `local:${claim.personId}:${claim.responsibilityId}`, collaborator_id: claim.personId, responsibility_source_id: claim.responsibilityId, status: claim.status, requested_at: claim.requestedAt ?? "", decided_at: claim.decidedAt ?? null, decided_by: null, decision_note: "" }))];
   const item = responsibilities.find((candidate) => candidate.id === id);
   if (!item) return <div className="border-l-4 border-orange-500 bg-orange-50 p-5 text-sm">
     <h2 className="font-semibold">Responsabilidade indisponível</h2>
@@ -587,11 +603,17 @@ function ResponsibilityDetail({ context, go, id, responsibilities, capabilities,
   const capabilityNames = new Map(capabilities.map((capability) => [capability.id, capability.title]));
   const requestClaim = async () => {
     try {
-      await requestResponsibility(item.id);
+      if (!currentUser) return;
+      await requestResponsibility(currentUser.id, item.id);
       await queryClient.invalidateQueries({ queryKey: ["master-plan-responsibility-claims"] });
       toast.success("Responsabilidade solicitada para avaliação administrativa.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a responsabilidade.");
+      if (currentUser) {
+        saveLocalClaim(currentUser.id, item.id);
+        toast.success("Responsabilidade registrada no Plano Mestre para avaliação administrativa.");
+      } else {
+        toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a responsabilidade.");
+      }
     }
   };
 

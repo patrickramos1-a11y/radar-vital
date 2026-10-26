@@ -19,6 +19,13 @@ export type RequestPlan = {
   comment?: string;
   attachment?: string;
 };
+export type LocalResponsibilityClaim = {
+  personId: string;
+  responsibilityId: string;
+  status: "requested" | "approved" | "rejected";
+  requestedAt?: string;
+  decidedAt?: string;
+};
 
 export interface MasterPlanDraft {
   version: 1;
@@ -30,7 +37,7 @@ export interface MasterPlanDraft {
   responsibilityOverrides: Record<string, Partial<PreviewResponsibility>>;
   requestPlans: Record<string, RequestPlan>;
   trainingRequests: Array<{ personId: string; capabilityId: string }>;
-  claims: Array<{ personId: string; responsibilityId: string }>;
+  claims: LocalResponsibilityClaim[];
   capabilityPlans: Record<string, Record<string, 0 | 1 | 2 | 3>>;
   nucleusThresholds: Partial<Record<NucleusId, number>>;
 }
@@ -70,7 +77,7 @@ const draftSchema = z.object({
   responsibilityOverrides: z.record(responsibilitySchema.partial()),
   requestPlans: z.record(requestPlanSchema),
   trainingRequests: z.array(z.object({ personId: identifier, capabilityId: identifier })).max(5_000),
-  claims: z.array(z.object({ personId: identifier, responsibilityId: identifier })).max(5_000),
+  claims: z.array(z.object({ personId: identifier, responsibilityId: identifier, status: z.enum(["requested", "approved", "rejected"]).default("requested"), requestedAt: boundedText.optional(), decidedAt: boundedText.optional() })).max(5_000),
   capabilityPlans: z.record(z.record(z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]))).default({}),
   nucleusThresholds: z.record(z.number().int().min(1).max(100)).default({}),
 });
