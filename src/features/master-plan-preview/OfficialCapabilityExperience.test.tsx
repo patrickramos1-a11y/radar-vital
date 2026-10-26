@@ -148,7 +148,7 @@ describe("official capability library", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Escada de cargo" }));
     expect(screen.getByRole("heading", { name: "Escada de promoção · Núcleo Técnico" })).toBeTruthy();
     expect(screen.getAllByText("Operador Júnior").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Caminhos de responsabilidade").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Responsabilidades disponíveis").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/até \d+/).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Capacidades disponíveis para este cargo").length).toBeGreaterThan(0);
     const f01Levels = screen.getAllByRole("group", { name: /Nível simulado para Gestão de Demandas e Fluxo Operacional/ })[0];
