@@ -116,6 +116,22 @@ describe("official capability library", () => {
     expect(screen.getByText("Estratégico Júnior")).toBeTruthy();
   });
 
+  it("links responsibility, sector, and missing capability from the professional journey", async () => {
+    const go = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="jornada" code="" tab="" mode="" go={go} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} mappedResponsibilities={[{ id: "resp-413535e8de506f6a", title: "SISRAMOS", sectorId: "sector-1", capabilityIds: ["T01", "T02", "T08"], sourceChallengeIds: [], holderId: null, substituteId: null, status: "local" }]} /></QueryClientProvider>);
+    fireEvent.click(await screen.findByRole("tab", { name: "Responsabilidades" }));
+    const row = screen.getByText("SISRAMOS").closest("article");
+    expect(row).toBeTruthy();
+    expect(within(row!).getByText("Capacitações necessárias e níveis")).toBeTruthy();
+    fireEvent.click(within(row!).getByRole("button", { name: "Abrir responsabilidade Gestão Interna" }));
+    expect(go).toHaveBeenCalledWith("responsabilidade", "resp-413535e8de506f6a");
+    fireEvent.click(within(row!).getByRole("button", { name: "Abrir setor SISRAMOS" }));
+    expect(go).toHaveBeenCalledWith("setor", "sector-1");
+    fireEvent.click(within(row!).getByRole("button", { name: /T02 · Atual: Não certificado · Exigido: Multiplicador/ }));
+    expect(go).toHaveBeenCalledWith("capacitacoes", "T02", "autoavaliacao", "colaborador");
+  });
+
   it("shows the administrative architecture of careers and functions to Patrick", async () => {
     fixture.profile = { id: "admin-1", name: "Patrick", role: "admin" };
     fixture.certifications = [{ collaborator_id: "collaborator-1", capability_code: "T01", certified_level: 3, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
