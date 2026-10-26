@@ -158,6 +158,7 @@ describe("official capability library", () => {
     ];
     open("capacitacoes");
     await screen.findByRole("heading", { name: "Disponibilidade para assumir" });
+    expect(screen.getByRole("heading", { name: "Como ler uma responsabilidade" })).toBeTruthy();
     expect(screen.getByText("SISRAMOS")).toBeTruthy();
     await waitFor(() => expect(screen.getByText("7 de 7 pontos")).toBeTruthy());
     const row = screen.getByText("SISRAMOS").closest("article");
