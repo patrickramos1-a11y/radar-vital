@@ -2,6 +2,7 @@ import { z } from "zod";
 import sourceCatalog from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
 import { guidanceFor } from "./criterionGuidance";
 import assessmentMatrix from "./capabilityAssessmentMatrix.json";
+import competencyComposition from "./competencyComposition.json";
 
 export const JOURNEY_STORAGE_KEY = "radar-vital:plano-mestre:jornada-capacidades:local:v1";
 
@@ -89,7 +90,6 @@ const storeSchema = z.object({
   applications: z.array(applicationSchema).max(5_000),
 });
 
-export const capabilityCatalogue = sourceCatalog.capabilities as CapabilityRecord[];
 export const capabilityLevelNames = ["Não capacitado", "Assistido", "Autônomo", "Multiplicador"] as const;
 export const emptyJourneyStore = (): JourneyStore => ({ version: 1, assessments: [], applications: [] });
 
@@ -129,8 +129,48 @@ type AssessmentMatrix = {
   levels: Record<string, Record<string, AssessmentLevelDetail>>;
   requests: Record<string, Record<string, AssessmentRequestGuide>>;
   criteria: Record<string, Record<string, AssessmentCriterion[]>>;
+  capabilities: Record<string, { nature: string; title: string }>;
 };
 const matrix = assessmentMatrix as AssessmentMatrix;
+
+type ImportedCompetencyRequirement = { capabilityCode: string; minimumLevel: CapabilityLevel; minimumLevelLabel: string; sourceRef: string };
+type ImportedCompetency = { sector: string; title: string; minimumPoints: number; requirements: ImportedCompetencyRequirement[] };
+const importedCompetencies = (competencyComposition as { competencies: ImportedCompetency[] }).competencies;
+const importedCapabilities = Object.entries(matrix.capabilities)
+  .filter(([code]) => !sourceCatalog.capabilities.some((capability) => capability.code === code))
+  .map(([code, metadata]) => {
+    const level = (position: CapabilityLevel) => matrix.levels[code]?.[String(position)];
+    const request = matrix.requests[code]?.["1"];
+    const criteria = Object.values(matrix.criteria[code] ?? {}).flat().map((item) => `${item.title}. Como se comprova: ${item.verify}`).join("\n• ");
+    return {
+      code, nature: metadata.nature, title: metadata.title,
+      summary: level(1)?.practice ?? level(1)?.description ?? "Capacidade em configuração.",
+      originLabel: "Matriz de capacidades e competências — out/2026", sourceVersion: "RESPOSABILIDADES 4 — out/2026",
+      detail: {
+        statement: level(2)?.description ?? level(1)?.description ?? "", scope: `• ${(level(1)?.practice ?? "").replace(/;\s*/g, "\n• ")}`,
+        performanceCriteria: criteria ? `• ${criteria}` : "", assisted: level(1)?.description ?? "", autonomous: level(2)?.description ?? "",
+        multiplier: level(3)?.description ?? "", certificationEvidence: request?.evidence ?? "", prerequisites: "Consulte a matriz de formação da competência.",
+        limits: level(2)?.limits ?? level(1)?.limits ?? "", relatedCapabilitiesText: "",
+      },
+      selfAssessmentQuestions: [
+        { number: 1, dimension: "Compreensão dos requisitos", question: `Você entende o que é esperado para atuar em ${metadata.title}?`, sourceRef: "RESPOSABILIDADES 4.xlsx" },
+        { number: 2, dimension: "Execução", question: `Você já executa na prática as atividades de ${metadata.title}?`, sourceRef: "RESPOSABILIDADES 4.xlsx" },
+        { number: 3, dimension: "Julgamento e decisão", question: "Você reconhece o que pode decidir e quando deve escalar uma situação?", sourceRef: "RESPOSABILIDADES 4.xlsx" },
+        { number: 4, dimension: "Qualidade e consistência", question: "Seus resultados já podem ser verificados em casos reais?", sourceRef: "RESPOSABILIDADES 4.xlsx" },
+      ],
+    };
+  });
+
+export const capabilityCatalogue = [...sourceCatalog.capabilities, ...importedCapabilities] as CapabilityRecord[];
+
+export function capabilityTitleFor(code: string): string | undefined {
+  return capabilityCatalogue.find((capability) => capability.code === code)?.title ?? matrix.capabilities[code]?.title;
+}
+
+export function importedCompetencyRequirementsFor(sector: string, title: string): ImportedCompetencyRequirement[] | undefined {
+  const direct = importedCompetencies.find((competency) => competency.sector === sector && competency.title === title);
+  return direct?.requirements ?? importedCompetencies.find((competency) => competency.title === title)?.requirements;
+}
 
 export function capabilityLevelDetailFor(capabilityCode: string, level: CapabilityLevel): AssessmentLevelDetail | undefined {
   return matrix.levels[capabilityCode]?.[String(level)];

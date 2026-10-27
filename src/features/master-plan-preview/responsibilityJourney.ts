@@ -1,4 +1,4 @@
-import { capabilityLevelNames, type CapabilityLevel } from "./capabilityJourney";
+import { capabilityLevelNames, importedCompetencyRequirementsFor, type CapabilityLevel } from "./capabilityJourney";
 import type { SourceResponsibility } from "./capabilityDemo";
 
 export type ResponsibilityClaimStatus = "requested" | "approved" | "rejected" | "cancelled";
@@ -73,6 +73,8 @@ const competencyFoundations: Record<string, Array<{ capabilityCode: string; mini
 };
 
 export function competencyRequirements(responsibility: SourceResponsibility): CompetencyRequirement[] {
+  const imported = importedCompetencyRequirementsFor(responsibility.sourceSector, responsibility.title);
+  if (imported?.length) return imported;
   const requirements = new Map(responsibility.requiredCapabilities.map((requirement) => [requirement.capabilityCode, requirement]));
   for (const foundation of competencyFoundations[responsibility.sourceSector] ?? []) {
     const current = requirements.get(foundation.capabilityCode);

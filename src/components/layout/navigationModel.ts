@@ -58,7 +58,7 @@ export const navigationModules: NavigationModule[] = [
       { key: "empresa", label: "Visão geral", href: masterPlan("empresa"), icon: LayoutDashboard },
       { key: "nucleos", label: "Núcleos", href: masterPlan("nucleos"), icon: Layers3 },
       { key: "setores", label: "Setores", href: masterPlan("setores"), icon: BriefcaseBusiness },
-      { key: "responsabilidades", label: "Responsabilidades", href: masterPlan("responsabilidades"), icon: ShieldAlert },
+      { key: "responsabilidades", label: "Competências", href: masterPlan("responsabilidades"), icon: ShieldAlert },
       { key: "capacidades", label: "Capacidades", href: masterPlan("capacidades"), icon: BookOpen },
       { key: "capacitacoes", label: "Capacitações", href: masterPlan("capacitacoes"), icon: GraduationCap },
       { key: "solicitacoes", label: "Solicitações", href: masterPlan("solicitacoes"), icon: ClipboardList },

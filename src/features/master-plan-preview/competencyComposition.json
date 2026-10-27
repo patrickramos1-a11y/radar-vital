@@ -1,0 +1,2464 @@
+{
+  "source": {
+    "fileName": "RESPOSABILIDADES 4.xlsx",
+    "version": "RESPOSABILIDADES 4"
+  },
+  "competencies": [
+    {
+      "sector": "Gestão Interna",
+      "title": "Controle de Informações",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "SISRAMOS",
+      "minimumPoints": 10,
+      "requirements": [
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Reuniões e Encaminhamentos",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Atendimento e Relacionamento",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Controle de Escopo / Interface Comercial",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Relatórios e Feedback",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Entrada de Demandas",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "F01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Gerenciamento de Demandas",
+      "minimumPoints": 12,
+      "requirements": [
+        {
+          "capabilityCode": "F01",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Qualificação de Demandas",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "F01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Distribuição e Direcionamento de Demandas",
+      "minimumPoints": 10,
+      "requirements": [
+        {
+          "capabilityCode": "F01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Coordenação do Fluxo Técnico",
+      "minimumPoints": 13,
+      "requirements": [
+        {
+          "capabilityCode": "F01",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Gestão de Pendências e Demandas sem Dono",
+      "minimumPoints": 10,
+      "requirements": [
+        {
+          "capabilityCode": "F01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Identificação de Gargalos e Fricções",
+      "minimumPoints": 10,
+      "requirements": [
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Identificação e Encaminhamento de Melhorias ao PAD",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Condicionantes",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "F04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Prazos e Renovações",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Cadastros e Plataformas",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "F03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Licenciamento Ambiental",
+      "minimumPoints": 11,
+      "requirements": [
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Documentação Oficial dos Processos",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Notificações e Exigências",
+      "minimumPoints": 13,
+      "requirements": [
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F06",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Relação com Órgãos",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "F06",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Protocolos e Publicações",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "F03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Planejamento e Coordenação Regulatória",
+      "minimumPoints": 11,
+      "requirements": [
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Outorgas e Recursos Hídricos",
+      "minimumPoints": 11,
+      "requirements": [
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "E02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Regularização Administrativa / Fundiária",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "E04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Processos e Órgãos",
+      "title": "Gestão de Taxas e Obrigações Regulatórias",
+      "minimumPoints": 10,
+      "requirements": [
+        {
+          "capabilityCode": "F04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F02",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Padronização Técnica",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "E03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Produção de Estudos, Planos e Projetos",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Produção de Relatórios e Memoriais",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Engenharia e Desenho Técnico",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "E03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "E01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Planejamento da Produção Técnica",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "F09",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Revisão e Controle de Qualidade Técnica",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Gestão da Produção e Capacidade Técnica",
+      "minimumPoints": 11,
+      "requirements": [
+        {
+          "capabilityCode": "T10",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Formação e Multiplicação Técnica",
+      "minimumPoints": 11,
+      "requirements": [
+        {
+          "capabilityCode": "T10",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Terceirização e Supervisão Técnica",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "F13",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Projetos Hídricos / Outorgas",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "E02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Projetos",
+      "title": "Gestão de Modelos, Métodos, Checklists e Biblioteca Técnica",
+      "minimumPoints": 10,
+      "requirements": [
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "CAR",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "E04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F12",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Georreferenciamento / Mapas",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "F12",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "E03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Coordenação de Serviços Externos de Campo",
+      "minimumPoints": 10,
+      "requirements": [
+        {
+          "capabilityCode": "F13",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "E05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Acompanhamento de Obras",
+      "minimumPoints": 6,
+      "requirements": [
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Imóveis",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "E04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Levantamentos",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Registros Fotográficos",
+      "minimumPoints": 5,
+      "requirements": [
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Visitas",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Vistorias",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Gestão de Dados de Campo",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "E02",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Planejamento de Campo",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Qualidade e Integridade dos Dados de Campo",
+      "minimumPoints": 9,
+      "requirements": [
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Consolidação e Entrega Padronizada dos Levantamentos",
+      "minimumPoints": 8,
+      "requirements": [
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Serviços, Visitas e Levantamentos",
+      "title": "Apoio de Campo aos demais setores",
+      "minimumPoints": 7,
+      "requirements": [
+        {
+          "capabilityCode": "F10",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F11",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Transversal",
+      "title": "Passagem de Bastão / Interface entre Setores",
+      "minimumPoints": 6,
+      "requirements": [
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Administrativo / Marketing",
+      "minimumPoints": 14,
+      "requirements": [
+        {
+          "capabilityCode": "F18",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "F15",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T06",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Financeiro",
+      "minimumPoints": 12,
+      "requirements": [
+        {
+          "capabilityCode": "F14",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Pessoas / RH",
+      "minimumPoints": 12,
+      "requirements": [
+        {
+          "capabilityCode": "F16",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T10",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T07",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    },
+    {
+      "sector": "Gestão Interna",
+      "title": "Tecnologia e Sistemas",
+      "minimumPoints": 13,
+      "requirements": [
+        {
+          "capabilityCode": "F17",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T02",
+          "minimumLevel": 3,
+          "minimumLevelLabel": "Multiplicador",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T08",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T09",
+          "minimumLevel": 2,
+          "minimumLevelLabel": "Autônomo",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T01",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T05",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T03",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        },
+        {
+          "capabilityCode": "T04",
+          "minimumLevel": 1,
+          "minimumLevelLabel": "Assistido",
+          "sourceRef": "RESPOSABILIDADES 4.xlsx · Composição de Competências"
+        }
+      ]
+    }
+  ]
+}

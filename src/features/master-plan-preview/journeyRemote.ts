@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CapabilityLevel, CapabilityRecord, Criterion, CriterionResponse, CriterionReview } from "./capabilityJourney";
 import type { SourceResponsibility } from "./capabilityDemo";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
-
 // Official published matrix (RESPONSABILIDADES 4, out/2026): 33 capabilities and 56 responsibilities,
 // all sharing one source hash. F14–F18 only exist in this version, so their presence proves the new matrix.
 const PUBLISHED_CAPABILITY_COUNT = 33;
@@ -62,7 +61,7 @@ export async function fetchLibrary(): Promise<Library> {
     throw new Error(`Importação incompleta: ${capRows.length}/${PUBLISHED_CAPABILITY_COUNT} capacidades e ${responsibilityRows.length}/${PUBLISHED_RESPONSIBILITY_COUNT} responsabilidades.`);
   }
   const sourceSha256 = capRows[0].source_sha256;
-  if ([...capRows, ...responsibilityRows].some((row) => row.source_sha256 !== sourceSha256)) {
+  if (!sourceSha256 || [...capRows, ...responsibilityRows].some((row) => row.source_sha256 !== sourceSha256)) {
     throw new Error("A biblioteca contém versões de fonte diferentes.");
   }
   const publishedCodes = new Set(capRows.map((row) => row.code));

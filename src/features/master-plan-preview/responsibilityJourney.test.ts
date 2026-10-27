@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
-import { globalCapabilityMaturity, responsibilityReadiness } from "./responsibilityJourney";
+import { competencyRequirements, globalCapabilityMaturity, responsibilityReadiness } from "./responsibilityJourney";
 
 const sisramos = source.responsibilities.find((responsibility) => responsibility.sourceId === "resp-413535e8de506f6a")!;
 
@@ -25,5 +25,15 @@ describe("responsibility journey", () => {
 
   it("uses all capacity levels in the global maturity scale", () => {
     expect(globalCapabilityMaturity(["T01", "T02", "T08"], new Map([["T01", 1], ["T02", 2], ["T08", 3]]))).toEqual({ pointsEarned: 6, pointsRequired: 9, progress: 66.7 });
+  });
+
+  it("uses the workbook composition, including the new financial capacity", () => {
+    const finance = source.responsibilities.find((responsibility) => responsibility.title === "Financeiro")!;
+    expect(competencyRequirements(finance)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ capabilityCode: "F14", minimumLevel: 2 }),
+      expect.objectContaining({ capabilityCode: "T04", minimumLevel: 2 }),
+      expect.objectContaining({ capabilityCode: "T09", minimumLevel: 1 }),
+    ]));
+    expect(competencyRequirements(finance)).toHaveLength(8);
   });
 });

@@ -125,6 +125,21 @@ describe("official capability library", () => {
     expect(go).toHaveBeenCalledWith("capacitacoes", "E01", "competencias");
   });
 
+  it("summarizes the expected performance as a certification response", async () => {
+    open("capacitacoes", "E01", "ficha");
+    await waitFor(() => expect(screen.getAllByText("Desempenho esperado")).toHaveLength(3));
+    expect(screen.getAllByText("Resumo para a solicitação")).toHaveLength(3);
+    expect(screen.queryByText("Desempenhos e evidências")).toBeNull();
+  });
+
+  it("opens a competency with its required capability composition", () => {
+    const competency = library.responsibilities.find((item) => item.requiredCapabilities.length > 0)!;
+    open("responsabilidade", competency.sourceId);
+    expect(screen.getByRole("heading", { name: competency.title })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Capacidades e níveis exigidos" })).toBeTruthy();
+    expect(screen.getByText("Situação no perfil")).toBeTruthy();
+  });
+
   it("shows the capability collection in its own Capacitações tab", async () => {
     open("capacitacoes", "", "acervo");
     await waitFor(() => expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy());
