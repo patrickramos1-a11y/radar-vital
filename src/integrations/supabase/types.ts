@@ -1841,6 +1841,163 @@ export type Database = {
           },
         ]
       }
+      master_plan_team_certifications: {
+        Row: {
+          capability_code: string
+          certified_at: string
+          certified_by: string
+          certified_level: number
+          collaborator_id: string
+          updated_at: string
+        }
+        Insert: {
+          capability_code: string
+          certified_at?: string
+          certified_by: string
+          certified_level: number
+          collaborator_id: string
+          updated_at?: string
+        }
+        Update: {
+          capability_code?: string
+          certified_at?: string
+          certified_by?: string
+          certified_level?: number
+          collaborator_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_team_certifications_capability_code_fkey"
+            columns: ["capability_code"]
+            isOneToOne: false
+            referencedRelation: "master_plan_capability_library"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "master_plan_team_certifications_certified_by_fkey"
+            columns: ["certified_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_certifications_certified_by_fkey"
+            columns: ["certified_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_certifications_certified_by_fkey"
+            columns: ["certified_by"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_certifications_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_certifications_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_certifications_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_plan_team_training_requests: {
+        Row: {
+          capability_code: string
+          collaborator_id: string
+          requested_at: string
+          requested_by: string
+          status: string
+          target_level: number
+          updated_at: string
+        }
+        Insert: {
+          capability_code: string
+          collaborator_id: string
+          requested_at?: string
+          requested_by: string
+          status?: string
+          target_level: number
+          updated_at?: string
+        }
+        Update: {
+          capability_code?: string
+          collaborator_id?: string
+          requested_at?: string
+          requested_by?: string
+          status?: string
+          target_level?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_team_training_requests_capability_code_fkey"
+            columns: ["capability_code"]
+            isOneToOne: false
+            referencedRelation: "master_plan_capability_library"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "master_plan_team_training_requests_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_training_requests_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_training_requests_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_training_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_performance_all_time"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_training_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "collaborator_star_balances"
+            referencedColumns: ["collaborator_id"]
+          },
+          {
+            foreignKeyName: "master_plan_team_training_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       municipalities: {
         Row: {
           created_at: string
@@ -2883,9 +3040,21 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_auth_enforced: { Args: never; Returns: boolean }
+      master_plan_apply_team_certifications: {
+        Args: { p_actor_id: string; p_updates: Json }
+        Returns: undefined
+      }
       master_plan_assert_current_collaborator: {
         Args: { p_collaborator_id: string }
         Returns: undefined
+      }
+      master_plan_deactivate_collaborator: {
+        Args: { p_actor_id: string; p_collaborator_id: string }
+        Returns: undefined
+      }
+      master_plan_operational_is_admin: {
+        Args: { p_collaborator_id: string }
+        Returns: boolean
       }
       master_plan_record_self_assessment: {
         Args: {
@@ -2911,7 +3080,7 @@ export type Database = {
         }
       }
       master_plan_request_responsibility: {
-        Args: { p_collaborator_id: string; p_responsibility_source_id: string }
+        Args: { p_responsibility_source_id: string }
         Returns: {
           collaborator_id: string
           decided_at: string | null
@@ -2925,6 +3094,29 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "master_plan_responsibility_claims"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      master_plan_request_team_training: {
+        Args: {
+          p_actor_id: string
+          p_capability_code: string
+          p_collaborator_id: string
+          p_target_level: number
+        }
+        Returns: {
+          capability_code: string
+          collaborator_id: string
+          requested_at: string
+          requested_by: string
+          status: string
+          target_level: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "master_plan_team_training_requests"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -2958,7 +3150,7 @@ export type Database = {
         }
       }
       master_plan_review_responsibility_claim: {
-        Args: { p_claim_id: string; p_decision: string; p_note?: string; p_reviewer_id: string }
+        Args: { p_claim_id: string; p_decision: string; p_note?: string }
         Returns: {
           collaborator_id: string
           decided_at: string | null
