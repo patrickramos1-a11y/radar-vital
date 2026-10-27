@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prévia | Competência</title>
+  <style>
+    :root { --ink:#172824; --muted:#63706d; --line:#d8e0dc; --canvas:#f3f6f4; --surface:#fff; --teal:#0b756b; --teal-soft:#e8f7f3; --blue:#166a99; --blue-soft:#eef8ff; --amber:#a35d12; --amber-soft:#fff6e8; --red:#b13b33; --red-soft:#fff1ef; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--canvas); color:var(--ink); font:14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button { font:inherit; cursor:pointer; }
+    .shell { max-width:1240px; margin:0 auto; padding:26px 24px 56px; }
+    .crumb { border:0; background:none; color:var(--teal); font-weight:700; padding:0; display:inline-flex; align-items:center; gap:8px; }
+    .crumb::before { content:"←"; font-size:18px; }
+    .header { margin-top:22px; border-top:4px solid var(--teal); background:var(--surface); padding:30px; box-shadow:0 2px 10px rgba(23,40,36,.05); }
+    .eyebrow { margin:0 0 7px; color:var(--teal); font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+    h1,h2,h3,p { margin-top:0; }
+    h1 { margin-bottom:8px; font-size:30px; line-height:1.12; }
+    h2 { font-size:18px; line-height:1.2; margin-bottom:8px; }
+    h3 { font-size:15px; margin-bottom:5px; }
+    .summary { max-width:780px; color:var(--muted); font-size:16px; }
+    .header-grid { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:32px; align-items:end; }
+    .status { border-left:3px solid var(--amber); background:var(--amber-soft); padding:14px 15px; }
+    .status strong { display:block; color:#6a3b0b; font-size:16px; }
+    .status span { color:#80551f; font-size:12px; }
+    .metric-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:24px; }
+    .metric { border:1px solid var(--line); padding:12px; }
+    .metric b { display:block; font-size:20px; }
+    .metric span { color:var(--muted); font-size:12px; }
+    .progress { height:8px; margin-top:12px; overflow:hidden; background:#dce9e4; }
+    .progress > i { display:block; width:60%; height:100%; background:var(--teal); }
+    .layout { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,.75fr); gap:22px; margin-top:22px; }
+    .panel { background:var(--surface); border:1px solid var(--line); padding:23px; }
+    .panel > :last-child { margin-bottom:0; }
+    .intro { font-size:16px; color:#34423e; max-width:820px; }
+    .intro strong { color:var(--teal); }
+    .cap-grid { display:grid; grid-template-columns:1.5fr .8fr .8fr 1fr auto; border-top:1px solid var(--line); }
+    .cap-head,.cap-row { display:contents; }
+    .cap-head > div { border-bottom:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.04em; padding:11px 10px; text-transform:uppercase; }
+    .cap-row > div { border-bottom:1px solid var(--line); padding:13px 10px; }
+    .cap-row:last-child > div { border-bottom:0; }
+    .cap-name { font-weight:750; }
+    .cap-code { color:var(--teal); display:block; font-size:11px; font-weight:800; margin-bottom:2px; }
+    .level { display:inline-flex; align-items:center; border:1px solid currentColor; padding:3px 7px; font-size:12px; font-weight:700; white-space:nowrap; }
+    .level.assist { color:var(--blue); background:var(--blue-soft); }
+    .level.auto { color:var(--teal); background:var(--teal-soft); }
+    .none { color:#77827f; }
+    .state { display:inline-flex; gap:6px; align-items:center; font-size:12px; font-weight:700; white-space:nowrap; }
+    .state::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
+    .state.ok { color:var(--teal); }.state.missing { color:var(--amber); }.state.start { color:var(--red); }
+    .icon-button { border:1px solid var(--line); background:#fff; color:var(--teal); padding:7px 10px; font-weight:700; font-size:12px; }
+    .icon-button:hover { background:var(--teal-soft); }
+    .callout { margin-top:18px; border-left:3px solid var(--amber); background:var(--amber-soft); color:#63420f; padding:13px 14px; font-size:13px; }
+    .side-list { list-style:none; padding:0; margin:14px 0 0; }
+    .side-list li { border-top:1px solid var(--line); padding:11px 0; }
+    .side-list li:first-child { border-top:0; padding-top:0; }
+    .side-list b { display:block; font-size:13px; }.side-list span { color:var(--muted); font-size:12px; }
+    .tags { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+    .tag { background:#eff3f1; border:1px solid #d9e2de; color:#33453f; padding:5px 8px; font-size:12px; font-weight:650; }
+    .three { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:22px; }
+    .list { list-style:none; margin:13px 0 0; padding:0; }.list li { padding:9px 0 9px 20px; border-top:1px solid var(--line); position:relative; }.list li::before { content:""; position:absolute; left:2px; top:16px; width:8px; height:8px; background:var(--teal); }.list li:first-child { border-top:0; }
+    .limits { border-top:4px solid #d29a59; }.limits p { color:#5d5041; }
+    .relations { margin-top:22px; display:grid; grid-template-columns:1.2fr 1fr; gap:22px; }
+    .relation-row { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:13px 0; border-top:1px solid var(--line); }.relation-row:first-of-type { border-top:0; }.relation-row span { color:var(--muted); font-size:12px; }
+    .relation-row b { font-size:13px; }.arrow { color:var(--teal); font-size:17px; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }.primary { border:1px solid var(--teal); background:var(--teal); color:#fff; padding:10px 13px; font-weight:750; }.secondary { border:1px solid var(--teal); background:#fff; color:var(--teal); padding:10px 13px; font-weight:750; }
+    @media (max-width:900px) { .header-grid,.layout,.relations { grid-template-columns:1fr; }.three { grid-template-columns:1fr; }.cap-grid { grid-template-columns:1.35fr .75fr .75fr; }.cap-head > div:nth-child(4),.cap-head > div:nth-child(5),.cap-row > div:nth-child(4),.cap-row > div:nth-child(5) { display:none; }.metric-grid { max-width:520px; } }
+    @media (max-width:560px) { .shell { padding:18px 14px 36px; }.header,.panel { padding:18px; } h1 { font-size:26px; }.metric-grid { grid-template-columns:1fr; }.cap-grid { grid-template-columns:1fr .8fr .7fr; }.cap-head > div,.cap-row > div { padding-left:6px; padding-right:6px; }.cap-name { font-size:12px; }.level,.state { font-size:11px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <button class="crumb" type="button">Competências</button>
+
+    <header class="header">
+      <div class="header-grid">
+        <div>
+          <p class="eyebrow">Competência · Processos e órgãos</p>
+          <h1>Condução de Processos Regulatórios</h1>
+          <p class="summary">Transforma uma demanda de regularização em um processo organizado, acompanhado e rastreável dentro do fluxo da Ramos.</p>
+        </div>
+        <div class="status"><strong>Em formação</strong><span>3 de 5 capacidades atendidas</span></div>
+      </div>
+      <div class="metric-grid">
+        <div class="metric"><b>60%</b><span>da competência formada</span><div class="progress"><i></i></div></div>
+        <div class="metric"><b>3</b><span>capacidades já atendidas</span></div>
+        <div class="metric"><b>2</b><span>capacidades para desenvolver</span></div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section class="panel">
+        <p class="eyebrow">O profissional que você está formando</p>
+        <h2>Conduz processos regulatórios ordinários com autonomia de fluxo</h2>
+        <p class="intro">Profissional capaz de receber uma necessidade de regularização, <strong>organizar documentos e requisitos</strong>, articular informações com órgãos e setores internos, acompanhar prazos e movimentações e manter o processo dentro do padrão da Ramos.</p>
+      </section>
+      <aside class="panel">
+        <p class="eyebrow">Onde pode atuar</p>
+        <div class="tags"><span class="tag">Licenciamento</span><span class="tag">Processos e Órgãos</span><span class="tag">Gestão Interna</span></div>
+      </aside>
+    </div>
+
+    <section class="panel" style="margin-top:22px">
+      <p class="eyebrow">Composição da competência</p>
+      <h2>Capacidades que precisam estar certificadas</h2>
+      <div class="cap-grid" aria-label="Capacidades que formam a competência">
+        <div class="cap-head"><div>Capacidade</div><div>Exigido</div><div>Perfil atual</div><div>Situação</div><div></div></div>
+        <div class="cap-row"><div><span class="cap-code">F02</span><span class="cap-name">Gestão de Processos Regulatórios</span></div><div><span class="level auto">Autônomo</span></div><div><span class="level assist">Assistido</span></div><div><span class="state missing">Falta evoluir</span></div><div><button class="icon-button">Ver ficha</button></div></div>
+        <div class="cap-row"><div><span class="cap-code">F05</span><span class="cap-name">Gestão Documental Regulatória</span></div><div><span class="level auto">Autônomo</span></div><div><span class="level auto">Autônomo</span></div><div><span class="state ok">Atendida</span></div><div><button class="icon-button">Ver ficha</button></div></div>
+        <div class="cap-row"><div><span class="cap-code">T01</span><span class="cap-name">Gestão de Informações e Acervo</span></div><div><span class="level assist">Assistido</span></div><div><span class="level auto">Autônomo</span></div><div><span class="state ok">Atendida</span></div><div><button class="icon-button">Ver ficha</button></div></div>
+        <div class="cap-row"><div><span class="cap-code">T05</span><span class="cap-name">Comunicação Profissional</span></div><div><span class="level assist">Assistido</span></div><div><span class="level assist">Assistido</span></div><div><span class="state ok">Atendida</span></div><div><button class="icon-button">Ver ficha</button></div></div>
+        <div class="cap-row"><div><span class="cap-code">T04</span><span class="cap-name">Gestão de Prazos e Prioridades</span></div><div><span class="level assist">Assistido</span></div><div><span class="none">Não certificada</span></div><div><span class="state start">Falta iniciar</span></div><div><button class="icon-button">Ver ficha</button></div></div>
+      </div>
+      <div class="callout"><strong>Faltam duas evoluções:</strong> Gestão de Processos Regulatórios até Autônomo e Gestão de Prazos e Prioridades até Assistido. Ao serem certificadas, a competência será formada automaticamente.</div>
+      <div class="actions"><button class="primary">Desenvolver capacidades faltantes</button><button class="secondary">Ver jornada por capacidades</button></div>
+    </section>
+
+    <section class="three">
+      <article class="panel"><p class="eyebrow">Atuação</p><h2>O que permite realizar</h2><ul class="list"><li>Estruturar processos de regularização.</li><li>Organizar documentos, requisitos e evidências.</li><li>Controlar prazos, protocolos e exigências.</li><li>Encaminhar necessidades técnicas aos setores responsáveis.</li></ul></article>
+      <article class="panel"><p class="eyebrow">Impacto</p><h2>Problemas que resolve</h2><ul class="list"><li>Pendências documentais e administrativas.</li><li>Processos sem acompanhamento ou rastreabilidade.</li><li>Exigências ordinárias de órgãos.</li><li>Falhas de registro, prazo ou movimentação.</li></ul></article>
+      <article class="panel"><p class="eyebrow">Entregas</p><h2>O que consegue produzir</h2><ul class="list"><li>Processo organizado e rastreável.</li><li>Protocolos e comprovantes.</li><li>Controle de exigências e prazos.</li><li>Relatório de andamento e pendências.</li></ul></article>
+    </section>
+
+    <section class="relations">
+      <article class="panel limits"><p class="eyebrow">Limites de atuação</p><h2>O que esta competência não habilita sozinha</h2><p>Não substitui responsabilidade técnica legal, elaboração de estudos especializados nem decisões que dependam de competências de engenharia, campo ou gestão.</p></article>
+      <article class="panel"><p class="eyebrow">Relações na jornada</p><h2>Impactos quando for formada</h2><div class="relation-row"><div><b>Responsabilidades habilitadas</b><span>Protocolos, documentos e fluxo regulatório</span></div><span class="arrow">→</span></div><div class="relation-row"><div><b>Perfil profissional</b><span>Operação e gestão regulatória</span></div><span class="arrow">→</span></div><div class="relation-row"><div><b>Competências relacionadas</b><span>Outorgas, licenciamento e taxas regulatórias</span></div><span class="arrow">→</span></div></article>
+    </section>
+  </main>
+</body>
+</html>
