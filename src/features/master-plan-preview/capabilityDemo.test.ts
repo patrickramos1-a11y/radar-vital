@@ -10,9 +10,9 @@ import {
 } from "./capabilityDemo";
 
 describe("catálogo e jornada visual", () => {
-  it("mantém as 33 fichas reais e vínculos da matriz atualizada", () => {
-    expect(capabilityCatalogue).toHaveLength(33);
-    expect(new Set(capabilityCatalogue.map((item) => item.code)).size).toBe(33);
+  it("mantém as 39 fichas reais e vínculos da matriz atualizada", () => {
+    expect(capabilityCatalogue).toHaveLength(39);
+    expect(new Set(capabilityCatalogue.map((item) => item.code)).size).toBe(39);
     expect(responsibilitiesFor("F04")).toHaveLength(4);
     expect(capabilityCatalogue.every((item) => item.selfAssessmentQuestions.length === 4)).toBe(true);
     for (const item of capabilityCatalogue) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
-import { capabilitiesForCareerStep, capabilityPoints, careerStepReadiness, competenciesForCareerTrack, competenciesIntroducedForCareerStep, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilitiesForCareerStep, technicalResponsibilities } from "./careerLadder";
+import { capabilitiesForCareerStep, capabilityPoints, careerScopeCapabilityCodes, careerStepReadiness, competenciesForCareerTrack, competenciesIntroducedForCareerStep, newPacRequirementsForCareerStep, nucleoTecnicoCareerLadder, pacForCareerStep, responsibilitiesForCareerStep, technicalResponsibilities } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
 import { competencyRequirements } from "./responsibilityJourney";
@@ -90,6 +90,20 @@ describe("Núcleo Técnico career ladder", () => {
     expect(pending.competencyCandidates).toHaveLength(4);
     expect(pending.earnedCompetencies).toBeGreaterThanOrEqual(4);
     expect(pending.eligible).toBe(true);
+  });
+
+  it("keeps capacities outside the technical PAC out of the career score", () => {
+    const expandedLibrary: Library = {
+      ...library,
+      capabilities: [...library.capabilities, { ...library.capabilities[0], code: "F19", title: "Inteligência Artificial e Automação de Processos" }],
+    };
+    const levels = new Map([["F19", 3]]);
+    const readiness = careerStepReadiness(expandedLibrary, nucleoTecnicoCareerLadder, "operador_junior", levels, [], "gabi");
+
+    expect(careerScopeCapabilityCodes(expandedLibrary, nucleoTecnicoCareerLadder)).not.toContain("F19");
+    expect(readiness.completedCapabilityPoints).toBe(0);
+    expect(readiness.certifiedCapabilityCount).toBe(0);
+    expect(readiness.eligible).toBe(false);
   });
 
   it("derives different responsibility paths from different certified capabilities with the same point total", () => {

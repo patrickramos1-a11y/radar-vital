@@ -238,6 +238,19 @@ autenticadas do modulo; nao ativa `auth_enforced` nem introduz login na interfac
 A virada final depende de contas vinculadas, administrador confirmado e testes
 autenticados. Permissoes publicas dos dominios operacionais permanecem intactas.
 
+## D-023 - Escopo de jornada por nucleo (2026-10-27)
+
+- A biblioteca de capacidades e comum e continua exibindo todas as capacidades
+  cadastradas.
+- A jornada de cada colaborador usa apenas as capacidades e competencias do
+  nucleo ao qual ele foi vinculado.
+- O PAC, a escada de cargos e os 84 pontos existentes pertencem exclusivamente
+  ao Nucleo Tecnico. Capacidades de Suporte ou Administrativo nao alteram essa
+  promocao.
+- Suporte e Administrativo ja possuem seus recortes de capacidades e
+  competencias. Seus marcos de promocao serao liberados somente depois da
+  definicao formal dos respectivos PACs, metas e cargos.
+
 ## Decisoes pendentes
 
 
@@ -248,3 +261,4 @@ autenticados. Permissoes publicas dos dominios operacionais permanecem intactas.
 | P-003 | Exibicao publica ou privada do valor em reais | Durante a Fase 5 |
 | P-004 | Meta anual configuravel no produto | Depois da Fase 6 |
 | P-005 | Supabase local ou projeto remoto de teste | Antes de concluir a Fase 0 |
+| P-006 | PACs, metas de promocao e cargos dos nucleos Suporte e Administrativo | Antes de liberar a escada desses nucleos |

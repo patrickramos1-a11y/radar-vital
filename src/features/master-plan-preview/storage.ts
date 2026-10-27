@@ -45,6 +45,7 @@ export interface MasterPlanDraft {
   claims: LocalResponsibilityClaim[];
   capabilityPlans: Record<string, Record<string, 0 | 1 | 2 | 3>>;
   careerCapabilitySimulations: Record<string, CareerCapabilitySimulation>;
+  collaboratorNuclei: Record<string, NucleusId>;
   nucleusThresholds: Partial<Record<NucleusId, number>>;
 }
 
@@ -90,13 +91,14 @@ const draftSchema = z.object({
     consolidatedStepIds: z.array(identifier).max(20),
     savedAt: boundedText,
   })).default({}),
+  collaboratorNuclei: z.record(z.enum(["tecnico", "suporte", "administrativo"])).default({}),
   nucleusThresholds: z.record(z.number().int().min(1).max(100)).default({}),
 });
 
 export function emptyMasterPlanDraft(): MasterPlanDraft {
   return {
     version: 1, savedAt: "", nucleusOverrides: {}, capabilities: [], responsibilities: [],
-    requests: [], responsibilityOverrides: {}, requestPlans: {}, trainingRequests: [], claims: [], capabilityPlans: {}, careerCapabilitySimulations: {}, nucleusThresholds: {},
+    requests: [], responsibilityOverrides: {}, requestPlans: {}, trainingRequests: [], claims: [], capabilityPlans: {}, careerCapabilitySimulations: {}, collaboratorNuclei: {}, nucleusThresholds: {},
   };
 }
 
@@ -143,6 +145,7 @@ export function mergeMasterPlanDraft(current: MasterPlanDraft, imported: MasterP
     claims: mergePairs(current.claims, imported.claims, (item) => `${item.personId}:${item.responsibilityId}`),
     capabilityPlans: Object.fromEntries([...new Set([...Object.keys(imported.capabilityPlans), ...Object.keys(current.capabilityPlans)])].map((code) => [code, { ...(imported.capabilityPlans[code] ?? {}), ...(current.capabilityPlans[code] ?? {}) }])),
     careerCapabilitySimulations: { ...imported.careerCapabilitySimulations, ...current.careerCapabilitySimulations },
+    collaboratorNuclei: { ...imported.collaboratorNuclei, ...current.collaboratorNuclei },
     nucleusThresholds: { ...imported.nucleusThresholds, ...current.nucleusThresholds },
   };
 }

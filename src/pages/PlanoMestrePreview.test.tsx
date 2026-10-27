@@ -138,9 +138,9 @@ describe("Plano Mestre organizational preview", () => {
     fireEvent.click(main().getByRole("tab", { name: "Níveis e evidências" }));
     expect(main().getByRole("heading", { name: "Do apoio à multiplicação" })).toBeTruthy();
     fireEvent.click(main().getByRole("button", { name: "Banco de capacidades" }));
-    expect(main().getByText("33 de 33 capacidades")).toBeTruthy();
+    expect(main().getByText("39 de 39 capacidades")).toBeTruthy();
     fireEvent.change(main().getByRole("textbox", { name: "Buscar capacidades" }), { target: { value: "F04" } });
-    expect(main().getByText("1 de 33 capacidades")).toBeTruthy();
+    expect(main().getByText("1 de 39 capacidades")).toBeTruthy();
   });
 
   it("keeps position across tabs and links T04 to its prerequisite", () => {

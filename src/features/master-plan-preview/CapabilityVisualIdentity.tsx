@@ -45,6 +45,7 @@ export function CapabilityHero({ item }: { item: CapabilityRecord }) {
   const visual = capabilityVisual(item.code);
   return <div className="cap-identity-hero cap-themed" style={capabilityVisualStyle(item.code)}>
     <img src={capabilityCoverPath(item.code)} alt={`Capa ilustrada de ${item.code}: ${item.title}`} width={1600} height={900} decoding="async" />
+    {visual && <span className="cap-identity-sticker"><img src={`/capability-stickers/posters/${item.code}.png`} alt={`Figurinha ${item.code}: ${item.title}`} width={384} height={384} loading="lazy" decoding="async" /></span>}
     {visual && <p className="cap-identity-concept">{visual.concept}</p>}
   </div>;
 }
