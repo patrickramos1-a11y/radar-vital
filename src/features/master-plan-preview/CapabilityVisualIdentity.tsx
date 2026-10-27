@@ -78,14 +78,13 @@ export function CapabilityStickerCard({ item, certifiedLevel = 0, trainingLevel 
   const visibleLevels = missingLevel ? ([1, 2, 3] as CapabilityLevel[]).filter((level) => level < missingLevel) : [1, 2, 3] as CapabilityLevel[];
   return <article className={`cap-sticker-card ${currentLevel === 0 ? "cap-sticker-card-locked" : ""} ${missingLevel ? "cap-sticker-card-missing" : ""}`} style={capabilityVisualStyle(item.code)}>
     <button type="button" className="cap-sticker-open" onClick={onOpen}>
-      <div className="cap-sticker-art"><img src={`/capability-stickers/posters/${item.code}.png`} alt={`Figurinha ${item.code}: ${item.title}`} loading="lazy" decoding="async" /></div>
       <div className="cap-sticker-body">
-        <span className="cap-sticker-kicker"><span>{item.nature}</span><strong>{item.code}</strong></span>
-        <strong className="cap-sticker-title">{item.title}</strong>
-        <span className="cap-sticker-level-copy">Nível atual <strong>{stickerLevelCopy[currentLevel]}</strong></span>
-        <span className="cap-sticker-levels" aria-label={`Níveis de ${item.title}`}>
-          {visibleLevels.map((level) => <span key={level} className={level <= currentLevel ? "cap-sticker-level-earned" : ""} title={stickerLevelCopy[level]}><img src={capabilityLevelInsignia[level]} alt="" loading="lazy" decoding="async" /></span>)}
+        <span className="cap-sticker-heading"><span className="min-w-0"><span className="cap-sticker-kicker"><span>{item.nature}</span><strong>{item.code}</strong></span><strong className="cap-sticker-title">{item.title}</strong></span>
+          <span className="cap-sticker-levels" aria-label={`Níveis de ${item.title}`}>
+            {visibleLevels.map((level) => <span key={level} className={level <= currentLevel ? "cap-sticker-level-earned" : ""} title={stickerLevelCopy[level]}><img src={capabilityLevelInsignia[level]} alt="" loading="lazy" decoding="async" /></span>)}
+          </span>
         </span>
+        <span className="cap-sticker-level-copy">Nível atual <strong>{stickerLevelCopy[currentLevel]}</strong></span>
       </div>
     </button>
     <div className="cap-sticker-status">

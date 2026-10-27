@@ -185,27 +185,27 @@
 .cap-team-person dt { color: #74807a; font-size: 10px; line-height: 1.2; }
 .cap-team-person dd { margin: 3px 0 0; color: #172824; font-size: 13px; font-weight: 700; }
 
-.cap-sticker-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.cap-sticker-card { min-width: 0; overflow: hidden; border: 1px solid #dfe8e4; border-top: 3px solid var(--cap-accent, #168274); border-radius: 6px; background: #fff; box-shadow: 0 1px 4px rgb(22 45 39 / 4%); }
-.cap-sticker-open { display: grid; grid-template-columns: minmax(145px, 42%) minmax(0, 1fr); width: 100%; padding: 0; border: 0; background: #fff; color: inherit; text-align: left; }
+.cap-sticker-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cap-sticker-card { min-width: 0; overflow: hidden; border: 1px solid #dfe8e4; border-radius: 6px; background: #fff; box-shadow: 0 2px 8px rgb(22 45 39 / 7%); transition: border-color 150ms, box-shadow 150ms, transform 150ms; }
+.cap-sticker-card:hover { border-color: color-mix(in srgb, var(--cap-accent, #168274) 55%, white); box-shadow: 0 8px 18px rgb(22 45 39 / 12%); transform: translateY(-1px); }
+.cap-sticker-open { display: block; width: 100%; padding: 0; border: 0; background: #fff; color: inherit; text-align: left; }
 .cap-sticker-open:hover .cap-sticker-title { color: var(--cap-ink, #176f68); }
 .cap-sticker-open:focus-visible, .cap-sticker-status button:focus-visible { outline: 3px solid #176f68; outline-offset: -3px; }
-.cap-sticker-art { display: grid; min-height: 162px; place-items: center; padding: 8px; border-right: 1px solid #e1e9e6; background: #f8fbfa; }
-.cap-sticker-art img { display: block; width: 100%; height: 100%; max-height: 205px; object-fit: contain; filter: drop-shadow(0 8px 7px rgb(22 45 39 / 12%)); }
-.cap-sticker-card-locked .cap-sticker-art img { filter: grayscale(1) opacity(.48); }
-.cap-sticker-card-missing .cap-sticker-art img { filter: grayscale(1) opacity(.62); }
-.cap-sticker-body { display: flex; min-width: 0; flex-direction: column; padding: 13px; }
+.cap-sticker-body { display: flex; min-width: 0; flex-direction: column; min-height: 95px; padding: 12px; }
+.cap-sticker-heading { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .cap-sticker-kicker { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--cap-ink, #176f68); font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .cap-sticker-kicker strong { flex: none; border: 1px solid color-mix(in srgb, var(--cap-accent, #168274) 40%, white); padding: 2px 5px; font-size: 10px; }
-.cap-sticker-title { display: block; min-height: 2.7em; margin-top: 8px; color: #172824; font-size: 14px; line-height: 1.35; transition: color 150ms; }
-.cap-sticker-level-copy { display: block; margin-top: auto; padding-top: 10px; color: #67756e; font-size: 11px; }
+.cap-sticker-title { display: block; min-height: 2.7em; margin-top: 7px; color: #172824; font-size: 13px; line-height: 1.35; transition: color 150ms; }
+.cap-sticker-level-copy { display: block; margin-top: auto; padding-top: 8px; color: #67756e; font-size: 10px; }
 .cap-sticker-level-copy strong { display: block; margin-top: 2px; color: #172824; font-size: 12px; }
-.cap-sticker-levels { display: flex; gap: 5px; margin-top: 8px; }
-.cap-sticker-levels > span { display: grid; width: 36px; height: 36px; place-items: center; opacity: .16; }
+.cap-sticker-levels { display: flex; flex: none; gap: 2px; }
+.cap-sticker-levels > span { display: grid; width: 42px; height: 42px; place-items: center; opacity: .18; }
 .cap-sticker-levels > span img { display: block; width: 100%; height: 100%; object-fit: contain; filter: grayscale(1); }
 .cap-sticker-levels > .cap-sticker-level-earned { opacity: 1; }
-.cap-sticker-levels > .cap-sticker-level-earned img { filter: drop-shadow(0 3px 4px rgb(22 45 39 / 12%)); }
-.cap-sticker-status { display: flex; min-height: 49px; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #e3ebe7; padding: 9px 13px; color: #65736c; font-size: 11px; line-height: 1.35; }
+.cap-sticker-levels > .cap-sticker-level-earned img { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--cap-accent, #168274) 62%, white)) drop-shadow(0 5px 5px rgb(22 45 39 / 24%)); }
+.cap-sticker-card-locked .cap-sticker-levels { filter: grayscale(1); }
+.cap-sticker-card-missing .cap-sticker-levels { filter: grayscale(.7); }
+.cap-sticker-status { display: flex; min-height: 38px; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #e3ebe7; padding: 7px 12px; color: #65736c; font-size: 10px; line-height: 1.35; }
 .cap-sticker-status p { min-width: 0; }
 .cap-sticker-status button { flex: none; border: 0; background: transparent; color: var(--cap-ink, #176f68); font-size: 11px; font-weight: 700; text-align: right; }
 .cap-sticker-status button:hover { text-decoration: underline; }
@@ -214,9 +214,7 @@
   .cap-catalog-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .cap-catalog-title { font-size: 14px; }
   .cap-catalog-concept { font-size: 11px; }
-  .cap-sticker-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .cap-sticker-open { grid-template-columns: 1fr; }
-  .cap-sticker-art { border-right: 0; border-bottom: 1px solid #e1e9e6; }
+  .cap-sticker-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 
 @keyframes cap-intro-wash { 0% { opacity: .94; } 42% { opacity: .7; } 100% { opacity: 0; } }
@@ -250,6 +248,7 @@
   .cap-team-availability-title { display: block; }
   .cap-team-availability-title p { margin-top: 4px; }
   .cap-sticker-grid { grid-template-columns: minmax(0, 1fr); }
+  .cap-sticker-levels > span { width: 38px; height: 38px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

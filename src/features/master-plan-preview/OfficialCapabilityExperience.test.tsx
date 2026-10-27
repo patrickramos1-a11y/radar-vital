@@ -153,11 +153,12 @@ describe("official capability library", () => {
     expect(screen.getByRole("tab", { name: "Acervo e disponibilidade" }).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy();
     expect(screen.getAllByRole("button", { name: /Solicitar Assistido/ }).length).toBeGreaterThan(0);
-    expect(screen.getByRole("img", { name: /Figurinha T01/ }).getAttribute("src")).toBe("/capability-stickers/posters/T01.png");
+    expect(screen.queryByRole("img", { name: /Figurinha T01/ })).toBeNull();
+    expect(screen.getAllByTitle("Assistido").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Falta certificar" }));
     expect(screen.getByRole("button", { name: "Falta certificar" }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Falta Assistido" }));
-    expect(screen.getAllByRole("img", { name: /Figurinha/ })[0].closest("article")?.className).toContain("cap-sticker-card-missing");
+    expect(screen.getAllByRole("button", { name: /Níveis de/ })[0].closest("article")?.className).toContain("cap-sticker-card-missing");
   }, 10_000);
 
   it("shows the certification matrix in the collection tab for Patrick", async () => {
