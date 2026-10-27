@@ -1,5 +1,7 @@
 import type { NucleusId } from "./model";
 
+type ResponsibilityScope = { sourceSector: string; title: string };
+
 // Capacidades transversais aparecem nos três núcleos, mas só entram na escada
 // quando fizerem parte do PAC específico daquela jornada.
 const transversalCodes = ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09", "T10", "T11"];
@@ -20,4 +22,14 @@ export function capabilityCodesForNucleus(nucleusId: NucleusId) {
 
 export function isCapabilityInNucleus(code: string, nucleusId: NucleusId) {
   return capabilityCodesForNucleus(nucleusId).includes(code);
+}
+
+export function responsibilityNucleus(responsibility: ResponsibilityScope): NucleusId {
+  if (responsibility.sourceSector !== "Fora do Núcleo Técnico") return "tecnico";
+  if (responsibility.title === "Tecnologia e Sistemas" || responsibility.title === "Administrativo / Marketing") return "suporte";
+  return "administrativo";
+}
+
+export function isResponsibilityInNucleus(responsibility: ResponsibilityScope, nucleusId: NucleusId) {
+  return responsibilityNucleus(responsibility) === nucleusId;
 }

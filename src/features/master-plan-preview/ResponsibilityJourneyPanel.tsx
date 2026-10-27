@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, LockKeyhole } from "lucide-react";
 import { capabilityLevelNames } from "./capabilityJourney";
-import { technicalResponsibilities } from "./careerLadder";
+import { isResponsibilityInNucleus } from "./capabilityNuclei";
+import type { NucleusId } from "./model";
 import type { Library } from "./journeyRemote";
 import { competencyReadiness, globalCapabilityMaturity, readinessModeLabel, type CompetencyReadiness } from "./responsibilityJourney";
 
@@ -26,15 +27,16 @@ function Status({ item }: { item: CompetencyReadiness }) {
   return <span className={`text-xs font-semibold ${color}`}>{statusCopy[item.status]}</span>;
 }
 
-export function ResponsibilityJourneyPanel({ library, certifiedLevels, onOpenSector, go, initialFilter }: {
+export function ResponsibilityJourneyPanel({ library, certifiedLevels, nucleusId, onOpenSector, go, initialFilter }: {
   library: Library;
   certifiedLevels: Map<string, number>;
+  nucleusId: NucleusId;
   onOpenSector: (responsibilitySourceId: string) => void;
   go: Go;
   initialFilter?: Filter;
 }) {
   const [filter, setFilter] = useState<Filter>(initialFilter ?? "Todas");
-  const items = useMemo(() => technicalResponsibilities(library).map((responsibility) => competencyReadiness(responsibility, certifiedLevels)), [library, certifiedLevels]);
+  const items = useMemo(() => library.responsibilities.filter((responsibility) => isResponsibilityInNucleus(responsibility, nucleusId)).map((responsibility) => competencyReadiness(responsibility, certifiedLevels)), [library, certifiedLevels, nucleusId]);
   const capabilityCodes = useMemo(() => [...new Set(items.flatMap((item) => item.responsibility.requiredCapabilities.map((requirement) => requirement.capabilityCode)))], [items]);
   const maturity = globalCapabilityMaturity(capabilityCodes, certifiedLevels);
   const visible = items.filter((item) => matchesFilter(item, filter));
@@ -45,7 +47,7 @@ export function ResponsibilityJourneyPanel({ library, certifiedLevels, onOpenSec
   };
 
   return <section className="mb-7 border-t-4 border-violet-500 bg-white p-4">
-    <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase text-violet-700">Jornada por competências</p><h2 className="mt-1 text-lg font-semibold">Competências formadas pelas capacidades</h2><p className="mt-1 max-w-3xl text-sm text-zinc-600">Cada competência é um grupo de capacidades e níveis. Ao concluir todos os requisitos, o sistema a consolida automaticamente e ela já passa a contar na sua progressão.</p></div><span className="text-sm font-semibold text-violet-800">{items.length} competências</span></div>
+    <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase text-violet-700">Jornada por competências</p><h2 className="mt-1 text-lg font-semibold">Competências formadas pelas capacidades</h2><p className="mt-1 max-w-3xl text-sm text-zinc-600">Cada competência é um grupo de capacidades e níveis do núcleo selecionado. Ao concluir todos os requisitos, o sistema a consolida automaticamente e ela passa a compor apenas a jornada deste núcleo.</p></div><span className="text-sm font-semibold text-violet-800">{items.length} competências</span></div>
     <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <Metric title="Maturidade global" value={`${maturity.progress.toLocaleString("pt-BR")} %`} note={`${maturity.pointsEarned} de ${maturity.pointsRequired} pontos`} tone="violet" />
       <Metric title="Consolidadas" value={counts.consolidated} note="requisitos completos" tone="emerald" />

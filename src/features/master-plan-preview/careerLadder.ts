@@ -2,6 +2,7 @@ import type { CapabilityLevel } from "./capabilityJourney";
 import type { SourceResponsibility } from "./capabilityDemo";
 import type { Library } from "./journeyRemote";
 import { competencyReadiness, competencyRequirements, globalCapabilityMaturity, type CompetencyReadiness, type ResponsibilityClaim } from "./responsibilityJourney";
+import { isResponsibilityInNucleus } from "./capabilityNuclei";
 
 export type CareerStepId =
   | "operador_junior"
@@ -114,7 +115,7 @@ export function capabilityPoints(requirements: PacRequirement[]) {
 }
 
 export function technicalResponsibilities(library: Library): SourceResponsibility[] {
-  return library.responsibilities.filter((responsibility) => responsibility.sourceSector !== "Fora do Núcleo Técnico");
+  return library.responsibilities.filter((responsibility) => isResponsibilityInNucleus(responsibility, "tecnico"));
 }
 
 /**
