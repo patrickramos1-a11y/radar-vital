@@ -3,7 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CapabilityLevel, CapabilityRecord, Criterion, CriterionResponse, CriterionReview } from "./capabilityJourney";
 import type { SourceResponsibility } from "./capabilityDemo";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
-import curatedSource from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
+
+// Official published matrix (RESPONSABILIDADES 4, out/2026): 33 capabilities and 56 responsibilities,
+// all sharing one source hash. F14–F18 only exist in this version, so their presence proves the new matrix.
+const PUBLISHED_CAPABILITY_COUNT = 33;
+const PUBLISHED_RESPONSIBILITY_COUNT = 56;
+const NEW_MATRIX_CODES = ["F14", "F15", "F16", "F17", "F18"] as const;
 
 export const journeySupabase = supabase as unknown as SupabaseClient;
 
@@ -53,13 +58,16 @@ export async function fetchLibrary(): Promise<Library> {
   ]);
   const capRows = result(caps.data, caps.error);
   const responsibilityRows = result(responsibilities.data, responsibilities.error);
-  if (capRows.length !== 28 || responsibilityRows.length !== 56) {
-    throw new Error(`Importação incompleta: ${capRows.length}/28 capacidades e ${responsibilityRows.length}/56 responsabilidades.`);
+  if (capRows.length !== PUBLISHED_CAPABILITY_COUNT || responsibilityRows.length !== PUBLISHED_RESPONSIBILITY_COUNT) {
+    throw new Error(`Importação incompleta: ${capRows.length}/${PUBLISHED_CAPABILITY_COUNT} capacidades e ${responsibilityRows.length}/${PUBLISHED_RESPONSIBILITY_COUNT} responsabilidades.`);
   }
   const sourceSha256 = capRows[0].source_sha256;
-  if (sourceSha256 !== curatedSource.source.sha256
-    || [...capRows, ...responsibilityRows].some((row) => row.source_sha256 !== sourceSha256)) {
+  if ([...capRows, ...responsibilityRows].some((row) => row.source_sha256 !== sourceSha256)) {
     throw new Error("A biblioteca contém versões de fonte diferentes.");
+  }
+  const publishedCodes = new Set(capRows.map((row) => row.code));
+  if (NEW_MATRIX_CODES.some((code) => !publishedCodes.has(code))) {
+    throw new Error("A biblioteca publicada não é a matriz atual: capacidades F14 a F18 ausentes.");
   }
   if (capRows.some((row) => !row.payload || row.payload.code !== row.code || !row.payload.detail?.statement)
     || responsibilityRows.some((row) => !row.payload || row.payload.sourceId !== row.source_id)) {

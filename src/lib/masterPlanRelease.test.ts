@@ -27,7 +27,7 @@ describeLive("Plano Mestre live release rules", () => {
     expect(result).toMatch(/"operational_roles_preserved"\s*:\s*true/);
   });
   it("preserves the curated source hash", () => {
-    const result = read("SELECT count(*) = 85 AND bool_and(source_sha256 = '4f4ebb45100a3092ccdc372dbe10b5ea3013894f6d4ee35c1463fde9e94d58b1') AS source_preserved FROM (SELECT source_sha256 FROM public.master_plan_capability_library UNION ALL SELECT source_sha256 FROM public.master_plan_responsibility_library UNION ALL SELECT source_sha256 FROM public.master_plan_library_metadata) sources");
+    const result = read("SELECT count(*) = 90 AND bool_and(source_sha256 = 'ad8d6c65e503cc33bd2d591e4b64345389ccfd0656c55401032db65506e99541') AS source_preserved FROM (SELECT source_sha256 FROM public.master_plan_capability_library UNION ALL SELECT source_sha256 FROM public.master_plan_responsibility_library UNION ALL SELECT source_sha256 FROM public.master_plan_library_metadata) sources");
     expect(result).toMatch(/"source_preserved"\s*:\s*true/);
   });
 });
