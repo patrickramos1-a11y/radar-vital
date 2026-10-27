@@ -131,16 +131,16 @@ describe("Plano Mestre organizational preview", () => {
     expect(main().queryByRole("button", { name: /Conferir qualidade/ })).toBeNull();
   });
 
-  it("opens a source capability directly and returns to the 28-item catalog", () => {
+  it("opens a source capability directly and returns to the local preview catalog", () => {
     openPreview("/universo-ramos/plano-mestre?view=capacidade&id=F04");
     expect(main().getByTestId("capability-experience")).toBeTruthy();
     expect(main().getByRole("button", { name: "Banco de capacidades" })).toBeTruthy();
     fireEvent.click(main().getByRole("tab", { name: "Níveis e evidências" }));
     expect(main().getByRole("heading", { name: "Do apoio à multiplicação" })).toBeTruthy();
     fireEvent.click(main().getByRole("button", { name: "Banco de capacidades" }));
-    expect(main().getByText("28 de 28 capacidades")).toBeTruthy();
+    expect(main().getByText("33 de 33 capacidades")).toBeTruthy();
     fireEvent.change(main().getByRole("textbox", { name: "Buscar capacidades" }), { target: { value: "F04" } });
-    expect(main().getByText("1 de 28 capacidades")).toBeTruthy();
+    expect(main().getByText("1 de 33 capacidades")).toBeTruthy();
   });
 
   it("keeps position across tabs and links T04 to its prerequisite", () => {
