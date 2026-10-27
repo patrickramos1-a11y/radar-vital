@@ -38,7 +38,7 @@ const library: Library = {
   sourceSha256: source.source.sha256,
 };
 
-function open(view: "capacidades" | "capacidade" | "capacitacoes" | "jornada" | "cargos-funcoes", code = "", tab = "visao", mode = "") {
+function open(view: Parameters<typeof OfficialCapabilityExperience>[0]["view"], code = "", tab = "visao", mode = "") {
   const go = vi.fn();
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(<QueryClientProvider client={client}><OfficialCapabilityExperience view={view} code={code} tab={tab} mode={mode} go={go} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} /></QueryClientProvider>);
