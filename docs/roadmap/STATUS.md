@@ -1,9 +1,15 @@
 # Estado de Execucao
 
-Atualizado em: 2026-10-25
+Atualizado em: 2026-10-27
 
 ## Entrega recente
 
+- RESPONSABILIDADES 6: conferência em andamento para a publicação autorizada em
+  27/10/2026. Banco confirmado com 39 capacidades, 56 competências e 1 metadata;
+  fingerprints de todos os payloads, critérios e hashes coincidem com o SQL
+  anexado. O SQL já estava aplicado e não foi reexecutado. Os seis novos códigos
+  F19, F20, F21, F22, F23 e T11 estão presentes, com critérios nos níveis 1, 2 e 3.
+  Frontend oficial já aceita 39/56; catálogo local de prévia permanece separado.
 - Plano Mestre: jornada operacional publicada e verificada em 2026-10-26: 28
   capacidades, 56 responsabilidades e 1 metadata com hash original. O perfil
   ativo Patrick e o unico administrador operacional; os demais perfis ativos
