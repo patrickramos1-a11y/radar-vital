@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   canApproveApplication, canSubmitApplication, capabilityCatalogue, certifiedLevelFor,
-  createAssessment, criteriaFor, emptyJourneyStore, newApplication, pendingCriteria,
+  capabilityLevelDetailFor, certificationRequestGuideFor, createAssessment, criteriaFor, emptyJourneyStore, newApplication, pendingCriteria,
   submitApplication,
 } from "./capabilityJourney";
 import {
   changeResponse, changeReview, createDemoStore, DEMO_PERSON_ID,
   nextTargetLevel, responsibilitiesFor, REVIEW_PERSON_ID,
 } from "./capabilityDemo";
-import { performanceGuidanceCount } from "./criterionGuidance";
 
 describe("catálogo e jornada visual", () => {
   it("mantém as 28 fichas reais e vínculos apenas da planilha", () => {
@@ -27,7 +26,7 @@ describe("catálogo e jornada visual", () => {
       expect(criteriaFor(item, 2).length).toBeGreaterThan(criteriaFor(item, 1).length);
       expect(criteriaFor(item, 3).length).toBeGreaterThan(criteriaFor(item, 2).length);
       expect(criteriaFor(item, 3).every((criterion) => criterion.guidance && criterion.reviewCheck)).toBe(true);
-      expect(performanceGuidanceCount(item.code)).toBe(criteriaFor(item, 1).filter((criterion) => criterion.kind === "performance").length);
+      expect(criteriaFor(item, 3).every((criterion) => criterion.kind === "evidence")).toBe(true);
     }
   });
 
@@ -39,15 +38,12 @@ describe("catálogo e jornada visual", () => {
     expect(() => createAssessment(first, DEMO_PERSON_ID, "F04", [1, 1, 1, 1], "")).toThrow();
   });
 
-  it("lê as evidências detalhadas da versão atual da planilha", () => {
+  it("lê níveis, solicitações e critérios detalhados da matriz de capacidades", () => {
     const capability = capabilityCatalogue.find((item) => item.code === "T01")!;
     const criteria = criteriaFor(capability, 1);
-    expect(criteria.find((item) => item.id === "performance-1")?.guidance).toContain("avaliador pede de surpresa");
-    expect(criteria.find((item) => item.id === "level-1-1")).toMatchObject({
-      text: expect.stringContaining("2 pastas ou acervos"),
-      guidance: expect.stringContaining("um Autônomo percorre"),
-      reviewCheck: expect.stringContaining("5 documentos"),
-    });
+    expect(capabilityLevelDetailFor("T01", 1)?.practice).toContain("Arquivar");
+    expect(certificationRequestGuideFor("T01", 1)?.narrativePrompt).toBeTruthy();
+    expect(criteria[0]).toMatchObject({ id: "T01-AS-01", level: 1, guidance: expect.any(String), reviewCheck: expect.any(String) });
   });
 
   it("cobra critérios cumulativos e dispensa o nível já aprovado", () => {

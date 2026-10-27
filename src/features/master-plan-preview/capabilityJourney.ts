@@ -1,6 +1,7 @@
 import { z } from "zod";
 import sourceCatalog from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
 import { guidanceFor } from "./criterionGuidance";
+import assessmentMatrix from "./capabilityAssessmentMatrix.json";
 
 export const JOURNEY_STORAGE_KEY = "radar-vital:plano-mestre:jornada-capacidades:local:v1";
 
@@ -15,8 +16,20 @@ export const capabilityLevelInsignia: Record<CapabilityLevel, string> = {
   2: "/capability-stickers/levels/INSIGNIA_AUTONOMO.png",
   3: "/capability-stickers/levels/INSIGNIA_MULTIPLICADOR.png",
 };
-export type Criterion = { id: string; level: 0 | CapabilityLevel; text: string; kind: "performance" | "evidence"; guidance?: string; reviewCheck?: string };
-export type CapabilityRecord = (typeof sourceCatalog.capabilities)[number];
+export type Criterion = {
+  id: string;
+  level: 0 | CapabilityLevel;
+  text: string;
+  kind: "performance" | "evidence";
+  guidance?: string;
+  reviewCheck?: string;
+  supportingEvidence?: string;
+  insufficientEvidence?: string;
+  reviewerAlert?: string;
+  reviewQuestion?: string;
+  possibleDecisions?: string;
+};
+export type CapabilityRecord = (typeof sourceCatalog.capabilities)[number] & { assessmentCriteria?: Criterion[] };
 export type CriterionResponse = {
   complete: boolean;
   explanation: string;
@@ -80,6 +93,53 @@ export const capabilityCatalogue = sourceCatalog.capabilities as CapabilityRecor
 export const capabilityLevelNames = ["Não capacitado", "Assistido", "Autônomo", "Multiplicador"] as const;
 export const emptyJourneyStore = (): JourneyStore => ({ version: 1, assessments: [], applications: [] });
 
+type AssessmentLevelDetail = {
+  points: number;
+  description: string;
+  practice: string;
+  autonomy: string;
+  observable: string;
+  limits: string;
+  difference: string;
+  responsibilityReference: string;
+};
+type AssessmentRequestGuide = {
+  title: string;
+  introduction: string;
+  narrativePrompt: string;
+  demonstrate: string;
+  realFacts: string;
+  evidence: string;
+  operationalReferences: string;
+  insufficientEvidence: string;
+  declaration: string;
+};
+type AssessmentCriterion = {
+  id: string;
+  title: string;
+  verify: string;
+  signals: string;
+  evidence: string;
+  insufficientEvidence: string;
+  reviewerAlert: string;
+  question: string;
+  decisions: string;
+};
+type AssessmentMatrix = {
+  levels: Record<string, Record<string, AssessmentLevelDetail>>;
+  requests: Record<string, Record<string, AssessmentRequestGuide>>;
+  criteria: Record<string, Record<string, AssessmentCriterion[]>>;
+};
+const matrix = assessmentMatrix as AssessmentMatrix;
+
+export function capabilityLevelDetailFor(capabilityCode: string, level: CapabilityLevel): AssessmentLevelDetail | undefined {
+  return matrix.levels[capabilityCode]?.[String(level)];
+}
+
+export function certificationRequestGuideFor(capabilityCode: string, level: CapabilityLevel): AssessmentRequestGuide | undefined {
+  return matrix.requests[capabilityCode]?.[String(level)];
+}
+
 export function parseJourneyStore(value: unknown): JourneyStore {
   return storeSchema.parse(value) as JourneyStore;
 }
@@ -100,6 +160,26 @@ function bullets(value: string): string[] {
 }
 
 export function criteriaFor(capability: CapabilityRecord, targetLevel: CapabilityLevel): Criterion[] {
+  if (capability.assessmentCriteria?.length) {
+    return capability.assessmentCriteria.filter((criterion) => criterion.level <= targetLevel);
+  }
+  const matrixCriteria = ([1, 2, 3] as CapabilityLevel[]).flatMap((level) => {
+    if (level > targetLevel) return [];
+    return (matrix.criteria[capability.code]?.[String(level)] ?? []).map((criterion) => ({
+      id: criterion.id,
+      level,
+      text: criterion.title,
+      kind: "evidence" as const,
+      guidance: criterion.verify,
+      reviewCheck: criterion.signals,
+      supportingEvidence: criterion.evidence,
+      insufficientEvidence: criterion.insufficientEvidence,
+      reviewerAlert: criterion.reviewerAlert,
+      reviewQuestion: criterion.question,
+      possibleDecisions: criterion.decisions,
+    }));
+  });
+  if (matrixCriteria.length) return matrixCriteria;
   const performance = bullets(capability.detail.performanceCriteria).map((item, index) => {
     const [title, verification] = item.split(/Como se comprova:\s*/i);
     const fallback = guidanceFor(capability.code, "performance", 0, index);

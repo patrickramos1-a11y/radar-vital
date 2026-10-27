@@ -309,11 +309,12 @@ describe("official capability library", () => {
     expect(screen.queryByRole("heading", { name: /Aguardando avaliação/ })).toBeNull();
   });
 
-  it("asks for an evidence name and repository location, without file upload", async () => {
+  it("guides one narrative with evidence details, without file upload", async () => {
     open("capacitacoes", "T01", "criterios");
-    await waitFor(() => expect(screen.getAllByText("Como comprovar:").length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByText("O que demonstrar")).toBeTruthy());
+    expect(screen.getByText("Fatos reais para relatar")).toBeTruthy();
     expect(screen.getAllByText("Nome da evidência").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Link ou caminho no repositório").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Link ou caminho da evidência").length).toBeGreaterThan(0);
     expect(screen.queryByText("Selecionar arquivo")).toBeNull();
   });
 

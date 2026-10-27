@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { CapabilityLevel, CapabilityRecord, CriterionResponse, CriterionReview } from "./capabilityJourney";
+import type { CapabilityLevel, CapabilityRecord, Criterion, CriterionResponse, CriterionReview } from "./capabilityJourney";
 import type { SourceResponsibility } from "./capabilityDemo";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
 import curatedSource from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
@@ -48,7 +48,7 @@ function result<T>(data: T | null, error: { message: string } | null): T {
 }
 export async function fetchLibrary(): Promise<Library> {
   const [caps, responsibilities] = await Promise.all([
-    journeySupabase.from("master_plan_capability_library").select("code,payload,source_sha256").order("code"),
+    journeySupabase.from("master_plan_capability_library").select("code,payload,criteria,source_sha256").order("code"),
     journeySupabase.from("master_plan_responsibility_library").select("source_id,payload,source_sha256").order("source_id"),
   ]);
   const capRows = result(caps.data, caps.error);
@@ -66,7 +66,10 @@ export async function fetchLibrary(): Promise<Library> {
     throw new Error("A biblioteca publicada contém fichas inválidas.");
   }
   return {
-    capabilities: capRows.map((row) => row.payload as CapabilityRecord),
+    capabilities: capRows.map((row) => ({
+      ...(row.payload as CapabilityRecord),
+      assessmentCriteria: row.criteria as Criterion[],
+    })),
     responsibilities: responsibilityRows.map((row) => row.payload as SourceResponsibility),
     sourceSha256,
   };
