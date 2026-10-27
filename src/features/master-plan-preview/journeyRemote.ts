@@ -5,9 +5,9 @@ import type { SourceResponsibility } from "./capabilityDemo";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
 // Official published matrix (RESPONSABILIDADES 4, out/2026): 33 capabilities and 56 responsibilities,
 // all sharing one source hash. F14–F18 only exist in this version, so their presence proves the new matrix.
-const PUBLISHED_CAPABILITY_COUNT = 33;
+const PUBLISHED_CAPABILITY_COUNT = 39;
 const PUBLISHED_RESPONSIBILITY_COUNT = 56;
-const NEW_MATRIX_CODES = ["F14", "F15", "F16", "F17", "F18"] as const;
+const NEW_MATRIX_CODES = ["F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22", "F23", "T11"] as const;
 
 export const journeySupabase = supabase as unknown as SupabaseClient;
 
