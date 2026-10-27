@@ -3,11 +3,13 @@ import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel, ty
 import { capabilityCoverPath, capabilityVisual, capabilityVisualStyle, hasCapabilityPoster } from "./capabilityVisuals";
 
 export function capabilityStickerPath(code: string) {
-  return hasCapabilityPoster(code) ? `/capability-stickers/posters/${code}.png` : "/capability-stickers/levels/NIVEL_1.png";
+  return hasCapabilityPoster(code) ? `/capability-stickers/posters/${code}.png` : capabilityCoverPath(code) ?? "/capability-stickers/levels/NIVEL_1.png";
 }
 
 export function CapabilityStickerThumb({ item, alt, className = "" }: { item: CapabilityRecord; alt?: string; className?: string }) {
-  return <img className={className} src={capabilityStickerPath(item.code)} alt={alt ?? `Figurinha ${item.code}: ${item.title}`} width={384} height={384} loading="lazy" decoding="async" />;
+  const cover = capabilityCoverPath(item.code);
+  const usesCover = Boolean(cover && !hasCapabilityPoster(item.code));
+  return <img className={className} src={capabilityStickerPath(item.code)} alt={alt ?? `Figurinha ${item.code}: ${item.title}`} width={usesCover ? 1600 : 384} height={usesCover ? 900 : 384} loading="lazy" decoding="async" />;
 }
 
 export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, trainingLevel = 0, onRequestLevel }: {
