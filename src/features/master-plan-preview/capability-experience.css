@@ -197,14 +197,13 @@
 .cap-sticker-open { display: block; width: 100%; padding: 0; border: 0; background: #fff; color: inherit; text-align: left; }
 .cap-sticker-open:hover .cap-sticker-title { color: var(--cap-ink, #176f68); }
 .cap-sticker-open:focus-visible { outline: 3px solid #176f68; outline-offset: -3px; }
-.cap-sticker-body { position: relative; display: flex; min-width: 0; min-height: 126px; overflow: hidden; padding: 12px; }
-.cap-sticker-backdrop { position: absolute; right: -18px; bottom: -24px; z-index: 0; width: 142px; height: 142px; object-fit: contain; opacity: .17; filter: grayscale(.12) drop-shadow(0 8px 9px rgb(22 45 39 / 18%)); pointer-events: none; }
-.cap-sticker-heading { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.cap-sticker-heading { position: relative; z-index: 1; width: 100%; }
+.cap-sticker-body { position: relative; display: flex; min-width: 0; min-height: 128px; overflow: visible; padding: 14px 14px 12px; }
+.cap-sticker-emblem { position: absolute; top: -40px; right: 12px; z-index: 2; width: 82px; height: 82px; object-fit: contain; filter: drop-shadow(0 12px 10px rgb(22 45 39 / 28%)) drop-shadow(0 0 12px color-mix(in srgb, var(--cap-accent, #168274) 38%, white)); pointer-events: none; }
+.cap-sticker-heading { position: relative; z-index: 1; display: block; min-width: 0; width: calc(100% - 62px); }
 .cap-sticker-kicker { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--cap-ink, #176f68); font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .cap-sticker-title { display: block; min-height: 2.7em; margin-top: 7px; color: #172824; font-size: 13px; line-height: 1.35; transition: color 150ms; }
-.cap-sticker-levels { display: flex; flex: none; gap: 2px; }
-.cap-sticker-levels > span { display: grid; width: 42px; height: 42px; place-items: center; opacity: .18; }
+.cap-sticker-levels { display: flex; margin-top: 8px; gap: 2px; }
+.cap-sticker-levels > span { display: grid; width: 28px; height: 28px; place-items: center; opacity: .18; }
 .cap-sticker-levels > span img { display: block; width: 100%; height: 100%; object-fit: contain; filter: grayscale(1); }
 .cap-sticker-levels > .cap-sticker-level-earned { opacity: 1; }
 .cap-sticker-levels > .cap-sticker-level-earned img { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--cap-accent, #168274) 62%, white)) drop-shadow(0 5px 5px rgb(22 45 39 / 24%)); }
@@ -249,7 +248,7 @@
   .cap-team-availability-title { display: block; }
   .cap-team-availability-title p { margin-top: 4px; }
   .cap-sticker-grid { grid-template-columns: minmax(0, 1fr); }
-  .cap-sticker-levels > span { width: 38px; height: 38px; }
+  .cap-sticker-levels > span { width: 26px; height: 26px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -154,7 +154,7 @@ describe("official capability library", () => {
     expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Solicitar Assistido/ })).toBeNull();
     expect(screen.queryByRole("img", { name: /Figurinha T01/ })).toBeNull();
-    expect(document.querySelectorAll(".cap-sticker-backdrop").length).toBeGreaterThan(0);
+    expect(document.querySelectorAll(".cap-sticker-emblem").length).toBeGreaterThan(0);
     expect(screen.queryByText("Nível atual")).toBeNull();
     expect(screen.getAllByTitle("Assistido").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Falta certificar" }));
