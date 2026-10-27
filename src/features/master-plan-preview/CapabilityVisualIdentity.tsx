@@ -1,9 +1,9 @@
 import { ArrowRight } from "lucide-react";
 import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel, type CapabilityRecord } from "./capabilityJourney";
-import { capabilityCoverPath, capabilityVisual, capabilityVisualStyle } from "./capabilityVisuals";
+import { capabilityCoverPath, capabilityVisual, capabilityVisualStyle, hasCapabilityPoster } from "./capabilityVisuals";
 
 export function capabilityStickerPath(code: string) {
-  return capabilityVisual(code) ? `/capability-stickers/posters/${code}.png` : "/capability-stickers/levels/NIVEL_1.png";
+  return hasCapabilityPoster(code) ? `/capability-stickers/posters/${code}.png` : "/capability-stickers/levels/NIVEL_1.png";
 }
 
 export function CapabilityStickerThumb({ item, alt, className = "" }: { item: CapabilityRecord; alt?: string; className?: string }) {

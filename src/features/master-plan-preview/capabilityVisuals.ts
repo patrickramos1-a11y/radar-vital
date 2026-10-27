@@ -35,7 +35,15 @@ const visuals: Record<string, CapabilityVisual> = {
   E03: { accent: "#263B59", ink: "#263B59", concept: "Tornar uma solução técnica precisa, visível e compreensível." },
   E04: { accent: "#76522F", ink: "#76522F", concept: "Dar identidade jurídica e espacial ao imóvel." },
   E05: { accent: "#1F5D4D", ink: "#1F5D4D", concept: "Medir o ambiente, interpretar resultados e demonstrar conformidade." },
+  F19: { accent: "#5265C9", ink: "#263B59", concept: "Transformar rotinas repetitivas em fluxos automatizados, documentados e supervisionados." },
+  F20: { accent: "#A64B3C", ink: "#25533F", concept: "Manter o ambiente de trabalho adequado por registro, acompanhamento e verificação." },
+  F21: { accent: "#6D1F42", ink: "#6D1F42", concept: "Transformar conhecimento técnico em materiais, vídeos e experiências de aprendizagem reutilizáveis." },
+  T11: { accent: "#187C86", ink: "#187C86", concept: "Medir, interpretar e transformar dados confiáveis em decisões e ações de gestão." },
+  F22: { accent: "#C85676", ink: "#6D1F42", concept: "Conectar benefícios e parcerias para apoiar a experiência e o reconhecimento das pessoas." },
+  F23: { accent: "#263B59", ink: "#263B59", concept: "Organizar papéis, fronteiras e decisões para que cada demanda encontre seu destino." },
 };
+
+const posterCodes = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09", "T10", "F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11", "F12", "F13", "E01", "E02", "E03", "E04", "E05"]);
 
 export function capabilityVisual(code: string): CapabilityVisual | undefined {
   return visuals[code];
@@ -48,4 +56,8 @@ export function capabilityVisualStyle(code: string): CSSProperties | undefined {
 
 export function capabilityCoverPath(code: string): string | undefined {
   return capabilityVisual(code) ? `/universe-capabilities/${code}.png` : undefined;
+}
+
+export function hasCapabilityPoster(code: string) {
+  return posterCodes.has(code);
 }
