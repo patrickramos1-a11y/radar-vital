@@ -335,7 +335,7 @@ function CapabilityJourneySheet({ item, approved, onRequestLevel }: { item: Capa
         const requestGuide = certificationRequestGuideFor(item.code, level);
         return <article key={level} className="border-t-4 bg-white p-4" style={{ borderTopColor: palette.secondary }}>
           <div className="flex items-start gap-3">
-            <img src={capabilityLevelSticker[level]} alt={`Figurinha do nível ${capabilityLevelNames[level]}`} className={`h-16 w-16 shrink-0 object-contain ${certified ? "" : "opacity-35 grayscale"}`} loading="lazy" decoding="async" />
+            <img src={capabilityLevelInsignia[level]} alt={`Insígnia do nível ${capabilityLevelNames[level]}`} className={`h-16 w-16 shrink-0 object-contain ${certified ? "" : "opacity-35 grayscale"}`} loading="lazy" decoding="async" />
             <div className="min-w-0"><p className="text-xs font-semibold uppercase" style={{ color: palette.primary }}>Nível {level}</p><h3 className="font-semibold" style={{ color: palette.primary }}>{capabilityLevelNames[level]}</h3>{certified && <span className="mt-1 inline-block text-xs font-semibold text-emerald-700">Certificado</span>}</div>
           </div>
           <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-zinc-700">{firstLetterUpper(levelDetail?.description || fallbackDetail)}</p>
