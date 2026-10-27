@@ -125,13 +125,13 @@
 .cap-level-trail-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; color: #6c7772; font-size: 11px; font-weight: 700; text-transform: uppercase; }
 .cap-level-trail-heading strong { color: var(--cap-ink, #176f68); font-size: 11px; }
 .cap-level-trail-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
-.cap-level-trail-step { position: relative; display: flex; min-width: 0; align-items: center; gap: 7px; border: 1px solid #e2e9e6; background: #fff; padding: 7px; color: #68736d; text-align: left; }
+.cap-level-trail-step { position: relative; display: flex; min-width: 0; min-height: 104px; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px solid #e2e9e6; background: #fff; padding: 8px; color: #68736d; text-align: center; }
 .cap-level-trail-step:not(:last-child)::after { content: ""; position: absolute; top: 50%; right: -9px; z-index: 1; width: 9px; height: 1px; background: #d4e0db; }
-.cap-level-trail-step > span:last-child { display: grid; min-width: 0; gap: 1px; }
+.cap-level-trail-step > span:last-child { display: grid; min-width: 0; gap: 1px; justify-items: center; }
 .cap-level-trail-step strong, .cap-level-trail-step small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cap-level-trail-step strong { font-size: 11px; }
 .cap-level-trail-step small { font-size: 9px; }
-.cap-level-trail-insignia { display: grid; flex: none; width: 38px; height: 38px; place-items: center; }
+.cap-level-trail-insignia { display: grid; flex: none; width: 58px; height: 58px; place-items: center; }
 .cap-level-trail-insignia img { width: 100%; height: 100%; object-fit: contain; }
 .cap-level-trail-earned { border-color: #79b690; background: #f0faf3; color: #25533f; }
 .cap-level-trail-next { border-color: var(--cap-accent, #168274); background: color-mix(in srgb, var(--cap-accent, #168274) 10%, white); color: var(--cap-ink, #176f68); cursor: pointer; }
@@ -243,11 +243,11 @@
   .cap-identity-sticker { right: 10px; bottom: 8px; width: 78px; height: 78px; }
   .cap-identity-sticker img { width: 68px; height: 68px; }
   .cap-level-trail-steps { gap: 5px; }
-  .cap-level-trail-step { gap: 4px; padding: 6px; }
+  .cap-level-trail-step { min-height: 88px; gap: 3px; padding: 6px; }
   .cap-level-trail-step:not(:last-child)::after { right: -6px; width: 6px; }
   .cap-level-trail-step strong { font-size: 10px; }
   .cap-level-trail-step small { font-size: 8px; }
-  .cap-level-trail-insignia { width: 30px; height: 30px; }
+  .cap-level-trail-insignia { width: 42px; height: 42px; }
   .cap-identity-strip img { width: 105px; }
   .cap-identity-strip p { display: none; }
   .cap-experience::before, .cap-experience::after { inset: -12px -16px auto; }

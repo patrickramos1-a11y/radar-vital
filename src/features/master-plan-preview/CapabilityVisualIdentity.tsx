@@ -63,7 +63,9 @@ export function CapabilityHero({ item, showSticker = true }: { item: CapabilityR
 export function CapabilityIdentityStrip({ item }: { item: CapabilityRecord }) {
   const visual = capabilityVisual(item.code);
   return <div className="cap-identity-strip cap-themed" style={capabilityVisualStyle(item.code)}>
-    <CapabilityStickerThumb item={item} alt="" />
+    {visual
+      ? <img src={capabilityCoverPath(item.code)} alt={`Capa ilustrada de ${item.code}: ${item.title}`} width={1600} height={900} loading="lazy" decoding="async" />
+      : <CapabilityStickerThumb item={item} alt="" />}
     <div className="min-w-0"><span className="cap-identity-code">{item.nature} · {item.code}</span><strong>{item.title}</strong><p>{visual?.concept ?? item.summary}</p></div>
   </div>;
 }

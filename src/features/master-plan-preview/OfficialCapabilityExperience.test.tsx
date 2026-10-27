@@ -84,11 +84,11 @@ describe("official capability library", () => {
     expect(go).toHaveBeenCalledWith("responsabilidade", mapped.sourceId);
   });
 
-  it("shows the corresponding sticker for every capability level", () => {
+  it("shows the level figurine for every capability level", () => {
     open("capacidade", "T04", "niveis");
-    expect(screen.getByRole("img", { name: "Insígnia do nível Assistido" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_ASSISTIDO.png");
-    expect(screen.getByRole("img", { name: "Insígnia do nível Autônomo" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_AUTONOMO.png");
-    expect(screen.getByRole("img", { name: "Insígnia do nível Multiplicador" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_MULTIPLICADOR.png");
+    expect(screen.getByRole("img", { name: "Figurinha do nível Assistido" }).getAttribute("src")).toBe("/capability-stickers/levels/NIVEL_1.png");
+    expect(screen.getByRole("img", { name: "Figurinha do nível Autônomo" }).getAttribute("src")).toBe("/capability-stickers/levels/NIVEL_2.png");
+    expect(screen.getByRole("img", { name: "Figurinha do nível Multiplicador" }).getAttribute("src")).toBe("/capability-stickers/levels/NIVEL_3.png");
   });
 
   it("keeps the standard palette for every certification level", () => {
