@@ -17,6 +17,7 @@ import { ResponsibilityJourneyPanel } from "./ResponsibilityJourneyPanel";
 import { competencyReadiness, competencyRequirements } from "./responsibilityJourney";
 import { competencyProfileFor } from "./competencyProfile";
 import { CareerJourneyExperience, CareerStructureExperience, ProfessionalProfile } from "./CareerJourneyExperience";
+import { JourneyGuide } from "./JourneyGuide";
 import { approvedLevels } from "./responsibilityEligibility";
 import type { PreviewResponsibility } from "./model";
 import { nuclei, type NucleusId } from "./model";
@@ -30,7 +31,7 @@ import {
 } from "./journeyRemote";
 import "./capability-experience.css";
 
-type Screen = "capacidades" | "capacidade" | "capacitacoes" | "responsabilidade" | "responsabilidades" | "jornada" | "perfil-profissional" | "cargos-funcoes";
+type Screen = "capacidades" | "capacidade" | "capacitacoes" | "responsabilidade" | "responsabilidades" | "guia-jornada" | "jornada" | "perfil-profissional" | "cargos-funcoes";
 type Go = (view: Screen | "responsabilidade" | "responsabilidades" | "setor", id?: string, tab?: string, mode?: string) => void;
 type Props = { view: Screen; code: string; tab: string; mode: string; go: Go; library: Library; people: Array<{ id: string; name: string }>; mappedResponsibilities?: PreviewResponsibility[]; sectors?: Unit[]; openSector?: (sectorId: string) => void; capabilityPlans?: Record<string, Record<string, 0 | CapabilityLevel>>; careerCapabilitySimulations?: Record<string, CareerCapabilitySimulation>; collaboratorNuclei?: Record<string, NucleusId>; localClaims?: LocalResponsibilityClaim[]; onSaveCareerCapabilitySimulation?: (collaboratorId: string, simulation: CareerCapabilitySimulation | null) => void; onChangeCollaboratorNucleus?: (collaboratorId: string, nucleusId: NucleusId) => void; onDeactivateCollaborator?: (collaboratorId: string) => Promise<void> };
 const kinds = ["Todas", "Transversal", "Funcional", "Especializada"];
@@ -101,6 +102,7 @@ export function OfficialCapabilityExperience({ view, code, tab, mode, go, librar
     {view === "responsabilidades" && (currentUser ? <ResponsibilityJourneyPanel library={library} certifiedLevels={certifiedLevels} nucleusId={collaboratorNuclei[currentUser.id] ?? "tecnico"} initialFilter={tab === "minhas" ? "Consolidadas" : tab === "disponiveis" ? "Em formação" : "Todas"} onOpenSector={(responsibilitySourceId) => { const responsibility = mappedResponsibilities.find((item) => item.id === responsibilitySourceId); if (responsibility) go("setor", responsibility.sectorId); }} go={go} /> : <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar suas competências.</div>)}
     {view === "responsabilidade" && selectedCompetency && <CompetencySheet competency={selectedCompetency} library={library} certifiedLevels={certifiedLevels} go={go} />}
     {view === "responsabilidade" && !selectedCompetency && <div className="cap-empty">Competência não encontrada.<Button variant="outline" onClick={() => go("responsabilidades")}>Voltar às competências</Button></div>}
+    {view === "guia-jornada" && <JourneyGuide library={library} go={go} />}
     {view === "jornada" && (currentUser ? <CareerJourneyExperience library={library} certifiedLevels={ownCertifiedLevels} claims={allResponsibilityClaims} collaboratorId={currentUser.id} collaboratorName={currentUser.name} isAdmin={isAdmin} people={people} teamLevels={teamLevels} mappedResponsibilities={mappedResponsibilities} careerNucleus={collaboratorNuclei[currentUser.id] ?? "tecnico"} capabilitySimulation={careerCapabilitySimulations[currentUser.id]} onSaveCapabilitySimulation={(simulation) => onSaveCareerCapabilitySimulation?.(currentUser.id, simulation)} onChangeCareerNucleus={(nucleusId) => onChangeCollaboratorNucleus?.(currentUser.id, nucleusId)} go={go} /> : <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar sua jornada.</div>)}
     {view === "perfil-profissional" && (currentUser ? <ProfessionalProfile library={library} certifiedLevels={ownCertifiedLevels} claims={allResponsibilityClaims} collaboratorId={currentUser.id} collaboratorName={currentUser.name} go={go} /> : <div className="cap-empty">Selecione seu perfil no Radar Vital para consultar seu perfil profissional.</div>)}
     {view === "cargos-funcoes" && <CareerStructureExperience library={library} people={people} teamLevels={teamLevels} claims={allResponsibilityClaims} isAdmin={isAdmin} collaboratorNuclei={collaboratorNuclei} onChangeCollaboratorNucleus={onChangeCollaboratorNucleus} go={go} />}

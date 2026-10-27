@@ -210,6 +210,16 @@ describe("official capability library", () => {
     expect(within(screen.getByRole("group", { name: "Forma de simular a jornada" })).getByRole("button", { name: /Por competências/ }).getAttribute("aria-pressed")).toBe("false");
   }, 15_000);
 
+  it("opens the journey guide from the professional journey", async () => {
+    const go = open("jornada");
+    fireEvent.click(await screen.findByRole("button", { name: "Entender minha jornada" }));
+    expect(go).toHaveBeenCalledWith("guia-jornada");
+
+    open("guia-jornada");
+    expect(await screen.findByRole("heading", { name: "Como funciona a evolução profissional" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Capacidades cadastradas" })).toBeTruthy();
+  });
+
   it("links responsibility, sector, and missing capability from the professional journey", async () => {
     const go = vi.fn();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
