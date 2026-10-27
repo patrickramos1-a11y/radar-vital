@@ -329,7 +329,7 @@ export default function PlanoMestrePreview() {
     setDraft(null);
   };
 
-  const officialReady = officialLibrary?.capabilities?.length === 33 && officialLibrary?.responsibilities?.length === 56;
+  const officialReady = officialLibrary?.capabilities?.length === 39 && officialLibrary?.responsibilities?.length === 56;
   const deactivateCollaborator = async (collaboratorId: string) => {
     if (!currentUser || currentUser.role !== "admin") {
       toast.error("Selecione o perfil Patrick para desativar um colaborador.");
