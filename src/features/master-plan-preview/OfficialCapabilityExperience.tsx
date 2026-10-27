@@ -40,7 +40,7 @@ const emptyResponse = (): CriterionResponse => ({ complete: false, explanation: 
 const prettyDate = (date: string) => new Date(date).toLocaleDateString("pt-BR");
 
 function Heading({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
-  return <div className="cap-intro-title mb-5 border-b border-zinc-200 pb-5"><p className="cap-eyebrow">{eyebrow}</p><h1 className="text-2xl font-semibold text-[#172824] sm:text-[28px]">{title}</h1>{children && <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600">{children}</p>}</div>;
+  return <div className="cap-intro-title mb-5 border-b border-zinc-200 pb-5"><p className="cap-eyebrow">{eyebrow}</p><h1 className="text-2xl font-semibold text-[#172824] sm:text-[28px]">{title}</h1>{children && <div className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600">{children}</div>}</div>;
 }
 
 function Lines({ value }: { value: string }) {
@@ -219,7 +219,7 @@ function Sheet({ item, library, approved, certifiedLevels, assessmentLevel, go, 
   return <><button type="button" onClick={() => go("capacidades")} className="mb-3 inline-flex items-center gap-1 text-xs font-semibold text-teal-700"><ArrowLeft className="h-4 w-4" /> Banco de capacidades</button>
     <div className="cap-sheet-identity">
       <CapabilityHero item={item} />
-      <Heading eyebrow={`${item.nature} / ${item.code}`} title={item.title}>{capabilitySummary(item)}<span className="mt-3 block border-l-2 border-teal-600 pl-3 text-zinc-700"><strong>Finalidade:</strong> {item.detail.statement}</span></Heading>
+      <Heading eyebrow={`${item.nature} / ${item.code}`} title={item.title}>{capabilitySummary(item)}<span className="mt-3 block border-l-2 border-teal-600 pl-3 text-zinc-700"><strong>Finalidade:</strong> {item.detail.statement}</span><CapabilityLevelTrail approved={approved} onOpenLevel={() => go("capacitacoes", item.code, "criterios")} /></Heading>
     </div>
     <div className="mb-5 flex gap-1 overflow-x-auto border-b" role="tablist">{[["visao", "Visão geral"], ["niveis", "Níveis e evidências"], ["responsabilidades", `Responsabilidades (${linked.length})`]].map(([key, label]) => <button type="button" role="tab" aria-selected={section === key} key={key} className={`cap-section-tab ${section === key ? "cap-section-tab-active" : ""}`} onClick={() => go("capacidade", item.code, key)}>{label}</button>)}</div>
     <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_270px]"><div className="space-y-7">
@@ -228,6 +228,20 @@ function Sheet({ item, library, approved, certifiedLevels, assessmentLevel, go, 
       {section === "responsabilidades" && <><p className="mb-3 text-sm text-zinc-600">Estas responsabilidades exigem a capacidade em diferentes níveis. Abra as que já estão vinculadas para consultar atividades, setor e pessoas responsáveis.</p><div className="divide-y border-y bg-white">{linked.map((responsibility) => { const mapped = mappedResponsibilities.find((entry) => entry.id === responsibility.sourceId); const sector = sectors.find((entry) => entry.id === mapped?.sectorId); const level = responsibility.requiredCapabilities.find((entry) => entry.capabilityCode === item.code)?.minimumLevel ?? 0; return <button key={responsibility.sourceId} type="button" disabled={!mapped} onClick={() => go("responsabilidade", responsibility.sourceId)} className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3 text-left hover:bg-teal-50 disabled:cursor-default disabled:hover:bg-white"><span className="min-w-0"><strong className="block text-sm">{responsibility.title}</strong><span className="mt-1 block text-xs text-zinc-600">{sector ? `Setor responsável: ${sector.name}` : "Vínculo com setor pendente; ficha ainda indisponível"}</span></span><span className={`cap-level-badge cap-level-badge-${level}`}>Nível mínimo <strong>{capabilityLevelNames[level]}</strong> {mapped && <ArrowRight className="h-4 w-4" />}</span></button>; })}</div>{!linked.length && <p className="text-sm text-zinc-500">Nenhuma responsabilidade exige esta capacidade no momento.</p>}</>}
     </div><aside className="self-start border-t-4 border-teal-600 bg-white p-4 shadow-sm xl:sticky xl:top-3"><BookOpen className="h-5 w-5 text-teal-700" /><p className="mt-3 text-xs text-zinc-500">Autoavaliação mais recente</p><strong className="block text-base">{assessmentLevel === undefined ? "Ainda não realizada" : capabilityLevelNames[assessmentLevel]}</strong><p className="mt-4 text-xs text-zinc-500">Nível certificado</p><strong className="block text-base">{approved ? capabilityLevelNames[approved] : "Nenhum"}</strong><Button className="mt-5 w-full bg-[#176f68] hover:bg-[#115b55]" onClick={() => go("capacitacoes", item.code, "autoavaliacao")}>Abrir jornada <ArrowRight className="ml-2 h-4 w-4" /></Button><p className="mt-3 text-xs text-zinc-500">Fonte: {item.sourceVersion}. Certificação interna não substitui habilitação profissional.</p></aside></div>
   </>;
+}
+
+function CapabilityLevelTrail({ approved, onOpenLevel }: { approved: number; onOpenLevel?: (level: CapabilityLevel) => void }) {
+  const nextLevel = approved < 3 ? Math.max(1, approved + 1) as CapabilityLevel : null;
+  return <section className="cap-level-trail" aria-label="Caminho de certificação">
+    <div className="cap-level-trail-heading"><span>Minha progressão</span><strong>{approved ? `Certificada até ${capabilityLevelNames[approved as CapabilityLevel]}` : "Ainda não certificada"}</strong></div>
+    <div className="cap-level-trail-steps">{([1, 2, 3] as CapabilityLevel[]).map((level) => {
+      const earned = level <= approved;
+      const next = level === nextLevel;
+      const state = earned ? "earned" : next ? "next" : "locked";
+      const content = <><span className="cap-level-trail-insignia"><img src={capabilityLevelInsignia[level]} alt="" loading="lazy" decoding="async" /></span><span><strong>{capabilityLevelNames[level]}</strong><small>{earned ? "Certificado" : next ? "Próximo nível" : "A desenvolver"}</small></span></>;
+      return onOpenLevel && !earned ? <button type="button" key={level} onClick={() => onOpenLevel(level)} className={`cap-level-trail-step cap-level-trail-${state}`} title={`Abrir solicitação para ${capabilityLevelNames[level]}`}>{content}</button> : <span key={level} className={`cap-level-trail-step cap-level-trail-${state}`}>{content}</span>;
+    })}</div>
+  </section>;
 }
 
 function Journey({ item, library, tab, go, collaboratorId, collaboratorName, approved, trainingLevel, assessments, requests, canReview }: {
@@ -309,6 +323,7 @@ function CapabilityJourneySheet({ item, approved, onRequestLevel }: { item: Capa
       <h2 className="text-xl font-semibold">Níveis, desempenho e evidências</h2>
       <p className="mt-1 max-w-3xl text-sm leading-relaxed text-zinc-600">Consulte o que é esperado em cada nível antes de se autoavaliar ou solicitar uma certificação.</p>
     </div>
+    <CapabilityLevelTrail approved={approved} onOpenLevel={onRequestLevel} />
     <div className="grid gap-4 xl:grid-cols-3">
       {([1, 2, 3] as CapabilityLevel[]).map((level) => {
         const palette = capabilityLevelPalette[level];
