@@ -152,8 +152,10 @@ describe("official capability library", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy());
     expect(screen.getByRole("tab", { name: "Acervo e disponibilidade" }).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByRole("heading", { name: "Próximas recomendações" })).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: /Solicitar Assistido/ }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /Solicitar Assistido/ })).toBeNull();
     expect(screen.queryByRole("img", { name: /Figurinha T01/ })).toBeNull();
+    expect(document.querySelectorAll(".cap-sticker-backdrop").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Nível atual")).toBeNull();
     expect(screen.getAllByTitle("Assistido").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Falta certificar" }));
     expect(screen.getByRole("button", { name: "Falta certificar" }).getAttribute("aria-pressed")).toBe("true");
