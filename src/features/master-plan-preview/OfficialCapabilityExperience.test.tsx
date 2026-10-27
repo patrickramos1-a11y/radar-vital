@@ -317,6 +317,17 @@ describe("official capability library", () => {
     expect(screen.queryByText("Selecionar arquivo")).toBeNull();
   });
 
+  it("shows the capability sheet alongside the assessment and request flow", async () => {
+    fixture.certifications = [{ collaborator_id: "collaborator-1", capability_code: "E01", certified_level: 1, certified_by: "admin-1", certified_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
+    open("capacitacoes", "E01", "ficha");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Níveis, desempenho e evidências" })).toBeTruthy());
+    expect(screen.getByRole("tab", { name: "Ficha da capacidade" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getAllByText("Assistido").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Autônomo").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Multiplicador").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Solicitar Autônomo" })).toBeTruthy();
+  });
+
   it("shows the review queue for the existing admin profile", async () => {
     fixture.profile = { id: "admin-1", name: "Patrick", role: "admin" };
     open("capacitacoes", "T01", "retorno", "administrador");
