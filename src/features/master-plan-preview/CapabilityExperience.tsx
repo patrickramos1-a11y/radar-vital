@@ -104,7 +104,7 @@ function CapabilitySheet({ item, tab, go, store, mappedResponsibilities, sectors
   const linked = responsibilitiesFor(item.code);
   const certified = certifiedLevelFor(store, DEMO_PERSON_ID, item.code);
   const assessment = latestAssessmentFor(store, DEMO_PERSON_ID, item.code);
-  const certifiedLevels = new Map(capabilityCatalogue.map((capability) => [capability.code, certifiedLevelFor(store, DEMO_PERSON_ID, capability.code)] as const).filter(([, level]) => level > 0));
+  const certifiedLevels = new Map(capabilityCatalogue.map((capability) => [capability.code, certifiedLevelFor(store, DEMO_PERSON_ID, capability.code)] as const).filter(([, level]) => level > 0)) as Map<string, CapabilityLevel>;
   return <>
     <button type="button" onClick={() => go("capacidades")} className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-teal-800 hover:underline"><ArrowLeft className="h-4 w-4" /> Banco de capacidades</button>
     <div className="cap-sheet-identity">
@@ -166,7 +166,7 @@ function TrainingJourney({ item, tab, mode, go, store, setStore, people, capabil
   };
   const assessment = latestAssessmentFor(store, DEMO_PERSON_ID, item.code);
 
-  if (administrator && tab === "mapa") return <CapabilityTeamMatrix library={{ capabilities: capabilityCatalogue, responsibilities: sourceCatalog.responsibilities, sourceSha256: sourceCatalog.source.sha256 }} people={people} plans={capabilityPlans} onPlanChange={onCapabilityPlanChange} />;
+  if (administrator && tab === "mapa") return <CapabilityTeamMatrix library={{ capabilities: capabilityCatalogue, responsibilities: sourceCatalog.responsibilities, sourceSha256: sourceCatalog.source.sha256 }} people={people} plans={capabilityPlans} onApplyUpdates={async (updates) => { updates.forEach((update) => onCapabilityPlanChange(update.capabilityCode, update.collaboratorId, update.level)); }} onRequestTraining={async () => {}} />;
 
   return <>
     <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><button type="button" onClick={() => go("capacidade", item.code)} className="inline-flex items-center gap-1 text-xs font-medium text-teal-800 hover:underline"><ArrowLeft className="h-4 w-4" /> Voltar à ficha</button><button type="button" onClick={() => go("capacitacoes", undefined, undefined, "atual")} className="text-xs text-zinc-500 hover:text-zinc-900 hover:underline">Ver pedidos já registrados no Plano Mestre</button></div>

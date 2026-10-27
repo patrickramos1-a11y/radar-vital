@@ -51,7 +51,7 @@ export function CapabilityTeamMatrix({ library, people, plans, onApplyUpdates, o
   const pendingUpdates = useMemo<TeamCertificationUpdate[]>(() => library.capabilities.flatMap((capability) => people.flatMap((person) => {
     const current = selectedLevel(capability.code, person.id);
     const certified = approvedByPerson.get(person.id)?.get(capability.code) ?? 0;
-    return current > 0 && current !== certified ? [{ collaboratorId: person.id, capabilityCode: capability.code, level: current }] : [];
+    return current > 0 && current !== certified ? [{ collaboratorId: person.id, capabilityCode: capability.code, level: current as CapabilityLevel }] : [];
   })), [approvedByPerson, draft, library.capabilities, people, plans]);
   const list = useMemo(() => library.capabilities.filter((capability) => {
     const matchesText = `${capability.code} ${capability.title}`.toLocaleLowerCase("pt-BR").includes(query.toLocaleLowerCase("pt-BR"));

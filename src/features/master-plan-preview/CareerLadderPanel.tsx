@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, ChevronDown, ChevronUp, RotateCcw, UserRoundSearch } from "lucide-react";
 import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel } from "./capabilityJourney";
-import { careerStepReadiness, competenciesForCareerTrack, competenciesIntroducedForCareerStep, maximumCapabilityLevelForCareerStep, nucleoTecnicoCareerLadder } from "./careerLadder";
+import { careerStepReadiness, competenciesForCareerTrack, competenciesIntroducedForCareerStep, maximumCapabilityLevelForCareerStep, nucleoTecnicoCareerLadder, type CareerStepId } from "./careerLadder";
 import type { Library } from "./journeyRemote";
 import { competencyReadiness, competencyRequirements, type ResponsibilityClaim } from "./responsibilityJourney";
 import type { CareerCapabilitySimulation } from "./storage";
@@ -270,7 +270,7 @@ export function CapabilityOnlyLadderPanel({ library, certifiedLevels, simulation
   }, [baselineIndex, certifiedLevels, changesByStep, consolidatedSteps, ladder.steps]);
   const firstOpenIndex = ladder.steps.findIndex((step, index) => index > baselineIndex && !consolidatedSteps.has(step.id));
   const activeIndex = firstOpenIndex < 0 ? ladder.steps.length - 1 : firstOpenIndex;
-  const setLevel = (stepId: string, code: string, level: CapabilityLevel) => {
+  const setLevel = (stepId: CareerStepId, code: string, level: CapabilityLevel) => {
     const base = scenarios.get(stepId)!.base.get(code) ?? 0;
     setChangesByStep((current) => {
       const next = new Map(current);
