@@ -138,6 +138,11 @@ describe("official capability library", () => {
     expect(screen.getByRole("heading", { name: competency.title })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Capacidades e níveis exigidos" })).toBeTruthy();
     expect(screen.getByText("Situação no perfil")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Finalidade e escopo" })).toBeTruthy();
+    expect(screen.getByText("Problemas que ajuda a resolver")).toBeTruthy();
+    expect(screen.getByText("Entregas e resultados verificáveis")).toBeTruthy();
+    expect(screen.getByText("Perfil profissional formado")).toBeTruthy();
+    expect(screen.getByText("Limites da competência")).toBeTruthy();
   });
 
   it("shows the capability collection in its own Capacitações tab", async () => {
