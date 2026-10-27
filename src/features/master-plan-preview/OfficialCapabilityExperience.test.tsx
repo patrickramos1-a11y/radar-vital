@@ -69,6 +69,12 @@ describe("official capability library", () => {
     expect(screen.getAllByText("Vínculo com setor pendente; ficha ainda indisponível").length).toBeGreaterThan(0);
   });
 
+  it("places the capability purpose directly below the title", () => {
+    open("capacidade", "E01", "visao");
+    expect(screen.getByRole("heading", { name: "Engenharia de Sistemas de Saneamento" })).toBeTruthy();
+    expect(screen.getByText(/Finalidade:/)).toBeTruthy();
+  });
+
   it("opens a mapped responsibility directly from the capability", () => {
     const mapped = library.responsibilities.find((responsibility) => responsibility.requiredCapabilities.some((entry) => entry.capabilityCode === "T01"))!;
     const go = vi.fn();
@@ -108,6 +114,15 @@ describe("official capability library", () => {
     expect(screen.getByRole("tab", { name: "Minha jornada" }).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByRole("tab", { name: "Acervo e disponibilidade" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Próximas recomendações" })).toBeNull();
+  });
+
+  it("starts the journey with an overview and maps related competencies", async () => {
+    const go = open("capacitacoes", "E01", "visao");
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Visão geral" }).getAttribute("aria-selected")).toBe("true"));
+    expect(screen.getByRole("tab", { name: "Competências relacionadas" })).toBeTruthy();
+    expect(screen.getByText("Próximo foco de desenvolvimento")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Competências relacionadas" }));
+    expect(go).toHaveBeenCalledWith("capacitacoes", "E01", "competencias");
   });
 
   it("shows the capability collection in its own Capacitações tab", async () => {
