@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import source from "../../../docs/roadmap/UNIVERSO_RAMOS_RESPONSABILIDADES_CURADAS.json";
 import { OfficialCapabilityExperience } from "./OfficialCapabilityExperience";
 import { capabilityLevelPalette } from "./capabilityJourney";
-import { applyTeamCertifications, fetchAssessments, fetchRequests, requestResponsibility, requestTeamTraining } from "./journeyRemote";
-import type { Library } from "./journeyRemote";
+import { applyTeamCertifications, fetchAssessments, fetchRequests, fetchTeamTrainingRequests, requestResponsibility, requestTeamTraining } from "./journeyRemote";
+import type { Library, TeamTrainingRequestRow } from "./journeyRemote";
 
 const fixture = vi.hoisted(() => ({
   profile: { id: "collaborator-1", name: "Gabi", role: "colaborador" },
@@ -264,9 +264,13 @@ describe("official capability library", () => {
   });
 
   it("opens training in development from the personal journey summary", async () => {
-    fixture.trainingRequests = [{ collaborator_id: "collaborator-1", capability_code: "T01", target_level: 1, status: "requested", requested_by: "admin-1", requested_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" }];
+    const trainingRequest: TeamTrainingRequestRow = { collaborator_id: "collaborator-1", capability_code: "T01", target_level: 1, status: "requested", requested_by: "admin-1", requested_at: "2026-10-25T00:00:00.000Z", updated_at: "2026-10-25T00:00:00.000Z" };
+    fixture.trainingRequests = [trainingRequest];
+    vi.mocked(fetchTeamTrainingRequests).mockResolvedValueOnce([trainingRequest]);
     const go = open("capacitacoes");
-    const summary = await screen.findByRole("button", { name: /Em desenvolvimento.*1.*capacitações solicitadas/ });
+    await waitFor(() => expect(fetchTeamTrainingRequests).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByRole("button", { name: /Em desenvolvimento.*1.*capacitações solicitadas/ })).toBeTruthy());
+    const summary = screen.getByRole("button", { name: /Em desenvolvimento.*1.*capacitações solicitadas/ });
     fireEvent.click(summary);
     const developmentPanel = screen.getByRole("heading", { name: "Capacitações em desenvolvimento" }).closest("section");
     expect(developmentPanel).toBeTruthy();

@@ -2,6 +2,14 @@ import { ArrowRight } from "lucide-react";
 import { capabilityLevelInsignia, capabilityLevelNames, type CapabilityLevel, type CapabilityRecord } from "./capabilityJourney";
 import { capabilityCoverPath, capabilityVisual, capabilityVisualStyle } from "./capabilityVisuals";
 
+export function capabilityStickerPath(code: string) {
+  return capabilityVisual(code) ? `/capability-stickers/posters/${code}.png` : "/capability-stickers/levels/NIVEL_1.png";
+}
+
+export function CapabilityStickerThumb({ item, alt, className = "" }: { item: CapabilityRecord; alt?: string; className?: string }) {
+  return <img className={className} src={capabilityStickerPath(item.code)} alt={alt ?? `Figurinha ${item.code}: ${item.title}`} width={384} height={384} loading="lazy" decoding="async" />;
+}
+
 export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, trainingLevel = 0, onRequestLevel }: {
   item: CapabilityRecord;
   onOpen: () => void;
@@ -16,7 +24,7 @@ export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, traini
     <button type="button" className="block w-full text-left" onClick={onOpen}>
       <img className="cap-catalog-cover" src={capabilityCoverPath(item.code)} alt={`Capa ilustrada de ${item.code}: ${item.title}`} width={1600} height={900} loading="lazy" decoding="async" />
       <span className="cap-catalog-main">
-        <img className="cap-catalog-sticker" src={`/capability-stickers/posters/${item.code}.png`} alt={`Figurinha ${item.code}: ${item.title}`} width={384} height={384} loading="lazy" decoding="async" />
+        <CapabilityStickerThumb item={item} className="cap-catalog-sticker" />
         <span className="cap-catalog-detail">
           <span className="cap-catalog-kicker"><span className="cap-catalog-nature">{item.nature} · {item.code}</span><ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
           <strong className="cap-catalog-title">{item.title}</strong>
@@ -44,8 +52,10 @@ export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, traini
 export function CapabilityHero({ item }: { item: CapabilityRecord }) {
   const visual = capabilityVisual(item.code);
   return <div className="cap-identity-hero cap-themed" style={capabilityVisualStyle(item.code)}>
-    <img src={capabilityCoverPath(item.code)} alt={`Capa ilustrada de ${item.code}: ${item.title}`} width={1600} height={900} decoding="async" />
-    {visual && <span className="cap-identity-sticker"><img src={`/capability-stickers/posters/${item.code}.png`} alt={`Figurinha ${item.code}: ${item.title}`} width={384} height={384} loading="lazy" decoding="async" /></span>}
+    {visual
+      ? <img src={capabilityCoverPath(item.code)} alt={`Capa ilustrada de ${item.code}: ${item.title}`} width={1600} height={900} decoding="async" />
+      : <div className="cap-identity-hero-fallback"><CapabilityStickerThumb item={item} /></div>}
+    <span className="cap-identity-sticker"><CapabilityStickerThumb item={item} /></span>
     {visual && <p className="cap-identity-concept">{visual.concept}</p>}
   </div>;
 }
@@ -53,13 +63,13 @@ export function CapabilityHero({ item }: { item: CapabilityRecord }) {
 export function CapabilityIdentityStrip({ item }: { item: CapabilityRecord }) {
   const visual = capabilityVisual(item.code);
   return <div className="cap-identity-strip cap-themed" style={capabilityVisualStyle(item.code)}>
-    <img src={capabilityCoverPath(item.code)} alt="" width={1600} height={900} decoding="async" />
+    <CapabilityStickerThumb item={item} alt="" />
     <div className="min-w-0"><span className="cap-identity-code">{item.nature} · {item.code}</span><strong>{item.title}</strong><p>{visual?.concept ?? item.summary}</p></div>
   </div>;
 }
 
 export function CapabilityQueueThumb({ code, alt = "", className = "" }: { code: string; alt?: string; className?: string }) {
-  return <img className={`cap-queue-thumb ${className}`} src={`/capability-stickers/posters/${code}.png`} alt={alt} width={384} height={384} loading="lazy" decoding="async" />;
+  return <img className={`cap-queue-thumb ${className}`} src={capabilityStickerPath(code)} alt={alt} width={384} height={384} loading="lazy" decoding="async" />;
 }
 
 const stickerLevelCopy = ["Ainda não iniciada", "Assistido", "Autônomo", "Multiplicador"] as const;

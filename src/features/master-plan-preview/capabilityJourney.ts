@@ -17,6 +17,11 @@ export const capabilityLevelInsignia: Record<CapabilityLevel, string> = {
   2: "/capability-stickers/levels/INSIGNIA_AUTONOMO.png",
   3: "/capability-stickers/levels/INSIGNIA_MULTIPLICADOR.png",
 };
+export const capabilityLevelSticker: Record<CapabilityLevel, string> = {
+  1: "/capability-stickers/levels/NIVEL_1.png",
+  2: "/capability-stickers/levels/NIVEL_2.png",
+  3: "/capability-stickers/levels/NIVEL_3.png",
+};
 export type Criterion = {
   id: string;
   level: 0 | CapabilityLevel;
