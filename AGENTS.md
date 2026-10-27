@@ -16,6 +16,7 @@ Antes de alterar codigo relacionado ao roadmap:
 
 ## Regras de trabalho
 
+- Validate official capability-library counts, source consistency, required codes and payload preservation in journeyRemote tests; legacy preview fixtures remain separate from the published database library.
 - Master Plan personal-record RPCs require verified session identity and server-side roles; preserve operational public access until an explicitly validated cutover.
 - Executar uma fase por vez, respeitando suas dependencias.
 - As fases sao etapas internas de construcao, nao publicacoes independentes.

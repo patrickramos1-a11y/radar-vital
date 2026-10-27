@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CapabilityLevel, CapabilityRecord, Criterion, CriterionResponse, CriterionReview } from "./capabilityJourney";
 import type { SourceResponsibility } from "./capabilityDemo";
 import type { ResponsibilityClaim } from "./responsibilityJourney";
-// Official published matrix (RESPONSABILIDADES 6, out/2026): 39 capabilities and 56 responsibilities,
-// all sharing one source hash. F14–F23 and T11 prove that the current matrix is loaded.
+// Official published matrix (RESPONSABILIDADES 6): 39 capabilities and 56 responsibilities.
+// Database payloads and criteria are authoritative; all rows must share one source hash.
 const PUBLISHED_CAPABILITY_COUNT = 39;
 const PUBLISHED_RESPONSIBILITY_COUNT = 56;
 const NEW_MATRIX_CODES = ["F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22", "F23", "T11"] as const;
@@ -66,7 +66,7 @@ export async function fetchLibrary(): Promise<Library> {
   }
   const publishedCodes = new Set(capRows.map((row) => row.code));
   if (NEW_MATRIX_CODES.some((code) => !publishedCodes.has(code))) {
-    throw new Error("A biblioteca publicada não é a matriz atual: capacidades F14 a F23 e T11 ausentes.");
+    throw new Error("A biblioteca publicada não é a matriz atual: capacidades F14 a F23 ou T11 ausentes.");
   }
   if (capRows.some((row) => !row.payload || row.payload.code !== row.code || !row.payload.detail?.statement)
     || responsibilityRows.some((row) => !row.payload || row.payload.sourceId !== row.source_id)) {
