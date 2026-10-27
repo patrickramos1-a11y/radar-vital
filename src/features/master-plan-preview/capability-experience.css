@@ -109,6 +109,7 @@
 .cap-identity-hero img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; }
 .cap-identity-sticker { position: absolute; right: 16px; bottom: 10px; display: grid; width: 104px; height: 104px; place-items: center; border: 1px solid color-mix(in srgb, var(--cap-accent, #168274) 45%, white); background: rgb(255 255 255 / 92%); box-shadow: 0 10px 24px rgb(23 40 36 / 18%); }
 .cap-identity-sticker img { width: 92px; height: 92px; aspect-ratio: 1; object-fit: contain; }
+.cap-sheet-journey-sticker { display: block; width: 100%; aspect-ratio: 1; margin: -2px 0 16px; object-fit: contain; filter: drop-shadow(0 9px 10px rgb(23 40 36 / 18%)); }
 .cap-sheet-identity { display: grid; gap: 20px; align-items: center; }
 .cap-sheet-identity .cap-intro-title { margin-bottom: 0; }
 .cap-sheet-identity .cap-identity-hero { margin-bottom: 0; }

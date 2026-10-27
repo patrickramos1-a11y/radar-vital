@@ -49,13 +49,13 @@ export function CapabilityCatalogCard({ item, onOpen, certifiedLevel = 0, traini
   </article>;
 }
 
-export function CapabilityHero({ item }: { item: CapabilityRecord }) {
+export function CapabilityHero({ item, showSticker = true }: { item: CapabilityRecord; showSticker?: boolean }) {
   const visual = capabilityVisual(item.code);
   return <div className="cap-identity-hero cap-themed" style={capabilityVisualStyle(item.code)}>
     {visual
       ? <img src={capabilityCoverPath(item.code)} alt={`Capa ilustrada de ${item.code}: ${item.title}`} width={1600} height={900} decoding="async" />
       : <div className="cap-identity-hero-fallback"><CapabilityStickerThumb item={item} /></div>}
-    <span className="cap-identity-sticker"><CapabilityStickerThumb item={item} /></span>
+    {showSticker && <span className="cap-identity-sticker"><CapabilityStickerThumb item={item} /></span>}
     {visual && <p className="cap-identity-concept">{visual.concept}</p>}
   </div>;
 }
