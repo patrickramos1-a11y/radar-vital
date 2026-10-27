@@ -87,6 +87,20 @@ export function pacForCareerStep(library: Library, ladder: CareerLadder, stepId:
     .sort((a, b) => a.capabilityCode.localeCompare(b.capabilityCode));
 }
 
+/**
+ * The career scope is defined by the complete PAC, not by every record in the
+ * global capability catalogue. New capabilities can therefore be added for
+ * other nuclei without changing the technical career scale.
+ */
+export function careerScopeCapabilityCodes(library: Library, ladder: CareerLadder): string[] {
+  return pacForCareerStep(library, ladder, "estrategico_junior").map((requirement) => requirement.capabilityCode);
+}
+
+export function capabilitiesInCareerScope(library: Library, ladder: CareerLadder) {
+  const codes = new Set(careerScopeCapabilityCodes(library, ladder));
+  return library.capabilities.filter((capability) => codes.has(capability.code));
+}
+
 export function newPacRequirementsForCareerStep(library: Library, ladder: CareerLadder, stepId: CareerStepId): PacRequirement[] {
   const targetIndex = ladder.steps.findIndex((step) => step.id === stepId);
   const current = pacForCareerStep(library, ladder, stepId);
@@ -168,11 +182,12 @@ export function careerStepReadiness(library: Library, ladder: CareerLadder, step
   const step = ladder.steps.find((item) => item.id === stepId);
   if (!step) throw new Error(`Cargo não encontrado: ${stepId}`);
   const pac = pacForCareerStep(library, ladder, stepId);
-  const maturity = globalCapabilityMaturity(library.capabilities.map((capability) => capability.code), levels);
+  const scopeCapabilities = capabilitiesInCareerScope(library, ladder);
+  const maturity = globalCapabilityMaturity(scopeCapabilities.map((capability) => capability.code), levels);
   const candidates = competencyCandidates(responsibilitiesForCareerStep(library, ladder, stepId), levels);
   const earnedCompetencies = candidates.length;
   const fullTechnicalMaturity = step.id === "estrategico_junior" || step.id === "estrategico_pleno" || step.id === "estrategico_master"
-    ? library.capabilities.every((capability) => (levels.get(capability.code) ?? 0) >= 3)
+    ? scopeCapabilities.every((capability) => (levels.get(capability.code) ?? 0) >= 3)
     : true;
   const missingCapabilities = pac.filter((requirement) => (levels.get(requirement.capabilityCode) ?? 0) < requirement.minimumLevel);
   const missingCapabilityPoints = Math.max(0, step.capabilityTarget - maturity.pointsEarned);
@@ -184,7 +199,7 @@ export function careerStepReadiness(library: Library, ladder: CareerLadder, step
     capabilityPoints: step.capabilityTarget,
     completedCapabilities: pac.filter((requirement) => (levels.get(requirement.capabilityCode) ?? 0) >= requirement.minimumLevel).length,
     completedCapabilityPoints: maturity.pointsEarned,
-    certifiedCapabilityCount: library.capabilities.filter((capability) => (levels.get(capability.code) ?? 0) > 0).length,
+    certifiedCapabilityCount: scopeCapabilities.filter((capability) => (levels.get(capability.code) ?? 0) > 0).length,
     earnedCompetencies,
     competencyTarget: step.responsibilityTarget,
     competencyCandidates: candidates.slice(0, step.responsibilityTarget),
