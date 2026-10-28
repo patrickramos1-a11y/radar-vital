@@ -68,6 +68,57 @@ const nav = () => within(screen.getByRole("navigation", { name: "Visões de Plan
 const main = () => within(screen.getByRole("main"));
 
 describe("Plano Mestre organizational preview", () => {
+  it("opens an institutional sector directly and searches the eleven-sector directory", () => {
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=SET-01");
+    expect(main().getByRole("heading", { name: "Setor Projetos" })).toBeTruthy();
+    expect(main().queryByRole("tab", { name: /Áreas/ })).toBeNull();
+    expect(main().getByRole("button", { name: "Abrir funções do setor" })).toBeTruthy();
+    fireEvent.click(nav().getByRole("link", { name: "Setores" }));
+    fireEvent.change(main().getByPlaceholderText("Buscar setor ou missão"), { target: { value: "Marketing" } });
+    expect(main().getByRole("button", { name: /Setor Marketing/ })).toBeTruthy();
+    expect(main().queryByRole("button", { name: /Setor Projetos/ })).toBeNull();
+  });
+
+  it("shows the sector visual identity, real outputs, work flow and linked capabilities", () => {
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=SET-01");
+    expect(main().getByText("Da leitura ao projeto")).toBeTruthy();
+    expect(main().getByRole("img", { name: /Camadas de terreno, água/ }).getAttribute("src")).toBe("/universe-sectors/04-setor-de-projetos.png");
+    expect(main().getByRole("heading", { name: "O que o setor entrega" })).toBeTruthy();
+    expect(main().getByText("Estudos, planos, projetos, relatórios técnicos, memoriais e pranchas revisados")).toBeTruthy();
+    expect(main().getByText("Dados e requisitos")).toBeTruthy();
+    expect(main().getByRole("button", { name: "Abrir competências do setor" })).toBeTruthy();
+    fireEvent.click(main().getByRole("tab", { name: /Capacidades/ }));
+    expect(main().getByRole("button", { name: /F01.*Gestão de Demandas e Fluxo Operacional/ })).toBeTruthy();
+    expect(main().queryByRole("button", { name: /Solicitar nível/ })).toBeNull();
+    expect(updateRemoteMasterPlanDraft).not.toHaveBeenCalled();
+  });
+
+  it("keeps organizational responsibilities hidden from sector and function pages", () => {
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=SET-03&tab=responsabilidades");
+    expect(main().getByRole("heading", { name: "Setor Gestão Interna" })).toBeTruthy();
+    expect(main().getByRole("tab", { name: "Visão geral" }).getAttribute("aria-selected")).toBe("true");
+    expect(main().queryByRole("tab", { name: /Responsabilidades/ })).toBeNull();
+    cleanup();
+    openPreview("/universo-ramos/plano-mestre?view=funcao&id=FUN-001");
+    expect(main().getByRole("heading", { name: "Coordenador(a) de Gestão Interna" })).toBeTruthy();
+    expect(main().queryByRole("heading", { name: "Responsabilidades relacionadas" })).toBeNull();
+    expect(main().getByRole("heading", { name: "Competências requeridas" })).toBeTruthy();
+    expect(remote.document).toMatchObject({ capabilities: [], responsibilities: [] });
+    expect(updateRemoteMasterPlanDraft).not.toHaveBeenCalled();
+  });
+
+  it("shows complete proposed capability levels without certification actions", () => {
+    openPreview("/universo-ramos/plano-mestre?view=competencia-manual&id=COMP-057");
+    expect(main().getByRole("heading", { name: "Marketing Digital e Conteúdo" })).toBeTruthy();
+    fireEvent.click(main().getByRole("button", { name: /Planejamento de Conteúdo e Canais Digitais/ }));
+    expect(main().getByRole("heading", { name: "Planejamento de Conteúdo e Canais Digitais" })).toBeTruthy();
+    expect(main().getByRole("heading", { name: "Assistido" })).toBeTruthy();
+    expect(main().getByRole("heading", { name: "Autônomo" })).toBeTruthy();
+    expect(main().getByRole("heading", { name: "Multiplicador" })).toBeTruthy();
+    expect(main().queryByRole("button", { name: /Solicitar/ })).toBeNull();
+    expect(updateRemoteMasterPlanDraft).not.toHaveBeenCalled();
+  });
+
   it("starts the sectors page without duplicate heading or breadcrumb bars", () => {
     openPreview("/universo-ramos/plano-mestre?view=setores");
     expect(main().getByRole("heading", { name: "Setores" })).toBeTruthy();
@@ -198,7 +249,7 @@ describe("Plano Mestre organizational preview", () => {
   it("opens all ten pages without treating proposals as registered data", () => {
     openPreview();
     const pages = [
-      ["Visão geral", "Mapa da Ramos"], ["Núcleos", "Núcleos"], ["Setores", "Setores"],
+      ["Visão geral", "Como a empresa se organiza e atua."], ["Núcleos", "Núcleos da Ramos Engenharia"], ["Setores", "Setores"],
       ["Responsabilidades", "Responsabilidades"], ["Capacidades", "Banco de capacidades"],
       ["Capacitações", "Minha capacitação"], ["Solicitações", "Solicitações"],
       ["Cronologia", "Cronologia"], ["Minha jornada", "Minha jornada"],
@@ -216,10 +267,10 @@ describe("Plano Mestre organizational preview", () => {
 
   it("starts with sectors and people but no inferred capabilities or responsibilities", () => {
     openPreview();
-    expect(main().getByText("Gabi")).toBeTruthy();
-    expect(main().getAllByText("0 mapeadas")).toHaveLength(2);
-    fireEvent.click(main().getByRole("button", { name: /Núcleo Técnico/ }));
-    fireEvent.click(main().getByRole("button", { name: /SETOR DE PROJETOS1 desafio/ }));
+    expect(main().getByRole("navigation", { name: "Navegação por núcleo" }).querySelectorAll("button")).toHaveLength(3);
+    expect(main().getByRole("region", { name: "Organograma panorâmico" }).querySelectorAll(".organization-map-sector")).toHaveLength(11);
+    cleanup();
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=projects");
     expect(main().getByRole("button", { name: "Cadastrar primeira capacidade" })).toBeTruthy();
     expect(main().getByRole("button", { name: "Cadastrar primeira responsabilidade" })).toBeTruthy();
     expect(main().getByRole("button", { name: /Criar o Padrão Ramos de Projetos/ })).toBeTruthy();
@@ -231,8 +282,7 @@ describe("Plano Mestre organizational preview", () => {
   });
 
   it("saves a capability and responsibility before linking them", async () => {
-    openPreview();
-    fireEvent.click(main().getByRole("button", { name: /SETOR DE PROJETOS/ }));
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=projects");
     fireEvent.click(main().getByRole("button", { name: "Cadastrar primeira capacidade" }));
     let dialog = within(screen.getByRole("dialog"));
     fireEvent.change(dialog.getByLabelText("Título"), { target: { value: "Revisar projetos" } });
@@ -254,22 +304,21 @@ describe("Plano Mestre organizational preview", () => {
   });
 
   it("keeps registered records after reopening the page", async () => {
-    const rendered = openPreview();
-    fireEvent.click(main().getByRole("button", { name: "Nova capacidade" }));
+    const rendered = openPreview("/universo-ramos/plano-mestre?view=setor&id=projects");
+    fireEvent.click(main().getByRole("button", { name: "Cadastrar primeira capacidade" }));
     const dialog = within(screen.getByRole("dialog"));
     fireEvent.change(dialog.getByLabelText("Título"), { target: { value: "Revisar projetos" } });
     fireEvent.change(dialog.getByLabelText("Setor existente"), { target: { value: "projects" } });
     fireEvent.click(dialog.getByRole("button", { name: "Salvar no Plano Mestre" }));
     await waitFor(() => expect(main().getByRole("heading", { name: "Revisar projetos" })).toBeTruthy());
     rendered.unmount();
-    openPreview();
-    expect(main().getByText("1 mapeada")).toBeTruthy();
-    expect(main().getByText("Gabi")).toBeTruthy();
+    openPreview("/universo-ramos/plano-mestre?view=capacidades&mode=atual");
+    expect(main().getByText("Revisar projetos")).toBeTruthy();
   });
 
   it("edits a saved capability after registration", async () => {
-    openPreview();
-    fireEvent.click(main().getByRole("button", { name: "Nova capacidade" }));
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=projects");
+    fireEvent.click(main().getByRole("button", { name: "Cadastrar primeira capacidade" }));
     let dialog = within(screen.getByRole("dialog"));
     fireEvent.change(dialog.getByLabelText("Título"), { target: { value: "Revisar projetos" } });
     fireEvent.change(dialog.getByLabelText("Setor existente"), { target: { value: "projects" } });
@@ -283,8 +332,8 @@ describe("Plano Mestre organizational preview", () => {
   });
 
   it("edits a responsibility and unlinks a capability", async () => {
-    openPreview();
-    fireEvent.click(main().getByRole("button", { name: "Nova capacidade" }));
+    openPreview("/universo-ramos/plano-mestre?view=setor&id=projects");
+    fireEvent.click(main().getByRole("button", { name: "Cadastrar primeira capacidade" }));
     let dialog = within(screen.getByRole("dialog"));
     fireEvent.change(dialog.getByLabelText("Título"), { target: { value: "Revisar projetos" } });
     fireEvent.change(dialog.getByLabelText("Setor existente"), { target: { value: "projects" } });
@@ -315,19 +364,21 @@ describe("Plano Mestre organizational preview", () => {
     expect(main().getByRole("heading", { name: "Banco de capacidades" })).toBeTruthy();
   });
 
-  it("keeps a clear return path without adding sector tabs to the trail", () => {
+  it("returns from the sector sheet to the organization map", () => {
     openPreview();
-    fireEvent.click(main().getByRole("button", { name: /Núcleo Técnico/ }));
-    fireEvent.click(main().getByRole("button", { name: /SETOR DE PROJETOS1 desafio/ }));
-    fireEvent.click(main().getByRole("tab", { name: "Capacidades" }));
-    expect(main().getByRole("tab", { name: "Capacidades" }).getAttribute("aria-selected")).toBe("true");
+    fireEvent.click(main().getByRole("button", { name: "Focar Núcleo Técnico" }));
+    fireEvent.click(main().getByRole("button", { name: /Setor · 5 funçõesSetor Projetos/ }));
+    fireEvent.click(main().getByRole("button", { name: "Abrir ficha" }));
+    fireEvent.click(main().getByRole("tab", { name: /Funções/ }));
+    expect(main().getByRole("tab", { name: /Funções/ }).getAttribute("aria-selected")).toBe("true");
     fireEvent.click(main().getByRole("button", { name: "Voltar" }));
-    expect(main().getByRole("heading", { name: "Núcleo Técnico" })).toBeTruthy();
+    expect(main().getByRole("heading", { name: "Como a empresa se organiza e atua." })).toBeTruthy();
   });
 
   it("saves regrouping of existing sectors without changing their names", async () => {
     openPreview();
     fireEvent.click(nav().getByRole("link", { name: "Núcleos" }));
+    fireEvent.click(main().getByRole("tab", { name: "Cadastro operacional" }));
     fireEvent.change(screen.getByRole("combobox", { name: "Núcleo de SETOR DE PROJETOS" }), { target: { value: "suporte" } });
     expect(main().getByRole("button", { name: /Núcleo Suporte/ })).toBeTruthy();
     expect(screen.getAllByText("SETOR DE PROJETOS").length).toBeGreaterThan(0);
