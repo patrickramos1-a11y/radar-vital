@@ -2276,6 +2276,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          source_task_id: string | null
           status: string
           title: string
           updated_at: string
@@ -2291,6 +2292,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          source_task_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -2306,6 +2308,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          source_task_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -2317,6 +2320,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priorities_source_task_id_fkey"
+            columns: ["source_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -2974,6 +2984,10 @@ export type Database = {
         Args: { p_actor_name?: string; p_challenge_ids: string[] }
         Returns: number
       }
+      finish_priority_task: {
+        Args: { p_finish_children: boolean; p_task_id: string }
+        Returns: undefined
+      }
       grant_manual_stars: {
         Args: {
           p_actor_name?: string
@@ -3231,6 +3245,36 @@ export type Database = {
         }
         Returns: string
       }
+      promote_client_task: {
+        Args: {
+          p_actor: string
+          p_category: string
+          p_task_id: string
+          p_weight: number
+        }
+        Returns: {
+          assigned_to: string[]
+          category: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          source_task_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          weight: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "priorities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       recalculate_pending_ciencia: {
         Args: { p_client_id: string }
         Returns: undefined
@@ -3241,6 +3285,10 @@ export type Database = {
       }
       record_challenge_resolution_transactions: {
         Args: { p_actor_name?: string; p_challenge_id: string }
+        Returns: undefined
+      }
+      refresh_client_priority_star: {
+        Args: { p_client_id: string }
         Returns: undefined
       }
       refresh_overdue_challenges: {
