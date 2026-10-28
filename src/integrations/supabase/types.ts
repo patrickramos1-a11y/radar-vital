@@ -1678,6 +1678,208 @@ export type Database = {
         }
         Relationships: []
       }
+      master_plan_manual_catalog_source: {
+        Row: {
+          catalog_key: string
+          imported_at: string
+          source_file: string
+          source_sha256: string
+        }
+        Insert: {
+          catalog_key: string
+          imported_at?: string
+          source_file: string
+          source_sha256: string
+        }
+        Update: {
+          catalog_key?: string
+          imported_at?: string
+          source_file?: string
+          source_sha256?: string
+        }
+        Relationships: []
+      }
+      master_plan_manual_essential_functions: {
+        Row: {
+          display_order: number
+          function_id: string
+          sector_id: string
+        }
+        Insert: {
+          display_order: number
+          function_id: string
+          sector_id: string
+        }
+        Update: {
+          display_order?: number
+          function_id?: string
+          sector_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_manual_essential_functions_function_id_fkey"
+            columns: ["function_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_manual_essential_functions_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_plan_manual_items: {
+        Row: {
+          area_id: string | null
+          classification: string
+          content: Json
+          id: string
+          kind: string
+          levels: Json
+          name: string
+          nature: string
+          nucleus_id: string | null
+          official_source_id: string
+          origin: string
+          primary_function_id: string | null
+          requirements: Json
+          sector_id: string | null
+          source: string
+        }
+        Insert: {
+          area_id?: string | null
+          classification?: string
+          content?: Json
+          id: string
+          kind: string
+          levels?: Json
+          name: string
+          nature?: string
+          nucleus_id?: string | null
+          official_source_id?: string
+          origin?: string
+          primary_function_id?: string | null
+          requirements?: Json
+          sector_id?: string | null
+          source?: string
+        }
+        Update: {
+          area_id?: string | null
+          classification?: string
+          content?: Json
+          id?: string
+          kind?: string
+          levels?: Json
+          name?: string
+          nature?: string
+          nucleus_id?: string | null
+          official_source_id?: string
+          origin?: string
+          primary_function_id?: string | null
+          requirements?: Json
+          sector_id?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_manual_items_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_manual_items_nucleus_id_fkey"
+            columns: ["nucleus_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_manual_items_primary_function_id_fkey"
+            columns: ["primary_function_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_manual_items_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_plan_manual_links: {
+        Row: {
+          classification: string
+          content: Json
+          from_id: string
+          id: string
+          kind: string
+          to_id: string
+        }
+        Insert: {
+          classification?: string
+          content?: Json
+          from_id: string
+          id: string
+          kind: string
+          to_id: string
+        }
+        Update: {
+          classification?: string
+          content?: Json
+          from_id?: string
+          id?: string
+          kind?: string
+          to_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_manual_links_from_id_fkey"
+            columns: ["from_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_plan_manual_links_to_id_fkey"
+            columns: ["to_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_plan_manual_sector_aliases: {
+        Row: {
+          normalized_alias: string
+          sector_id: string
+        }
+        Insert: {
+          normalized_alias: string
+          sector_id: string
+        }
+        Update: {
+          normalized_alias?: string
+          sector_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_plan_manual_sector_aliases_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_plan_responsibility_claims: {
         Row: {
           collaborator_id: string

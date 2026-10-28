@@ -92,6 +92,13 @@
       "when": 1793221061863,
       "tag": "0012_client_priority_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793221089084,
+      "tag": "0013_master_plan_manual_catalog",
+      "breakpoints": true
     }
   ]
 }
