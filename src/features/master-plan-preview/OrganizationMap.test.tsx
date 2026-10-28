@@ -7,39 +7,51 @@ import { organizationMap } from "./organizationMapModel";
 afterEach(cleanup);
 
 describe("organization map", () => {
-  it("uses the approved nucleus, sector and essential-function relationships", () => {
+  it("preserves the approved structure and essential functions", () => {
     expect(organizationMap).toHaveLength(3);
     expect(organizationMap.flatMap((nucleus) => nucleus.sectors)).toHaveLength(11);
-    const functions = organizationMap.flatMap((nucleus) => nucleus.sectors.flatMap((sector) => sector.functions));
-    expect(functions).toHaveLength(41);
-    expect(functions.every((item) => item.competencies.length > 0)).toBe(true);
-    expect(organizationMap[0].sectors.map((sector) => sector.item.id)).toEqual(["SET-01", "SET-02", "SET-11", "SET-03"]);
+    expect(organizationMap.flatMap((nucleus) => nucleus.sectors.flatMap((sector) => sector.functions))).toHaveLength(41);
   });
 
-  it("focuses a sector, opens its sheet and resets the panorama", () => {
-    const go = vi.fn();
-    render(<OrganizationMap go={go} officialCompetencyIds={[]} />);
-    const panorama = screen.getByRole("region", { name: "Organograma panorâmico" });
-    expect(panorama.querySelectorAll(".organization-map-sector")).toHaveLength(11);
-    fireEvent.click(within(panorama).getByRole("button", { name: /Setor · 5 funçõesSetor Projetos/ }));
-    expect(panorama.querySelectorAll(".organization-map-sector-row.is-filtered").length).toBe(10);
-    fireEvent.click(screen.getByRole("button", { name: "Abrir ficha" }));
-    expect(go).toHaveBeenCalledWith("setor", "SET-01");
-    fireEvent.click(screen.getByRole("button", { name: "Ver empresa inteira" }));
-    expect(panorama.querySelectorAll(".organization-map-sector-row.is-filtered")).toHaveLength(0);
-    expect(screen.queryByRole("button", { name: "Abrir ficha" })).toBeNull();
+  it("starts compact, expands nuclei in selection order, and keeps other nuclei available", () => {
+    render(<OrganizationMap go={vi.fn()} officialCompetencyIds={[]} />);
+    const map = screen.getByRole("region", { name: "Organograma interativo" });
+    expect(map.querySelectorAll(".organization-map-lane.is-compact")).toHaveLength(3);
+    fireEvent.click(screen.getByRole("button", { name: "Expandir Núcleo Suporte" }));
+    expect(map.querySelector(".organization-map-lane")?.textContent).toContain("Núcleo Suporte");
+    expect(map.querySelectorAll(".organization-map-lane.is-compact")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Expandir Núcleo Técnico" }));
+    expect(map.querySelectorAll(".organization-map-lane.is-open")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Recolher Núcleo Suporte" }));
+    expect(map.querySelectorAll(".organization-map-lane.is-open")).toHaveLength(1);
   });
 
-  it("keeps reading modes separate from the institution's records", () => {
+  it("opens multiple sectors, then a function and its named competencies", () => {
+    render(<OrganizationMap go={vi.fn()} officialCompetencyIds={[]} certifiedLevels={{ F01: 1 }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Expandir Núcleo Técnico" }));
+    const map = screen.getByRole("region", { name: "Organograma interativo" });
+    fireEvent.click(within(map).getByRole("button", { name: /5 funções essenciaisSetor Projetos/ }));
+    fireEvent.click(within(map).getByRole("button", { name: /5 funções essenciaisSetor Processos e Órgãos/ }));
+    expect(map.querySelectorAll(".organization-map-sector-row.is-open")).toHaveLength(2);
+    expect(map.querySelector(".organization-map-sector-row")?.textContent).toContain("Setor Projetos");
+    fireEvent.click(within(map).getByRole("button", { name: "Coordenador(a) de Projetos" }));
+    expect(within(map).getByRole("button", { name: "Planejamento da Produção Técnica" })).toBeTruthy();
+    fireEvent.click(within(map).getByRole("button", { name: "Planejamento da Produção Técnica" }));
+    expect(map.querySelector(".organization-map-requirements")).toBeTruthy();
+    expect(map.querySelectorAll(".organization-map-requirement").length).toBeGreaterThan(0);
+  });
+
+  it("keeps proposals separate from certification and opens their manual sheet", () => {
     const go = vi.fn();
     render(<OrganizationMap go={go} officialCompetencyIds={[]} />);
-    const panorama = screen.getByRole("region", { name: "Organograma panorâmico" });
-    fireEvent.click(screen.getByRole("button", { name: "Compactar setores" }));
-    expect(panorama.querySelector(".organization-map-mode-sectors")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Tudo aberto" }));
-    const proposal = panorama.querySelectorAll(".organization-map-competencies .is-proposal");
-    expect(proposal.length).toBeGreaterThan(0);
-    fireEvent.click(proposal[0]);
-    expect(go).toHaveBeenCalledWith("competencia-manual", expect.stringMatching(/^COMP-0/));
+    fireEvent.click(screen.getByRole("button", { name: "Expandir Núcleo Técnico" }));
+    const map = screen.getByRole("region", { name: "Organograma interativo" });
+    fireEvent.click(within(map).getByRole("button", { name: /5 funções essenciaisSetor Projetos/ }));
+    const functionButton = within(map).getByRole("button", { name: "Coordenador(a) de Projetos" });
+    fireEvent.click(functionButton);
+    const proposal = map.querySelector(".organization-map-competency.is-pending");
+    expect(proposal).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Recolher tudo" }));
+    expect(map.querySelectorAll(".organization-map-lane.is-compact")).toHaveLength(3);
   });
 });

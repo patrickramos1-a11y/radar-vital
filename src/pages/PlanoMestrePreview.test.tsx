@@ -267,8 +267,11 @@ describe("Plano Mestre organizational preview", () => {
 
   it("starts with sectors and people but no inferred capabilities or responsibilities", () => {
     openPreview();
-    expect(main().getByRole("navigation", { name: "Navegação por núcleo" }).querySelectorAll("button")).toHaveLength(3);
-    expect(main().getByRole("region", { name: "Organograma panorâmico" }).querySelectorAll(".organization-map-sector")).toHaveLength(11);
+    expect(main().getByRole("navigation", { name: "Núcleos" }).querySelectorAll("button")).toHaveLength(3);
+    const map = main().getByRole("region", { name: "Organograma interativo" });
+    expect(map.querySelectorAll(".organization-map-lane.is-compact")).toHaveLength(3);
+    fireEvent.click(main().getByRole("button", { name: "Expandir Núcleo Técnico" }));
+    expect(map.querySelectorAll(".organization-map-sector")).toHaveLength(4);
     cleanup();
     openPreview("/universo-ramos/plano-mestre?view=setor&id=projects");
     expect(main().getByRole("button", { name: "Cadastrar primeira capacidade" })).toBeTruthy();
@@ -366,9 +369,9 @@ describe("Plano Mestre organizational preview", () => {
 
   it("returns from the sector sheet to the organization map", () => {
     openPreview();
-    fireEvent.click(main().getByRole("button", { name: "Focar Núcleo Técnico" }));
-    fireEvent.click(main().getByRole("button", { name: /Setor · 5 funçõesSetor Projetos/ }));
-    fireEvent.click(main().getByRole("button", { name: "Abrir ficha" }));
+    fireEvent.click(main().getByRole("button", { name: "Expandir Núcleo Técnico" }));
+    fireEvent.click(main().getByRole("button", { name: /5 funções essenciaisSetor Projetos/ }));
+    fireEvent.click(main().getByRole("button", { name: "Abrir ficha do setor" }));
     fireEvent.click(main().getByRole("tab", { name: /Funções/ }));
     expect(main().getByRole("tab", { name: /Funções/ }).getAttribute("aria-selected")).toBe("true");
     fireEvent.click(main().getByRole("button", { name: "Voltar" }));

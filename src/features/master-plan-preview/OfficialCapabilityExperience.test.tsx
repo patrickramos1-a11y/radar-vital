@@ -139,6 +139,9 @@ describe("official capability library", () => {
     expect(screen.getByRole("heading", { name: "Capacidades e níveis exigidos" })).toBeTruthy();
     expect(screen.getByText("Situação no perfil")).toBeTruthy();
     expect(screen.getAllByText("Capacidades exigidas em").length).toBeGreaterThan(0);
+    expect(document.querySelector('img[src*="INSIGNIA_"]')).toBeTruthy();
+    expect(document.querySelector('img[src*="capability-stickers/posters/"]')).toBeTruthy();
+    expect(screen.getAllByText(/no total · .* atendidas · .* pendentes/).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Assistido").length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "Finalidade e escopo" })).toBeTruthy();
     expect(screen.getByText("Problemas que ajuda a resolver")).toBeTruthy();
