@@ -248,8 +248,9 @@ describe("Plano Mestre organizational preview", () => {
 
   it("opens all ten pages without treating proposals as registered data", () => {
     openPreview();
+    expect(main().getByLabelText("Abrangência da jornada")).toBeTruthy();
     const pages = [
-      ["Visão geral", "Como a empresa se organiza e atua."], ["Núcleos", "Núcleos da Ramos Engenharia"], ["Setores", "Setores"],
+      ["Núcleos", "Núcleos da Ramos Engenharia"], ["Setores", "Setores"],
       ["Responsabilidades", "Responsabilidades"], ["Capacidades", "Banco de capacidades"],
       ["Capacitações", "Minha capacitação"], ["Solicitações", "Solicitações"],
       ["Cronologia", "Cronologia"], ["Minha jornada", "Minha jornada"],
@@ -267,11 +268,8 @@ describe("Plano Mestre organizational preview", () => {
 
   it("starts with sectors and people but no inferred capabilities or responsibilities", () => {
     openPreview();
-    expect(main().getByRole("navigation", { name: "Núcleos" }).querySelectorAll("button")).toHaveLength(3);
-    const map = main().getByRole("region", { name: "Organograma interativo" });
-    expect(map.querySelectorAll(".organization-map-lane.is-compact")).toHaveLength(3);
-    fireEvent.click(main().getByRole("button", { name: "Expandir Núcleo Técnico" }));
-    expect(map.querySelectorAll(".organization-map-sector")).toHaveLength(4);
+    expect(main().getByText("Nenhuma atuação encontrada neste perfil.")).toBeTruthy();
+    expect(main().queryByRole("navigation", { name: "Núcleos ativos" })).toBeNull();
     cleanup();
     openPreview("/universo-ramos/plano-mestre?view=setor&id=projects");
     expect(main().getByRole("button", { name: "Cadastrar primeira capacidade" })).toBeTruthy();
@@ -367,14 +365,11 @@ describe("Plano Mestre organizational preview", () => {
     expect(main().getByRole("heading", { name: "Banco de capacidades" })).toBeTruthy();
   });
 
-  it("opens every sector competency group directly from the organization map", () => {
+  it("shows the focused organization map without the removed introductory block", () => {
     openPreview();
-    fireEvent.click(main().getByRole("button", { name: "Expandir Núcleo Técnico" }));
-    fireEvent.click(main().getByRole("button", { name: /5 funções essenciaisSetor Projetos/ }));
-    fireEvent.click(main().getByRole("button", { name: "Abrir competências de Setor Projetos" }));
-    expect(main().getByRole("button", { name: "Recolher competências de Setor Projetos" })).toBeTruthy();
-    expect(main().getByLabelText("Competências selecionadas de Setor Projetos").querySelectorAll(".organization-map-competency-group")).toHaveLength(5);
-    expect(main().getByRole("heading", { name: "Como a empresa se organiza e atua." })).toBeTruthy();
+    expect(main().getByText("Nenhuma atuação encontrada neste perfil.")).toBeTruthy();
+    expect(main().getByLabelText("Abrangência da jornada")).toBeTruthy();
+    expect(main().queryByRole("heading", { name: "Como a empresa se organiza e atua." })).toBeNull();
   });
 
   it("saves regrouping of existing sectors without changing their names", async () => {
