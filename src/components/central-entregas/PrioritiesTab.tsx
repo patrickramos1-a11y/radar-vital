@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { differenceInCalendarDays } from 'date-fns';
-import { Check, ChevronDown, ChevronRight, Circle, Pencil, Plus, Search, Star, Trash2 } from 'lucide-react';
+import { differenceInCalendarDays, format } from 'date-fns';
+import { CalendarClock, Check, ChevronDown, ChevronRight, Circle, Gauge, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import type { Client } from '@/types/client';
 import type { Priority, PriorityFormData } from '@/types/priority';
 import type { Task, TaskFormData } from '@/types/task';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PriorityModal } from './PriorityModal';
 
 interface RespOption { name: string; color: string; initials: string }
@@ -25,7 +26,66 @@ interface Props {
   onDelete: (id: string) => Promise<boolean>;
   onCreateSubtask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
   onToggleTask: (taskId: string, clientName?: string) => Promise<boolean>;
+  onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
   onRefreshTasks: () => Promise<void>;
+}
+
+const today = () => format(new Date(), 'yyyy-MM-dd');
+
+function rootTaskFor(priority: Priority, tasks: Task[]) {
+  return tasks.find(task => task.id === priority.source_task_id)
+    || tasks.find(task => task.priority_id === priority.id && !task.parent_task_id);
+}
+
+function PrioritySchedule({ task, onUpdateTask }: { task?: Task; onUpdateTask: Props['onUpdateTask'] }) {
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState(task?.scheduled_for || '');
+  const [saving, setSaving] = useState(false);
+  const scheduled = Boolean(task?.scheduled_for && task.scheduled_for > today());
+
+  useEffect(() => setDate(task?.scheduled_for || ''), [task?.scheduled_for]);
+  if (!task) return null;
+
+  const save = async (scheduledFor: string | null) => {
+    setSaving(true);
+    const ok = await onUpdateTask(task.id, { scheduled_for: scheduledFor });
+    setSaving(false);
+    if (ok) setOpen(false);
+  };
+
+  return <Popover open={open} onOpenChange={setOpen}>
+    <PopoverTrigger asChild>
+      <button type="button" title={scheduled ? `Planejada para ${new Date(`${task.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}` : 'Planejar quando a prioridade volta'} aria-label="Planejar prioridade" className={`p-1.5 hover:bg-violet-50 ${scheduled ? 'text-violet-700' : 'text-muted-foreground'}`}>
+        <CalendarClock className="h-4 w-4" />
+      </button>
+    </PopoverTrigger>
+    <PopoverContent align="end" className="w-64 p-3">
+      <p className="text-xs font-semibold">Quando esta prioridade volta?</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">Ela ficará fora da lista ativa até a data escolhida.</p>
+      <Input type="date" min={today()} value={date} onChange={event => setDate(event.target.value)} className="mt-3 h-8 text-xs" aria-label="Data de retorno da prioridade" />
+      <div className="mt-3 flex items-center justify-end gap-2">
+        {scheduled && <Button type="button" size="sm" variant="ghost" disabled={saving} onClick={() => void save(null)}><X className="mr-1 h-3.5 w-3.5" />Ativar agora</Button>}
+        <Button type="button" size="sm" disabled={!date || saving} onClick={() => void save(date)}>Planejar</Button>
+      </div>
+    </PopoverContent>
+  </Popover>;
+}
+
+function PriorityWeight({ priority, onUpdate }: { priority: Priority; onUpdate: Props['onUpdate'] }) {
+  const [open, setOpen] = useState(false);
+  return <Popover open={open} onOpenChange={setOpen}>
+    <PopoverTrigger asChild>
+      <button type="button" title="Alterar peso" aria-label={`Peso ${priority.weight}`} className="inline-flex h-7 min-w-9 items-center justify-center gap-1 border px-1.5 text-[11px] font-semibold text-slate-700 hover:border-primary hover:text-primary">
+        <Gauge className="h-3.5 w-3.5" />{priority.weight}
+      </button>
+    </PopoverTrigger>
+    <PopoverContent align="end" className="w-48 p-2">
+      <p className="px-1 pb-2 text-xs font-semibold">Peso da prioridade</p>
+      <div className="grid grid-cols-5 gap-1">
+        {[5, 4, 3, 2, 1].map(weight => <button key={weight} type="button" aria-label={`Definir peso ${weight}`} className={`h-8 border text-xs font-semibold ${priority.weight === weight ? 'border-primary bg-primary text-primary-foreground' : 'bg-white hover:bg-muted'}`} onClick={async () => { if (await onUpdate(priority.id, { weight })) setOpen(false); }}>{weight}</button>)}
+      </div>
+    </PopoverContent>
+  </Popover>;
 }
 
 function Subtasks({ parentId, tasks, clientName, onToggle, depth = 0 }: {
@@ -44,17 +104,18 @@ function Subtasks({ parentId, tasks, clientName, onToggle, depth = 0 }: {
     </div>)}</>;
 }
 
-function PriorityItem({ priority, client, tasks, onUpdate, onDelete, onCreateSubtask, onToggleTask, onEdit, onRefreshTasks }: {
+function PriorityItem({ priority, client, tasks, rowIndex, onUpdate, onDelete, onCreateSubtask, onToggleTask, onUpdateTask, onEdit, onRefreshTasks }: {
   priority: Priority; client?: Client; tasks: Task[];
+  rowIndex: number;
   onUpdate: Props['onUpdate']; onDelete: Props['onDelete'];
   onCreateSubtask: Props['onCreateSubtask']; onToggleTask: Props['onToggleTask'];
+  onUpdateTask: Props['onUpdateTask'];
   onEdit: () => void; onRefreshTasks: Props['onRefreshTasks'];
 }) {
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
-  const root = tasks.find(task => task.id === priority.source_task_id)
-    || tasks.find(task => task.priority_id === priority.id && !task.parent_task_id);
+  const root = rootTaskFor(priority, tasks);
   const children = root ? tasks.filter(task => task.parent_task_id === root.id) : [];
   const closed = priority.status === 'concluida' || priority.status === 'cancelada';
   const age = Math.max(0, differenceInCalendarDays(new Date(priority.completed_at || new Date()), new Date(priority.created_at)));
@@ -70,24 +131,28 @@ function PriorityItem({ priority, client, tasks, onUpdate, onDelete, onCreateSub
     if (ok) setDraft('');
   };
 
-  return <article className={`border-b bg-white last:border-b-0 ${overdue ? 'border-l-2 border-l-red-500' : ''}`}>
-    <div className="flex min-w-0 items-start gap-2 px-3 py-3">
-      <button type="button" onClick={() => setExpanded(value => !value)} className="mt-0.5 shrink-0 p-1 text-muted-foreground" aria-label={expanded ? 'Recolher subtarefas' : 'Mostrar subtarefas'} aria-expanded={expanded}>
+  const weightColor = priority.weight >= 5 ? 'border-l-red-500' : priority.weight === 4 ? 'border-l-orange-400' : priority.weight === 3 ? 'border-l-amber-400' : priority.weight === 2 ? 'border-l-sky-400' : 'border-l-slate-300';
+  const scheduled = Boolean(root?.scheduled_for && root.scheduled_for > today());
+
+  return <article className={`border-b border-l-2 last:border-b-0 ${rowIndex % 2 ? 'bg-slate-50/80' : 'bg-white'} ${overdue ? 'border-l-red-600' : weightColor}`}>
+    <div className="flex min-w-0 items-center gap-1.5 px-2 py-1.5">
+      <button type="button" onClick={() => setExpanded(value => !value)} className="shrink-0 p-1 text-muted-foreground" aria-label={expanded ? 'Recolher subtarefas' : 'Mostrar subtarefas'} aria-expanded={expanded}>
         {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </button>
-      <Star className={`mt-1 h-4 w-4 shrink-0 ${closed ? 'text-slate-400' : 'fill-amber-400 text-amber-500'}`} />
       <div className="min-w-0 flex-1">
-        <button type="button" onClick={() => setExpanded(value => !value)} className="block max-w-full text-left text-sm font-semibold leading-snug hover:text-primary">{priority.title}</button>
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        <button type="button" onClick={() => setExpanded(value => !value)} className="block max-w-full truncate text-left text-[13px] font-semibold leading-tight hover:text-primary">{priority.title}</button>
+        <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
           <span>{closed ? `${age}d de duração` : `Aberta há ${age}d`}</span>
           {priority.due_date && <span className={overdue ? 'font-semibold text-red-700' : ''}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${priority.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
-          <span>Peso {priority.weight}</span>
+          {scheduled && <span className="font-medium text-violet-700">Volta em {new Date(`${root?.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {priority.category && <span>{priority.category}</span>}
           {!!children.length && <span>{children.filter(task => task.completed).length}/{children.length} subtarefas</span>}
           {!!priority.assigned_to.length && <span>{priority.assigned_to.join(', ')}</span>}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
+        {!closed && <PriorityWeight priority={priority} onUpdate={onUpdate} />}
+        {!closed && <PrioritySchedule task={root} onUpdateTask={onUpdateTask} />}
         {!closed && <button type="button" onClick={async () => { if (await onUpdate(priority.id, { status: 'concluida' })) await onRefreshTasks(); }} title="Concluir prioridade" aria-label="Concluir prioridade" className="p-1.5 text-emerald-700 hover:bg-emerald-50"><Check className="h-4 w-4" /></button>}
         <button type="button" onClick={onEdit} title="Editar prioridade" aria-label="Editar prioridade" className="p-1.5 text-muted-foreground hover:bg-muted"><Pencil className="h-4 w-4" /></button>
         <button type="button" onClick={async () => { if (window.confirm('Excluir esta prioridade? A tarefa continuará no cliente.')) { await onDelete(priority.id); await onRefreshTasks(); } }} title="Excluir prioridade" aria-label="Excluir prioridade" className="p-1.5 text-muted-foreground hover:bg-muted"><Trash2 className="h-4 w-4" /></button>
@@ -106,11 +171,12 @@ function PriorityItem({ priority, client, tasks, onUpdate, onDelete, onCreateSub
   </article>;
 }
 
-export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onCreateSubtask, onToggleTask, onRefreshTasks }: Props) {
+export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onCreateSubtask, onToggleTask, onUpdateTask, onRefreshTasks }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Priority | null>(null);
   const [presetClientId, setPresetClientId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [showScheduled, setShowScheduled] = useState(false);
   const [search, setSearch] = useState('');
   const [clientFilter, setClientFilter] = useState(initialClientId || 'all');
   useEffect(() => setClientFilter(initialClientId || 'all'), [initialClientId]);
@@ -118,6 +184,10 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   const filtered = useMemo(() => priorities.filter(priority =>
     (isTeamView || Boolean(initialClientId) || assigneeMatches(priority.assigned_to, collaborator))
     && (showAll || (priority.status !== 'concluida' && priority.status !== 'cancelada'))
+    && (showScheduled || !(() => {
+      const root = rootTaskFor(priority, tasks);
+      return Boolean(root?.scheduled_for && root.scheduled_for > today());
+    })())
     && (clientFilter === 'all' || priority.client_id === clientFilter)
     && (!search.trim() || `${priority.title} ${priority.description || ''} ${clientById.get(priority.client_id || '')?.name || ''}`.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
   ).sort((a, b) => {
@@ -127,7 +197,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
     return b.weight - a.weight || bOverdue - aOverdue
       || (a.due_date || '9999-12-31').localeCompare(b.due_date || '9999-12-31')
       || a.created_at.localeCompare(b.created_at);
-  }), [priorities, isTeamView, initialClientId, collaborator, showAll, clientFilter, search, clientById]);
+  }), [priorities, tasks, isTeamView, initialClientId, collaborator, showAll, showScheduled, clientFilter, search, clientById]);
   const groups = useMemo(() => {
     const byClient = new Map<string, Priority[]>();
     filtered.forEach(priority => {
@@ -144,6 +214,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         <option value="all">Todos os clientes</option>{clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
       </select>
       <label className="flex items-center gap-1 text-xs text-muted-foreground"><input type="checkbox" checked={showAll} onChange={event => setShowAll(event.target.checked)} />Concluídas</label>
+      <label className="flex items-center gap-1 text-xs text-muted-foreground"><input type="checkbox" checked={showScheduled} onChange={event => setShowScheduled(event.target.checked)} />Planejadas</label>
       <Button size="sm" onClick={() => { setEditing(null); setPresetClientId(clientFilter === 'all' ? null : clientFilter); setModalOpen(true); }} style={{ backgroundColor: color }}><Plus className="mr-1 h-4 w-4" />Nova prioridade</Button>
     </div>
     <p className="text-xs text-muted-foreground">{filtered.length} prioridades em {groups.length} clientes</p>
@@ -151,9 +222,11 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
     {groups.map(([clientId, items]) => {
       const client = clientById.get(clientId);
       return <section key={clientId} className="border-t-2 border-primary/70">
-        <div className="flex items-center justify-between gap-2 py-2"><h3 className="min-w-0 truncate text-sm font-semibold">{client?.name || 'Sem cliente'} <span className="ml-1 text-xs font-normal text-muted-foreground">{items.length}</span></h3>
+        <div className="flex items-center justify-between gap-2 bg-slate-100/80 px-2 py-1.5"><h3 className="flex min-w-0 items-center gap-2 truncate text-sm font-semibold">
+          {client?.logoUrl ? <img src={client.logoUrl} alt={`Logo ${client.name}`} className="h-7 w-9 shrink-0 object-contain" /> : <span className="flex h-7 w-7 shrink-0 items-center justify-center bg-white text-[10px] font-bold text-slate-600">{client?.initials || 'SC'}</span>}
+          <span className="truncate">{client?.name || 'Sem cliente'}</span><span className="text-xs font-normal text-muted-foreground">{items.length}</span></h3>
           {client && <button type="button" onClick={() => { setEditing(null); setPresetClientId(client.id); setModalOpen(true); }} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary"><Plus className="h-3.5 w-3.5" />Prioridade</button>}</div>
-        <div className="border-x border-t">{items.map(priority => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} onUpdate={onUpdate} onDelete={onDelete} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}</div>
+        <div className="border-x border-t">{items.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} onUpdate={onUpdate} onDelete={onDelete} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}</div>
       </section>;
     })}
     <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} allowMultipleClients={!editing && !presetClientId} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async data => {

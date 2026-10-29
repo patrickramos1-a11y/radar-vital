@@ -38,7 +38,6 @@ interface MobileClientDetailProps {
   onToggleHighlight: (id: string, reason?: string) => void;
   collaborators: Collaborator[];
   assignedCollaboratorIds: string[];
-  onToggleCollaboratorAssignment: (clientId: string, collaboratorId: string) => void;
   onEditClient: (client: Client) => void;
   onAddTask: (clientId: string, data: TaskFormData) => Promise<boolean>;
   onAddTaskFromTemplate: (clientId: string, template: TaskTemplate, overrides: Partial<TaskFormData>, clientName?: string) => Promise<boolean>;
@@ -62,7 +61,6 @@ export function MobileClientDetail({
   onToggleHighlight,
   collaborators,
   assignedCollaboratorIds,
-  onToggleCollaboratorAssignment,
   onEditClient,
   onAddTask,
   onAddTaskFromTemplate,
@@ -228,40 +226,14 @@ export function MobileClientDetail({
             </div>
 
 
-            {/* Collaborators */}
+            {/* Automatic involvement from open tasks and priorities */}
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-foreground">Colaboradores</h4>
-              <div
-                className="grid gap-1"
-                style={{ gridTemplateColumns: `repeat(${Math.max(collaborators.length, 1)}, minmax(0, 1fr))` }}
-              >
-                {collaborators.map((person) => {
-                  const isAssigned = assignedCollaboratorIds.includes(person.id);
-                  return (
-                  <button
-                    key={person.id}
-                    onClick={() => onToggleCollaboratorAssignment(client.id, person.id)}
-                    className="flex min-w-0 flex-col items-center border-b-2 px-1 py-1.5 transition-all"
-                    style={{
-                      backgroundColor: `${person.color}${isAssigned ? '30' : '12'}`,
-                      borderBottomColor: isAssigned ? person.color : 'transparent',
-                    }}
-                    title={`${isAssigned ? 'Remover' : 'Vincular'} ${person.name}`}
-                  >
-                    <span 
-                      className="grid h-5 w-5 place-items-center rounded-full text-[11px] font-extrabold uppercase text-white"
-                      style={{ backgroundColor: person.color }}
-                    >
-                      {person.initials}
-                    </span>
-                    <span 
-                      className="max-w-full truncate text-[9px] font-semibold capitalize"
-                      style={{ color: person.color }}
-                    >
-                      {person.name}
-                    </span>
-                  </button>
-                );})}
+              <h4 className="text-sm font-semibold text-foreground">Envolvidos em itens abertos</h4>
+              <div className="flex flex-wrap gap-2">
+                {collaborators.filter(person => assignedCollaboratorIds.includes(person.id)).map(person => <span key={person.id} className="inline-flex items-center gap-1.5 border px-2 py-1 text-xs font-semibold" style={{ borderColor: person.color, color: person.color, backgroundColor: `${person.color}12` }}>
+                  <span className="grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: person.color }}>{person.initials}</span>{person.name}
+                </span>)}
+                {assignedCollaboratorIds.length === 0 && <span className="text-xs text-muted-foreground">Nenhum colaborador com tarefa ou prioridade aberta.</span>}
               </div>
             </div>
 

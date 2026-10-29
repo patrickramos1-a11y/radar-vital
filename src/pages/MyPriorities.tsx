@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Star } from 'lucide-react';
+import { format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PrioritiesTab } from '@/components/central-entregas/PrioritiesTab';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,9 +15,15 @@ export default function MyPriorities() {
   const { clients } = useClients();
   const priorityData = usePriorities();
   const taskData = useTasks();
+  const today = format(new Date(), 'yyyy-MM-dd');
   const activeCount = priorityData.priorities.filter(priority =>
     (priority.status === 'aberta' || priority.status === 'em_andamento')
-    && assigneeMatches(priority.assigned_to, currentUser?.name || '')).length;
+    && assigneeMatches(priority.assigned_to, currentUser?.name || '')
+    && !(() => {
+      const rootTask = taskData.tasks.find(task => task.id === priority.source_task_id)
+        || taskData.tasks.find(task => task.priority_id === priority.id && !task.parent_task_id);
+      return Boolean(rootTask?.scheduled_for && rootTask.scheduled_for > today);
+    })()).length;
 
   return <AppLayout><main className="h-full overflow-y-auto bg-slate-50 px-3 pb-20 pt-4 sm:px-6">
     <div className="mx-auto max-w-5xl">
@@ -42,6 +49,7 @@ export default function MyPriorities() {
           onDelete={priorityData.deletePriority}
           onCreateSubtask={taskData.addTask}
           onToggleTask={taskData.toggleComplete}
+          onUpdateTask={taskData.updateTask}
           onRefreshTasks={taskData.refetch}
         /> : <p className="border bg-white p-4 text-sm text-muted-foreground">Selecione um perfil para consultar suas prioridades.</p>}
       </div>

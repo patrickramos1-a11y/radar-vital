@@ -58,7 +58,7 @@ export function ClientWorkList({
   onOpenSource,
   onRetry,
 }: ClientWorkListProps) {
-  if (isLoading) {
+  if (isLoading && items.length === 0) {
     return (
       <div className="flex min-h-32 items-center justify-center text-sm text-muted-foreground">
         <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />

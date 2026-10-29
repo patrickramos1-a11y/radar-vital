@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, Sparkles } from "lucide-react";
+import { Star, Bomb, Building2, MessageCircle, ListChecks, Sparkles } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
@@ -8,11 +8,6 @@ import { ChecklistButton } from "@/components/checklist/ChecklistButton";
 import { CommentButton } from "@/components/comments/CommentButton";
 import { MarkerReasonDialog } from "@/components/dashboard/MarkerReasonDialog";
 import { CommentSnippet } from "@/hooks/useAllClientsCommentSnippets";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import type { AuditClientStatus } from "@/types/audit";
 import { getUniverseAccentColor, getUniverseNameColor } from "@/lib/universeColors";
 
@@ -31,7 +26,6 @@ interface ClientCardProps {
   onSelect: (id: string) => void;
   onHighlight: (id: string, reason?: string) => void;
   onTogglePriority: (id: string, reason?: string) => void;
-  onToggleCollaboratorAssignment: (clientId: string, collaboratorId: string) => void;
   onOpenChecklist: (id: string) => void;
   onEdit?: (client: Client) => void;
   showHighlight?: boolean;
@@ -45,7 +39,7 @@ interface ClientCardProps {
   unitProfileActionLabel?: string;
   onCreateChallenge?: (clientId: string) => void;
   /** Universo Ramos: header counters open the unit Central on a given tab. */
-  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks') => void;
+  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks' | 'priorities') => void;
   challengeCount?: number;
 }
 
@@ -111,13 +105,6 @@ function getHeaderSizes(clientCount: number): { numberSize: string; nameSize: st
   else return { numberSize: 'w-4 h-4 text-[8px]', nameSize: 'text-[9px]', headerPadding: 'px-1.5 py-0.5' };
 }
 
-function getBadgeSize(clientCount: number): { size: string; fontSize: string } {
-  if (clientCount <= 8) return { size: 'w-5 h-5', fontSize: 'text-[9px]' };
-  else if (clientCount <= 20) return { size: 'w-4.5 h-4.5', fontSize: 'text-[8px]' };
-  else if (clientCount <= 40) return { size: 'w-4 h-4', fontSize: 'text-[7px]' };
-  else return { size: 'w-3.5 h-3.5', fontSize: 'text-[6px]' };
-}
-
 export function ClientCard({
   client,
   displayNumber,
@@ -130,7 +117,6 @@ export function ClientCard({
   onSelect,
   onHighlight,
   onTogglePriority,
-  onToggleCollaboratorAssignment,
   onOpenChecklist,
   onEdit,
   showHighlight = true,
@@ -168,12 +154,11 @@ export function ClientCard({
 
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (onOpenTab) {
+      onOpenTab(client.id, 'priorities');
+      return;
+    }
     navigate(`/central-entregas?tab=priorities&clientId=${encodeURIComponent(client.id)}`);
-  };
-
-  const handleCollaboratorClick = (e: React.MouseEvent, collaboratorId: string) => {
-    e.stopPropagation();
-    onToggleCollaboratorAssignment(client.id, collaboratorId);
   };
 
   const handleChecklistClick = (e: React.MouseEvent) => {
@@ -253,24 +238,6 @@ export function ClientCard({
         )}
       </div>
 
-
-      {/* Collaborator Row */}
-      <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-muted/20 border-b border-border/30">
-        {assignedCollaborators.map((collab) => (
-          <CollaboratorBadge
-            key={collab.id}
-            collaborator={collab}
-            onClick={(e) => handleCollaboratorClick(e, collab.id)}
-            clientCount={clientCount}
-          />
-        ))}
-        <CollaboratorAddButton
-          allCollaborators={allCollaborators}
-          assignedCollaboratorIds={assignedCollaboratorIds}
-          onToggle={(e, collaboratorId) => handleCollaboratorClick(e, collaboratorId)}
-          clientCount={clientCount}
-        />
-      </div>
 
       {/* Content Area: logo, tasks list, or comments list */}
       <div
@@ -383,74 +350,6 @@ function CommentsContent({ snippets, clientId, clientName }: { snippets: Comment
   );
 }
 
-interface CollaboratorBadgeProps {
-  collaborator: Collaborator;
-  onClick: (e: React.MouseEvent) => void;
-  clientCount: number;
-}
-
-function CollaboratorBadge({ collaborator, onClick, clientCount }: CollaboratorBadgeProps) {
-  const { size, fontSize } = getBadgeSize(clientCount);
-  return (
-    <button
-      onClick={onClick}
-      className={`${size} rounded-full transition-all hover:opacity-80 hover:scale-110 flex items-center justify-center shadow-sm ring-1 ring-background/20`}
-      style={{ backgroundColor: collaborator.color }}
-      title={`${collaborator.name} - Clique para remover`}
-    >
-      <span className={`${fontSize} font-bold text-white leading-none`}>{collaborator.initials?.charAt(0) || collaborator.name.charAt(0).toUpperCase()}</span>
-    </button>
-  );
-}
-
-interface CollaboratorAddButtonProps {
-  allCollaborators: Collaborator[];
-  assignedCollaboratorIds: string[];
-  onToggle: (e: React.MouseEvent, collaboratorId: string) => void;
-  clientCount: number;
-}
-
-function CollaboratorAddButton({ allCollaborators, assignedCollaboratorIds, onToggle, clientCount }: CollaboratorAddButtonProps) {
-  const { size } = getBadgeSize(clientCount);
-  const unassigned = allCollaborators.filter(c => !assignedCollaboratorIds.includes(c.id));
-
-  if (unassigned.length === 0) return null;
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className={`${size} rounded-full border border-dashed border-muted-foreground/30 transition-all hover:border-muted-foreground/60 hover:bg-muted/30 flex items-center justify-center`}
-          title="Adicionar colaborador"
-        >
-          <Plus className={`${clientCount <= 8 ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-muted-foreground/50`} />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-2" align="end" onClick={(e) => e.stopPropagation()}>
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground px-1 mb-1">Adicionar colaborador</span>
-          <div className="flex gap-1 flex-wrap">
-            {unassigned.map((collab) => (
-              <button
-                key={collab.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggle(e, collab.id);
-                }}
-                className="w-8 h-8 rounded-full transition-all hover:opacity-80 hover:scale-110 flex items-center justify-center shadow-sm"
-                style={{ backgroundColor: collab.color }}
-                title={`Adicionar ${collab.name}`}
-              >
-                <span className="text-xs font-bold text-white">{collab.initials?.charAt(0) || collab.name.charAt(0).toUpperCase()}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 function TabCounter({ label, icon, count, onClick }: { label: string; icon: React.ReactNode; count: number; onClick: () => void }) {
   return (

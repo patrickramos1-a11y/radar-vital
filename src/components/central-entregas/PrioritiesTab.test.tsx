@@ -9,6 +9,7 @@ const client = {
   id: 'client-1',
   name: 'Cliente Alfa',
   initials: 'CA',
+  logoUrl: '/cliente-alfa.png',
   isPriority: true,
   isActive: true,
   isChecked: false,
@@ -82,6 +83,7 @@ function renderTab(overrides: Partial<React.ComponentProps<typeof PrioritiesTab>
     onDelete: vi.fn(async () => true),
     onCreateSubtask: vi.fn(async () => true),
     onToggleTask: vi.fn(async () => true),
+    onUpdateTask: vi.fn(async () => true),
     onRefreshTasks: vi.fn(async () => undefined),
     ...overrides,
   };
@@ -123,5 +125,32 @@ describe('PrioritiesTab', () => {
 
     expect(screen.getByRole('combobox', { name: 'Filtrar cliente' })).toHaveValue(client.id);
     expect(screen.queryByText('Outro cliente')).not.toBeInTheDocument();
+  });
+
+  it('shows the client logo and changes weight from the compact action', async () => {
+    const onUpdate = vi.fn(async () => true);
+    renderTab({ onUpdate });
+
+    expect(screen.getByAltText('Logo Cliente Alfa')).toHaveAttribute('src', client.logoUrl);
+    expect(screen.queryByTestId('priority-star')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Peso 4' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Definir peso 5' }));
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledWith(priority.id, { weight: 5 }));
+  });
+
+  it('plans the linked task and hides future scheduled priorities by default', async () => {
+    const onUpdateTask = vi.fn(async () => true);
+    const { rerender, props } = renderTab({ onUpdateTask });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Planejar prioridade' }));
+    fireEvent.change(screen.getByLabelText('Data de retorno da prioridade'), { target: { value: '2099-12-31' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Planejar' }));
+    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(rootTask.id, { scheduled_for: '2099-12-31' }));
+
+    rerender(<PrioritiesTab {...props} tasks={[{ ...rootTask, scheduled_for: '2099-12-31' }]} />);
+    expect(screen.queryByText(priority.title)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Planejadas' }));
+    expect(screen.getByText(priority.title)).toBeInTheDocument();
   });
 });

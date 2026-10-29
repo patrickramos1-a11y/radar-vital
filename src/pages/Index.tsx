@@ -10,7 +10,6 @@ import { useTasks } from "@/hooks/useTasks";
 import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments";
 import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippets";
 import { useAuth } from "@/contexts/AuthContext";
-import { useClientAssignments } from "@/hooks/useClientAssignments";
 import { Client } from "@/types/client";
 import { Users, Star, Bomb, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -26,10 +25,10 @@ import { ClientQuickEditDialog } from "@/components/dashboard/ClientQuickEditDia
 import { useAudits } from "@/hooks/useAudits";
 import type { AuditSummary } from "@/types/audit";
 import type { WorkItemFilter } from "@/types/workItem";
+import { getActiveCollaboratorIdsForClient } from "@/lib/clientInvolvement";
 const Index = () => {
   const isMobile = useIsMobile();
   const { currentUser, collaborators: allCollaborators } = useAuth();
-  const { getAssignedCollaboratorIds, toggleAssignment, getClientsWithAnyAssignment } = useClientAssignments();
   
   const {
     activeClients, 
@@ -37,8 +36,6 @@ const Index = () => {
     toggleHighlight, 
     clearHighlights,
     togglePriority,
-    toggleChecked,
-    toggleCollaborator,
     isLoading,
     getClient,
     updateClient,
@@ -58,6 +55,10 @@ const Index = () => {
     toggleComplete,
     setTaskDependencies,
   } = useTasks();
+  const getAssignedCollaboratorIds = useCallback(
+    (clientId: string) => getActiveCollaboratorIdsForClient(clientId, tasks, allCollaborators),
+    [allCollaborators, tasks],
+  );
   const auditsSource = useAudits();
 
   const commentSnippetsMap = useAllClientsCommentSnippets();
@@ -155,7 +156,10 @@ const Index = () => {
   const selectedCount = useMemo(() => activeClients.filter(c => c.isChecked).length, [activeClients]);
   
   // Count of clients with at least one collaborator assigned (responsáveis)
-  const clientsWithAssignments = getClientsWithAnyAssignment();
+  const clientsWithAssignments = useMemo(
+    () => new Set(activeClients.filter(client => getAssignedCollaboratorIds(client.id).length > 0).map(client => client.id)),
+    [activeClients, getAssignedCollaboratorIds],
+  );
   const responsaveisCount = useMemo(() => 
     activeClients.filter(c => clientsWithAssignments.has(c.id)).length,
     [activeClients, clientsWithAssignments]
@@ -358,10 +362,6 @@ const Index = () => {
     setSelectedClientId(prev => prev === id ? null : id);
   };
 
-  const handleToggleCollaboratorAssignment = (clientId: string, collaboratorId: string) => {
-    toggleAssignment(clientId, collaboratorId);
-  };
-
   const handleOpenChecklist = (id: string, view: WorkItemFilter = 'all') => {
     setChecklistInitialView(view);
     setChecklistClientId(id);
@@ -490,7 +490,6 @@ const Index = () => {
             onToggleHighlight={toggleHighlight}
             collaborators={allCollaborators.filter((person) => person.isActive)}
             assignedCollaboratorIds={mobileDetailClientId ? getAssignedCollaboratorIds(mobileDetailClientId) : []}
-            onToggleCollaboratorAssignment={handleToggleCollaboratorAssignment}
             onEditClient={setEditingClient}
             onAddTask={addTask}
             onAddTaskFromTemplate={addTaskFromTemplate}
@@ -506,7 +505,7 @@ const Index = () => {
             onOpenChange={(open) => !open && setEditingClient(null)}
             onSave={async (client, data) => updateClient(client.id, data)}
             collaborators={allCollaborators}
-            linkedCollaboratorIds={editingClient ? getAssignedCollaboratorIds(editingClient.id) : []}
+            linkedCollaboratorIds={activeClients.map(client => client.universeCollaboratorId).filter((id): id is string => Boolean(id))}
           />
 
           {/* Comments modal - opened from card action */}
@@ -674,11 +673,14 @@ const Index = () => {
                 onSelectClient={handleSelectClient}
                 onHighlightClient={toggleHighlight}
                 onTogglePriority={togglePriority}
-                onToggleCollaboratorAssignment={handleToggleCollaboratorAssignment}
                 onOpenChecklist={handleOpenChecklist}
                 onOpenTab={(clientId, tab) => {
                   if (tab === 'tasks') {
                     handleOpenChecklist(clientId, 'task');
+                    return;
+                  }
+                  if (tab === 'priorities') {
+                    handleOpenChecklist(clientId, 'priority');
                     return;
                   }
                   handleOpenChecklist(clientId);
