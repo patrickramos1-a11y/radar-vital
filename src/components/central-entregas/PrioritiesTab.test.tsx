@@ -178,6 +178,56 @@ describe('PrioritiesTab', () => {
     expect(screen.getByAltText('Logo Cliente Alfa')).toHaveClass('h-8');
   });
 
+  it('opens the collaborator task dashboard grouped by client', () => {
+    renderTab({
+      tasks: [rootTask, { ...rootTask, id: 'task-other', title: 'Tarefa da Gabi', assigned_to: ['Gabi'], priority_id: null }],
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
+
+    expect(screen.getByRole('button', { name: 'Tarefas' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('1 tarefas em 1 clientes')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Adicionar tarefa para Cliente Alfa' })).toBeInTheDocument();
+    expect(screen.getByText(rootTask.title)).toBeInTheDocument();
+    expect(screen.queryByText('Tarefa da Gabi')).not.toBeInTheDocument();
+  });
+
+  it('creates a task inline from the client header', async () => {
+    const onCreateSubtask = vi.fn(async () => true);
+    renderTab({ onCreateSubtask });
+    fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar tarefa para Cliente Alfa' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nova tarefa para Cliente Alfa' }), { target: { value: 'Conferir protocolo' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar tarefa' }));
+
+    await waitFor(() => expect(onCreateSubtask).toHaveBeenCalledWith(
+      client.id,
+      expect.objectContaining({ title: 'Conferir protocolo', assigned_to: ['Celine'] }),
+      client.name,
+    ));
+  });
+
+  it('plans and transfers a task from the task dashboard', async () => {
+    const onUpdateTask = vi.fn(async () => true);
+    renderTab({
+      onUpdateTask,
+      responsibleList: [
+        { name: 'Celine', color: '#0f766e', initials: 'CE' },
+        { name: 'Gabi', color: '#7c3aed', initials: 'GA' },
+      ],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Responsável Celine' }));
+    fireEvent.click(screen.getByRole('button', { name: /Gabi/ }));
+    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(rootTask.id, { assigned_to: ['Gabi'] }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Planejar tarefa' }));
+    fireEvent.change(screen.getByLabelText('Data de retorno da prioridade'), { target: { value: '2099-12-31' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Planejar' }));
+    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(rootTask.id, { scheduled_for: '2099-12-31' }));
+  });
+
   it('starts expanded when the priority already has subtasks', () => {
     const child = {
       ...rootTask,
@@ -233,7 +283,7 @@ describe('PrioritiesTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar prioridade' }));
 
     await waitFor(() => expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Nova entrega', client_id: client.id, assigned_to: ['Celine'], weight: 3 }),
+      expect.objectContaining({ title: 'Nova entrega', client_id: client.id, assigned_to: ['Celine'], weight: 1 }),
       client.name,
     ));
     expect(onRefreshTasks).toHaveBeenCalled();

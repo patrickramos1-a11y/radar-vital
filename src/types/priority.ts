@@ -5,6 +5,7 @@ export interface Priority {
   title: string;
   description: string | null;
   client_id: string | null;
+  universe_item_id?: string | null;
   assigned_to: string[];
   due_date: string | null;
   status: PriorityStatus;
@@ -21,7 +22,7 @@ export interface PriorityFormData {
   title: string;
   description?: string;
   client_id?: string | null;
-  client_ids?: string[];
+  universe_item_id?: string | null;
   assigned_to: string[];
   due_date?: string | null;
   status?: PriorityStatus;

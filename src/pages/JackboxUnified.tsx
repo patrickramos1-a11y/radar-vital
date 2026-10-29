@@ -14,6 +14,7 @@ export default function JackboxUnified() {
     tasks,
     toggleComplete,
     updateTask,
+    deleteTask,
     bulkUpdateTasks,
     getDaysOpen,
     isLoading,
@@ -65,6 +66,7 @@ export default function JackboxUnified() {
           getDaysOpen={getDaysOpen}
           onToggleComplete={toggleComplete}
           onUpdateTask={updateTask}
+          onDeleteTask={deleteTask}
           onBulkUpdateTasks={bulkUpdateTasks}
         />
       </div>

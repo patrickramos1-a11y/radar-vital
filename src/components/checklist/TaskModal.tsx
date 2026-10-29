@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, CalendarPlus, CalendarX2, Check, ClipboardCheck, Clock3, Eye, FileCheck2, Flame, History, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, CalendarPlus, CalendarX2, Check, ClipboardCheck, Clock3, ExternalLink, Eye, FileCheck2, Flame, History, Link2, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ClientWorkList } from '@/components/client-work/ClientWorkList';
@@ -146,7 +146,7 @@ export function TaskModal({
 
     const success = await onAddTask(client.id, {
       title: newTaskTitle.trim(),
-      assigned_to: newTaskAssignees,
+      assigned_to: newTaskAssignees.slice(0, 1),
       due_date: newTaskDueDate || undefined,
       priority: newTaskPriority,
       modality: newTaskModality,
@@ -187,9 +187,7 @@ export function TaskModal({
     if (!task) return;
     const current = task.assigned_to || [];
     const isAssigned = current.some(a => a.toLowerCase() === collaboratorName.toLowerCase());
-    const newAssignees = isAssigned
-      ? current.filter(a => a.toLowerCase() !== collaboratorName.toLowerCase())
-      : [...current, collaboratorName];
+    const newAssignees = isAssigned ? [] : [collaboratorName];
     await onUpdateTask(taskId, { assigned_to: newAssignees });
   };
 
@@ -207,9 +205,9 @@ export function TaskModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent showClose={false} className="flex max-h-[86vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-3 overflow-hidden p-0 sm:rounded-xl">
+      <DialogContent showClose={false} className="flex max-h-[90vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-3 overflow-hidden p-0 text-[15px] sm:rounded-xl lg:max-w-6xl">
         <DialogHeader className="relative border-b px-5 py-4">
-          <DialogTitle className="flex min-w-0 items-center gap-3 pr-12">
+          <DialogTitle className="flex min-w-0 items-center gap-3 pr-12 text-lg lg:text-xl">
             {client.logoUrl ? (
               <img src={client.logoUrl} alt="" className="h-8 w-8 flex-shrink-0 rounded object-contain" />
             ) : (
@@ -406,6 +404,7 @@ export function TaskModal({
                           onPriorityChange={(p) => handlePriorityChange(task.id, p)}
                           onModalityChange={(modality) => handleModalityChange(task.id, modality)}
                           onDueDateChange={(dueDate) => handleDueDateChange(task.id, dueDate)}
+                          onLinkChange={(externalUrl) => onUpdateTask(task.id, { external_url: externalUrl || null })}
                           onScheduleChange={(date) => onUpdateTask(task.id, { scheduled_for: date })}
                           onDelete={() => onDeleteTask(task.id)}
                           subtasks={tasks.filter((item) => item.parent_task_id === task.id)}
@@ -444,6 +443,7 @@ export function TaskModal({
                           onPriorityChange={() => {}}
                           onModalityChange={(modality) => handleModalityChange(task.id, modality)}
                           onDueDateChange={() => {}}
+                          onLinkChange={(externalUrl) => onUpdateTask(task.id, { external_url: externalUrl || null })}
                           onScheduleChange={(date) => onUpdateTask(task.id, { scheduled_for: date })}
                           onDelete={() => onDeleteTask(task.id)}
                           subtasks={tasks.filter((item) => item.parent_task_id === task.id)}
@@ -482,6 +482,7 @@ interface TaskItemProps {
   onPriorityChange: (priority: TaskPriority) => void;
   onModalityChange: (modality: TaskModality) => void;
   onDueDateChange: (dueDate: string) => void;
+  onLinkChange: (externalUrl: string) => Promise<boolean>;
   onScheduleChange: (date: string | null) => Promise<boolean>;
   onDelete: () => void;
   subtasks: Task[];
@@ -507,6 +508,7 @@ function TaskItem({
   onPriorityChange,
   onModalityChange,
   onDueDateChange,
+  onLinkChange,
   onScheduleChange,
   onDelete,
   subtasks,
@@ -522,7 +524,7 @@ function TaskItem({
   const [subtaskTitle, setSubtaskTitle] = useState('');
   const [subtaskModality, setSubtaskModality] = useState<TaskModality>(task.modality || 'levantamento');
   const [subtaskPriority, setSubtaskPriority] = useState<TaskPriority>(task.priority || 'normal');
-  const [subtaskAssignees, setSubtaskAssignees] = useState<string[]>(task.assigned_to);
+  const [subtaskAssignees, setSubtaskAssignees] = useState<string[]>(task.assigned_to.slice(0, 1));
   const [subtaskDueDate, setSubtaskDueDate] = useState('');
   const [isSavingSubtask, setIsSavingSubtask] = useState(false);
   const priority = (task.priority || 'normal') as TaskPriority;
@@ -543,7 +545,7 @@ function TaskItem({
         title,
         modality: subtaskModality,
         priority: subtaskPriority,
-        assigned_to: subtaskAssignees,
+        assigned_to: subtaskAssignees.slice(0, 1),
         due_date: subtaskDueDate || undefined,
       });
       if (created) {
@@ -633,7 +635,7 @@ function TaskItem({
             onClick={() => {
               setSubtaskModality(task.modality || 'levantamento');
               setSubtaskPriority(task.priority || 'normal');
-              setSubtaskAssignees(task.assigned_to);
+              setSubtaskAssignees(task.assigned_to.slice(0, 1));
               setIsAddingSubtask((current) => !current);
             }}
             className={cn(
@@ -651,6 +653,7 @@ function TaskItem({
             collaboratorColorMap={collaboratorColorMap}
             onAssigneeChange={onAssigneeChange}
           />
+          <TaskLinkMenu value={task.external_url} title={task.title} onChange={onLinkChange} />
           <TaskReplanMenu task={task} onScheduleChange={onScheduleChange} />
         </>
       )}
@@ -730,6 +733,63 @@ function TaskItem({
           />
         ))}
     </div>
+  );
+}
+
+function TaskLinkMenu({ value, title, onChange }: {
+  value?: string | null;
+  title: string;
+  onChange: (value: string) => Promise<boolean>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(value || '');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => setDraft(value || ''), [value]);
+
+  const normalizedUrl = value
+    ? (/^https?:\/\//i.test(value) ? value : `https://${value}`)
+    : '';
+
+  const save = async () => {
+    setSaving(true);
+    const normalizedDraft = draft.trim()
+      ? (/^https?:\/\//i.test(draft.trim()) ? draft.trim() : `https://${draft.trim()}`)
+      : '';
+    const updated = await onChange(normalizedDraft);
+    setSaving(false);
+    if (updated) setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'grid h-7 w-7 flex-shrink-0 place-items-center border transition-colors',
+            value ? 'border-sky-300 bg-sky-50 text-sky-700' : 'text-muted-foreground hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700',
+          )}
+          title={value ? `Link vinculado a ${title}` : `Adicionar link a ${title}`}
+          aria-label={value ? `Editar link da tarefa ${title}` : `Adicionar link à tarefa ${title}`}
+        >
+          <Link2 className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-3">
+        <p className="text-sm font-semibold">Link da tarefa</p>
+        <p className="mt-1 text-xs text-muted-foreground">Cole o endereço do documento, sistema ou referência.</p>
+        <Input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="https://..." className="mt-3 h-9 text-xs" autoFocus />
+        <div className="mt-3 flex items-center gap-2">
+          {normalizedUrl && (
+            <a href={normalizedUrl} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1 border px-2 text-xs font-medium text-sky-700 hover:bg-sky-50">
+              <ExternalLink className="h-3.5 w-3.5" />Abrir link
+            </a>
+          )}
+          <Button type="button" size="sm" className="ml-auto" disabled={saving} onClick={() => void save()}>{saving ? 'Salvando...' : 'Salvar'}</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -883,6 +943,7 @@ function InlineSubtask({ task, collaborators, onToggle, onUpdate, onDelete }: {
           collaborators={collaborators}
           onChange={(value) => void onUpdate({ assigned_to: value })}
         />
+        <TaskLinkMenu value={task.external_url} title={task.title} onChange={(value) => onUpdate({ external_url: value || null })} />
         <button
           type="button"
           onClick={onDelete}
@@ -917,7 +978,7 @@ function SubtaskAssigneeMenu({ selected, collaborators, onChange }: {
 }) {
   const toggle = (name: string) => {
     const isSelected = selected.some((item) => assigneeMatches([item], name));
-    onChange(isSelected ? selected.filter((item) => !assigneeMatches([item], name)) : [...selected, name]);
+    onChange(isSelected ? [] : [name]);
   };
 
   const first = selected[0];
@@ -1066,11 +1127,7 @@ function NewTaskAssigneeDropdown({
   );
 
   const toggle = (name: string) => {
-    onChange(
-      selected.includes(name)
-        ? selected.filter(n => n !== name)
-        : [...selected, name]
-    );
+    onChange(selected.includes(name) ? [] : [name]);
   };
 
   return (

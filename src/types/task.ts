@@ -21,6 +21,7 @@ export interface Task {
   client_id: string;
   title: string;
   description: string | null;
+  external_url?: string | null;
   completed: boolean;
   status: TaskStatus;
   assigned_to: string[];
@@ -42,6 +43,7 @@ export interface Task {
 export type TaskFormData = {
   title: string;
   description?: string;
+  external_url?: string;
   assigned_to: string[];
   due_date?: string;
   scheduled_for?: string;

@@ -11,10 +11,11 @@ const dbRowToPriority = (row: Database['public']['Tables']['priorities']['Row'])
   title: row.title,
   description: row.description,
   client_id: row.client_id,
-  assigned_to: Array.isArray(row.assigned_to) ? row.assigned_to : [],
+  universe_item_id: row.universe_item_id ?? null,
+  assigned_to: Array.isArray(row.assigned_to) ? row.assigned_to.slice(0, 1) : [],
   due_date: row.due_date,
   status: row.status as PriorityStatus,
-  weight: row.weight ?? 3,
+  weight: row.weight ?? 1,
   category: row.category,
   created_by: row.created_by,
   created_at: row.created_at,
@@ -66,40 +67,41 @@ export function usePriorities() {
     return () => { supabase.removeChannel(ch); };
   }, [fetch]);
 
-  const addPrioritiesForClients = useCallback(async (data: PriorityFormData, clientIds: string[]) => {
+  const addPriority = useCallback(async (data: PriorityFormData, _clientName?: string) => {
     try {
-      const ids = [...new Set(clientIds.filter(Boolean))];
-      if (!ids.length) {
-        toast.error('Selecione ao menos um cliente');
-        return [];
+      if (!data.client_id && !data.universe_item_id) {
+        toast.error('Selecione um cliente ou um item do Universo Ramos');
+        return null;
       }
-      const base = {
+      const payload: Database['public']['Tables']['priorities']['Insert'] = {
         title: data.title,
         description: data.description || null,
-        assigned_to: data.assigned_to || [],
+        client_id: data.universe_item_id ? null : data.client_id || null,
+        assigned_to: (data.assigned_to || []).slice(0, 1),
         due_date: data.due_date || null,
         status: data.status || 'aberta',
-        weight: data.weight ?? 3,
+        weight: data.weight ?? 1,
         category: data.category || null,
         created_by: currentUserName,
+        ...(data.universe_item_id ? { universe_item_id: data.universe_item_id } : {}),
       };
-      const { data: inserted, error } = await supabase.from('priorities')
-        .insert(ids.map(client_id => ({ ...base, client_id }))).select();
+      const { data: inserted, error } = await supabase.from('priorities').insert(payload).select().single();
       if (error) throw error;
       await fetch();
-      toast.success(ids.length === 1 ? 'Prioridade criada' : `${ids.length} prioridades criadas`);
-      return (inserted || []).map(dbRowToPriority);
+      toast.success('Prioridade criada');
+      return inserted ? dbRowToPriority(inserted) : null;
     } catch (e) {
       console.error(e);
       toast.error('Erro ao criar prioridade');
-      return [];
+      return null;
     }
   }, [currentUserName, fetch]);
 
-  const addPriority = useCallback(async (data: PriorityFormData, _clientName?: string) => {
-    const inserted = await addPrioritiesForClients(data, data.client_id ? [data.client_id] : []);
-    return inserted[0] || null;
-  }, [addPrioritiesForClients]);
+  const addPrioritiesForClients = useCallback(async (data: PriorityFormData, clientIds: string[]) => {
+    const clientId = [...new Set(clientIds.filter(Boolean))][0] || data.client_id || null;
+    const inserted = await addPriority({ ...data, client_id: clientId, universe_item_id: null });
+    return inserted ? [inserted] : [];
+  }, [addPriority]);
 
   const updatePriority = useCallback(async (id: string, data: Partial<PriorityFormData>) => {
     try {
@@ -126,7 +128,8 @@ export function usePriorities() {
           p_finish_children: hasOpen,
         });
         if (finishError) throw finishError;
-        const { status: _status, client_ids: _clientIds, ...otherChanges } = data;
+        const { status: _status, ...otherChanges } = data;
+        if (otherChanges.assigned_to) otherChanges.assigned_to = otherChanges.assigned_to.slice(0, 1);
         if (Object.keys(otherChanges).length) {
           const { error: editError } = await supabase.from('priorities').update(otherChanges).eq('id', id);
           if (editError) throw editError;
@@ -135,7 +138,9 @@ export function usePriorities() {
         toast.success('Prioridade concluída');
         return true;
       }
-      const { client_ids: _clientIds, ...patchData } = data;
+      const patchData = { ...data };
+      if (patchData.assigned_to) patchData.assigned_to = patchData.assigned_to.slice(0, 1);
+      if (patchData.universe_item_id === null && !current?.universe_item_id) delete patchData.universe_item_id;
       const patch: Database['public']['Tables']['priorities']['Update'] = { ...patchData };
       if (data.status === 'concluida') patch.completed_at = new Date().toISOString();
       if (data.status && data.status !== 'concluida') patch.completed_at = null;
@@ -169,7 +174,7 @@ export function usePriorities() {
     try {
       const { data: created, error } = await callPriorityRpc('promote_client_task', {
         p_task_id: taskId,
-        p_weight: data.weight ?? 3,
+        p_weight: data.weight ?? 1,
         p_category: data.category || null,
         p_actor: currentUserName,
       });

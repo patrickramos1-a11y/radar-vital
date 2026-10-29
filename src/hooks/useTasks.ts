@@ -73,7 +73,7 @@ function readLocalWorkspace(): LocalWorkspaceState | null {
     const parsed = JSON.parse(value) as LocalWorkspaceState;
     return {
       ...parsed,
-      tasks: parsed.tasks.map((task) => ({ ...task, modality: task.modality || 'levantamento', scheduled_for: task.scheduled_for || null })),
+      tasks: parsed.tasks.map((task) => ({ ...task, modality: task.modality || 'levantamento', scheduled_for: task.scheduled_for || null, external_url: task.external_url || null })),
     };
   } catch {
     return null;
@@ -92,9 +92,10 @@ function createLocalTask(clientId: string, data: TaskFormData): Task {
     client_id: clientId,
     title: data.title,
     description: data.description?.trim() || null,
+    external_url: data.external_url?.trim() || null,
     completed: data.status === 'concluida',
     status: data.status || 'pendente',
-    assigned_to: data.assigned_to,
+    assigned_to: data.assigned_to.slice(0, 1),
     created_at: now,
     completed_at: data.status === 'concluida' ? now : null,
     due_date: data.due_date || null,
@@ -115,9 +116,10 @@ const dbRowToTask = (row: TaskRow): Task => ({
   client_id: row.client_id,
   title: row.title,
   description: row.description ?? null,
+  external_url: row.external_url ?? null,
   completed: row.completed,
   status: (row.status as Task['status']) || (row.completed ? 'concluida' : 'pendente'),
-  assigned_to: Array.isArray(row.assigned_to) ? row.assigned_to : row.assigned_to ? [row.assigned_to] : [],
+  assigned_to: Array.isArray(row.assigned_to) ? row.assigned_to.slice(0, 1) : row.assigned_to ? [row.assigned_to] : [],
   created_at: row.created_at,
   completed_at: row.completed_at,
   due_date: row.due_date || null,
@@ -232,7 +234,7 @@ export function useTasks() {
         client_id: clientId,
         title: data.title,
         description: data.description?.trim() || null,
-        assigned_to: data.assigned_to,
+        assigned_to: data.assigned_to.slice(0, 1),
         due_date: data.due_date || null,
         scheduled_for: data.scheduled_for || null,
         priority: data.priority || 'normal',
@@ -242,6 +244,7 @@ export function useTasks() {
         source_comment_id: data.source_comment_id || null,
         recurrence: data.recurrence || 'none',
         sort_order: data.sort_order || 0,
+        ...(data.external_url?.trim() ? { external_url: data.external_url.trim() } : {}),
       }).select('*').single();
 
       if (error) throw error;
@@ -326,6 +329,7 @@ export function useTasks() {
   }, [createTask, dependencies, fetchTasks, tasks]);
 
   const updateTask = useCallback(async (taskId: string, data: Partial<Task>) => {
+    if (data.assigned_to) data = { ...data, assigned_to: data.assigned_to.slice(0, 1) };
     const currentTask = tasks.find((task) => task.id === taskId);
     try {
       const isCompleting = data.completed === true || data.status === 'concluida';
@@ -396,6 +400,7 @@ export function useTasks() {
           const nextTask = createLocalTask(currentTask.client_id, {
             title: currentTask.title,
             description: currentTask.description ?? undefined,
+            external_url: currentTask.external_url ?? undefined,
             assigned_to: currentTask.assigned_to,
             due_date: getNextRecurrenceDate(currentTask.due_date, currentTask.recurrence) ?? undefined,
             priority: currentTask.priority,
@@ -408,6 +413,7 @@ export function useTasks() {
             .map((child) => createLocalTask(child.client_id, {
               title: child.title,
               description: child.description ?? undefined,
+              external_url: child.external_url ?? undefined,
               assigned_to: child.assigned_to,
               priority: child.priority,
               modality: child.modality,
@@ -467,6 +473,7 @@ export function useTasks() {
           client_id: currentTask.client_id,
           title: currentTask.title,
           description: currentTask.description,
+          external_url: currentTask.external_url,
           assigned_to: currentTask.assigned_to,
           due_date: nextDueDate,
           priority: currentTask.priority,
@@ -484,6 +491,7 @@ export function useTasks() {
               client_id: child.client_id,
               title: child.title,
               description: child.description,
+              external_url: child.external_url,
               assigned_to: child.assigned_to,
               due_date: null,
               priority: child.priority,
@@ -516,6 +524,7 @@ export function useTasks() {
     taskIds: string[],
     data: Partial<Pick<Task, 'assigned_to' | 'priority' | 'modality' | 'scheduled_for'>>,
   ) => {
+    if (data.assigned_to) data = { ...data, assigned_to: data.assigned_to.slice(0, 1) };
     const uniqueTaskIds = [...new Set(taskIds)];
     if (uniqueTaskIds.length === 0) return false;
     const previousTasks = tasks;
