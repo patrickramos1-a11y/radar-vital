@@ -7,7 +7,7 @@ import type { Library } from "./journeyRemote";
 type Go = (view: "capacidade" | "capacitacoes" | "cargos-funcoes" | "guia-jornada" | "jornada" | "responsabilidade" | "responsabilidades", id?: string, tab?: string, mode?: string) => void;
 
 const journeyAreas = [
-  { title: "Capacidades", description: "São conhecimentos e práticas verificáveis. Cada uma pode ser reconhecida em Assistido, Autônomo ou Multiplicador.", icon: BookOpen, target: "capacidades" as const },
+  { title: "Capacidades", description: "São conhecimentos e práticas verificáveis. Cada uma pode ser reconhecida em Assistido, Autônomo ou Multiplicador.", icon: BookOpen, target: "guia-jornada" as const },
   { title: "Capacitações", description: "É o espaço para estudar a ficha, fazer autoavaliação, registrar fatos reais e solicitar a certificação do próximo nível.", icon: GraduationCap, target: "capacitacoes" as const },
   { title: "Competências", description: "São atuações profissionais formadas automaticamente quando todas as capacidades e níveis exigidos são certificados.", icon: ShieldCheck, target: "responsabilidades" as const },
   { title: "Escada de cargo", description: "No Núcleo Técnico, os pontos certificados e as competências formadas liberam cada marco de promoção.", icon: BriefcaseBusiness, target: "jornada" as const },
