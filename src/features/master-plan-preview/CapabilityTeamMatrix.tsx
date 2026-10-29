@@ -19,13 +19,55 @@ type Props = {
   onDeactivatePerson?: (collaboratorId: string) => Promise<void>;
 };
 
-const levelStyles: Record<CapabilityLevel, { idle: string; active: string }> = {
-  1: { idle: "border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100", active: "border-sky-600 bg-sky-600 text-white" },
-  2: { idle: "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100", active: "border-amber-500 bg-amber-500 text-white" },
-  3: { idle: "border-violet-200 bg-violet-50 text-violet-900 hover:bg-violet-100", active: "border-violet-600 bg-violet-600 text-white" },
-};
-
 const assignmentKey = (capabilityCode: string, collaboratorId: string) => `${capabilityCode}:${collaboratorId}`;
+
+function TeamLevelControls({ capabilityTitle, personName, approved, selected, trainingLevel, isTrainingRequested, requesting, onSelect, onRequest, onDiscard }: {
+  capabilityTitle: string;
+  personName: string;
+  approved: number;
+  selected: PlanLevel;
+  trainingLevel: CapabilityLevel | null;
+  isTrainingRequested: boolean;
+  requesting: boolean;
+  onSelect: (level: CapabilityLevel) => void;
+  onRequest: () => void;
+  onDiscard: () => void;
+}) {
+  const effectiveLevel = Math.max(approved, selected);
+  const hasDraftUpdate = selected > approved;
+  const requestLabel = isTrainingRequested && trainingLevel
+    ? `Capacitação para ${capabilityLevelNames[trainingLevel]} solicitada`
+    : requesting
+      ? "Solicitando capacitação"
+      : trainingLevel
+        ? `Solicitar ${capabilityLevelNames[trainingLevel]}`
+        : "Jornada de certificação concluída";
+
+  return <div className="cap-team-level-control" role="group" aria-label={`Capacidade de ${capabilityTitle} para ${personName}`}>
+    <p className={approved > 0 ? "text-xs text-emerald-700" : "text-xs text-zinc-500"}>Capacidade atual: <strong>{approved > 0 ? capabilityLevelNames[approved as CapabilityLevel] : "Nenhuma"}</strong></p>
+    <div className="cap-team-level-line">
+      {([1, 2, 3] as CapabilityLevel[]).map((level) => {
+        const reached = level <= effectiveLevel;
+        const certified = level <= approved;
+        if (certified) return <span key={level} className="cap-team-level-icon is-reached" title={`${capabilityLevelNames[level]} já conquistado`}><img src={capabilityLevelInsignia[level]} alt={level === approved ? `Nível atual: ${capabilityLevelNames[level]}` : ""} loading="lazy" decoding="async" /></span>;
+        return <button
+          key={level}
+          type="button"
+          aria-label={`Conceder ${capabilityLevelNames[level]}`}
+          title={certified ? `${capabilityLevelNames[level]} já conquistado` : `Conceder ${capabilityLevelNames[level]}`}
+          aria-pressed={selected === level && hasDraftUpdate}
+          onClick={() => onSelect(level)}
+          className={`cap-team-level-icon ${reached ? "is-reached" : "is-muted"} ${selected === level && hasDraftUpdate ? "is-selected" : ""}`}
+        >
+          <img src={capabilityLevelInsignia[level]} alt="" loading="lazy" decoding="async" />
+        </button>;
+      })}
+      {approved < 3 && trainingLevel && <button type="button" aria-label={requestLabel} title={requestLabel} disabled={requesting || isTrainingRequested} onClick={onRequest} className={`cap-team-training-icon ${isTrainingRequested ? "is-requested" : ""}`}><GraduationCap aria-hidden="true" /></button>}
+      {hasDraftUpdate && <button type="button" onClick={onDiscard} aria-label={`Descartar mudança de ${capabilityTitle} para ${personName}`} title="Descartar mudança" className="cap-team-discard-icon"><CircleX aria-hidden="true" /></button>}
+    </div>
+    {approved === 3 && <p className="mt-1 text-[10px] font-semibold text-emerald-800">Jornada concluída</p>}
+  </div>;
+}
 
 export function CapabilityTeamMatrix({ library, people, plans, onApplyUpdates, onRequestTraining, onDeactivatePerson }: Props) {
   const { currentUser } = useAuth();
@@ -137,8 +179,18 @@ export function CapabilityTeamMatrix({ library, people, plans, onApplyUpdates, o
             const trainingRequest = (teamTrainingRequests.data ?? []).find((request) => request.collaborator_id === person.id && request.capability_code === capability.code && request.status !== "cancelled" && request.target_level > approved);
             const trainingLevel = (approved > 0 ? nextLevel : selected || 1) as CapabilityLevel | null;
             const isTrainingRequested = trainingRequest?.status === "requested" || trainingRequest?.status === "started";
-            const hasDraftUpdate = selected > approved;
-          const controls = approved > 0 ? <div role="group" aria-label={`Capacidade de ${capability.title} para ${person.name}`}><p className="text-xs text-emerald-700">Capacidade atual</p><img src={capabilityLevelInsignia[approved as CapabilityLevel]} alt={`Nível atual: ${capabilityLevelNames[approved as CapabilityLevel]}`} title={capabilityLevelNames[approved as CapabilityLevel]} className="mt-1 h-10 w-10 object-contain" loading="lazy" decoding="async" />{nextLevel ? <><p className="mb-1 mt-2 text-[11px] font-medium text-zinc-600">Próxima evolução</p><button type="button" aria-label={`Conceder ${capabilityLevelNames[nextLevel]}`} title={`Conceder ${capabilityLevelNames[nextLevel]}`} aria-pressed={hasDraftUpdate} onClick={() => setDraft((current) => ({ ...current, [key]: nextLevel }))} className={`grid h-11 w-full place-items-center border p-1 ${hasDraftUpdate ? levelStyles[nextLevel].active : levelStyles[nextLevel].idle}`}><img src={capabilityLevelInsignia[nextLevel]} alt="" className="h-full w-full object-contain" loading="lazy" decoding="async" /></button><button type="button" disabled={requestingKey === key || isTrainingRequested || !trainingLevel} onClick={() => trainingLevel && void requestTraining(person.id, capability.code, trainingLevel)} className="mt-2 flex min-h-7 w-full items-center justify-center gap-1 border border-teal-600 bg-teal-50 px-1 text-[10px] font-semibold text-teal-800 hover:bg-teal-100 disabled:cursor-default disabled:border-teal-200 disabled:text-teal-700"><GraduationCap className="h-3.5 w-3.5" />{isTrainingRequested ? `Capacitação para ${capabilityLevelNames[trainingRequest!.target_level]} solicitada` : requestingKey === key ? "Solicitando..." : `Solicitar ${capabilityLevelNames[nextLevel]}`}</button>{hasDraftUpdate && <button type="button" onClick={() => setDraft((current) => ({ ...current, [key]: approved as PlanLevel }))} aria-label={`Descartar mudança de ${capability.title} para ${person.name}`} title="Descartar mudança" className="mt-1 inline-flex h-6 w-6 items-center justify-center text-zinc-500 hover:text-rose-700"><CircleX className="h-4 w-4" /></button>}</> : <p className="mt-2 text-[11px] font-semibold text-emerald-800">Jornada de certificação concluída.</p>}</div> : <div className="mt-2" role="group" aria-label={`Capacidade de ${capability.title} para ${person.name}`}><p className="text-xs text-zinc-500">Capacidade atual: <strong>Nenhuma</strong></p><p className="mb-1 mt-2 text-[11px] font-medium text-zinc-600">Nível inicial a conceder</p><div className="grid grid-cols-2 gap-1">{([1, 2, 3] as CapabilityLevel[]).map((level) => <button key={level} type="button" aria-label={`Conceder ${capabilityLevelNames[level]}`} title={`Conceder ${capabilityLevelNames[level]}`} aria-pressed={selected === level} onClick={() => setDraft((current) => ({ ...current, [key]: level }))} className={`grid h-11 place-items-center border p-1 ${selected === level ? levelStyles[level].active : levelStyles[level].idle} ${level === 3 ? "col-span-2" : ""}`}><img src={capabilityLevelInsignia[level]} alt="" className="h-full w-full object-contain" loading="lazy" decoding="async" /></button>)}</div><button type="button" disabled={requestingKey === key || isTrainingRequested || !trainingLevel} onClick={() => trainingLevel && void requestTraining(person.id, capability.code, trainingLevel)} className="mt-2 flex min-h-7 w-full items-center justify-center gap-1 border border-teal-600 bg-teal-50 px-1 text-[10px] font-semibold text-teal-800 hover:bg-teal-100 disabled:cursor-default disabled:border-teal-200 disabled:text-teal-700"><GraduationCap className="h-3.5 w-3.5" />{isTrainingRequested ? `Capacitação para ${capabilityLevelNames[trainingRequest!.target_level]} solicitada` : requestingKey === key ? "Solicitando..." : `Solicitar ${capabilityLevelNames[trainingLevel]}`}</button>{hasDraftUpdate && <button type="button" onClick={() => setDraft((current) => ({ ...current, [key]: approved as PlanLevel }))} aria-label={`Descartar mudança de ${capability.title} para ${person.name}`} title="Descartar mudança" className="mt-1 inline-flex h-6 w-6 items-center justify-center text-zinc-500 hover:text-rose-700"><CircleX className="h-4 w-4" /></button>}</div>;
+            const controls = <TeamLevelControls
+              capabilityTitle={capability.title}
+              personName={person.name}
+              approved={approved}
+              selected={selected}
+              trainingLevel={trainingLevel}
+              isTrainingRequested={isTrainingRequested}
+              requesting={requestingKey === key}
+              onSelect={(level) => setDraft((current) => ({ ...current, [key]: level }))}
+              onRequest={() => trainingLevel && void requestTraining(person.id, capability.code, trainingLevel)}
+              onDiscard={() => setDraft((current) => ({ ...current, [key]: approved as PlanLevel }))}
+            />;
             return <td key={person.id} className="px-2 py-3 align-top">{controls}</td>;
           })}</tr>;
         })}</tbody>

@@ -192,20 +192,23 @@ function NextCapabilityOpportunities({ details, go }: { details: Array<{ item: C
 function TrainingAcervo({ library, go, certifiedLevels, trainingRequests, people, teamLevels, teamTrainingRequests, currentUserId }: { library: Library; go: Go; certifiedLevels: Map<string, number>; trainingRequests: TeamTrainingRequestRow[]; people: Array<{ id: string; name: string }>; teamLevels: Map<string, Map<string, number>>; teamTrainingRequests: TeamTrainingRequestRow[]; currentUserId: string }) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState("Todas");
+  const [nucleus, setNucleus] = useState<NucleusId | "Todos">("Todos");
   const [journeyFilter, setJourneyFilter] = useState("Todas");
   const list = useMemo(() => library.capabilities.filter((item) => {
     const certifiedLevel = certifiedLevels.get(item.code) ?? 0;
     const trainingLevel = trainingRequests.find((request) => request.capability_code === item.code && request.target_level > certifiedLevel)?.target_level ?? 0;
     const matchesText = `${item.code} ${item.title} ${item.summary}`.toLocaleLowerCase("pt-BR").includes(query.toLocaleLowerCase("pt-BR"));
     const matchesKind = kind === "Todas" || item.nature === kind;
+    const matchesNucleus = nucleus === "Todos" || isCapabilityInNucleus(item.code, nucleus);
     const matchesJourney = journeyFilter === "Todas" || journeyFilter === "Certificadas" && certifiedLevel > 0 || journeyFilter === "Em desenvolvimento" && trainingLevel > certifiedLevel || journeyFilter === "Falta certificar" && certifiedLevel === 0 || journeyFilter === "Falta Assistido" && certifiedLevel === 0 && trainingLevel === 0 || journeyFilter === "Falta Autônomo" && certifiedLevel === 1 && trainingLevel === 0 || journeyFilter === "Falta Multiplicador" && certifiedLevel === 2 && trainingLevel === 0;
-    return matchesText && matchesKind && matchesJourney;
-  }), [library, certifiedLevels, trainingRequests, query, kind, journeyFilter]);
+    return matchesText && matchesKind && matchesNucleus && matchesJourney;
+  }), [library, certifiedLevels, trainingRequests, query, kind, nucleus, journeyFilter]);
   return <section className="mt-9 border-t pt-6">
     <div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><p className="cap-eyebrow">Acervo de capacitações</p><h2 className="text-xl font-semibold">Próximas recomendações</h2><p className="mt-1 text-sm text-zinc-600">Cada figurinha mostra o nível já certificado, a solicitação ativa e o próximo nível disponível para este perfil.</p></div><span className="text-sm font-semibold text-zinc-600">{list.length} de {library.capabilities.length} capacidades</span></div>
     <TeamAvailability people={people} library={library} teamLevels={teamLevels} teamTrainingRequests={teamTrainingRequests} currentUserId={currentUserId} />
     <div className="cap-search-shell mb-3"><Search className="h-5 w-5 text-teal-700" /><input aria-label="Buscar no acervo de capacitações" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar capacidade ou código" className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none" />{query && <button type="button" aria-label="Limpar busca no acervo" onClick={() => setQuery("")}><X className="h-4 w-4" /></button>}</div>
     <div className="mb-2 flex flex-wrap gap-1" role="group" aria-label="Natureza do acervo">{kinds.map((value) => <button type="button" key={value} aria-pressed={kind === value} onClick={() => setKind(value)} className={`cap-filter ${kind === value ? "cap-filter-active" : ""}`}>{value}</button>)}</div>
+    <div className="mb-2 flex flex-wrap gap-1" role="group" aria-label="Núcleo do acervo"><button type="button" aria-pressed={nucleus === "Todos"} onClick={() => setNucleus("Todos")} className={`cap-filter ${nucleus === "Todos" ? "cap-filter-active" : ""}`}>Todos os núcleos</button>{nuclei.map((item) => <button type="button" key={item.id} aria-pressed={nucleus === item.id} onClick={() => setNucleus(item.id)} className={`cap-filter ${nucleus === item.id ? "cap-filter-active" : ""}`}>{item.name}</button>)}</div>
     <div className="mb-5 flex flex-wrap gap-1" role="group" aria-label="Situação no acervo">{["Todas", "Certificadas", "Em desenvolvimento", "Falta certificar", "Falta Assistido", "Falta Autônomo", "Falta Multiplicador"].map((value) => <button type="button" key={value} aria-pressed={journeyFilter === value} onClick={() => setJourneyFilter(value)} className={`cap-filter ${journeyFilter === value ? "cap-filter-active" : ""}`}>{value}</button>)}</div>
     <div className="cap-sticker-grid">{list.map((item) => { const certifiedLevel = certifiedLevels.get(item.code) ?? 0; const missingLevel = journeyFilter === "Falta Assistido" ? 1 : journeyFilter === "Falta Autônomo" ? 2 : journeyFilter === "Falta Multiplicador" ? 3 : undefined; return <CapabilityStickerCard key={item.code} item={item} certifiedLevel={certifiedLevel} missingLevel={missingLevel} onOpen={() => go("capacidade", item.code)} />; })}</div>
     {!list.length && <div className="cap-empty">Nenhuma capacidade encontrada com estes filtros.</div>}

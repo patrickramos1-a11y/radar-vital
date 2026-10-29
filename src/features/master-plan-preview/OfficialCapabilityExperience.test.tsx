@@ -160,6 +160,9 @@ describe("official capability library", () => {
     expect(document.querySelectorAll(".cap-sticker-emblem").length).toBeGreaterThan(0);
     expect(screen.queryByText("Nível atual")).toBeNull();
     expect(screen.getAllByTitle("Assistido").length).toBeGreaterThan(0);
+    const nucleusFilters = screen.getByRole("group", { name: "Núcleo do acervo" });
+    fireEvent.click(within(nucleusFilters).getByRole("button", { name: "Núcleo Suporte" }));
+    expect(within(nucleusFilters).getByRole("button", { name: "Núcleo Suporte" }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Falta certificar" }));
     expect(screen.getByRole("button", { name: "Falta certificar" }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Falta Assistido" }));
@@ -401,7 +404,10 @@ describe("official capability library", () => {
     expect(screen.getByRole("columnheader", { name: "Gabi" }).className).toContain("sticky");
     expect(screen.getByRole("columnheader", { name: "Gabi" }).className).toContain("top-0");
     const controls = screen.getByRole("group", { name: /Capacidade de Engenharia de Sistemas de Saneamento para Gabi/ });
-    expect(within(controls).getByRole("button", { name: "Solicitar Assistido" })).toBeTruthy();
+    const trainingAction = within(controls).getByRole("button", { name: "Solicitar Assistido" });
+    expect(trainingAction.className).toContain("cap-team-training-icon");
+    expect(trainingAction.textContent).toBe("");
+    expect(within(controls).getAllByRole("button", { name: /Conceder/ }).every((button) => button.className.includes("cap-team-level-icon"))).toBe(true);
     expect(screen.getByRole("img", { name: "Figurinha E01: Engenharia de Sistemas de Saneamento" }).getAttribute("src")).toBe("/capability-stickers/posters/E01.png");
     fireEvent.click(within(controls).getByRole("button", { name: "Conceder Autônomo" }));
     fireEvent.click(within(controls).getByRole("button", { name: "Solicitar Autônomo" }));
@@ -422,7 +428,7 @@ describe("official capability library", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><OfficialCapabilityExperience view="capacitacoes" code="E01" tab="mapa" mode="administrador" go={vi.fn()} library={library} people={[{ id: "collaborator-1", name: "Gabi" }]} /></QueryClientProvider>);
     const controls = await screen.findByRole("group", { name: /Capacidade de Engenharia de Sistemas de Saneamento para Gabi/ });
-    expect(within(controls).getByText("Capacidade atual")).toBeTruthy();
+    expect(within(controls).getByText(/Capacidade atual/)).toBeTruthy();
     expect(within(controls).getByRole("img", { name: "Nível atual: Assistido" }).getAttribute("src")).toBe("/capability-stickers/levels/INSIGNIA_ASSISTIDO.png");
     expect(within(controls).queryByRole("button", { name: "Conceder Assistido" })).toBeNull();
     expect(within(controls).getByRole("button", { name: "Conceder Autônomo" })).toBeTruthy();
