@@ -35,9 +35,15 @@ describe("organization map", () => {
     expect(map.querySelectorAll(".organization-map-sector-row.is-open")).toHaveLength(2);
     expect(map.querySelector(".organization-map-sector-row")?.textContent).toContain("Setor Projetos");
     fireEvent.click(within(map).getByRole("button", { name: "Coordenador(a) de Projetos" }));
+    const focusedSector = map.querySelector(".organization-map-sector-row.is-deep");
+    expect(focusedSector?.querySelector(".organization-map-functions.is-deep")).toBeTruthy();
+    expect(map.querySelector(".organization-map-lane.is-deep")).toBeTruthy();
+    expect(focusedSector?.querySelector(".organization-map-function-list")?.nextElementSibling?.classList.contains("organization-map-competencies")).toBe(true);
     expect(within(map).getByRole("button", { name: "Planejamento da Produção Técnica" })).toBeTruthy();
     fireEvent.click(within(map).getByRole("button", { name: "Planejamento da Produção Técnica" }));
     expect(map.querySelector(".organization-map-requirements")).toBeTruthy();
+    expect(map.querySelector(".organization-map-competency-list")?.nextElementSibling?.classList.contains("organization-map-requirements")).toBe(true);
+    expect(map.querySelector(".organization-map-board.has-capabilities")).toBeTruthy();
     expect(map.querySelectorAll(".organization-map-requirement").length).toBeGreaterThan(0);
   });
 

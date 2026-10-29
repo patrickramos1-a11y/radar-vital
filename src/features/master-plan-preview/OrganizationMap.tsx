@@ -68,28 +68,30 @@ export function OrganizationMap({ go, officialCompetencyIds, certifiedLevels }: 
     <header className="organization-map-intro"><div><p className="organization-map-eyebrow">Universo Ramos / Mapa da Ramos</p><h1>Como a empresa se <span>organiza e atua.</span></h1><p>Explore núcleos, setores, funções essenciais, competências e capacidades.</p></div></header>
     <nav className="organization-map-nuclei" aria-label="Núcleos">{organizationMap.map((nucleus, index) => <button type="button" key={nucleus.id} aria-pressed={nucleusIds.includes(nucleus.id)} onClick={() => openNucleus(nucleus.id)} style={{ "--org-tone": nucleus.tone, "--org-soft": nucleus.soft } as CSSProperties}><strong>{String(index + 1).padStart(2, "0")}</strong><span>{nucleus.label}<small>{nucleus.animal} · {nucleus.sectors.length} setores</small></span><ChevronDown aria-hidden="true" /></button>)}</nav>
     <div className="organization-map-tools"><span>{nucleusIds.length ? `${nucleusIds.length} ${nucleusIds.length === 1 ? "núcleo aberto" : "núcleos abertos"} · ${sectorIds.length} ${sectorIds.length === 1 ? "setor aberto" : "setores abertos"}` : "Selecione um núcleo para explorar sua estrutura"}</span><button type="button" onClick={reset}><RotateCcw aria-hidden="true" /> Recolher tudo</button></div>
-    <section className="organization-map-scroll" aria-label="Organograma interativo"><div className="organization-map-board">{selectedFirst(organizationMap, nucleusIds, (item) => item.id).map((nucleus) => {
+    <section className="organization-map-scroll" aria-label="Organograma interativo"><div className={`organization-map-board ${competencyId ? "has-capabilities" : functionId ? "has-competencies" : ""}`}>{selectedFirst(organizationMap, nucleusIds, (item) => item.id).map((nucleus) => {
       const nucleusOpen = nucleusIds.includes(nucleus.id);
-      return <article key={nucleus.id} className={`organization-map-lane ${nucleusOpen ? "is-open" : "is-compact"}`} style={{ "--org-tone": nucleus.tone } as CSSProperties}>
+      const nucleusDeep = nucleus.sectors.some((sector) => sector.functions.some(({ item }) => item.id === functionId));
+      return <article key={nucleus.id} className={`organization-map-lane ${nucleusOpen ? "is-open" : "is-compact"} ${nucleusDeep ? "is-deep" : ""}`} style={{ "--org-tone": nucleus.tone } as CSSProperties}>
         <button type="button" className="organization-map-nucleus" aria-label={`${nucleusOpen ? "Recolher" : "Expandir"} ${nucleus.label}`} aria-expanded={nucleusOpen} onClick={() => openNucleus(nucleus.id)}>
           <img className="organization-map-nucleus-art" src={nucleus.image} alt="" loading="lazy" /><img className="organization-map-sticker" src={nucleus.sticker} alt="" loading="lazy" />
           <span className="organization-map-number">{String(organizationMap.indexOf(nucleus) + 1).padStart(2, "0")}</span><span className="organization-map-nucleus-copy"><strong>{nucleus.label}</strong><small>{nucleus.animal}</small><span>{nucleus.summary}</span></span><ChevronDown className="organization-map-toggle" aria-hidden="true" />
         </button>
         {nucleusOpen && <div className="organization-map-sector-rows" aria-label={`Setores de ${nucleus.label}`}>{selectedFirst(nucleus.sectors, sectorIds, (item) => item.item.id).map((sector) => {
           const sectorOpen = sectorIds.includes(sector.item.id);
-          return <section key={sector.item.id} className={`organization-map-sector-row ${sectorOpen ? "is-open" : "is-compact"}`} style={{ "--org-sector": sector.tone, "--org-sector-cover": `url("${sector.image}")` } as CSSProperties}>
+          const selectedFunction = sector.functions.find(({ item }) => item.id === functionId);
+          const selectedCompetency = selectedFunction?.competencies.find((item) => item.id === competencyId);
+          return <section key={sector.item.id} className={`organization-map-sector-row ${sectorOpen ? "is-open" : "is-compact"} ${selectedFunction ? "is-deep" : ""}`} style={{ "--org-sector": sector.tone, "--org-sector-cover": `url("${sector.image}")` } as CSSProperties}>
             <button type="button" className="organization-map-sector" aria-expanded={sectorOpen} onClick={() => openSector(sector, nucleus)}><img src={sector.sticker} alt="" loading="lazy" /><span><small>{sector.functions.length} funções essenciais</small><strong>{sector.label}</strong></span><ChevronDown aria-hidden="true" /></button>
-            {sectorOpen && <div className="organization-map-functions" aria-label={`Funções de ${sector.label}`}><button type="button" className="organization-map-sector-sheet" onClick={() => go("setor", sector.item.id)}>Abrir ficha do setor <ArrowRight aria-hidden="true" /></button>{sector.functions.map((item) => {
+            {sectorOpen && <div className={`organization-map-functions ${selectedFunction ? "is-deep" : ""}`} aria-label={`Funções de ${sector.label}`}><div className="organization-map-function-list"><button type="button" className="organization-map-sector-sheet" onClick={() => go("setor", sector.item.id)}>Abrir ficha do setor <ArrowRight aria-hidden="true" /></button>{sector.functions.map((item) => {
               const functionOpen = functionId === item.item.id;
               return <div key={item.item.id} className={`organization-map-function ${functionOpen ? "is-open" : ""}`}>
                 <button type="button" className="organization-map-function-name" aria-expanded={functionOpen} onClick={() => openFunction(item)}><img src={item.image} alt="" loading="lazy" /><span>{item.item.name}</span><ChevronDown aria-hidden="true" /></button>
-                {functionOpen && <div className="organization-map-competencies">{item.competencies.map((competency) => {
+              </div>;
+            })}</div>{selectedFunction && <div className={`organization-map-competencies ${selectedCompetency ? "is-deep" : ""}`} aria-label={`Competências de ${selectedFunction.item.name}`}><div className="organization-map-competency-list">{selectedFunction.competencies.map((competency) => {
                   const available = isEarned(competency, certifiedLevels) && officialIds.has(competency.officialSourceId);
                   const selected = competencyId === competency.id;
-                  return <div key={competency.id} className={`organization-map-competency ${available ? "is-earned" : "is-pending"} ${selected ? "is-open" : ""}`}><button type="button" aria-expanded={selected} onClick={() => setCompetencyId((current) => current === competency.id ? null : competency.id)}>{competency.name}{competency.origin === "Nova" && <small>Proposta</small>}<ChevronDown aria-hidden="true" /></button>{selected && <Requirements item={competency} go={go} levels={certifiedLevels} />}</div>;
-                })}</div>}
-              </div>;
-            })}</div>}
+                  return <div key={competency.id} className={`organization-map-competency ${available ? "is-earned" : "is-pending"} ${selected ? "is-open" : ""}`}><button type="button" aria-expanded={selected} onClick={() => setCompetencyId((current) => current === competency.id ? null : competency.id)}>{competency.name}{competency.origin === "Nova" && <small>Proposta</small>}<ChevronDown aria-hidden="true" /></button></div>;
+                })}</div>{selectedCompetency && <Requirements item={selectedCompetency} go={go} levels={certifiedLevels} />}</div>}</div>}
           </section>;
         })}</div>}
       </article>;
