@@ -367,14 +367,13 @@ describe("Plano Mestre organizational preview", () => {
     expect(main().getByRole("heading", { name: "Banco de capacidades" })).toBeTruthy();
   });
 
-  it("returns from the sector sheet to the organization map", () => {
+  it("opens every sector competency group directly from the organization map", () => {
     openPreview();
     fireEvent.click(main().getByRole("button", { name: "Expandir Núcleo Técnico" }));
     fireEvent.click(main().getByRole("button", { name: /5 funções essenciaisSetor Projetos/ }));
-    fireEvent.click(main().getByRole("button", { name: "Abrir ficha do setor" }));
-    fireEvent.click(main().getByRole("tab", { name: /Funções/ }));
-    expect(main().getByRole("tab", { name: /Funções/ }).getAttribute("aria-selected")).toBe("true");
-    fireEvent.click(main().getByRole("button", { name: "Voltar" }));
+    fireEvent.click(main().getByRole("button", { name: "Abrir competências de Setor Projetos" }));
+    expect(main().getByRole("button", { name: "Recolher competências de Setor Projetos" })).toBeTruthy();
+    expect(main().getByLabelText("Competências selecionadas de Setor Projetos").querySelectorAll(".organization-map-competency-group")).toHaveLength(5);
     expect(main().getByRole("heading", { name: "Como a empresa se organiza e atua." })).toBeTruthy();
   });
 

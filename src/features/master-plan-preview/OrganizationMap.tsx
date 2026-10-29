@@ -1,17 +1,27 @@
-import { useState, type CSSProperties } from "react";
-import { ArrowRight, CheckCircle2, ChevronDown, RotateCcw } from "lucide-react";
+import { useMemo, useState, type CSSProperties } from "react";
+import { ArrowRight, CheckCircle2, ChevronDown, Layers3, RotateCcw } from "lucide-react";
 import { capabilityLevelInsignia, capabilityLevelNames } from "./capabilityJourney";
 import { capabilityStickerPath } from "./CapabilityVisualIdentity";
 import { hasCapabilityPoster } from "./capabilityVisuals";
+import { nucleoTecnicoCareerLadder, type CareerStepId } from "./careerLadder";
 import { manualCatalog, type ManualCompetency } from "./manualDigitalModel";
 import { organizationMap, type OrganizationFunction, type OrganizationNucleus, type OrganizationSector } from "./organizationMapModel";
 import "./organizationMap.css";
 
 type Destination = "nucleo" | "setor" | "funcao" | "competencia-manual" | "responsabilidade" | "capacidade" | "capacidade-manual";
 type Go = (view: Destination, id?: string, tab?: string) => void;
+type ScopeStepId = "current" | CareerStepId;
+type CoverageStatus = "complete" | "partial" | "empty";
 interface Props { go: Go; officialCompetencyIds: string[]; certifiedLevels?: Record<string, number> | null }
 
+const allFunctions = organizationMap.flatMap((nucleus) => nucleus.sectors.flatMap((sector) => sector.functions));
+const functionById = new Map(allFunctions.map((item) => [item.item.id, item]));
+
 function toggle(items: string[], id: string) { return items.includes(id) ? items.filter((item) => item !== id) : [...items, id]; }
+function without(items: string[], removed: Iterable<string>) {
+  const removedIds = new Set(removed);
+  return items.filter((item) => !removedIds.has(item));
+}
 function selectedFirst<T>(items: T[], ids: string[], key: (item: T) => string): T[] {
   return [...items].sort((a, b) => {
     const ai = ids.indexOf(key(a));
@@ -24,6 +34,31 @@ function selectedFirst<T>(items: T[], ids: string[], key: (item: T) => string): 
 }
 function isEarned(item: ManualCompetency, levels?: Record<string, number> | null) {
   return item.origin === "Original" && !!levels && item.requirements.length > 0 && item.requirements.every((entry) => (levels[entry.code] ?? 0) >= entry.level);
+}
+function simulatedLevelsFor(stepId: CareerStepId): Record<string, number> {
+  const stepIndex = nucleoTecnicoCareerLadder.steps.findIndex((step) => step.id === stepId);
+  const levels: Record<string, number> = {};
+  nucleoTecnicoCareerLadder.steps.slice(0, stepIndex + 1).forEach((step) => step.capabilityRequirements.forEach((requirement) => {
+    levels[requirement.capabilityCode] = Math.max(levels[requirement.capabilityCode] ?? 0, requirement.minimumLevel);
+  }));
+  return levels;
+}
+function competencyCovered(item: ManualCompetency, levels: Record<string, number> | null | undefined, officialIds: Set<string>) {
+  return isEarned(item, levels) && officialIds.has(item.officialSourceId);
+}
+function functionCoverage(item: OrganizationFunction, levels: Record<string, number> | null | undefined, officialIds: Set<string>): CoverageStatus {
+  const official = item.competencies.filter((competency) => competency.origin === "Original" && officialIds.has(competency.officialSourceId));
+  if (!official.length) return "empty";
+  const covered = official.filter((competency) => competencyCovered(competency, levels, officialIds)).length;
+  return covered === official.length ? "complete" : covered > 0 ? "partial" : "empty";
+}
+function sectorCoverage(item: OrganizationSector, levels: Record<string, number> | null | undefined, officialIds: Set<string>): CoverageStatus {
+  const statuses = item.functions.map((entry) => functionCoverage(entry, levels, officialIds));
+  return statuses.length > 0 && statuses.every((status) => status === "complete") ? "complete" : statuses.some((status) => status !== "empty") ? "partial" : "empty";
+}
+function nucleusCoverage(item: OrganizationNucleus, levels: Record<string, number> | null | undefined, officialIds: Set<string>): CoverageStatus {
+  const statuses = item.sectors.map((entry) => sectorCoverage(entry, levels, officialIds));
+  return statuses.length > 0 && statuses.every((status) => status === "complete") ? "complete" : statuses.some((status) => status !== "empty") ? "partial" : "empty";
 }
 
 function Requirements({ item, go, levels }: { item: ManualCompetency; go: Go; levels?: Record<string, number> | null }) {
@@ -45,53 +80,97 @@ function Requirements({ item, go, levels }: { item: ManualCompetency; go: Go; le
 export function OrganizationMap({ go, officialCompetencyIds, certifiedLevels }: Props) {
   const [nucleusIds, setNucleusIds] = useState<string[]>([]);
   const [sectorIds, setSectorIds] = useState<string[]>([]);
-  const [functionId, setFunctionId] = useState<string | null>(null);
-  const [competencyId, setCompetencyId] = useState<string | null>(null);
-  const officialIds = new Set(officialCompetencyIds);
+  const [functionIds, setFunctionIds] = useState<string[]>([]);
+  const [competencyIds, setCompetencyIds] = useState<string[]>([]);
+  const [scopeStepId, setScopeStepId] = useState<ScopeStepId>("current");
+  const officialIds = useMemo(() => new Set(officialCompetencyIds), [officialCompetencyIds]);
+  const scopeStep = scopeStepId === "current" ? null : nucleoTecnicoCareerLadder.steps.find((step) => step.id === scopeStepId) ?? null;
+  const effectiveLevels = useMemo(() => scopeStepId === "current" ? certifiedLevels : simulatedLevelsFor(scopeStepId), [certifiedLevels, scopeStepId]);
+  const simulationActive = scopeStepId !== "current";
+
+  const scopeStats = useMemo(() => {
+    const competencies = new Map<string, ManualCompetency>();
+    allFunctions.forEach((item) => item.competencies.forEach((competency) => {
+      if (competency.origin === "Original" && officialIds.has(competency.officialSourceId)) competencies.set(competency.id, competency);
+    }));
+    const coveredCompetencies = [...competencies.values()].filter((item) => competencyCovered(item, effectiveLevels, officialIds)).length;
+    const completeFunctions = allFunctions.filter((item) => functionCoverage(item, effectiveLevels, officialIds) === "complete").length;
+    const allSectors = organizationMap.flatMap((nucleus) => nucleus.sectors);
+    const completeSectors = allSectors.filter((item) => sectorCoverage(item, effectiveLevels, officialIds) === "complete").length;
+    const completeNuclei = organizationMap.filter((item) => nucleusCoverage(item, effectiveLevels, officialIds) === "complete").length;
+    return { coveredCompetencies, competencies: competencies.size, completeFunctions, functions: allFunctions.length, completeSectors, sectors: allSectors.length, completeNuclei, nuclei: organizationMap.length };
+  }, [effectiveLevels, officialIds]);
+
+  const removeFunctions = (ids: Iterable<string>) => {
+    const removedIds = new Set(ids);
+    const remainingFunctions = without(functionIds, removedIds);
+    const remainingCompetencies = new Set(remainingFunctions.flatMap((id) => functionById.get(id)?.competencies.map((item) => item.id) ?? []));
+    setFunctionIds(remainingFunctions);
+    setCompetencyIds((current) => current.filter((id) => remainingCompetencies.has(id)));
+  };
   const openNucleus = (id: string) => {
-    const next = toggle(nucleusIds, id);
-    setNucleusIds(next);
-    setSectorIds((current) => current.filter((sectorId) => next.some((nucleusId) => organizationMap.find((entry) => entry.id === nucleusId)?.sectors.some((sector) => sector.item.id === sectorId))));
-    setFunctionId(null);
-    setCompetencyId(null);
+    if (nucleusIds.includes(id)) {
+      const nucleus = organizationMap.find((item) => item.id === id);
+      const closingSectors = nucleus?.sectors.map((sector) => sector.item.id) ?? [];
+      const closingFunctions = nucleus?.sectors.flatMap((sector) => sector.functions.map((item) => item.item.id)) ?? [];
+      setSectorIds((current) => without(current, closingSectors));
+      removeFunctions(closingFunctions);
+    }
+    setNucleusIds((current) => toggle(current, id));
   };
   const openSector = (sector: OrganizationSector, nucleus: OrganizationNucleus) => {
     if (!nucleusIds.includes(nucleus.id)) setNucleusIds((current) => [...current, nucleus.id]);
+    if (sectorIds.includes(sector.item.id)) removeFunctions(sector.functions.map((item) => item.item.id));
     setSectorIds((current) => toggle(current, sector.item.id));
-    setFunctionId(null);
-    setCompetencyId(null);
   };
-  const openFunction = (item: OrganizationFunction) => { setFunctionId((current) => current === item.item.id ? null : item.item.id); setCompetencyId(null); };
-  const reset = () => { setNucleusIds([]); setSectorIds([]); setFunctionId(null); setCompetencyId(null); };
+  const openFunction = (item: OrganizationFunction) => {
+    if (functionIds.includes(item.item.id)) removeFunctions([item.item.id]);
+    else setFunctionIds((current) => [...current, item.item.id]);
+  };
+  const openSectorCompetencies = (sector: OrganizationSector) => {
+    const ids = sector.functions.map((item) => item.item.id);
+    const allOpen = ids.every((id) => functionIds.includes(id));
+    if (allOpen) removeFunctions(ids);
+    else setFunctionIds((current) => [...current, ...ids.filter((id) => !current.includes(id))]);
+  };
+  const reset = () => { setNucleusIds([]); setSectorIds([]); setFunctionIds([]); setCompetencyIds([]); };
 
-  return <div className="organization-map">
+  return <div className={`organization-map ${simulationActive ? "is-simulating" : ""}`}>
     <header className="organization-map-intro"><div><p className="organization-map-eyebrow">Universo Ramos / Mapa da Ramos</p><h1>Como a empresa se <span>organiza e atua.</span></h1><p>Explore núcleos, setores, funções essenciais, competências e capacidades.</p></div></header>
+    <section className="organization-map-scope" aria-label="Filtro de abrangência da jornada">
+      <div className="organization-map-scope-control"><label htmlFor="organization-map-scope-step">Abrangência da jornada</label><select id="organization-map-scope-step" value={scopeStepId} onChange={(event) => setScopeStepId(event.target.value as ScopeStepId)}><option value="current">Perfil atual · usar certificações</option>{nucleoTecnicoCareerLadder.steps.map((step) => <option key={step.id} value={step.id}>{step.title}</option>)}</select><p>{scopeStep ? `${scopeStep.function} Simulação com ${scopeStep.capabilityTarget} pontos-alvo e abrangência de ${scopeStep.nucleiRequired} ${scopeStep.nucleiRequired === 1 ? "núcleo" : "núcleos"}.` : "Leitura real do perfil selecionado, conforme as capacidades já certificadas."}</p>{simulationActive && <span>Simulação: credenciais pessoais ignoradas</span>}</div>
+      <div className="organization-map-scope-stats" aria-live="polite"><span><strong>{scopeStats.coveredCompetencies}/{scopeStats.competencies}</strong> competências</span><span><strong>{scopeStats.completeFunctions}/{scopeStats.functions}</strong> funções completas</span><span><strong>{scopeStats.completeSectors}/{scopeStats.sectors}</strong> setores completos</span><span><strong>{scopeStats.completeNuclei}/{scopeStats.nuclei}</strong> núcleos completos</span></div>
+    </section>
     <nav className="organization-map-nuclei" aria-label="Núcleos">{organizationMap.map((nucleus, index) => <button type="button" key={nucleus.id} aria-pressed={nucleusIds.includes(nucleus.id)} onClick={() => openNucleus(nucleus.id)} style={{ "--org-tone": nucleus.tone, "--org-soft": nucleus.soft } as CSSProperties}><strong>{String(index + 1).padStart(2, "0")}</strong><span>{nucleus.label}<small>{nucleus.animal} · {nucleus.sectors.length} setores</small></span><ChevronDown aria-hidden="true" /></button>)}</nav>
-    <div className="organization-map-tools"><span>{nucleusIds.length ? `${nucleusIds.length} ${nucleusIds.length === 1 ? "núcleo aberto" : "núcleos abertos"} · ${sectorIds.length} ${sectorIds.length === 1 ? "setor aberto" : "setores abertos"}` : "Selecione um núcleo para explorar sua estrutura"}</span><button type="button" onClick={reset}><RotateCcw aria-hidden="true" /> Recolher tudo</button></div>
-    <section className="organization-map-scroll" aria-label="Organograma interativo"><div className={`organization-map-board ${competencyId ? "has-capabilities" : functionId ? "has-competencies" : ""}`}>{selectedFirst(organizationMap, nucleusIds, (item) => item.id).map((nucleus) => {
+    <div className="organization-map-tools"><span>{nucleusIds.length ? `${nucleusIds.length} ${nucleusIds.length === 1 ? "núcleo aberto" : "núcleos abertos"} · ${sectorIds.length} ${sectorIds.length === 1 ? "setor aberto" : "setores abertos"} · ${functionIds.length} ${functionIds.length === 1 ? "função aberta" : "funções abertas"}` : "Selecione um núcleo para explorar sua estrutura"}</span><button type="button" onClick={reset}><RotateCcw aria-hidden="true" /> Recolher tudo</button></div>
+    <section className="organization-map-scroll" aria-label="Organograma interativo"><div className={`organization-map-board ${competencyIds.length ? "has-capabilities" : functionIds.length ? "has-competencies" : ""}`}>{selectedFirst(organizationMap, nucleusIds, (item) => item.id).map((nucleus) => {
       const nucleusOpen = nucleusIds.includes(nucleus.id);
-      const nucleusDeep = nucleus.sectors.some((sector) => sector.functions.some(({ item }) => item.id === functionId));
-      return <article key={nucleus.id} className={`organization-map-lane ${nucleusOpen ? "is-open" : "is-compact"} ${nucleusDeep ? "is-deep" : ""}`} style={{ "--org-tone": nucleus.tone } as CSSProperties}>
+      const nucleusDeep = nucleus.sectors.some((sector) => sector.functions.some(({ item }) => functionIds.includes(item.id)));
+      const nucleusScope = simulationActive ? `is-scope-${nucleusCoverage(nucleus, effectiveLevels, officialIds)}` : "";
+      return <article key={nucleus.id} className={`organization-map-lane ${nucleusOpen ? "is-open" : "is-compact"} ${nucleusDeep ? "is-deep" : ""} ${nucleusScope}`} style={{ "--org-tone": nucleus.tone } as CSSProperties}>
         <button type="button" className="organization-map-nucleus" aria-label={`${nucleusOpen ? "Recolher" : "Expandir"} ${nucleus.label}`} aria-expanded={nucleusOpen} onClick={() => openNucleus(nucleus.id)}>
           <img className="organization-map-nucleus-art" src={nucleus.image} alt="" loading="lazy" /><img className="organization-map-sticker" src={nucleus.sticker} alt="" loading="lazy" />
           <span className="organization-map-number">{String(organizationMap.indexOf(nucleus) + 1).padStart(2, "0")}</span><span className="organization-map-nucleus-copy"><strong>{nucleus.label}</strong><small>{nucleus.animal}</small><span>{nucleus.summary}</span></span><ChevronDown className="organization-map-toggle" aria-hidden="true" />
         </button>
         {nucleusOpen && <div className="organization-map-sector-rows" aria-label={`Setores de ${nucleus.label}`}>{selectedFirst(nucleus.sectors, sectorIds, (item) => item.item.id).map((sector) => {
           const sectorOpen = sectorIds.includes(sector.item.id);
-          const selectedFunction = sector.functions.find(({ item }) => item.id === functionId);
-          const selectedCompetency = selectedFunction?.competencies.find((item) => item.id === competencyId);
-          return <section key={sector.item.id} className={`organization-map-sector-row ${sectorOpen ? "is-open" : "is-compact"} ${selectedFunction ? "is-deep" : ""}`} style={{ "--org-sector": sector.tone, "--org-sector-cover": `url("${sector.image}")` } as CSSProperties}>
+          const selectedFunctions = sector.functions.filter(({ item }) => functionIds.includes(item.id));
+          const selectedCompetencies = [...new Map(selectedFunctions.flatMap((item) => item.competencies).filter((item) => competencyIds.includes(item.id)).map((item) => [item.id, item])).values()];
+          const allFunctionsOpen = sector.functions.every(({ item }) => functionIds.includes(item.id));
+          const sectorScope = simulationActive ? `is-scope-${sectorCoverage(sector, effectiveLevels, officialIds)}` : "";
+          return <section key={sector.item.id} className={`organization-map-sector-row ${sectorOpen ? "is-open" : "is-compact"} ${selectedFunctions.length ? "is-deep" : ""} ${sectorScope}`} style={{ "--org-sector": sector.tone, "--org-sector-cover": `url("${sector.image}")` } as CSSProperties}>
             <button type="button" className="organization-map-sector" aria-expanded={sectorOpen} onClick={() => openSector(sector, nucleus)}><img src={sector.sticker} alt="" loading="lazy" /><span><small>{sector.functions.length} funções essenciais</small><strong>{sector.label}</strong></span><ChevronDown aria-hidden="true" /></button>
-            {sectorOpen && <div className={`organization-map-functions ${selectedFunction ? "is-deep" : ""}`} aria-label={`Funções de ${sector.label}`}><div className="organization-map-function-list"><button type="button" className="organization-map-sector-sheet" onClick={() => go("setor", sector.item.id)}>Abrir ficha do setor <ArrowRight aria-hidden="true" /></button>{sector.functions.map((item) => {
-              const functionOpen = functionId === item.item.id;
-              return <div key={item.item.id} className={`organization-map-function ${functionOpen ? "is-open" : ""}`}>
+            {sectorOpen && <div className={`organization-map-functions ${selectedFunctions.length ? "is-deep" : ""}`} aria-label={`Funções de ${sector.label}`}><div className="organization-map-function-list"><button type="button" className="organization-map-sector-sheet" aria-label={`${allFunctionsOpen ? "Recolher" : "Abrir"} competências de ${sector.label}`} onClick={() => openSectorCompetencies(sector)}><Layers3 aria-hidden="true" /> {allFunctionsOpen ? "Recolher competências" : "Abrir competências"}</button>{sector.functions.map((item) => {
+              const functionOpen = functionIds.includes(item.item.id);
+              const functionScope = simulationActive ? `is-scope-${functionCoverage(item, effectiveLevels, officialIds)}` : "";
+              return <div key={item.item.id} className={`organization-map-function ${functionOpen ? "is-open" : ""} ${functionScope}`}>
                 <button type="button" className="organization-map-function-name" aria-expanded={functionOpen} onClick={() => openFunction(item)}><img src={item.image} alt="" loading="lazy" /><span>{item.item.name}</span><ChevronDown aria-hidden="true" /></button>
               </div>;
-            })}</div>{selectedFunction && <div className={`organization-map-competencies ${selectedCompetency ? "is-deep" : ""}`} aria-label={`Competências de ${selectedFunction.item.name}`}><div className="organization-map-competency-list">{selectedFunction.competencies.map((competency) => {
-                  const available = isEarned(competency, certifiedLevels) && officialIds.has(competency.officialSourceId);
-                  const selected = competencyId === competency.id;
-                  return <div key={competency.id} className={`organization-map-competency ${available ? "is-earned" : "is-pending"} ${selected ? "is-open" : ""}`}><button type="button" aria-expanded={selected} onClick={() => setCompetencyId((current) => current === competency.id ? null : competency.id)}>{competency.name}{competency.origin === "Nova" && <small>Proposta</small>}<ChevronDown aria-hidden="true" /></button></div>;
-                })}</div>{selectedCompetency && <Requirements item={selectedCompetency} go={go} levels={certifiedLevels} />}</div>}</div>}
+            })}</div>{selectedFunctions.length > 0 && <div className={`organization-map-competencies ${selectedCompetencies.length ? "is-deep" : ""}`} aria-label={`Competências selecionadas de ${sector.label}`}><div className="organization-map-competency-list">{selectedFunctions.map((selectedFunction) => <section key={selectedFunction.item.id} className="organization-map-competency-group"><div className="organization-map-competency-group-heading"><img src={selectedFunction.image} alt="" /><strong>{selectedFunction.item.name}</strong><span>{selectedFunction.competencies.length}</span></div>{selectedFunction.competencies.map((competency) => {
+                  const available = competencyCovered(competency, effectiveLevels, officialIds);
+                  const selected = competencyIds.includes(competency.id);
+                  return <div key={competency.id} className={`organization-map-competency ${available ? "is-earned" : "is-pending"} ${selected ? "is-open" : ""}`}><button type="button" aria-expanded={selected} onClick={() => setCompetencyIds((current) => toggle(current, competency.id))}>{competency.name}{competency.origin === "Nova" && <small>Proposta</small>}<ChevronDown aria-hidden="true" /></button></div>;
+                })}</section>)}</div>{selectedCompetencies.length > 0 && <div className="organization-map-requirements-stack">{selectedCompetencies.map((item) => <Requirements key={item.id} item={item} go={go} levels={effectiveLevels} />)}</div>}</div>}</div>}
           </section>;
         })}</div>}
       </article>;
