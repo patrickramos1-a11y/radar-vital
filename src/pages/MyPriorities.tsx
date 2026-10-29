@@ -15,7 +15,7 @@ export default function MyPriorities() {
   const taskData = useTasks();
 
   return <AppLayout><main className="h-full overflow-y-auto bg-slate-50 px-3 pb-20 pt-4 sm:px-6">
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-[1480px]">
       <Link to="/" className="inline-flex items-center gap-1 text-xs text-primary"><ArrowLeft className="h-4 w-4" />Voltar aos clientes</Link>
       <div className="mt-3">
         {currentUser ? <PrioritiesTab

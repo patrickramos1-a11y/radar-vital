@@ -175,7 +175,7 @@ describe('PrioritiesTab', () => {
 
     expect(screen.getByRole('button', { name: 'Painel' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Adicionar prioridade para Cliente Alfa' })).toBeInTheDocument();
-    expect(screen.getByAltText('Logo Cliente Alfa')).toHaveClass('h-16');
+    expect(screen.getByAltText('Logo Cliente Alfa')).toHaveClass('h-8');
   });
 
   it('starts expanded when the priority already has subtasks', () => {
@@ -221,5 +221,59 @@ describe('PrioritiesTab', () => {
     });
     expect(await screen.findByRole('menuitem', { name: 'Editar prioridade' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Excluir prioridade' })).toBeInTheDocument();
+  });
+
+  it('creates a priority inline from the client header', async () => {
+    const onCreate = vi.fn(async () => priority);
+    const onRefreshTasks = vi.fn(async () => undefined);
+    renderTab({ onCreate, onRefreshTasks });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar prioridade para Cliente Alfa' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nova prioridade para Cliente Alfa' }), { target: { value: 'Nova entrega' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar prioridade' }));
+
+    await waitFor(() => expect(onCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Nova entrega', client_id: client.id, assigned_to: ['Celine'], weight: 3 }),
+      client.name,
+    ));
+    expect(onRefreshTasks).toHaveBeenCalled();
+  });
+
+  it('orders priorities by weight and then by longest open duration', () => {
+    const newestHeavy = { ...priority, id: 'priority-heavy-new', title: 'Peso cinco recente', weight: 5, created_at: '2026-10-20T12:00:00.000Z' };
+    const oldestHeavy = { ...priority, id: 'priority-heavy-old', title: 'Peso cinco antiga', weight: 5, created_at: '2026-09-20T12:00:00.000Z' };
+    const olderLight = { ...priority, id: 'priority-light', title: 'Peso dois antiga', weight: 2, created_at: '2026-08-20T12:00:00.000Z' };
+    renderTab({ priorities: [olderLight, newestHeavy, oldestHeavy] });
+
+    const titles = screen.getAllByRole('button', { name: /prioridade (Peso cinco antiga|Peso cinco recente|Peso dois antiga)/ });
+    expect(titles.map(item => item.textContent)).toEqual(['Peso cinco antiga', 'Peso cinco recente', 'Peso dois antiga']);
+  });
+
+  it('transfers the priority and its linked task to another collaborator', async () => {
+    const onUpdate = vi.fn(async () => true);
+    const onUpdateTask = vi.fn(async () => true);
+    renderTab({
+      onUpdate,
+      onUpdateTask,
+      responsibleList: [
+        { name: 'Celine', color: '#0f766e', initials: 'CE' },
+        { name: 'Gabi', color: '#7c3aed', initials: 'GA' },
+      ],
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Responsável Celine' }));
+    fireEvent.click(screen.getByRole('button', { name: /Gabi/ }));
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledWith(priority.id, { assigned_to: ['Gabi'] }));
+    expect(onUpdateTask).toHaveBeenCalledWith(rootTask.id, { assigned_to: ['Gabi'] });
+  });
+
+  it('reveals the mobile edit and delete actions with a left swipe', () => {
+    renderTab();
+    const row = screen.getByRole('button', { name: 'Expandir prioridade Entregar relatório' }).closest('.relative.flex');
+    expect(row).toBeTruthy();
+    fireEvent.touchStart(row!, { touches: [{ clientX: 220 }] });
+    fireEvent.touchEnd(row!, { changedTouches: [{ clientX: 120 }] });
+    expect(row).toHaveClass('-translate-x-24');
   });
 });
