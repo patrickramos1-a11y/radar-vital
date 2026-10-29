@@ -14,6 +14,9 @@ type TaskPriorityAutomationRpc = (
   fn: string,
   args: Record<string, unknown>,
 ) => Promise<{ error: { code?: string; message: string } | null }>;
+type FinishTaskRpc = (fn: string, args: Record<string, unknown>) => Promise<{
+  error: { message: string } | null;
+}>;
 
 const LOCAL_WORKSPACE_PREVIEW = import.meta.env.VITE_CLIENT_WORKSPACE_PREVIEW === 'true';
 const LOCAL_WORKSPACE_KEY = 'radar-vital:client-workspace-preview:v1';
@@ -327,8 +330,35 @@ export function useTasks() {
     try {
       const isCompleting = data.completed === true || data.status === 'concluida';
       if (isCompleting && !canCompleteTask(taskId, tasks)) {
-        toast.error('Conclua ou cancele as subtarefas abertas primeiro');
-        return false;
+        if (!window.confirm('Esta tarefa tem subtarefas abertas. Deseja concluir todas elas e a tarefa principal?')) return false;
+        if (LOCAL_WORKSPACE_PREVIEW) {
+          const descendants = new Set([taskId]);
+          let changed = true;
+          while (changed) {
+            changed = false;
+            for (const task of tasks) {
+              if (task.parent_task_id && descendants.has(task.parent_task_id) && !descendants.has(task.id)) {
+                descendants.add(task.id);
+                changed = true;
+              }
+            }
+          }
+          const now = new Date().toISOString();
+          writeLocalWorkspace({
+            tasks: tasks.map(task => descendants.has(task.id)
+              ? { ...task, completed: true, status: 'concluida', completed_at: task.completed_at || now, updated_at: now }
+              : task),
+            dependencies,
+          });
+          return true;
+        }
+        const { error: finishError } = await (supabase.rpc as unknown as FinishTaskRpc)('finish_priority_task', {
+          p_task_id: taskId,
+          p_finish_children: true,
+        });
+        if (finishError) throw finishError;
+        await fetchTasks();
+        if (currentTask?.recurrence === 'none' || currentTask?.parent_task_id) return true;
       }
 
       if (LOCAL_WORKSPACE_PREVIEW) {
@@ -480,7 +510,7 @@ export function useTasks() {
       toast.error('Erro ao atualizar tarefa');
       return false;
     }
-  }, [dependencies, tasks]);
+  }, [dependencies, fetchTasks, tasks]);
 
   const bulkUpdateTasks = useCallback(async (
     taskIds: string[],

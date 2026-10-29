@@ -28,6 +28,7 @@ interface Props {
   clients: Client[];
   responsibleList: RespOption[];
   onPromote: (taskId: string, taskTitle: string, data: PriorityFormData, clientName?: string) => Promise<Priority | null>;
+  onRefreshTasks: () => Promise<void>;
   onToggleComplete: (taskId: string, clientName?: string) => Promise<boolean>;
   onCreateTask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
   onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
@@ -36,7 +37,7 @@ interface Props {
 
 type TaskSortKey = 'title' | 'client' | 'assignees' | 'dueDate' | 'daysOpen' | 'priority';
 
-export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, clients, responsibleList, onPromote, onToggleComplete, onCreateTask, onUpdateTask, getDaysOpen }: Props) {
+export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, clients, responsibleList, onPromote, onRefreshTasks, onToggleComplete, onCreateTask, onUpdateTask, getDaysOpen }: Props) {
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -233,14 +234,18 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
         defaultAssignee={collaborator}
         presetTitle={promotingTask?.title}
         presetClientId={promotingTask?.client_id}
+        lockClientId
+        promotionMode
         clients={clients}
         responsibleList={responsibleList}
         submitLabel="Promover para prioridade"
         onSubmit={async (data) => {
           if (!promotingTask) return;
           const clientName = data.client_id ? clientById.get(data.client_id)?.name : undefined;
-          await onPromote(promotingTask.id, promotingTask.title, data, clientName);
-          setPromotingTask(null);
+          if (await onPromote(promotingTask.id, promotingTask.title, data, clientName)) {
+            await onRefreshTasks();
+            setPromotingTask(null);
+          }
         }}
       />
 

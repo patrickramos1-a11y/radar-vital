@@ -111,6 +111,17 @@ describe("work item adapters", () => {
     ).toEqual([]);
   });
 
+  it("shows a linked priority once in the consolidated client history", () => {
+    const items = buildClientWorkItems(
+      "client-1",
+      [{ ...task, priority_id: priority.id }],
+      [{ ...priority, source_task_id: task.id }],
+      [],
+    );
+
+    expect(items.map(item => item.id)).toEqual(["priority:priority-1"]);
+  });
+
   it("already supports audit and challenge adapters", () => {
     const item = futureSourceToWorkItem({
       id: "audit-client-1",

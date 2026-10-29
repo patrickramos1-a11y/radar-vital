@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Star, Bomb, Building2, Plus, MessageCircle, ListChecks, Sparkles } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
@@ -144,6 +145,7 @@ export function ClientCard({
   onOpenTab,
 }: ClientCardProps) {
 
+  const navigate = useNavigate();
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
   const hasCollaborators = assignedCollaborators.length > 0;
@@ -166,11 +168,7 @@ export function ClientCard({
 
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!client.isPriority) {
-      setReasonDialog("priority");
-      return;
-    }
-    onTogglePriority(client.id);
+    navigate(`/central-entregas?tab=priorities&clientId=${encodeURIComponent(client.id)}`);
   };
 
   const handleCollaboratorClick = (e: React.MouseEvent, collaboratorId: string) => {
@@ -209,7 +207,7 @@ export function ClientCard({
               <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
             </button>
             )}
-            <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? `Prioridade: ${client.priorityReason || 'sem motivo informado'}` : "Marcar como prioritário"}>
+            <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Ver prioridades do cliente">
               <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
             </button>
           </div>
@@ -247,7 +245,7 @@ export function ClientCard({
                 <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
               </button>
             )}
-            <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title={client.isPriority ? `Prioridade: ${client.priorityReason || 'sem motivo informado'}` : "Marcar como prioritário"}>
+            <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Ver prioridades do cliente">
               <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
             </button>
             <TabCounter label="Tarefas" count={activeTaskCount} onClick={() => onOpenTab(client.id, 'tasks')} icon={<ListChecks className="w-3.5 h-3.5 text-amber-600" />} />

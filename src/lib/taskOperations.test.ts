@@ -51,6 +51,15 @@ describe('task operational rules', () => {
     expect(canCompleteTask(parent.id, [parent, completed, { ...open, status: 'cancelada' }])).toBe(true);
   });
 
+  it('does not allow a priority task to close while a nested subtask remains open', () => {
+    const root = makeTask({ priority_id: 'priority-1' });
+    const completedChild = makeTask({ id: 'sub-1', parent_task_id: root.id, completed: true, status: 'concluida' });
+    const openGrandchild = makeTask({ id: 'sub-2', parent_task_id: completedChild.id });
+
+    expect(canCompleteTask(root.id, [root, completedChild, openGrandchild])).toBe(false);
+    expect(canCompleteTask(root.id, [root, completedChild, { ...openGrandchild, status: 'cancelada' }])).toBe(true);
+  });
+
   it('calculates weekly and monthly recurrence dates', () => {
     expect(getNextRecurrenceDate('2026-10-18', 'weekly')).toBe('2026-10-25');
     expect(getNextRecurrenceDate('2026-10-18', 'monthly')).toBe('2026-11-18');

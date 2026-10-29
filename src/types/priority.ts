@@ -14,12 +14,14 @@ export interface Priority {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  source_task_id?: string | null;
 }
 
 export interface PriorityFormData {
   title: string;
   description?: string;
   client_id?: string | null;
+  client_ids?: string[];
   assigned_to: string[];
   due_date?: string | null;
   status?: PriorityStatus;

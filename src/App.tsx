@@ -12,6 +12,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const JackboxPanel = lazy(() => import("./pages/JackboxPanel"));
 const JackboxUnified = lazy(() => import("./pages/JackboxUnified"));
 const CentralEntregas = lazy(() => import("./pages/CentralEntregas"));
+const MyPriorities = lazy(() => import("./pages/MyPriorities"));
 const UniversoRamos = lazy(() => import("./pages/UniversoRamos"));
 const PlanoMestrePreview = lazy(() => import("./pages/PlanoMestrePreview"));
 const Auditorias = lazy(() => import("./pages/Auditorias"));
@@ -57,6 +58,7 @@ const App = () => {
                   <Route path="/jackbox" element={<JackboxPanel />} />
                   <Route path="/jackbox-unificado" element={<JackboxUnified />} />
                   <Route path="/central-entregas" element={<CentralEntregas />} />
+                  <Route path="/minhas-prioridades" element={<MyPriorities />} />
                   <Route path="/universo-ramos" element={<UniversoRamos />} />
                   <Route path="/universo-ramos/plano-mestre" element={<PlanoMestrePreview />} />
                   <Route path="/auditorias" element={<Auditorias />} />

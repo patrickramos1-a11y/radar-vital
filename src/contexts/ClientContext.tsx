@@ -274,6 +274,14 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     fetchClients();
   }, [fetchClients]);
 
+  useEffect(() => {
+    const channel = supabase.channel('clients-priority-state')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clients' }, () => {
+        void fetchClients();
+      }).subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [fetchClients]);
+
   const allActiveClients = clients
     .filter(c => c.isActive)
     .sort((a, b) => a.order - b.order);

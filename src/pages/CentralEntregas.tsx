@@ -41,7 +41,7 @@ type ClientCommentRow = {
 export default function CentralEntregas() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { collaborators } = useCollaborators();
-  const { isAdmin } = useAuth();
+  const { isAdmin, currentUser } = useAuth();
   const { clients } = useClients();
   const tasksHook = useTasks();
   const prioritiesHook = usePriorities();
@@ -88,7 +88,8 @@ export default function CentralEntregas() {
     return Array.from(map.values());
   }, [collaborators]);
 
-  const [selected, setSelected] = useState<string>('Patrick');
+  const [selected, setSelected] = useState<string>(() => currentUser?.name || 'Patrick');
+  useEffect(() => { if (currentUser?.name) setSelected(currentUser.name); }, [currentUser?.name]);
   const isTeamView = selected === TEAM_VIEW;
   const selectedInfo = useMemo(
     () =>
@@ -379,11 +380,17 @@ export default function CentralEntregas() {
                 color={selectedInfo.color}
                 isTeamView={isTeamView}
                 priorities={scopedPriorities}
+                tasks={scopedTasks}
                 clients={scopedClients}
                 responsibleList={responsibleList}
+                initialClientId={searchParams.get('clientId')}
                 onCreate={prioritiesHook.addPriority}
+                onCreateMany={prioritiesHook.addPrioritiesForClients}
                 onUpdate={prioritiesHook.updatePriority}
                 onDelete={prioritiesHook.deletePriority}
+                onCreateSubtask={tasksHook.addTask}
+                onToggleTask={tasksHook.toggleComplete}
+                onRefreshTasks={tasksHook.refetch}
               />
             </TabsContent>
 
@@ -397,6 +404,7 @@ export default function CentralEntregas() {
                 clients={scopedClients}
                 responsibleList={responsibleList}
                 onPromote={prioritiesHook.promoteTaskToPriority}
+                onRefreshTasks={tasksHook.refetch}
                 onToggleComplete={tasksHook.toggleComplete}
                 onCreateTask={tasksHook.addTask}
                 onUpdateTask={tasksHook.updateTask}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Star, 
   Bomb,
@@ -70,6 +71,7 @@ export function MobileClientDetail({
   onDeleteTask,
   onSetTaskDependencies,
 }: MobileClientDetailProps) {
+  const navigate = useNavigate();
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
@@ -170,11 +172,8 @@ export function MobileClientDetail({
                 active={client.isPriority}
                 color="rgb(245, 158, 11)"
                 onClick={() => {
-                  if (!client.isPriority) {
-                    setReasonDialog("priority");
-                    return;
-                  }
-                  onTogglePriority(client.id);
+                  onClose();
+                  navigate(`/minhas-prioridades?clientId=${encodeURIComponent(client.id)}`);
                 }}
               />
               <ActionButton

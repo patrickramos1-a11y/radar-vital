@@ -18,16 +18,20 @@ interface Props {
   presetTitle?: string;
   presetClientId?: string | null;
   presetDescription?: string;
+  allowMultipleClients?: boolean;
+  lockClientId?: boolean;
+  promotionMode?: boolean;
   clients: Client[];
   responsibleList: RespOption[];
   onSubmit: (data: PriorityFormData) => Promise<void>;
   submitLabel?: string;
 }
 
-export function PriorityModal({ open, onOpenChange, editing, defaultAssignee, presetTitle, presetClientId, presetDescription, clients, responsibleList, onSubmit, submitLabel }: Props) {
+export function PriorityModal({ open, onOpenChange, editing, defaultAssignee, presetTitle, presetClientId, presetDescription, allowMultipleClients = false, lockClientId = false, promotionMode = false, clients, responsibleList, onSubmit, submitLabel }: Props) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [clientId, setClientId] = useState<string | null>(null);
+  const [clientIds, setClientIds] = useState<string[]>([]);
   const [assignedTo, setAssignedTo] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [weight, setWeight] = useState(3);
@@ -40,6 +44,7 @@ export function PriorityModal({ open, onOpenChange, editing, defaultAssignee, pr
         setTitle(editing.title);
         setDescription(editing.description || '');
         setClientId(editing.client_id);
+        setClientIds(editing.client_id ? [editing.client_id] : []);
         setAssignedTo(editing.assigned_to);
         setDueDate(editing.due_date || '');
         setWeight(editing.weight);
@@ -49,6 +54,7 @@ export function PriorityModal({ open, onOpenChange, editing, defaultAssignee, pr
         setTitle(presetTitle || '');
         setDescription(presetDescription || '');
         setClientId(presetClientId || null);
+        setClientIds(presetClientId ? [presetClientId] : []);
         setAssignedTo(defaultAssignee ? [defaultAssignee] : []);
         setDueDate('');
         setWeight(3);
@@ -66,10 +72,12 @@ export function PriorityModal({ open, onOpenChange, editing, defaultAssignee, pr
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
+    if (!editing && !lockClientId && !(allowMultipleClients ? clientIds.length : clientId)) return;
     await onSubmit({
       title: title.trim(),
       description: description.trim() || undefined,
       client_id: clientId,
+      client_ids: allowMultipleClients && !editing ? clientIds : undefined,
       assigned_to: assignedTo,
       due_date: dueDate || null,
       weight,
@@ -88,29 +96,36 @@ export function PriorityModal({ open, onOpenChange, editing, defaultAssignee, pr
         <div className="space-y-3">
           <div>
             <Label>Título</Label>
-            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Enviar relatório..." />
+            <Input value={title} onChange={e => setTitle(e.target.value)} readOnly={promotionMode} placeholder="Ex: Enviar relatório..." />
           </div>
 
-          <div>
+          {!promotionMode && <div>
             <Label>Descrição</Label>
             <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} />
-          </div>
+          </div>}
 
-          <div className="grid grid-cols-2 gap-3">
+          {!promotionMode && <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Cliente</Label>
-              <select value={clientId || ''} onChange={e => setClientId(e.target.value || null)} className="w-full px-2 py-2 border rounded-md bg-background text-sm">
-                <option value="">— Sem cliente —</option>
+              {allowMultipleClients && !editing ? (
+                <div className="max-h-36 overflow-auto border p-2 space-y-1" role="group" aria-label="Clientes da prioridade">
+                  {clients.map(c => <label key={c.id} className="flex items-center gap-2 text-xs py-1">
+                    <input type="checkbox" checked={clientIds.includes(c.id)} onChange={e => setClientIds(current => e.target.checked ? [...current, c.id] : current.filter(id => id !== c.id))} />
+                    <span>{c.name}</span>
+                  </label>)}
+                </div>
+              ) : <select value={clientId || ''} disabled={lockClientId} onChange={e => setClientId(e.target.value || null)} className="w-full px-2 py-2 border rounded-md bg-background text-sm">
+                <option value="">Selecione um cliente</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              </select>}
             </div>
             <div>
               <Label>Prazo</Label>
               <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </div>
-          </div>
+          </div>}
 
-          <div>
+          {!promotionMode && <div>
             <Label>Responsáveis</Label>
             <div className="flex flex-wrap gap-1.5 mt-1">
               {responsibleList.map(r => {
@@ -128,9 +143,9 @@ export function PriorityModal({ open, onOpenChange, editing, defaultAssignee, pr
                 );
               })}
             </div>
-          </div>
+          </div>}
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className={`grid gap-3 ${promotionMode ? 'grid-cols-2' : 'grid-cols-3'}`}>
             <div>
               <Label>Peso (1–5)</Label>
               <Input type="number" min={1} max={5} value={weight} onChange={e => setWeight(Number(e.target.value))} />
@@ -139,14 +154,14 @@ export function PriorityModal({ open, onOpenChange, editing, defaultAssignee, pr
               <Label>Categoria</Label>
               <Input value={category} onChange={e => setCategory(e.target.value)} placeholder="Ex: Fiscal" />
             </div>
-            <div>
+            {!promotionMode && <div>
               <Label>Status</Label>
               <select value={status} onChange={e => setStatus(e.target.value as PriorityStatus)} className="w-full px-2 py-2 border rounded-md bg-background text-sm">
                 {(Object.keys(PRIORITY_STATUS_CONFIG) as PriorityStatus[]).map(s => (
                   <option key={s} value={s}>{PRIORITY_STATUS_CONFIG[s].label}</option>
                 ))}
               </select>
-            </div>
+            </div>}
           </div>
         </div>
 

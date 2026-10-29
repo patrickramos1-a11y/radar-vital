@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useClients } from "@/contexts/ClientContext";
 import { useMunicipalities } from "@/hooks/useMunicipalities";
 import { ClientType, UniversoRamosCategory, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from "@/types/client";
-import { Landmark, Briefcase, Globe2, Star, Upload, X, Search, Check, Loader2 } from "lucide-react";
+import { Landmark, Briefcase, Globe2, Upload, X, Search, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface NewClientDialogProps {
@@ -21,7 +21,6 @@ export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }
   const [initials, setInitials] = useState("");
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [clientType, setClientType] = useState<ClientType>(defaultClientType);
-  const [isPriority, setIsPriority] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [municipios, setMunicipios] = useState<string[]>([]);
   const [universeCategory, setUniverseCategory] = useState<UniversoRamosCategory | "">("");
@@ -32,7 +31,6 @@ export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }
     setInitials("");
     setLogoUrl("");
     setClientType(defaultClientType);
-    setIsPriority(false);
     setIsActive(true);
     setMunicipios([]);
     setUniverseCategory("");
@@ -62,7 +60,7 @@ export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }
         name: name.trim(),
         initials: initials.trim() || generateInitials(name.trim()),
         logoUrl: logoUrl || undefined,
-        isPriority,
+        isPriority: false,
         isActive,
         isChecked: false,
         isHighlighted: false,
@@ -228,11 +226,6 @@ export function NewClientDialog({ open, onOpenChange, defaultClientType = "AC" }
 
           {/* Toggles */}
           <div className="flex items-center gap-6 pt-2">
-            <label className="flex items-center gap-2 cursor-pointer text-sm">
-              <input type="checkbox" checked={isPriority} onChange={(e) => setIsPriority(e.target.checked)} className="w-4 h-4" />
-              <Star className={`w-4 h-4 ${isPriority ? "text-yellow-500 fill-current" : "text-muted-foreground"}`} />
-              Prioritário
-            </label>
             <label className="flex items-center gap-2 cursor-pointer text-sm">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4" />
               Ativo na respectiva visão

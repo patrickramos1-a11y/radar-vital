@@ -172,8 +172,9 @@ export function buildClientWorkItems(
   futureSources: FutureWorkItemSource[] = [],
   comments: ClientComment[] = [],
 ): WorkItem[] {
+  const priorityTaskIds = new Set(priorities.flatMap(priority => priority.source_task_id ? [priority.source_task_id] : []));
   const taskItems = tasks
-    .filter((task) => task.client_id === clientId)
+    .filter((task) => task.client_id === clientId && !priorityTaskIds.has(task.id))
     .map(taskToWorkItem);
   const priorityItems = priorities
     .map(priorityToWorkItem)

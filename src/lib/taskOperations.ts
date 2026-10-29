@@ -45,7 +45,16 @@ export function getTaskProgress(taskId: string, tasks: Task[]) {
 }
 
 export function canCompleteTask(taskId: string, tasks: Task[]) {
-  return !tasks.some(
-    (task) => task.parent_task_id === taskId && task.status !== 'concluida' && task.status !== 'cancelada',
-  );
+  const descendants = new Set([taskId]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const task of tasks) {
+      if (task.parent_task_id && descendants.has(task.parent_task_id) && !descendants.has(task.id)) {
+        descendants.add(task.id);
+        changed = true;
+      }
+    }
+  }
+  return !tasks.some(task => task.id !== taskId && descendants.has(task.id) && !task.completed && task.status !== 'cancelada');
 }
