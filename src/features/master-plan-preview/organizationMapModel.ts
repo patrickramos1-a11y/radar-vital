@@ -2,6 +2,7 @@ import {
   essentialFunctionsForSector, manualCatalog,
   type ManualCompetency, type ManualFunction, type ManualSector,
 } from "./manualDigitalModel";
+import { functionStickerPath, sectorStickerPath } from "./organizationVisualAssets";
 
 interface NucleusDesign {
   id: string;
@@ -24,6 +25,7 @@ interface SectorDesign {
 
 export interface OrganizationFunction {
   item: ManualFunction;
+  image: string;
   competencies: ManualCompetency[];
 }
 
@@ -32,6 +34,7 @@ export interface OrganizationSector {
   label: string;
   tone: string;
   image: string;
+  sticker: string;
   functions: OrganizationFunction[];
 }
 
@@ -95,8 +98,10 @@ export const organizationMap: OrganizationNucleus[] = nuclei.map((nucleus) => ({
       label: design.label ?? item.name,
       tone: design.tone,
       image: `${imageRoot}/sectors/${design.image}.webp`,
+      sticker: required(sectorStickerPath(sectorId), sectorId),
       functions: essentialFunctionsForSector(sectorId).map((entry) => ({
         item: entry,
+        image: required(functionStickerPath(entry.id), entry.id),
         competencies: [...entry.content["Competências requeridas (IDs)"].matchAll(/COMP-\d{3}/g)]
           .map(([id]) => required(competencyById.get(id), id)),
       })),

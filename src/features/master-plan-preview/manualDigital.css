@@ -4,6 +4,12 @@
   color: #18302c;
 }
 
+.nucleus-visual { position: relative; min-width: 0; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid #dce6e2; background: white; }
+.nucleus-visual-cover { display: block; width: 100%; height: 100%; object-fit: cover; }
+.nucleus-visual-sticker { position: absolute; right: 4%; bottom: 3%; width: 35%; height: 72%; object-fit: contain; filter: drop-shadow(0 6px 8px #17362d66); }
+.function-heading-art { display: flex; flex-shrink: 0; align-items: center; gap: 0.75rem; }
+.function-heading-art img { display: block; width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 5px 7px #17362d4d); }
+
 .sector-breadcrumb {
   display: flex;
   flex-wrap: wrap;
@@ -25,7 +31,8 @@
 .sector-directory-item { display: flex; align-items: center; gap: 0.9rem; min-width: 0; min-height: 112px; padding: 0.6rem 0.8rem 0.6rem 0.6rem; border: 1px solid #dce6e2; border-left: 3px solid var(--sector-accent); background: white; text-align: left; }
 .sector-directory-item:hover, .sector-directory-item:focus-visible { border-color: var(--sector-accent); background: var(--sector-soft); }
 .sector-directory-image { position: relative; flex-shrink: 0; width: 120px; height: 86px; overflow: hidden; background: var(--sector-soft); }
-.sector-directory-image img { position: absolute; top: 0; left: 0; width: 200%; max-width: none; height: 100%; transform: translateX(-50%); object-fit: cover; }
+.sector-directory-image .sector-directory-cover { position: absolute; top: 0; left: 0; width: 200%; max-width: none; height: 100%; transform: translateX(-50%); object-fit: cover; opacity: .55; }
+.sector-directory-image .sector-directory-sticker { position: absolute; right: 2px; bottom: 0; width: 72px; height: 78px; object-fit: contain; filter: drop-shadow(0 3px 4px #17362d44); }
 .sector-directory-copy { display: flex; flex: 1; flex-direction: column; min-width: 0; }
 .sector-directory-copy small { color: #526662; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
 .sector-directory-copy strong { margin-top: 0.25rem; font-size: 0.85rem; line-height: 1.3; }
@@ -61,7 +68,7 @@
   background: white;
 }
 
-.sector-nucleus-stamp img { width: 100%; height: 100%; object-fit: cover; object-position: 72% 44%; }
+.sector-nucleus-stamp img { width: 100%; height: 100%; object-fit: contain; }
 .sector-code { padding: 0.2rem 0.45rem; border: 1px solid #a4b8b1; background: white; color: #264c47; font-size: 0.68rem; font-weight: 700; }
 .sector-review-tag { color: #755319; font-size: 0.67rem; font-weight: 700; }
 .sector-concept { margin-top: 1.15rem; color: #25533f; font-size: 0.76rem; font-weight: 700; text-transform: uppercase; }
@@ -70,7 +77,8 @@
 .sector-hero-copy > p { max-width: 62ch; margin-top: 0.8rem; color: #405450; font-size: 0.9rem; line-height: 1.55; }
 
 .sector-hero-art { position: relative; min-width: 0; overflow: hidden; border-left: 1px solid #cddbd6; background: white; }
-.sector-hero-art img { position: absolute; top: 0; left: 0; width: 200%; max-width: none; height: 100%; transform: translateX(-50%); object-fit: cover; object-position: center; }
+.sector-hero-art .sector-hero-cover { position: absolute; top: 0; left: 0; width: 200%; max-width: none; height: 100%; transform: translateX(-50%); object-fit: cover; object-position: center; }
+.sector-hero-art .sector-hero-sticker { position: absolute; right: 5%; bottom: 2%; width: min(34%, 190px); height: 72%; object-fit: contain; filter: drop-shadow(0 8px 10px #17362d55); }
 
 .sector-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; margin: 1rem 0 1.15rem; }
 .sector-fact { display: flex; min-width: 0; width: 100%; gap: 0.7rem; align-items: flex-start; padding: 0.75rem; border: 1px solid #e0e7e4; border-top: 3px solid var(--sector-accent); background: #fff; text-align: left; cursor: pointer; }

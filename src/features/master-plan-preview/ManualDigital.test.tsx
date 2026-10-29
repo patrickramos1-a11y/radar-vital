@@ -14,6 +14,12 @@ function sector(tab: string, certifiedLevels: Record<string, number> | null = { 
 }
 
 describe("Manual Digital sector journey", () => {
+  it("shows the official function sticker on its direct page", () => {
+    render(<ManualDigital view="funcao" id="FUN-003" tab="visao" go={vi.fn()} officialCapabilityCodes={officialCapabilityCodes} officialCompetencyIds={[]} />);
+    const sticker = screen.getByRole("img", { name: /Figurinha de/ });
+    expect(sticker.getAttribute("src")).toBe("/organization-map/functions/T20.webp");
+  });
+
   it("opens all four quick facts and keeps areas in the overview without a tab", () => {
     const go = sector("visao");
     expect(screen.queryByRole("tab", { name: /Áreas/ })).toBeNull();

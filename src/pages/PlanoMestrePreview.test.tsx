@@ -82,7 +82,7 @@ describe("Plano Mestre organizational preview", () => {
   it("shows the sector visual identity, real outputs, work flow and linked capabilities", () => {
     openPreview("/universo-ramos/plano-mestre?view=setor&id=SET-01");
     expect(main().getByText("Da leitura ao projeto")).toBeTruthy();
-    expect(main().getByRole("img", { name: /Camadas de terreno, água/ }).getAttribute("src")).toBe("/universe-sectors/04-setor-de-projetos.png");
+    expect(main().getByRole("img", { name: /Camadas de terreno, água/ }).getAttribute("src")).toBe("/organization-map/sectors/projetos.webp");
     expect(main().getByRole("heading", { name: "O que o setor entrega" })).toBeTruthy();
     expect(main().getByText("Estudos, planos, projetos, relatórios técnicos, memoriais e pranchas revisados")).toBeTruthy();
     expect(main().getByText("Dados e requisitos")).toBeTruthy();

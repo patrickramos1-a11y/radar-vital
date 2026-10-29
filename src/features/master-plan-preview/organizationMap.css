@@ -44,9 +44,9 @@
 .organization-map-sector-row { display: grid; min-width: 0; border: 1px solid color-mix(in srgb, var(--org-sector) 30%, #dce5de); border-left: 3px solid var(--org-sector); background: #fff; }
 .organization-map-sector-row.is-open { grid-template-columns: minmax(160px, 32%) minmax(0, 1fr); border-color: var(--org-sector); }
 .organization-map-sector { position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 58px; overflow: hidden; padding: 7px 12px; border: 0; background: #fff; color: #17362d; text-align: left; }
-.organization-map-sector::before { position: absolute; inset: 0; content: ""; background-image: linear-gradient(90deg, #fffffff0 20%, #ffffffd5 80%), var(--org-sector-cover); background-size: cover; background-position: center; opacity: .75; }
+.organization-map-sector::before { position: absolute; inset: 0; content: ""; background-image: linear-gradient(90deg, #fffffff2 15%, #ffffffb8 80%), var(--org-sector-cover); background-size: cover; background-position: center; opacity: .9; }
 .organization-map-sector:hover::before, .organization-map-sector-row.is-open .organization-map-sector::before { opacity: 1; }
-.organization-map-sector > img { position: relative; z-index: 1; width: 48px; height: 48px; flex: none; object-fit: contain; filter: drop-shadow(0 2px 3px #17362d44); }
+.organization-map-sector > img { position: relative; z-index: 1; width: 52px; height: 52px; flex: none; object-fit: contain; filter: drop-shadow(0 3px 5px #17362d55); }
 .organization-map-sector > span { position: relative; z-index: 1; min-width: 0; flex: 1; }
 .organization-map-sector small { display: block; color: var(--org-sector); font-size: 10px; font-weight: 750; }
 .organization-map-sector strong { display: block; font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-size: 21px; font-weight: 800; line-height: 1; text-transform: uppercase; }
@@ -54,13 +54,15 @@
 .organization-map-sector-row.is-open .organization-map-sector > svg { transform: rotate(180deg); }
 .organization-map-sector-row.is-open .organization-map-sector { align-items: flex-end; min-height: 150px; }
 .organization-map-sector-row.is-open .organization-map-sector::before { background-image: linear-gradient(0deg, #fffffff5 8%, #ffffff80 90%), var(--org-sector-cover); }
-.organization-map-sector-row.is-open .organization-map-sector > img { position: absolute; top: 10px; right: 10px; width: 64px; height: 64px; }
+.organization-map-sector-row.is-open .organization-map-sector > img { position: absolute; top: 10px; right: 10px; width: 76px; height: 76px; }
 .organization-map-functions { display: grid; align-content: start; gap: 4px; min-width: 0; padding: 6px; }
 .organization-map-sector-sheet { display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; min-height: 25px; border: 0; background: transparent; color: #087e4a; font-size: 10px; font-weight: 750; }
 .organization-map-sector-sheet svg { width: 13px; height: 13px; }
 .organization-map-function { min-width: 0; border: 1px solid #dce5de; background: #fff; }
 .organization-map-function.is-open { border-color: #087e4a; }
-.organization-map-function-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 36px; padding: 7px 10px; border: 0; background: transparent; color: #244735; font-size: 13px; font-weight: 750; text-align: left; }
+.organization-map-function-name { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 5px 10px; border: 0; background: transparent; color: #244735; font-size: 13px; font-weight: 750; text-align: left; }
+.organization-map-function-name > img { width: 38px; height: 38px; flex: none; object-fit: contain; filter: drop-shadow(0 2px 3px #17362d33); }
+.organization-map-function-name > span { flex: 1; min-width: 0; }
 .organization-map-function-name svg { width: 15px; height: 15px; flex: none; }
 .organization-map-function.is-open .organization-map-function-name { background: #eef8f0; }
 .organization-map-function.is-open .organization-map-function-name svg { transform: rotate(180deg); }
