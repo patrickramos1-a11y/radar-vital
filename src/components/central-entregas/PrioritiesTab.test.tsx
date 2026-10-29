@@ -96,7 +96,7 @@ describe('PrioritiesTab', () => {
       priorities: [priority, { ...priority, id: 'priority-2', title: 'Outra pessoa', assigned_to: ['Gabi'] }],
     });
 
-    expect(screen.getByRole('heading', { name: /Cliente Alfa/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Adicionar prioridade para Cliente Alfa' })).toBeInTheDocument();
     expect(screen.getByText('Entregar relatório')).toBeInTheDocument();
     expect(screen.queryByText('Outra pessoa')).not.toBeInTheDocument();
     expect(screen.getByText('1 prioridades em 1 clientes')).toBeInTheDocument();
@@ -106,7 +106,7 @@ describe('PrioritiesTab', () => {
     const onCreateSubtask = vi.fn(async () => true);
     renderTab({ onCreateSubtask });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar subtarefas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir prioridade Entregar relatório' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Nova subtarefa' }), { target: { value: 'Conferir anexos' } });
     fireEvent.click(screen.getByTitle('Adicionar subtarefa'));
 
@@ -152,5 +152,74 @@ describe('PrioritiesTab', () => {
     expect(screen.queryByText(priority.title)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Planejadas' }));
     expect(screen.getByText(priority.title)).toBeInTheDocument();
+  });
+
+  it('lets an administrator inspect another collaborator priorities', () => {
+    renderTab({
+      allowCollaboratorFilter: true,
+      responsibleList: [
+        { name: 'Celine', color: '#0f766e', initials: 'CE' },
+        { name: 'Gabi', color: '#7c3aed', initials: 'GA' },
+      ],
+      priorities: [priority, { ...priority, id: 'priority-2', title: 'Prioridade da Gabi', assigned_to: ['Gabi'] }],
+    });
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Filtrar colaborador' }), { target: { value: 'Gabi' } });
+    expect(screen.getByText('Prioridade da Gabi')).toBeInTheDocument();
+    expect(screen.queryByText(priority.title)).not.toBeInTheDocument();
+  });
+
+  it('switches to the panel view and keeps client creation on the logo', () => {
+    renderTab();
+    fireEvent.click(screen.getByRole('button', { name: 'Painel' }));
+
+    expect(screen.getByRole('button', { name: 'Painel' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Adicionar prioridade para Cliente Alfa' })).toBeInTheDocument();
+    expect(screen.getByAltText('Logo Cliente Alfa')).toHaveClass('h-16');
+  });
+
+  it('starts expanded when the priority already has subtasks', () => {
+    const child = {
+      ...rootTask,
+      id: 'task-child',
+      title: 'Conferir anexos',
+      parent_task_id: rootTask.id,
+      priority_id: null,
+      sort_order: 1,
+    } satisfies Task;
+
+    renderTab({ tasks: [rootTask, child] });
+    expect(screen.getByText('Conferir anexos')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Nova subtarefa' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Recolher prioridade Entregar relatório' }));
+    expect(screen.queryByRole('textbox', { name: 'Nova subtarefa' })).not.toBeInTheDocument();
+  });
+
+  it('opens automatically when subtasks arrive after the first render', async () => {
+    const child = {
+      ...rootTask,
+      id: 'task-child-late',
+      title: 'Subtarefa carregada depois',
+      parent_task_id: rootTask.id,
+      priority_id: null,
+      sort_order: 1,
+    } satisfies Task;
+    const { rerender, props } = renderTab();
+
+    rerender(<PrioritiesTab {...props} tasks={[rootTask, child]} />);
+
+    expect(await screen.findByText('Subtarefa carregada depois')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Recolher prioridade Entregar relatório' })).toBeInTheDocument();
+  });
+
+  it('places edit and delete inside the overflow menu', async () => {
+    renderTab();
+    expect(screen.queryByRole('button', { name: 'Editar prioridade' })).not.toBeInTheDocument();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Mais ações da prioridade' }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    expect(await screen.findByRole('menuitem', { name: 'Editar prioridade' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Excluir prioridade' })).toBeInTheDocument();
   });
 });
