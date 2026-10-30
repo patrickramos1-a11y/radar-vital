@@ -2917,6 +2917,7 @@ export type Database = {
           completed: boolean
           completed_at: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           due_date: string | null
           external_url: string | null
@@ -2940,6 +2941,7 @@ export type Database = {
           completed?: boolean
           completed_at?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           external_url?: string | null
@@ -2963,6 +2965,7 @@ export type Database = {
           completed?: boolean
           completed_at?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           external_url?: string | null
@@ -3194,6 +3197,10 @@ export type Database = {
       delete_audit: {
         Args: { p_actor_name?: string; p_audit_id: string }
         Returns: undefined
+      }
+      delete_priority_with_task_tree: {
+        Args: { p_priority_id: string }
+        Returns: Json
       }
       delete_universe_challenges: {
         Args: { p_actor_name?: string; p_challenge_ids: string[] }
