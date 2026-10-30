@@ -2483,7 +2483,6 @@ export type Database = {
           title: string
           universe_item_id: string | null
           updated_at: string
-          universe_item_id: string | null
           weight: number
         }
         Insert: {
@@ -2501,7 +2500,6 @@ export type Database = {
           title: string
           universe_item_id?: string | null
           updated_at?: string
-          universe_item_id?: string | null
           weight?: number
         }
         Update: {
@@ -2519,7 +2517,6 @@ export type Database = {
           title?: string
           universe_item_id?: string | null
           updated_at?: string
-          universe_item_id?: string | null
           weight?: number
         }
         Relationships: [
@@ -2919,7 +2916,6 @@ export type Database = {
           client_id: string
           completed: boolean
           completed_at: string | null
-          created_by: string | null
           created_at: string
           description: string | null
           due_date: string | null
@@ -2943,7 +2939,6 @@ export type Database = {
           client_id: string
           completed?: boolean
           completed_at?: string | null
-          created_by?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -2967,7 +2962,6 @@ export type Database = {
           client_id?: string
           completed?: boolean
           completed_at?: string | null
-          created_by?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
