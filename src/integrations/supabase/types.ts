@@ -2483,7 +2483,6 @@ export type Database = {
           title: string
           universe_item_id: string | null
           updated_at: string
-          universe_item_id: string | null
           weight: number
         }
         Insert: {
@@ -2501,7 +2500,6 @@ export type Database = {
           title: string
           universe_item_id?: string | null
           updated_at?: string
-          universe_item_id?: string | null
           weight?: number
         }
         Update: {
@@ -2519,7 +2517,6 @@ export type Database = {
           title?: string
           universe_item_id?: string | null
           updated_at?: string
-          universe_item_id?: string | null
           weight?: number
         }
         Relationships: [
@@ -2919,8 +2916,8 @@ export type Database = {
           client_id: string
           completed: boolean
           completed_at: string | null
-          created_by: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           due_date: string | null
           external_url: string | null
@@ -2943,8 +2940,8 @@ export type Database = {
           client_id: string
           completed?: boolean
           completed_at?: string | null
-          created_by?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           external_url?: string | null
@@ -2967,8 +2964,8 @@ export type Database = {
           client_id?: string
           completed?: boolean
           completed_at?: string | null
-          created_by?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           due_date?: string | null
           external_url?: string | null
@@ -3200,6 +3197,10 @@ export type Database = {
       delete_audit: {
         Args: { p_actor_name?: string; p_audit_id: string }
         Returns: undefined
+      }
+      delete_priority_with_task_tree: {
+        Args: { p_priority_id: string }
+        Returns: Json
       }
       delete_universe_challenges: {
         Args: { p_actor_name?: string; p_challenge_ids: string[] }
