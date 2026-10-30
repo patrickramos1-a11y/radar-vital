@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { differenceInCalendarDays, format } from 'date-fns';
-import { ArrowDownWideNarrow, CalendarClock, Check, Circle, Clock3, Gauge, LayoutGrid, List, ListChecks, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { ArrowDownWideNarrow, CalendarClock, Check, Circle, Clock3, Gauge, LayoutGrid, List, ListChecks, MoreHorizontal, Pencil, Plus, Search, Star, Trash2, X } from 'lucide-react';
 import type { Client } from '@/types/client';
 import type { Priority, PriorityFormData } from '@/types/priority';
 import { PRIORITY_CONFIG, type Task, type TaskFormData } from '@/types/task';
@@ -23,6 +23,7 @@ interface Props {
   clients: Client[];
   responsibleList: RespOption[];
   allowCollaboratorFilter?: boolean;
+  canPlanPriorities?: boolean;
   initialClientId?: string | null;
   onCreate: (data: PriorityFormData, clientName?: string) => Promise<Priority | null>;
   onCreateMany: (data: PriorityFormData, clientIds: string[]) => Promise<Priority[]>;
@@ -150,15 +151,15 @@ function Subtasks({ parentId, tasks, clientName, onToggle, depth = 0 }: {
     </div>)}</>;
 }
 
-function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, onUpdate, onDelete, onCreateSubtask, onToggleTask, onUpdateTask, onEdit, onRefreshTasks }: {
+function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canPlanPriorities, onUpdate, onDelete, onCreateSubtask, onToggleTask, onUpdateTask, onEdit, onRefreshTasks }: {
   priority: Priority; client?: Client; tasks: Task[]; rowIndex: number; responsibleList: RespOption[];
+  canPlanPriorities: boolean;
   onUpdate: Props['onUpdate']; onDelete: Props['onDelete']; onCreateSubtask: Props['onCreateSubtask'];
   onToggleTask: Props['onToggleTask']; onUpdateTask: Props['onUpdateTask']; onEdit: () => void; onRefreshTasks: Props['onRefreshTasks'];
 }) {
   const root = rootTaskFor(priority, tasks);
   const children = root ? tasks.filter(task => task.parent_task_id === root.id) : [];
-  const [expanded, setExpanded] = useState(children.length > 0);
-  const [manuallyToggled, setManuallyToggled] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const [swiped, setSwiped] = useState(false);
@@ -175,7 +176,7 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, onUp
     if (ok) setDraft('');
   };
   const remove = async () => {
-    if (window.confirm('Excluir esta prioridade? A tarefa continuará no cliente.')) {
+    if (window.confirm('Excluir esta prioridade? A tarefa vinculada e todas as subtarefas também serão excluídas.')) {
       await onDelete(priority.id);
       await onRefreshTasks();
     }
@@ -183,12 +184,14 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, onUp
   const toggleExpanded = () => {
     if (touchMoved.current) { touchMoved.current = false; return; }
     if (swiped) { setSwiped(false); return; }
-    setManuallyToggled(true);
     setExpanded(value => !value);
   };
   const weightColor = priority.weight >= 5 ? 'border-l-red-500' : priority.weight === 4 ? 'border-l-orange-400' : priority.weight === 3 ? 'border-l-amber-400' : priority.weight === 2 ? 'border-l-sky-400' : 'border-l-slate-300';
   const scheduled = Boolean(root?.scheduled_for && root.scheduled_for > today());
-  useEffect(() => { if (!manuallyToggled && children.length > 0) setExpanded(true); }, [children.length, manuallyToggled]);
+
+  useEffect(() => {
+    if (children.length > 0) setExpanded(true);
+  }, [children.length]);
 
   return <article className={`relative overflow-hidden border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : weightColor}`}>
     <div className={`absolute right-0 top-0 h-12 w-24 items-stretch sm:hidden ${swiped ? 'flex' : 'hidden'}`} aria-hidden={!swiped}>
@@ -219,7 +222,7 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, onUp
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
-        {!closed && <WorkSchedule task={root} onUpdateTask={onUpdateTask} />}
+        {!closed && canPlanPriorities && <WorkSchedule task={root} onUpdateTask={onUpdateTask} />}
         {!closed && <button type="button" onClick={async () => { if (await onUpdate(priority.id, { status: 'concluida' })) await onRefreshTasks(); }} title="Concluir prioridade" aria-label="Concluir prioridade" className="p-1.5 text-emerald-700 hover:bg-emerald-50"><Check className="h-4 w-4" /></button>}
         <DropdownMenu>
           <DropdownMenuTrigger asChild><button type="button" title="Mais ações" aria-label="Mais ações da prioridade" className="hidden p-1.5 text-muted-foreground hover:bg-muted sm:block"><MoreHorizontal className="h-4 w-4" /></button></DropdownMenuTrigger>
@@ -291,15 +294,13 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
   onCreateSubtask: Props['onCreateSubtask']; onToggleTask: Props['onToggleTask']; onUpdateTask: Props['onUpdateTask'];
 }) {
   const children = tasks.filter(item => item.parent_task_id === task.id);
-  const [expanded, setExpanded] = useState(children.length > 0);
-  const [manuallyToggled, setManuallyToggled] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const age = Math.max(0, differenceInCalendarDays(new Date(task.completed_at || new Date()), new Date(task.created_at)));
   const scheduled = Boolean(task.scheduled_for && task.scheduled_for > today());
   const overdue = !task.completed && Boolean(task.due_date && task.due_date < today());
   const config = PRIORITY_CONFIG[task.priority];
-  useEffect(() => { if (!manuallyToggled && children.length > 0) setExpanded(true); }, [children.length, manuallyToggled]);
 
   const addSubtask = async () => {
     if (!client || !draft.trim()) return;
@@ -318,7 +319,7 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
   return <article className={`border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : config.borderClass}`}>
     <div className={`flex min-w-0 items-center gap-1.5 px-2 py-1.5 ${rowIndex % 2 ? 'bg-slate-50' : 'bg-white'}`}>
       <div className="min-w-0 flex-1">
-        <button type="button" onClick={() => { setManuallyToggled(true); setExpanded(value => !value); }} className="block w-full min-w-0 py-0.5 text-left" aria-label={`${expanded ? 'Recolher' : 'Expandir'} tarefa ${task.title}`} aria-expanded={expanded}>
+        <button type="button" onClick={() => setExpanded(value => !value)} className="block w-full min-w-0 py-0.5 text-left" aria-label={`${expanded ? 'Recolher' : 'Expandir'} tarefa ${task.title}`} aria-expanded={expanded}>
           <span className={`line-clamp-2 text-[11px] font-semibold leading-[1.15] hover:text-primary sm:line-clamp-1 sm:text-[13px] ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</span>
         </button>
         <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
@@ -401,7 +402,7 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
   </Dialog>;
 }
 
-export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onCreateSubtask, onToggleTask, onUpdateTask, onRefreshTasks }: Props) {
+export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanPriorities = true, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onCreateSubtask, onToggleTask, onUpdateTask, onRefreshTasks }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Priority | null>(null);
   const [presetClientId, setPresetClientId] = useState<string | null>(null);
@@ -458,6 +459,10 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   const selectedAssignee = collaboratorFilter !== 'all' ? collaboratorFilter : collaborator;
 
   return <div className="space-y-3">
+    <div className="flex items-center gap-3 border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-amber-950">
+      <Star className="h-7 w-7 fill-amber-400 text-amber-600" />
+      <div><h2 className="text-xl font-bold">Prioridades</h2><p className="text-xs text-amber-800">Foco atual organizado por cliente, peso e tempo em aberto.</p></div>
+    </div>
     <div className="border bg-white p-2 shadow-sm">
       <div className="flex flex-wrap items-center gap-1.5">
         <div className="flex h-8 items-center border bg-slate-50" role="group" aria-label="Ordenar prioridades">
@@ -501,7 +506,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
             <Plus className="h-3.5 w-3.5 shrink-0 text-primary" />
           </button>}
         </header>
-        <div className="min-w-0">{items.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} onUpdate={onUpdate} onDelete={onDelete} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}</div>
+        <div className="min-w-0">{items.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanPriorities={canPlanPriorities} onUpdate={onUpdate} onDelete={onDelete} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}</div>
       </section>;
     })}</div>}
     {showingTasks && <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">{taskGroups.map(([clientId, items]) => {
@@ -521,7 +526,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         <div className="min-w-0">{items.map((task, rowIndex) => <TaskItem key={task.id} task={task} client={client} tasks={filteredTasks} rowIndex={rowIndex} responsibleList={responsibleList} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} />)}</div>
       </section>;
     })}</div>}
-    <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async data => {
+    <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} linkedTaskTitle={editing ? rootTaskFor(editing, tasks)?.title : undefined} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async data => {
       if (editing) { if (await onUpdate(editing.id, data)) { await onRefreshTasks(); setModalOpen(false); } }
       else { const created = await onCreate(data, data.client_id ? clientById.get(data.client_id)?.name : undefined); if (created) { await onRefreshTasks(); setModalOpen(false); } }
     }} />

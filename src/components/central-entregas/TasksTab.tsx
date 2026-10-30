@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { normalizeAssignee } from '@/lib/taskAssignee';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { priorityTaskTreeIds } from '@/lib/taskHierarchy';
 
 interface RespOption { name: string; color: string; initials: string; }
 
@@ -49,9 +50,13 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
 
   const clientById = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
   const priorityMap = useMemo(() => new Map(priorities.map(p => [p.id, p])), [priorities]);
+  const ordinaryTasks = useMemo(() => {
+    const promoted = priorityTaskTreeIds(tasks);
+    return tasks.filter(task => !promoted.has(task.id));
+  }, [tasks]);
 
   const filtered = useMemo(() => {
-    let list = tasks.filter(t => isTeamView ? true : assigneeMatches(t.assigned_to, collaborator));
+    let list = ordinaryTasks.filter(t => isTeamView ? true : assigneeMatches(t.assigned_to, collaborator));
     if (!showDone) list = list.filter(t => !t.completed);
     if (clientFilter !== 'all') list = list.filter(t => t.client_id === clientFilter);
     if (assigneeFilter === 'unassigned') list = list.filter(t => t.assigned_to.length === 0);
@@ -78,13 +83,13 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
       return values[sortKey] * (sortDirection === 'asc' ? 1 : -1);
     });
     return list;
-  }, [tasks, collaborator, isTeamView, clientFilter, assigneeFilter, search, showDone, sortKey, sortDirection, getDaysOpen, clientById, priorityMap]);
+  }, [ordinaryTasks, collaborator, isTeamView, clientFilter, assigneeFilter, search, showDone, sortKey, sortDirection, getDaysOpen, clientById, priorityMap]);
 
   const linkedClients = useMemo(() => {
     const ids = new Set<string>();
-    tasks.forEach(t => { if (isTeamView || assigneeMatches(t.assigned_to, collaborator)) ids.add(t.client_id); });
+    ordinaryTasks.forEach(t => { if (isTeamView || assigneeMatches(t.assigned_to, collaborator)) ids.add(t.client_id); });
     return clients.filter(c => ids.has(c.id)).sort((a, b) => a.name.localeCompare(b.name));
-  }, [tasks, clients, collaborator, isTeamView]);
+  }, [ordinaryTasks, clients, collaborator, isTeamView]);
 
   const toggleSort = (key: TaskSortKey) => {
     if (key === sortKey) setSortDirection(direction => direction === 'asc' ? 'desc' : 'asc');

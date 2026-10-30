@@ -26,7 +26,7 @@ const dbRowToPriority = (row: Database['public']['Tables']['priorities']['Row'])
 
 type PriorityRpc = (name: string, args: Record<string, unknown>) => Promise<{
   data: unknown;
-  error: { message: string } | null;
+  error: { code?: string; message: string } | null;
 }>;
 const callPriorityRpc = supabase.rpc as unknown as PriorityRpc;
 
@@ -158,17 +158,49 @@ export function usePriorities() {
 
   const deletePriority = useCallback(async (id: string) => {
     try {
+      const atomicDelete = await callPriorityRpc('delete_priority_with_task_tree', { p_priority_id: id });
+      if (!atomicDelete.error) {
+        await fetch();
+        toast.success('Prioridade, tarefa e subtarefas excluídas');
+        return true;
+      }
+      if (!['42883', 'PGRST202'].includes(atomicDelete.error.code ?? '')) throw atomicDelete.error;
+
+      const current = priorities.find((priority) => priority.id === id);
+      const { data: linkedTasks, error: linkedError } = await supabase
+        .from('tasks')
+        .select('id,parent_task_id')
+        .eq('priority_id', id);
+      if (linkedError) throw linkedError;
+
+      const rootIds = new Set<string>([
+        ...(current?.source_task_id ? [current.source_task_id] : []),
+        ...((linkedTasks ?? []).filter((task) => !task.parent_task_id).map((task) => task.id)),
+      ]);
+
+      if (current?.source_task_id) {
+        const { error: unlinkError } = await supabase.from('priorities').update({ source_task_id: null }).eq('id', id);
+        if (unlinkError) throw unlinkError;
+      }
+
+      // Deleting the roots also deletes every nested subtask through the
+      // parent_task_id ON DELETE CASCADE relationship.
+      if (rootIds.size > 0) {
+        const { error: taskError } = await supabase.from('tasks').delete().in('id', [...rootIds]);
+        if (taskError) throw taskError;
+      }
+
       const { error } = await supabase.from('priorities').delete().eq('id', id);
       if (error) throw error;
       await fetch();
-      toast.success('Prioridade excluída');
+      toast.success(rootIds.size > 0 ? 'Prioridade, tarefa e subtarefas excluídas' : 'Prioridade excluída');
       return true;
     } catch (e) {
       console.error(e);
       toast.error('Erro ao excluir prioridade');
       return false;
     }
-  }, [fetch]);
+  }, [fetch, priorities]);
 
   const promoteTaskToPriority = useCallback(async (taskId: string, _taskTitle: string, data: PriorityFormData, _clientName?: string) => {
     try {

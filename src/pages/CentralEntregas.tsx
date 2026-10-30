@@ -48,7 +48,7 @@ export default function CentralEntregas() {
   const deliverablesHook = useDeliverables();
   const challengesHook = useChallenges();
   const { ratings } = useDeliverableRatings();
-  const [clientScope, setClientScope] = useState<ClientScope>('external');
+  const [clientScope, setClientScope] = useState<ClientScope>('all');
   const requestedTab = searchParams.get('tab');
   const activeTab = [
     'priorities',
@@ -355,6 +355,7 @@ export default function CentralEntregas() {
             !isMobile && (
               <TeamOverview
                 responsibleList={responsibleList}
+                canPlanPriorities={isAdmin && currentUser?.name?.toLocaleLowerCase('pt-BR').includes('patrick')}
                 tasks={scopedTasks}
                 priorities={scopedPriorities}
                 deliverables={scopedDeliverables}

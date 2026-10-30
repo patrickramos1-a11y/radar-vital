@@ -27,6 +27,7 @@ export default function MyPriorities() {
           clients={clients.filter(client => client.isActive)}
           responsibleList={collaborators.filter(person => person.isActive).map(person => ({ name: person.name, color: person.color, initials: person.initials }))}
           allowCollaboratorFilter={isAdmin}
+          canPlanPriorities={isAdmin && currentUser.name.toLocaleLowerCase('pt-BR').includes('patrick')}
           initialClientId={searchParams.get('clientId')}
           onCreate={priorityData.addPriority}
           onCreateMany={priorityData.addPrioritiesForClients}

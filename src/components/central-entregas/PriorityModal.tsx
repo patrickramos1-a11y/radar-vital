@@ -18,6 +18,7 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: Priority | null;
+  linkedTaskTitle?: string;
   defaultAssignee?: string;
   presetTitle?: string;
   presetClientId?: string | null;
@@ -44,6 +45,7 @@ export function PriorityModal({
   open,
   onOpenChange,
   editing,
+  linkedTaskTitle,
   defaultAssignee,
   presetTitle,
   presetClientId,
@@ -147,6 +149,12 @@ export function PriorityModal({
         </DialogHeader>
 
         <div className="space-y-3">
+          {editing?.source_task_id && (
+            <div className="border-l-4 border-sky-500 bg-sky-50 px-3 py-2">
+              <p className="text-[10px] font-semibold uppercase text-sky-700">Tarefa vinculada</p>
+              <p className="mt-0.5 text-sm font-medium text-sky-950">{linkedTaskTitle || editing.source_task_id}</p>
+            </div>
+          )}
           <div>
             <Label>Titulo</Label>
             <Input value={title} onChange={event => setTitle(event.target.value)} readOnly={promotionMode} placeholder="Ex: Enviar relatorio..." />

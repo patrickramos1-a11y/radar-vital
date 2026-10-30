@@ -521,6 +521,7 @@ function TaskItem({
   collaboratorColorMap,
 }: TaskItemProps) {
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+  const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState('');
   const [subtaskModality, setSubtaskModality] = useState<TaskModality>(task.modality || 'levantamento');
   const [subtaskPriority, setSubtaskPriority] = useState<TaskPriority>(task.priority || 'normal');
@@ -552,6 +553,7 @@ function TaskItem({
         setSubtaskTitle('');
         setSubtaskDueDate('');
         setIsAddingSubtask(false);
+        setSubtasksExpanded(true);
       }
     } finally {
       setIsSavingSubtask(false);
@@ -720,7 +722,19 @@ function TaskItem({
         </div>
       )}
 
-      {[...subtasks]
+      {subtasks.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setSubtasksExpanded(current => !current)}
+          className="ml-9 flex h-7 items-center gap-1.5 px-2 text-[10px] font-semibold text-primary hover:bg-primary/5"
+          aria-expanded={subtasksExpanded}
+        >
+          <ArrowDown className={cn('h-3.5 w-3.5 transition-transform', !subtasksExpanded && '-rotate-90')} />
+          {subtasks.length} {subtasks.length === 1 ? 'subtarefa' : 'subtarefas'}
+        </button>
+      )}
+
+      {subtasksExpanded && [...subtasks]
         .sort((left, right) => left.sort_order - right.sort_order || left.created_at.localeCompare(right.created_at))
         .map((subtask) => (
           <InlineSubtask

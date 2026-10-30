@@ -2916,6 +2916,7 @@ export type Database = {
           client_id: string
           completed: boolean
           completed_at: string | null
+          created_by: string | null
           created_at: string
           description: string | null
           due_date: string | null
@@ -2939,6 +2940,7 @@ export type Database = {
           client_id: string
           completed?: boolean
           completed_at?: string | null
+          created_by?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -2962,6 +2964,7 @@ export type Database = {
           client_id?: string
           completed?: boolean
           completed_at?: string | null
+          created_by?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null

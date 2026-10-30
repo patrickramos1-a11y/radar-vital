@@ -25,6 +25,7 @@ export interface Task {
   completed: boolean;
   status: TaskStatus;
   assigned_to: string[];
+  created_by?: string | null;
   created_at: string;
   completed_at: string | null;
   due_date: string | null;

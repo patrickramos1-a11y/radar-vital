@@ -10,6 +10,7 @@ import { actorName } from '@/lib/auth';
 import { canCompleteTask, getNextRecurrenceDate } from '@/lib/taskOperations';
 
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
+type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 type TaskPriorityAutomationRpc = (
   fn: string,
   args: Record<string, unknown>,
@@ -85,7 +86,7 @@ function writeLocalWorkspace(state: LocalWorkspaceState) {
   window.dispatchEvent(new CustomEvent(LOCAL_WORKSPACE_EVENT));
 }
 
-function createLocalTask(clientId: string, data: TaskFormData): Task {
+function createLocalTask(clientId: string, data: TaskFormData, createdBy?: string): Task {
   const now = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
@@ -96,6 +97,7 @@ function createLocalTask(clientId: string, data: TaskFormData): Task {
     completed: data.status === 'concluida',
     status: data.status || 'pendente',
     assigned_to: data.assigned_to.slice(0, 1),
+    created_by: createdBy || null,
     created_at: now,
     completed_at: data.status === 'concluida' ? now : null,
     due_date: data.due_date || null,
@@ -120,6 +122,7 @@ const dbRowToTask = (row: TaskRow): Task => ({
   completed: row.completed,
   status: (row.status as Task['status']) || (row.completed ? 'concluida' : 'pendente'),
   assigned_to: Array.isArray(row.assigned_to) ? row.assigned_to.slice(0, 1) : row.assigned_to ? [row.assigned_to] : [],
+  created_by: row.created_by ?? null,
   created_at: row.created_at,
   completed_at: row.completed_at,
   due_date: row.due_date || null,
@@ -225,16 +228,17 @@ export function useTasks() {
   ): Promise<Task | null> => {
     try {
       if (LOCAL_WORKSPACE_PREVIEW) {
-        const created = createLocalTask(clientId, data);
+        const created = createLocalTask(clientId, data, currentUserName);
         writeLocalWorkspace({ tasks: [created, ...tasks], dependencies });
         return created;
       }
 
-      const { data: inserted, error } = await supabase.from('tasks').insert({
+      const insertPayload: TaskInsert = {
         client_id: clientId,
         title: data.title,
         description: data.description?.trim() || null,
         assigned_to: data.assigned_to.slice(0, 1),
+        created_by: currentUserName || null,
         due_date: data.due_date || null,
         scheduled_for: data.scheduled_for || null,
         priority: data.priority || 'normal',
@@ -245,12 +249,18 @@ export function useTasks() {
         recurrence: data.recurrence || 'none',
         sort_order: data.sort_order || 0,
         ...(data.external_url?.trim() ? { external_url: data.external_url.trim() } : {}),
-      }).select('*').single();
+      };
 
-      if (error) throw error;
+      let result = await supabase.from('tasks').insert(insertPayload).select('*').single();
+      if (result.error?.code === 'PGRST204' && result.error.message.includes('created_by')) {
+        const { created_by: _createdBy, ...legacyPayload } = insertPayload;
+        result = await supabase.from('tasks').insert(legacyPayload).select('*').single();
+      }
+
+      if (result.error) throw result.error;
       if (refresh) await fetchTasks();
       ActivityLogger.createTask(currentUserName, clientName || 'Cliente', clientId, data.title);
-      return dbRowToTask(inserted);
+      return dbRowToTask(result.data);
     } catch (error) {
       console.error('Error adding task:', error);
       toast.error('Erro ao criar tarefa');
