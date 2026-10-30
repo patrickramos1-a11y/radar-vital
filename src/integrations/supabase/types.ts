@@ -2481,6 +2481,7 @@ export type Database = {
           source_task_id: string | null
           status: string
           title: string
+          universe_item_id: string | null
           updated_at: string
           weight: number
         }
@@ -2497,6 +2498,7 @@ export type Database = {
           source_task_id?: string | null
           status?: string
           title: string
+          universe_item_id?: string | null
           updated_at?: string
           weight?: number
         }
@@ -2513,6 +2515,7 @@ export type Database = {
           source_task_id?: string | null
           status?: string
           title?: string
+          universe_item_id?: string | null
           updated_at?: string
           weight?: number
         }
@@ -2529,6 +2532,13 @@ export type Database = {
             columns: ["source_task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priorities_universe_item_id_fkey"
+            columns: ["universe_item_id"]
+            isOneToOne: false
+            referencedRelation: "master_plan_manual_items"
             referencedColumns: ["id"]
           },
         ]
@@ -2909,6 +2919,7 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string | null
+          external_url: string | null
           id: string
           modality: string
           parent_task_id: string | null
@@ -2931,6 +2942,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          external_url?: string | null
           id?: string
           modality?: string
           parent_task_id?: string | null
@@ -2953,6 +2965,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          external_url?: string | null
           id?: string
           modality?: string
           parent_task_id?: string | null
@@ -3467,6 +3480,7 @@ export type Database = {
           source_task_id: string | null
           status: string
           title: string
+          universe_item_id: string | null
           updated_at: string
           weight: number
         }
