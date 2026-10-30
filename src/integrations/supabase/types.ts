@@ -2481,6 +2481,7 @@ export type Database = {
           source_task_id: string | null
           status: string
           title: string
+          universe_item_id: string | null
           updated_at: string
           universe_item_id: string | null
           weight: number
@@ -2498,6 +2499,7 @@ export type Database = {
           source_task_id?: string | null
           status?: string
           title: string
+          universe_item_id?: string | null
           updated_at?: string
           universe_item_id?: string | null
           weight?: number
@@ -2515,6 +2517,7 @@ export type Database = {
           source_task_id?: string | null
           status?: string
           title?: string
+          universe_item_id?: string | null
           updated_at?: string
           universe_item_id?: string | null
           weight?: number
@@ -3483,6 +3486,7 @@ export type Database = {
           source_task_id: string | null
           status: string
           title: string
+          universe_item_id: string | null
           updated_at: string
           weight: number
         }

@@ -506,7 +506,6 @@ export default function UniversoRamos() {
               onSelectClient={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
               onHighlightClient={toggleHighlight}
               onTogglePriority={togglePriority}
-              onToggleCollaboratorAssignment={toggleAssignment}
               onOpenChecklist={(id) => { setUnitTab("tasks"); setSelectedClientId(id); }}
               onOpenTab={(id, tab) => { setUnitTab(tab); setSelectedClientId(id); }}
 
