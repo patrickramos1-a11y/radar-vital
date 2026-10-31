@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { PriorityModal } from './PriorityModal';
+import { priorityTaskTreeIds } from '@/lib/taskHierarchy';
 
 interface RespOption { name: string; color: string; initials: string }
 interface Props {
@@ -29,6 +30,7 @@ interface Props {
   onCreateMany: (data: PriorityFormData, clientIds: string[]) => Promise<Priority[]>;
   onUpdate: (id: string, data: Partial<PriorityFormData>) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
+  onPromote: (taskId: string, taskTitle: string, data: PriorityFormData, clientName?: string) => Promise<Priority | null>;
   onCreateSubtask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
   onToggleTask: (taskId: string, clientName?: string) => Promise<boolean>;
   onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
@@ -289,9 +291,31 @@ function TaskAssignee({ task, responsibleList, onUpdateTask }: {
   </Popover>;
 }
 
-function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubtask, onToggleTask, onUpdateTask }: {
+function ClientSideRail({ client, count, kind, onClick }: {
+  client?: Client;
+  count: number;
+  kind: 'prioridade' | 'tarefa';
+  onClick: () => void;
+}) {
+  const name = client?.name || 'Sem cliente';
+  return <button
+    type="button"
+    onClick={onClick}
+    disabled={!client}
+    title={client ? `Adicionar ${kind} para ${name}` : 'Sem cliente'}
+    aria-label={client ? `Adicionar ${kind} para ${name}` : 'Sem cliente'}
+    className="relative flex min-h-[58px] w-full flex-col items-center justify-center gap-1 overflow-hidden border-r bg-slate-50 px-1.5 py-2 text-center hover:bg-slate-100 disabled:cursor-default"
+  >
+    <span className="absolute right-1 top-1 min-w-4 bg-white px-1 text-[9px] font-semibold text-slate-500">{count}</span>
+    {client?.logoUrl ? <img src={client.logoUrl} alt={`Logo ${name}`} className="max-h-11 w-full object-contain" /> : <span className="max-w-full break-words text-[10px] font-bold leading-tight text-slate-800 sm:text-[11px]">{name}</span>}
+    {client && <Plus className="absolute bottom-1 right-1 h-3 w-3 text-primary" />}
+  </button>;
+}
+
+function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubtask, onToggleTask, onUpdateTask, onPromote }: {
   task: Task; client?: Client; tasks: Task[]; rowIndex: number; responsibleList: RespOption[];
   onCreateSubtask: Props['onCreateSubtask']; onToggleTask: Props['onToggleTask']; onUpdateTask: Props['onUpdateTask'];
+  onPromote: () => void;
 }) {
   const children = tasks.filter(item => item.parent_task_id === task.id);
   const [expanded, setExpanded] = useState(false);
@@ -333,6 +357,7 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
         {!task.completed && <WorkSchedule task={task} onUpdateTask={onUpdateTask} kind="tarefa" />}
+        {!task.completed && <button type="button" onClick={onPromote} title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`} className="p-1.5 text-amber-600 hover:bg-amber-50"><Star className="h-4 w-4" /></button>}
         <button type="button" onClick={() => void onToggleTask(task.id, client?.name)} title={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'} aria-label={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'} className="p-1.5 text-emerald-700 hover:bg-emerald-50">{task.completed ? <Circle className="h-4 w-4" /> : <Check className="h-4 w-4" />}</button>
       </div>
     </div>
@@ -402,13 +427,14 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
   </Dialog>;
 }
 
-export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanPriorities = true, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onCreateSubtask, onToggleTask, onUpdateTask, onRefreshTasks }: Props) {
+export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanPriorities = true, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onPromote, onCreateSubtask, onToggleTask, onUpdateTask, onRefreshTasks }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Priority | null>(null);
   const [presetClientId, setPresetClientId] = useState<string | null>(null);
   const [quickClientId, setQuickClientId] = useState<string | null>(null);
   const [quickTaskClientId, setQuickTaskClientId] = useState<string | null>(null);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [promotingTask, setPromotingTask] = useState<Task | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [showScheduled, setShowScheduled] = useState(false);
   const [search, setSearch] = useState('');
@@ -435,7 +461,10 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
       || aItems[0].created_at.localeCompare(bItems[0].created_at)
       || (clientById.get(a)?.name || 'Sem cliente').localeCompare(clientById.get(b)?.name || 'Sem cliente', 'pt-BR'));
   }, [filtered, clientById]);
+  const promotedTaskIds = useMemo(() => priorityTaskTreeIds(tasks), [tasks]);
   const filteredTasks = useMemo(() => tasks.filter(task =>
+    !promotedTaskIds.has(task.id)
+    &&
     (isTeamView || collaboratorFilter === 'all' || Boolean(initialClientId) || assigneeMatches(task.assigned_to, collaboratorFilter))
     && (showAll || !task.completed)
     && (showScheduled || !(task.scheduled_for && task.scheduled_for > today()))
@@ -443,7 +472,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
     && (!search.trim() || `${task.title} ${task.description || ''} ${clientById.get(task.client_id)?.name || ''}`.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
   ).sort((a, b) => sortMode === 'oldest'
     ? a.created_at.localeCompare(b.created_at) || PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order
-    : PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order || a.created_at.localeCompare(b.created_at)), [tasks, isTeamView, collaboratorFilter, initialClientId, showAll, showScheduled, clientFilter, search, clientById, sortMode]);
+    : PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order || a.created_at.localeCompare(b.created_at)), [tasks, promotedTaskIds, isTeamView, collaboratorFilter, initialClientId, showAll, showScheduled, clientFilter, search, clientById, sortMode]);
   const rootFilteredTasks = useMemo(() => {
     const visibleIds = new Set(filteredTasks.map(task => task.id));
     return filteredTasks.filter(task => !task.parent_task_id || !visibleIds.has(task.parent_task_id));
@@ -497,7 +526,9 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
       const headerBackground = colors.length > 1 ? `linear-gradient(90deg, ${colors.map((item, index) => `${colorWithAlpha(item, '22')} ${Math.round(index * 100 / Math.max(1, colors.length - 1))}%`).join(', ')})` : colorWithAlpha(colors[0] || color, '18');
       const quickOpen = quickClientId === clientId;
       const quickAssignee = selectedAssignee;
-      return <section key={clientId} className="client-card-compact min-w-0 overflow-hidden border-t-2 bg-white" style={{ borderTopColor: colors[0] || color }}>
+      const rows = <div className="min-w-0">{quickOpen && client && <div className="flex h-10 items-center border-b bg-slate-50 px-1"><QuickPriorityInput client={client} assignee={quickAssignee} color={color} onCreate={onCreate} onRefreshTasks={onRefreshTasks} onClose={() => setQuickClientId(null)} /></div>}{items.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanPriorities={canPlanPriorities} onUpdate={onUpdate} onDelete={onDelete} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}</div>;
+
+      if (viewMode === 'panel') return <section key={clientId} className="client-card-compact min-w-0 overflow-hidden border-t-2 bg-white" style={{ borderTopColor: colors[0] || color }}>
         <header className="flex h-11 min-w-0 items-center border-b px-2" style={{ background: headerBackground }}>
           {quickOpen && client ? <QuickPriorityInput client={client} assignee={quickAssignee} color={color} onCreate={onCreate} onRefreshTasks={onRefreshTasks} onClose={() => setQuickClientId(null)} /> : <button type="button" onClick={() => client && setQuickClientId(client.id)} disabled={!client} title={client ? `Adicionar prioridade para ${client.name}` : 'Sem cliente'} aria-label={client ? `Adicionar prioridade para ${client.name}` : 'Sem cliente'} className="flex h-full min-w-0 flex-1 items-center gap-2 text-left">
             {client?.logoUrl ? <img src={client.logoUrl} alt={`Logo ${client.name}`} className="h-8 w-12 shrink-0 object-contain" /> : null}
@@ -506,29 +537,37 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
             <Plus className="h-3.5 w-3.5 shrink-0 text-primary" />
           </button>}
         </header>
-        <div className="min-w-0">{items.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanPriorities={canPlanPriorities} onUpdate={onUpdate} onDelete={onDelete} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}</div>
+        {rows}
+      </section>;
+
+      return <section key={clientId} className="client-card-compact grid min-w-0 grid-cols-[72px_minmax(0,1fr)] overflow-hidden border-t-2 bg-white sm:grid-cols-[96px_minmax(0,1fr)]" style={{ borderTopColor: colors[0] || color }}>
+        <ClientSideRail client={client} count={items.length} kind="prioridade" onClick={() => client && setQuickClientId(client.id)} />
+        {rows}
       </section>;
     })}</div>}
-    {showingTasks && <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">{taskGroups.map(([clientId, items]) => {
+    {showingTasks && <div className="space-y-3">{taskGroups.map(([clientId, items]) => {
       const client = clientById.get(clientId);
       const colors = [...new Set(items.flatMap(item => item.assigned_to).map(name => responsibleList.find(person => person.name === name)?.color).filter(Boolean))] as string[];
-      const headerBackground = colors.length > 1 ? `linear-gradient(90deg, ${colors.map((item, index) => `${colorWithAlpha(item, '22')} ${Math.round(index * 100 / Math.max(1, colors.length - 1))}%`).join(', ')})` : colorWithAlpha(colors[0] || color, '18');
       const quickOpen = quickTaskClientId === clientId;
-      return <section key={clientId} className="client-card-compact min-w-0 overflow-hidden border-t-2 bg-white" style={{ borderTopColor: colors[0] || color }}>
-        <header className="flex h-11 min-w-0 items-center border-b px-2" style={{ background: headerBackground }}>
-          {quickOpen && client ? <QuickTaskInput client={client} assignee={selectedAssignee} color={color} onCreate={onCreateSubtask} onClose={() => setQuickTaskClientId(null)} /> : <button type="button" onClick={() => client && setQuickTaskClientId(client.id)} disabled={!client} title={client ? `Adicionar tarefa para ${client.name}` : 'Sem cliente'} aria-label={client ? `Adicionar tarefa para ${client.name}` : 'Sem cliente'} className="flex h-full min-w-0 flex-1 items-center gap-2 text-left">
-            {client?.logoUrl ? <img src={client.logoUrl} alt={`Logo ${client.name}`} className="h-8 w-12 shrink-0 object-contain" /> : null}
-            <span className={`min-w-0 flex-1 truncate font-bold text-slate-800 ${client?.logoUrl ? 'text-xs' : 'text-sm'}`}>{client?.name || 'Sem cliente'}</span>
-            <span className="shrink-0 bg-white/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{items.length}</span>
-            <Plus className="h-3.5 w-3.5 shrink-0 text-primary" />
-          </button>}
-        </header>
-        <div className="min-w-0">{items.map((task, rowIndex) => <TaskItem key={task.id} task={task} client={client} tasks={filteredTasks} rowIndex={rowIndex} responsibleList={responsibleList} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} />)}</div>
+      return <section key={clientId} className="client-card-compact grid min-w-0 grid-cols-[72px_minmax(0,1fr)] overflow-hidden border-t-2 bg-white sm:grid-cols-[96px_minmax(0,1fr)]" style={{ borderTopColor: colors[0] || color }}>
+        <ClientSideRail client={client} count={items.length} kind="tarefa" onClick={() => client && setQuickTaskClientId(client.id)} />
+        <div className="min-w-0">
+          {quickOpen && client && <div className="flex h-10 items-center border-b bg-slate-50 px-1"><QuickTaskInput client={client} assignee={selectedAssignee} color={color} onCreate={onCreateSubtask} onClose={() => setQuickTaskClientId(null)} /></div>}
+          {items.map((task, rowIndex) => <TaskItem key={task.id} task={task} client={client} tasks={filteredTasks} rowIndex={rowIndex} responsibleList={responsibleList} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onPromote={() => setPromotingTask(task)} />)}
+        </div>
       </section>;
     })}</div>}
     <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} linkedTaskTitle={editing ? rootTaskFor(editing, tasks)?.title : undefined} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async data => {
       if (editing) { if (await onUpdate(editing.id, data)) { await onRefreshTasks(); setModalOpen(false); } }
       else { const created = await onCreate(data, data.client_id ? clientById.get(data.client_id)?.name : undefined); if (created) { await onRefreshTasks(); setModalOpen(false); } }
+    }} />
+    <PriorityModal open={Boolean(promotingTask)} onOpenChange={open => { if (!open) setPromotingTask(null); }} editing={null} defaultAssignee={selectedAssignee} presetTitle={promotingTask?.title} presetClientId={promotingTask?.client_id} lockClientId promotionMode clients={clients} responsibleList={responsibleList} submitLabel="Promover para prioridade" onSubmit={async data => {
+      if (!promotingTask) return;
+      const clientName = data.client_id ? clientById.get(data.client_id)?.name : undefined;
+      if (await onPromote(promotingTask.id, promotingTask.title, data, clientName)) {
+        await onRefreshTasks();
+        setPromotingTask(null);
+      }
     }} />
     <NewTaskModal open={taskModalOpen} onOpenChange={setTaskModalOpen} clients={clients} responsibleList={responsibleList} defaultAssignee={selectedAssignee} color={color} presetClientId={clientFilter === 'all' ? null : clientFilter} onCreate={onCreateSubtask} />
   </div>;

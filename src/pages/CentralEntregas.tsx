@@ -389,6 +389,7 @@ export default function CentralEntregas() {
                 onCreateMany={prioritiesHook.addPrioritiesForClients}
                 onUpdate={prioritiesHook.updatePriority}
                 onDelete={prioritiesHook.deletePriority}
+                onPromote={prioritiesHook.promoteTaskToPriority}
                 onCreateSubtask={tasksHook.addTask}
                 onToggleTask={tasksHook.toggleComplete}
                 onUpdateTask={tasksHook.updateTask}

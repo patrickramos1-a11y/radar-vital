@@ -68,6 +68,14 @@ const rootTask = {
   updated_at: priority.updated_at,
 } satisfies Task;
 
+const ordinaryTask = {
+  ...rootTask,
+  id: 'task-ordinary',
+  title: 'Conferir protocolo comum',
+  priority_id: null,
+  source_comment_id: null,
+} satisfies Task;
+
 function renderTab(overrides: Partial<React.ComponentProps<typeof PrioritiesTab>> = {}) {
   const props: React.ComponentProps<typeof PrioritiesTab> = {
     collaborator: 'Celine',
@@ -81,6 +89,7 @@ function renderTab(overrides: Partial<React.ComponentProps<typeof PrioritiesTab>
     onCreateMany: vi.fn(async () => []),
     onUpdate: vi.fn(async () => true),
     onDelete: vi.fn(async () => true),
+    onPromote: vi.fn(async () => null),
     onCreateSubtask: vi.fn(async () => true),
     onToggleTask: vi.fn(async () => true),
     onUpdateTask: vi.fn(async () => true),
@@ -180,7 +189,7 @@ describe('PrioritiesTab', () => {
 
   it('opens the collaborator task dashboard grouped by client', () => {
     renderTab({
-      tasks: [rootTask, { ...rootTask, id: 'task-other', title: 'Tarefa da Gabi', assigned_to: ['Gabi'], priority_id: null }],
+      tasks: [rootTask, ordinaryTask, { ...ordinaryTask, id: 'task-other', title: 'Tarefa da Gabi', assigned_to: ['Gabi'] }],
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
@@ -188,13 +197,14 @@ describe('PrioritiesTab', () => {
     expect(screen.getByRole('button', { name: 'Tarefas' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('1 tarefas em 1 clientes')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Adicionar tarefa para Cliente Alfa' })).toBeInTheDocument();
-    expect(screen.getByText(rootTask.title)).toBeInTheDocument();
+    expect(screen.getByText(ordinaryTask.title)).toBeInTheDocument();
+    expect(screen.queryByText(rootTask.title)).not.toBeInTheDocument();
     expect(screen.queryByText('Tarefa da Gabi')).not.toBeInTheDocument();
   });
 
   it('creates a task inline from the client header', async () => {
     const onCreateSubtask = vi.fn(async () => true);
-    renderTab({ onCreateSubtask });
+    renderTab({ onCreateSubtask, tasks: [rootTask, ordinaryTask] });
     fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar tarefa para Cliente Alfa' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Nova tarefa para Cliente Alfa' }), { target: { value: 'Conferir protocolo' } });
@@ -211,6 +221,7 @@ describe('PrioritiesTab', () => {
     const onUpdateTask = vi.fn(async () => true);
     renderTab({
       onUpdateTask,
+      tasks: [rootTask, ordinaryTask],
       responsibleList: [
         { name: 'Celine', color: '#0f766e', initials: 'CE' },
         { name: 'Gabi', color: '#7c3aed', initials: 'GA' },
@@ -220,12 +231,29 @@ describe('PrioritiesTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Responsável Celine' }));
     fireEvent.click(screen.getByRole('button', { name: /Gabi/ }));
-    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(rootTask.id, { assigned_to: ['Gabi'] }));
+    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(ordinaryTask.id, { assigned_to: ['Gabi'] }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Planejar tarefa' }));
     fireEvent.change(screen.getByLabelText('Data de retorno da prioridade'), { target: { value: '2099-12-31' } });
     fireEvent.click(screen.getByRole('button', { name: 'Planejar' }));
-    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(rootTask.id, { scheduled_for: '2099-12-31' }));
+    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(ordinaryTask.id, { scheduled_for: '2099-12-31' }));
+  });
+
+  it('promotes an ordinary task and keeps linked priority tasks out of the task list', async () => {
+    const onPromote = vi.fn(async () => priority);
+    renderTab({ tasks: [rootTask, ordinaryTask], onPromote });
+    fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
+
+    expect(screen.queryByText(rootTask.title)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: `Promover ${ordinaryTask.title} para prioridade` }));
+    fireEvent.click(screen.getByRole('button', { name: 'Promover para prioridade' }));
+
+    await waitFor(() => expect(onPromote).toHaveBeenCalledWith(
+      ordinaryTask.id,
+      ordinaryTask.title,
+      expect.objectContaining({ title: ordinaryTask.title, client_id: client.id }),
+      client.name,
+    ));
   });
 
   it('starts expanded when the priority already has subtasks', () => {
