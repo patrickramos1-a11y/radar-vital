@@ -346,6 +346,58 @@ describe('PrioritiesTab', () => {
     expect(onUpdateTask).toHaveBeenCalledWith(rootTask.id, { assigned_to: ['Gabi'] });
   });
 
+  it('edits a priority title inline with a double click', async () => {
+    const onUpdate = vi.fn(async () => true);
+    renderTab({ onUpdate });
+
+    fireEvent.doubleClick(screen.getByRole('button', { name: 'Expandir prioridade Entregar relatório' }));
+    const input = screen.getByRole('textbox', { name: 'Editar Expandir prioridade Entregar relatório' });
+    fireEvent.change(input, { target: { value: 'Entregar relatório revisado' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledWith(priority.id, { title: 'Entregar relatório revisado' }));
+  });
+
+  it('edits a task title inline with a double click', async () => {
+    const onUpdateTask = vi.fn(async () => true);
+    renderTab({ tasks: [rootTask, ordinaryTask], onUpdateTask });
+    fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
+
+    fireEvent.doubleClick(screen.getByRole('button', { name: `Expandir tarefa ${ordinaryTask.title}` }));
+    const input = screen.getByRole('textbox', { name: `Editar Expandir tarefa ${ordinaryTask.title}` });
+    fireEvent.change(input, { target: { value: 'Conferir protocolo atualizado' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(ordinaryTask.id, { title: 'Conferir protocolo atualizado' }));
+  });
+
+  it('shows a compact assignee control on subtasks and transfers ownership', async () => {
+    const onUpdateTask = vi.fn(async () => true);
+    const child = {
+      ...rootTask,
+      id: 'task-child-owner',
+      title: 'Providenciar lista de frequência',
+      assigned_to: ['Gabi'],
+      parent_task_id: rootTask.id,
+      priority_id: null,
+      sort_order: 1,
+    } satisfies Task;
+    renderTab({
+      tasks: [rootTask, child],
+      onUpdateTask,
+      responsibleList: [
+        { name: 'Celine', color: '#0f766e', initials: 'CE' },
+        { name: 'Gabi', color: '#7c3aed', initials: 'GA' },
+      ],
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Responsável Gabi' }));
+    const celineOptions = screen.getAllByRole('button', { name: /Celine/ });
+    fireEvent.click(celineOptions[celineOptions.length - 1]);
+
+    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(child.id, { assigned_to: ['Celine'] }));
+  });
+
   it('reveals the mobile edit and delete actions with a left swipe', () => {
     renderTab();
     const row = screen.getByRole('button', { name: 'Expandir prioridade Entregar relatório' }).closest('.relative.flex');

@@ -56,6 +56,80 @@ function colorWithAlpha(color: string, alpha: string) {
   return /^#[0-9a-f]{6}$/i.test(color) ? `${color}${alpha}` : 'rgba(15, 118, 110, 0.08)';
 }
 
+function categoryLabel(category?: string | null) {
+  if (!category) return '';
+  if (category === 'auto_task_aging') return 'Automática';
+  if (category === 'entregavel_migrado') return 'Entregável';
+  return category.replaceAll('_', ' ');
+}
+
+function EditableTitle({ title, ariaLabel, completed = false, expanded, onToggle, onSave }: {
+  title: string;
+  ariaLabel: string;
+  completed?: boolean;
+  expanded?: boolean;
+  onToggle: () => void;
+  onSave: (title: string) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(title);
+  const [saving, setSaving] = useState(false);
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => setDraft(title), [title]);
+  useEffect(() => () => { if (clickTimer.current) clearTimeout(clickTimer.current); }, []);
+
+  const cancelClick = () => {
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    clickTimer.current = null;
+  };
+  const startEditing = () => {
+    cancelClick();
+    setDraft(title);
+    setEditing(true);
+  };
+  const save = async () => {
+    const nextTitle = draft.trim();
+    if (!nextTitle) { setDraft(title); setEditing(false); return; }
+    if (nextTitle === title) { setEditing(false); return; }
+    setSaving(true);
+    const ok = await onSave(nextTitle);
+    setSaving(false);
+    if (ok) setEditing(false);
+  };
+
+  if (editing) return <Input
+    autoFocus
+    value={draft}
+    disabled={saving}
+    aria-label={`Editar ${ariaLabel}`}
+    className="h-7 min-w-0 border-primary bg-white px-1.5 text-[12px] font-semibold sm:text-[13px]"
+    onChange={event => setDraft(event.target.value)}
+    onBlur={() => void save()}
+    onKeyDown={event => {
+      if (event.key === 'Enter') { event.preventDefault(); void save(); }
+      if (event.key === 'Escape') { setDraft(title); setEditing(false); }
+    }}
+  />;
+
+  return <button
+    type="button"
+    onClick={event => {
+      if (event.detail === 0) { onToggle(); return; }
+      if (event.detail > 1) { cancelClick(); return; }
+      cancelClick();
+      clickTimer.current = setTimeout(onToggle, 180);
+    }}
+    onDoubleClick={startEditing}
+    className="block w-full min-w-0 py-0.5 text-left"
+    aria-label={ariaLabel}
+    aria-expanded={expanded}
+    title="Clique para expandir; clique duas vezes para editar"
+  >
+    <span className={`line-clamp-2 text-[11px] font-semibold leading-[1.15] hover:text-primary sm:line-clamp-1 sm:text-[13px] ${completed ? 'line-through text-muted-foreground' : ''}`}>{title}</span>
+  </button>;
+}
+
 function WorkSchedule({ task, onUpdateTask, kind = 'prioridade' }: { task?: Task; onUpdateTask: Props['onUpdateTask']; kind?: 'prioridade' | 'tarefa' }) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(task?.scheduled_for || '');
@@ -137,8 +211,9 @@ function PriorityAssignee({ priority, root, responsibleList, onUpdate, onUpdateT
   </Popover>;
 }
 
-function Subtasks({ parentId, tasks, clientName, onToggle, depth = 0 }: {
-  parentId: string; tasks: Task[]; clientName: string; onToggle: Props['onToggleTask']; depth?: number;
+function Subtasks({ parentId, tasks, clientName, responsibleList, onToggle, onUpdateTask, depth = 0 }: {
+  parentId: string; tasks: Task[]; clientName: string; responsibleList: RespOption[];
+  onToggle: Props['onToggleTask']; onUpdateTask: Props['onUpdateTask']; depth?: number;
 }) {
   return <>{tasks.filter(task => task.parent_task_id === parentId)
     .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
@@ -147,9 +222,10 @@ function Subtasks({ parentId, tasks, clientName, onToggle, depth = 0 }: {
         <button type="button" onClick={() => void onToggle(task.id, clientName)} aria-label={task.completed ? `Reabrir ${task.title}` : `Concluir ${task.title}`} className="shrink-0 text-emerald-700">
           {task.completed ? <Check className="h-4 w-4" /> : <Circle className="h-4 w-4 text-slate-400" />}
         </button>
-        <span className={task.completed ? 'line-through text-muted-foreground' : ''}>{task.title}</span>
+        <span className={`min-w-0 flex-1 ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</span>
+        <TaskAssignee compact task={task} responsibleList={responsibleList} onUpdateTask={onUpdateTask} />
       </div>
-      <Subtasks parentId={task.id} tasks={tasks} clientName={clientName} onToggle={onToggle} depth={depth + 1} />
+      <Subtasks parentId={task.id} tasks={tasks} clientName={clientName} responsibleList={responsibleList} onToggle={onToggle} onUpdateTask={onUpdateTask} depth={depth + 1} />
     </div>)}</>;
 }
 
@@ -210,15 +286,13 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
         touchStart.current = null;
       }}>
       <div className="min-w-0 flex-1">
-        <button type="button" onClick={toggleExpanded} className="block w-full min-w-0 py-0.5 text-left" aria-label={`${expanded ? 'Recolher' : 'Expandir'} prioridade ${priority.title}`} aria-expanded={expanded}>
-          <span className="line-clamp-2 text-[11px] font-semibold leading-[1.15] hover:text-primary sm:line-clamp-1 sm:text-[13px]">{priority.title}</span>
-        </button>
-        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
-          <span>{closed ? `${age}d de duração` : `Aberta há ${age}d`}</span>
-          {priority.due_date && <span className={overdue ? 'font-semibold text-red-700' : ''}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${priority.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
-          {scheduled && <span className="font-medium text-violet-700">Volta em {new Date(`${root?.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
-          {priority.category && <span className="hidden lg:inline">{priority.category}</span>}
-          {!!children.length && <span>{children.filter(task => task.completed).length}/{children.length} subtarefas</span>}
+        <EditableTitle title={priority.title} expanded={expanded} ariaLabel={`${expanded ? 'Recolher' : 'Expandir'} prioridade ${priority.title}`} onToggle={toggleExpanded} onSave={title => onUpdate(priority.id, { title })} />
+        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
+          <span className="bg-slate-100 px-1.5 py-0.5 text-slate-600">{closed ? `${age}d de duração` : `Aberta há ${age}d`}</span>
+          {priority.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${priority.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
+          {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {new Date(`${root?.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
+          {priority.category && <span className="hidden bg-amber-50 px-1.5 py-0.5 capitalize text-amber-800 lg:inline">{categoryLabel(priority.category)}</span>}
+          {!!children.length && <span className="inline-flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 text-indigo-700"><ListChecks className="h-3 w-3" />{children.filter(task => task.completed).length}/{children.length} subtarefas</span>}
           <PriorityAssignee priority={priority} root={root} responsibleList={responsibleList} onUpdate={onUpdate} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} />
           {!closed && <PriorityWeight priority={priority} onUpdate={onUpdate} />}
         </div>
@@ -238,7 +312,7 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
     {expanded && <div className="bg-white px-3 pb-3 sm:px-4">
       {priority.description && <p className="mb-2 text-xs text-muted-foreground">{priority.description}</p>}
       {root ? <>
-        <Subtasks parentId={root.id} tasks={tasks} clientName={client?.name || 'Cliente'} onToggle={onToggleTask} />
+        <Subtasks parentId={root.id} tasks={tasks} clientName={client?.name || 'Cliente'} responsibleList={responsibleList} onToggle={onToggleTask} onUpdateTask={onUpdateTask} />
         {!closed && <form className="mt-2 flex gap-2" onSubmit={event => { event.preventDefault(); void addSubtask(); }}>
           <Input value={draft} onChange={event => setDraft(event.target.value)} placeholder="Nova subtarefa" aria-label="Nova subtarefa" className="h-8 text-xs" />
           <Button type="submit" size="sm" variant="outline" disabled={!draft.trim() || saving} title="Adicionar subtarefa"><Plus className="h-4 w-4" /></Button>
@@ -267,14 +341,19 @@ function QuickPriorityInput({ client, assignee, color, onCreate, onRefreshTasks,
   </form>;
 }
 
-function TaskAssignee({ task, responsibleList, onUpdateTask }: {
-  task: Task; responsibleList: RespOption[]; onUpdateTask: Props['onUpdateTask'];
+function TaskAssignee({ task, responsibleList, onUpdateTask, compact = false }: {
+  task: Task; responsibleList: RespOption[]; onUpdateTask: Props['onUpdateTask']; compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const current = task.assigned_to.join(', ') || 'Sem responsável';
+  const person = responsibleList.find(item => task.assigned_to.includes(item.name));
+  const initials = person?.initials || '?';
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild>
-      <button type="button" title="Transferir tarefa" aria-label={`Responsável ${current}`} className="max-w-32 truncate font-medium text-slate-600 underline-offset-2 hover:text-primary hover:underline">{current}</button>
+      <button type="button" title={`Transferir tarefa · ${current}`} aria-label={`Responsável ${current}`} className={compact
+        ? 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white shadow-sm ring-1 ring-white'
+        : 'max-w-32 truncate font-medium text-slate-600 underline-offset-2 hover:text-primary hover:underline'}
+        style={compact ? { backgroundColor: person?.color || '#64748b' } : undefined}>{compact ? initials : current}</button>
     </PopoverTrigger>
     <PopoverContent align="start" className="w-56 p-2">
       <p className="px-2 pb-2 text-xs font-semibold">Transferir tarefa</p>
@@ -343,15 +422,13 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
   return <article className={`border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : config.borderClass}`}>
     <div className={`flex min-w-0 items-center gap-1.5 px-2 py-1.5 ${rowIndex % 2 ? 'bg-slate-50' : 'bg-white'}`}>
       <div className="min-w-0 flex-1">
-        <button type="button" onClick={() => setExpanded(value => !value)} className="block w-full min-w-0 py-0.5 text-left" aria-label={`${expanded ? 'Recolher' : 'Expandir'} tarefa ${task.title}`} aria-expanded={expanded}>
-          <span className={`line-clamp-2 text-[11px] font-semibold leading-[1.15] hover:text-primary sm:line-clamp-1 sm:text-[13px] ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</span>
-        </button>
-        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
-          <span>{task.completed ? `${age}d de duração` : `Aberta há ${age}d`}</span>
-          <span style={{ color: config.color }} className="font-semibold">{config.label}</span>
-          {task.due_date && <span className={overdue ? 'font-semibold text-red-700' : ''}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${task.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
-          {scheduled && <span className="font-medium text-violet-700">Volta em {new Date(`${task.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
-          {!!children.length && <span>{children.filter(item => item.completed).length}/{children.length} subtarefas</span>}
+        <EditableTitle title={task.title} completed={task.completed} expanded={expanded} ariaLabel={`${expanded ? 'Recolher' : 'Expandir'} tarefa ${task.title}`} onToggle={() => setExpanded(value => !value)} onSave={title => onUpdateTask(task.id, { title })} />
+        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
+          <span className="bg-slate-100 px-1.5 py-0.5 text-slate-600">{task.completed ? `${age}d de duração` : `Aberta há ${age}d`}</span>
+          <span style={{ color: config.color, backgroundColor: colorWithAlpha(config.color, '12') }} className="px-1.5 py-0.5 font-semibold">{config.label}</span>
+          {task.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${task.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
+          {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {new Date(`${task.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
+          {!!children.length && <span className="inline-flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 text-indigo-700"><ListChecks className="h-3 w-3" />{children.filter(item => item.completed).length}/{children.length} subtarefas</span>}
           <TaskAssignee task={task} responsibleList={responsibleList} onUpdateTask={onUpdateTask} />
         </div>
       </div>
@@ -363,7 +440,7 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
     </div>
     {expanded && <div className="bg-white px-3 pb-3 sm:px-4">
       {task.description && <p className="mb-2 text-xs text-muted-foreground">{task.description}</p>}
-      <Subtasks parentId={task.id} tasks={tasks} clientName={client?.name || 'Cliente'} onToggle={onToggleTask} />
+      <Subtasks parentId={task.id} tasks={tasks} clientName={client?.name || 'Cliente'} responsibleList={responsibleList} onToggle={onToggleTask} onUpdateTask={onUpdateTask} />
       {!task.completed && <form className="mt-2 flex gap-2" onSubmit={event => { event.preventDefault(); void addSubtask(); }}>
         <Input value={draft} onChange={event => setDraft(event.target.value)} placeholder="Nova subtarefa" aria-label={`Nova subtarefa para ${task.title}`} className="h-8 text-xs" />
         <Button type="submit" size="sm" variant="outline" disabled={!draft.trim() || saving} title="Adicionar subtarefa"><Plus className="h-4 w-4" /></Button>
