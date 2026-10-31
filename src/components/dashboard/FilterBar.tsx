@@ -216,8 +216,22 @@ export function FilterBar({
 
         {extraControls}
 
-        {/* Grid Size Picker + Lock Toggle + TV Mode */}
+        {/* Priority shortcut + Grid Size Picker + Lock Toggle + TV Mode */}
         <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/minhas-prioridades"
+                aria-label="Minhas prioridades"
+                className="rounded-md border border-amber-300 bg-amber-50 p-1.5 text-amber-700 transition-all hover:border-amber-500 hover:bg-amber-100"
+              >
+                <Star className="h-4 w-4" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              Minhas prioridades
+            </TooltipContent>
+          </Tooltip>
           <GridSizePicker 
             selectedSize={gridSize} 
             onSizeSelect={onGridSizeChange}
