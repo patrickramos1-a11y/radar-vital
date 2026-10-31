@@ -15,6 +15,7 @@ interface Props {
   tasks: Task[];
   priorities: Priority[];
   deliverables: Deliverable[];
+  canPlanPriorities?: boolean;
 }
 
 function computeRow(name: string, tasks: Task[], priorities: Priority[], deliverables: Deliverable[], ratings: any[]) {
