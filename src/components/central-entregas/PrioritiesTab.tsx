@@ -66,7 +66,7 @@ function categoryLabel(category?: string | null) {
   if (!category) return '';
   if (category === 'auto_task_aging') return 'Automática';
   if (category === 'entregavel_migrado') return 'Entregável';
-  return category.replaceAll('_', ' ');
+  return category.replace(/_/g, ' ');
 }
 
 function EditableTitle({ title, ariaLabel, completed = false, expanded, onToggle, onSave }: {
