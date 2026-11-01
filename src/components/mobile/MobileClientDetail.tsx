@@ -133,7 +133,7 @@ export function MobileClientDetail({
   return (
     <>
       <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-0">
+        <SheetContent side="bottom" className="h-[100dvh] w-screen max-w-none rounded-none p-0 sm:h-[85vh] sm:rounded-t-2xl">
           <SheetHeader className="p-4 border-b border-border">
             <div className="flex items-center pr-8">
               <div className="flex items-center gap-3">
@@ -161,7 +161,7 @@ export function MobileClientDetail({
             </div>
           </SheetHeader>
 
-          <div className="h-[calc(85vh-80px)] space-y-4 overflow-y-auto p-4">
+          <div className="h-[calc(100dvh-80px)] space-y-4 overflow-y-auto p-4 sm:h-[calc(85vh-80px)]">
             {/* Ações rápidas */}
             <div className="grid grid-cols-4 gap-2">
               <ActionButton

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, CalendarPlus, CalendarX2, Check, ClipboardCheck, Clock3, ExternalLink, Eye, FileCheck2, Flame, History, Link2, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, CalendarDays, CalendarPlus, CalendarX2, Check, ClipboardCheck, Clock3, ExternalLink, Eye, FileCheck2, Flame, History, Link2, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -207,7 +207,7 @@ export function TaskModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent showClose={false} className="flex max-h-[90vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-3 overflow-hidden p-0 text-[15px] sm:rounded-xl lg:max-w-6xl">
+      <DialogContent showClose={false} className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-3 overflow-hidden rounded-none p-0 text-[15px] sm:h-auto sm:max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-4xl sm:rounded-xl lg:max-w-6xl">
         <DialogHeader className="relative border-b px-5 py-4">
           <DialogTitle className="flex min-w-0 items-center gap-3 pr-12 text-lg lg:text-xl">
             {client.logoUrl ? (
@@ -601,7 +601,7 @@ function TaskItem({
               </span>
             )}
             <span
-              className={`min-w-0 truncate text-sm leading-snug ${task.completed ? 'text-muted-foreground line-through' : ''}`}
+              className={`min-w-0 flex-1 whitespace-normal break-words text-[12px] leading-snug sm:text-sm ${task.completed ? 'text-muted-foreground line-through' : ''}`}
               onDoubleClick={onStartEdit}
               title={task.title}
             >
@@ -609,57 +609,41 @@ function TaskItem({
             </span>
           </div>
           {!task.completed && (
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
               <PriorityMenu value={priority} onChange={onPriorityChange} />
-              <span>Criada há {daysOpen} {daysOpen === 1 ? 'dia' : 'dias'}</span>
+              <span className="inline-flex h-6 items-center gap-1 bg-slate-100 px-1.5 font-medium text-slate-600" title={`Criada há ${daysOpen} ${daysOpen === 1 ? 'dia' : 'dias'}`}>
+                <Clock3 className="h-3 w-3" />{daysOpen}d
+              </span>
               {progress.total > 0 && <span>{progress.completed}/{progress.total} etapas</span>}
-              <label className="flex w-fit items-center gap-1">
-                <span>Prazo</span>
-              <input
-                type="date"
-                value={task.due_date ?? ''}
-                onChange={(event) => onDueDateChange(event.target.value)}
-                className={`h-6 rounded border bg-background px-1 text-[10px] outline-none ${
-                  task.due_date && new Date(task.due_date) < new Date(new Date().toDateString())
-                    ? 'border-destructive text-destructive font-bold'
-                    : 'border-border'
-                }`}
-                aria-label={`Prazo da tarefa ${task.title}`}
+              <TaskDueDateMenu value={task.due_date} title={task.title} onChange={onDueDateChange} />
+              <button
+                type="button"
+                onClick={() => {
+                  setSubtaskModality(task.modality || 'levantamento');
+                  setSubtaskPriority(task.priority || 'normal');
+                  setSubtaskAssignees(task.assigned_to.slice(0, 1));
+                  setIsAddingSubtask((current) => !current);
+                }}
+                className={cn(
+                  'grid h-7 w-7 flex-shrink-0 place-items-center border text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary',
+                  isAddingSubtask && 'border-primary bg-primary/10 text-primary',
+                )}
+                title="Adicionar subtarefa"
+                aria-label={`Adicionar subtarefa em ${task.title}`}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+              <AssigneeDropdown
+                task={task}
+                collaborators={collaborators}
+                collaboratorColorMap={collaboratorColorMap}
+                onAssigneeChange={onAssigneeChange}
               />
-              </label>
+              <TaskLinkMenu value={task.external_url} title={task.title} onChange={onLinkChange} />
+              <TaskReplanMenu task={task} onScheduleChange={onScheduleChange} />
             </div>
           )}
         </div>
-      )}
-
-      {!task.completed && (
-        <>
-          <button
-            type="button"
-            onClick={() => {
-              setSubtaskModality(task.modality || 'levantamento');
-              setSubtaskPriority(task.priority || 'normal');
-              setSubtaskAssignees(task.assigned_to.slice(0, 1));
-              setIsAddingSubtask((current) => !current);
-            }}
-            className={cn(
-              'grid h-7 w-7 flex-shrink-0 place-items-center border text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary',
-              isAddingSubtask && 'border-primary bg-primary/10 text-primary',
-            )}
-            title="Adicionar subtarefa"
-            aria-label={`Adicionar subtarefa em ${task.title}`}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-          <AssigneeDropdown
-            task={task}
-            collaborators={collaborators}
-            collaboratorColorMap={collaboratorColorMap}
-            onAssigneeChange={onAssigneeChange}
-          />
-          <TaskLinkMenu value={task.external_url} title={task.title} onChange={onLinkChange} />
-          <TaskReplanMenu task={task} onScheduleChange={onScheduleChange} />
-        </>
       )}
 
       <button
@@ -809,6 +793,62 @@ function TaskLinkMenu({ value, title, onChange }: {
   );
 }
 
+function TaskDueDateMenu({ value, title, onChange }: {
+  value?: string | null;
+  title: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(value || '');
+
+  useEffect(() => setDraft(value || ''), [value]);
+
+  const overdue = Boolean(value && value < new Date().toISOString().slice(0, 10));
+  const save = () => {
+    onChange(draft);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={(nextOpen) => {
+      setOpen(nextOpen);
+      if (nextOpen) setDraft(value || '');
+    }}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'grid h-7 w-7 flex-shrink-0 place-items-center border transition-colors',
+            overdue
+              ? 'border-red-300 bg-red-50 text-red-700'
+              : value
+                ? 'border-teal-300 bg-teal-50 text-teal-700'
+                : 'border-teal-200 bg-teal-50/60 text-teal-700 hover:bg-teal-100',
+          )}
+          title={value ? `Prazo ${new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR')}` : `Definir prazo de ${title}`}
+          aria-label={`Prazo da tarefa ${title}`}
+        >
+          <CalendarDays className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-3">
+        <p className="text-sm font-semibold">Prazo da tarefa</p>
+        <input
+          type="date"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          className="mt-3 h-9 w-full border bg-background px-2 text-xs outline-none focus:border-teal-400"
+          aria-label={`Nova data de prazo para ${title}`}
+        />
+        <div className="mt-3 flex items-center gap-2">
+          {value && <button type="button" onClick={() => { onChange(''); setOpen(false); }} className="h-8 border px-2 text-xs text-muted-foreground hover:bg-muted">Limpar</button>}
+          <button type="button" disabled={!draft} onClick={save} className="ml-auto h-8 bg-teal-700 px-3 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-40">Salvar</button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function TaskReplanMenu({ task, onScheduleChange }: {
   task: Task;
   onScheduleChange: (date: string | null) => Promise<boolean>;
@@ -946,20 +986,13 @@ function InlineSubtask({ task, collaborators, onToggle, onUpdate, onDelete }: {
           />
         ) : (
           <span
-            className={cn('min-w-0 flex-1 truncate text-xs', task.completed && 'text-muted-foreground line-through')}
+            className={cn('min-w-0 flex-1 whitespace-normal break-words text-[11px] leading-snug sm:text-xs', task.completed && 'text-muted-foreground line-through')}
             title={`${task.title} - clique duas vezes para editar`}
             onDoubleClick={() => setIsEditingTitle(true)}
           >
             {task.title}
           </span>
         )}
-        <PriorityMenu value={priority} onChange={(value) => void onUpdate({ priority: value })} />
-        <SubtaskAssigneeMenu
-          selected={task.assigned_to}
-          collaborators={collaborators}
-          onChange={(value) => void onUpdate({ assigned_to: value })}
-        />
-        <TaskLinkMenu value={task.external_url} title={task.title} onChange={(value) => onUpdate({ external_url: value || null })} />
         <button
           type="button"
           onClick={onDelete}
@@ -970,18 +1003,18 @@ function InlineSubtask({ task, collaborators, onToggle, onUpdate, onDelete }: {
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
-      <div className="ml-[42px] flex flex-wrap items-center gap-2 text-[9px] text-muted-foreground">
-        <span>Criada há {daysOpen} {daysOpen === 1 ? 'dia' : 'dias'}</span>
-        <label className="flex items-center gap-1">
-          <span>Prazo</span>
-          <input
-            type="date"
-            value={task.due_date ?? ''}
-            onChange={(event) => void onUpdate({ due_date: event.target.value || null })}
-            className="h-5 border bg-background px-1 text-[9px]"
-            aria-label={`Prazo da subtarefa ${task.title}`}
-          />
-        </label>
+      <div className="ml-[42px] flex flex-wrap items-center gap-1.5 text-[9px] text-muted-foreground">
+        <span className="inline-flex h-6 items-center gap-1 bg-slate-100 px-1.5 font-medium text-slate-600" title={`Criada há ${daysOpen} ${daysOpen === 1 ? 'dia' : 'dias'}`}>
+          <Clock3 className="h-3 w-3" />{daysOpen}d
+        </span>
+        <TaskDueDateMenu value={task.due_date} title={task.title} onChange={(value) => void onUpdate({ due_date: value || null })} />
+        <PriorityMenu value={priority} onChange={(value) => void onUpdate({ priority: value })} />
+        <SubtaskAssigneeMenu
+          selected={task.assigned_to}
+          collaborators={collaborators}
+          onChange={(value) => void onUpdate({ assigned_to: value })}
+        />
+        <TaskLinkMenu value={task.external_url} title={task.title} onChange={(value) => onUpdate({ external_url: value || null })} />
       </div>
     </div>
   );

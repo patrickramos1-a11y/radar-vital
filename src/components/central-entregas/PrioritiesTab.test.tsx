@@ -256,7 +256,7 @@ describe('PrioritiesTab', () => {
     ));
   });
 
-  it('starts expanded when the priority already has subtasks', () => {
+  it('starts collapsed when the priority has subtasks and expands from the counter', () => {
     const child = {
       ...rootTask,
       id: 'task-child',
@@ -267,27 +267,13 @@ describe('PrioritiesTab', () => {
     } satisfies Task;
 
     renderTab({ tasks: [rootTask, child] });
+    expect(screen.queryByText('Conferir anexos')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Nova subtarefa' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar 1 subtarefa de Entregar relatório' }));
     expect(screen.getByText('Conferir anexos')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Nova subtarefa' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Recolher prioridade Entregar relatório' }));
-    expect(screen.queryByRole('textbox', { name: 'Nova subtarefa' })).not.toBeInTheDocument();
-  });
-
-  it('opens automatically when subtasks arrive after the first render', async () => {
-    const child = {
-      ...rootTask,
-      id: 'task-child-late',
-      title: 'Subtarefa carregada depois',
-      parent_task_id: rootTask.id,
-      priority_id: null,
-      sort_order: 1,
-    } satisfies Task;
-    const { rerender, props } = renderTab();
-
-    rerender(<PrioritiesTab {...props} tasks={[rootTask, child]} />);
-
-    expect(await screen.findByText('Subtarefa carregada depois')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Recolher prioridade Entregar relatório' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Recolher 1 subtarefa de Entregar relatório' }));
+    expect(screen.queryByText('Conferir anexos')).not.toBeInTheDocument();
   });
 
   it('places edit and delete inside the overflow menu', async () => {
@@ -391,6 +377,7 @@ describe('PrioritiesTab', () => {
       ],
     });
 
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar 1 subtarefa de Entregar relatório' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Responsável Gabi' }));
     const celineOptions = screen.getAllByRole('button', { name: /Celine/ });
     fireEvent.click(celineOptions[celineOptions.length - 1]);

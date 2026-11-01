@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Label } from '@/components/ui/label';
 import { PriorityModal } from './PriorityModal';
 import { priorityTaskTreeIds } from '@/lib/taskHierarchy';
+import { cn } from '@/lib/utils';
 
 interface RespOption { name: string; color: string; initials: string }
 interface Props {
@@ -267,10 +268,6 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
   const weightColor = priority.weight >= 5 ? 'border-l-red-500' : priority.weight === 4 ? 'border-l-orange-400' : priority.weight === 3 ? 'border-l-amber-400' : priority.weight === 2 ? 'border-l-sky-400' : 'border-l-slate-300';
   const scheduled = Boolean(root?.scheduled_for && root.scheduled_for > today());
 
-  useEffect(() => {
-    if (children.length > 0) setExpanded(true);
-  }, [children.length]);
-
   return <article className={`relative overflow-hidden border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : weightColor}`}>
     <div className={`absolute right-0 top-0 h-12 w-24 items-stretch sm:hidden ${swiped ? 'flex' : 'hidden'}`} aria-hidden={!swiped}>
       <button type="button" onClick={onEdit} className="flex w-12 items-center justify-center bg-sky-600 text-white" title="Editar prioridade" aria-label="Editar prioridade"><Pencil className="h-4 w-4" /></button>
@@ -292,13 +289,28 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
           {priority.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${priority.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {new Date(`${root?.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {priority.category && <span className="hidden bg-amber-50 px-1.5 py-0.5 capitalize text-amber-800 lg:inline">{categoryLabel(priority.category)}</span>}
-          {!!children.length && <span className="inline-flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 text-indigo-700"><ListChecks className="h-3 w-3" />{children.filter(task => task.completed).length}/{children.length} subtarefas</span>}
           <PriorityAssignee priority={priority} root={root} responsibleList={responsibleList} onUpdate={onUpdate} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} />
           {!closed && <PriorityWeight priority={priority} onUpdate={onUpdate} />}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
         {!closed && canPlanPriorities && <WorkSchedule task={root} onUpdateTask={onUpdateTask} />}
+        {!!children.length && <button
+          type="button"
+          onClick={toggleExpanded}
+          aria-label={`${expanded ? 'Recolher' : 'Mostrar'} ${children.length} ${children.length === 1 ? 'subtarefa' : 'subtarefas'} de ${priority.title}`}
+          aria-expanded={expanded}
+          title={`${children.filter(task => task.completed).length}/${children.length} subtarefas`}
+          className={cn(
+            'inline-flex h-7 shrink-0 items-center gap-1 border px-1.5 text-[10px] font-bold transition-colors',
+            expanded
+              ? 'border-indigo-500 bg-indigo-600 text-white'
+              : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:border-indigo-400 hover:bg-indigo-100',
+          )}
+        >
+          <ListChecks className="h-3.5 w-3.5" />
+          {children.filter(task => task.completed).length}/{children.length}
+        </button>}
         {!closed && <button type="button" onClick={async () => { if (await onUpdate(priority.id, { status: 'concluida' })) await onRefreshTasks(); }} title="Concluir prioridade" aria-label="Concluir prioridade" className="p-1.5 text-emerald-700 hover:bg-emerald-50"><Check className="h-4 w-4" /></button>}
         <DropdownMenu>
           <DropdownMenuTrigger asChild><button type="button" title="Mais ações" aria-label="Mais ações da prioridade" className="hidden p-1.5 text-muted-foreground hover:bg-muted sm:block"><MoreHorizontal className="h-4 w-4" /></button></DropdownMenuTrigger>
