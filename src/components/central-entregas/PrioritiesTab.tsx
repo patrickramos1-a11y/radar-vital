@@ -261,7 +261,7 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
   const closed = priority.status === 'concluida' || priority.status === 'cancelada';
   const age = Math.max(0, differenceInCalendarDays(
     new Date(priority.completed_at || new Date()),
-    new Date(priority.weight_changed_at || priority.created_at),
+    new Date(priority.created_at),
   ));
   const overdue = !closed && Boolean(priority.due_date && priority.due_date < new Date().toISOString().slice(0, 10));
   const addSubtask = async () => {
@@ -303,8 +303,8 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
         <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
           <span
             className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 text-slate-600"
-            aria-label={closed ? `${age} dias no último nível` : `${age} dias no nível atual`}
-            title={closed ? `${age} dias no último nível` : `${age} dias no nível atual`}
+            aria-label={closed ? `${age} dias de duração total` : `${age} dias desde a criação`}
+            title={closed ? `${age} dias de duração total` : `${age} dias desde a criação`}
           >
             <Clock3 className="h-3 w-3" />{age}d
           </span>
@@ -497,7 +497,7 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
   const touchMoved = useRef(false);
   const age = Math.max(0, differenceInCalendarDays(
     new Date(task.completed_at || new Date()),
-    new Date(task.priority_changed_at || task.created_at),
+    new Date(task.created_at),
   ));
   const scheduled = Boolean(task.scheduled_for && task.scheduled_for > today());
   const overdue = !task.completed && Boolean(task.due_date && task.due_date < today());

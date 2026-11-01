@@ -139,12 +139,15 @@ describe('PrioritiesTab', () => {
 
   it('shows the client logo and changes weight from the compact action', async () => {
     const onUpdate = vi.fn(async () => true);
-    renderTab({ onUpdate });
+    renderTab({
+      onUpdate,
+      priorities: [{ ...priority, weight_changed_at: new Date().toISOString() }],
+    });
 
     expect(screen.getByAltText('Logo Cliente Alfa')).toHaveAttribute('src', client.logoUrl);
     expect(screen.queryByTestId('priority-star')).not.toBeInTheDocument();
     expect(screen.queryByText(/Aberta há/)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/\d+ dias no nível atual/)).toHaveTextContent(/^\d+d$/);
+    expect(screen.getByLabelText(/\d+ dias desde a criação/)).not.toHaveTextContent(/^0d$/);
     fireEvent.click(screen.getByRole('button', { name: 'Peso 4: Urgente' }));
     fireEvent.click(screen.getByRole('button', { name: 'Definir peso 5: Extremamente urgente' }));
 
