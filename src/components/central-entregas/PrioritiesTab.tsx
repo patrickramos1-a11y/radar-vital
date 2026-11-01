@@ -433,6 +433,19 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
 
   return <article className={`border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : config.borderClass}`}>
     <div className={`flex min-w-0 items-center gap-1.5 px-2 py-1.5 ${rowIndex % 2 ? 'bg-slate-50' : 'bg-white'}`}>
+      <button
+        type="button"
+        onClick={() => void onToggleTask(task.id, client?.name)}
+        title={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'}
+        aria-label={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'}
+        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors ${
+          task.completed
+            ? 'border-emerald-600 bg-emerald-600 text-white'
+            : 'border-slate-400 bg-white text-transparent hover:border-emerald-600'
+        }`}
+      >
+        {task.completed && <Check className="h-3 w-3" />}
+      </button>
       <div className="min-w-0 flex-1">
         <EditableTitle title={task.title} completed={task.completed} expanded={expanded} ariaLabel={`${expanded ? 'Recolher' : 'Expandir'} tarefa ${task.title}`} onToggle={() => setExpanded(value => !value)} onSave={title => onUpdateTask(task.id, { title })} />
         <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
@@ -447,7 +460,6 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
       <div className="flex shrink-0 items-center gap-0.5">
         {!task.completed && <WorkSchedule task={task} onUpdateTask={onUpdateTask} kind="tarefa" />}
         {!task.completed && <button type="button" onClick={onPromote} title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`} className="p-1.5 text-amber-600 hover:bg-amber-50"><Star className="h-4 w-4" /></button>}
-        <button type="button" onClick={() => void onToggleTask(task.id, client?.name)} title={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'} aria-label={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'} className="p-1.5 text-emerald-700 hover:bg-emerald-50">{task.completed ? <Circle className="h-4 w-4" /> : <Check className="h-4 w-4" />}</button>
       </div>
     </div>
     {expanded && <div className="bg-white px-3 pb-3 sm:px-4">

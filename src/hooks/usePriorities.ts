@@ -216,7 +216,10 @@ export function usePriorities() {
       return created ? dbRowToPriority(created as Database['public']['Tables']['priorities']['Row']) : null;
     } catch (e) {
       console.error(e);
-      toast.error('Erro ao promover tarefa');
+      const message = e instanceof Error
+        ? e.message
+        : (typeof e === 'object' && e && 'message' in e ? String(e.message) : 'Não foi possível promover a tarefa.');
+      toast.error('Erro ao promover tarefa', { description: message });
       return null;
     }
   }, [currentUserName, fetch]);

@@ -672,7 +672,7 @@ function TaskItem({
                 }
               }}
               placeholder="Escreva a subtarefa e pressione Enter"
-              className="h-8 min-w-0 flex-1 border-0 bg-transparent px-1 text-xs outline-none"
+              className="h-8 min-w-0 flex-1 border-0 bg-transparent px-1 text-base outline-none sm:text-xs"
               maxLength={100}
               autoFocus
             />
@@ -701,7 +701,7 @@ function TaskItem({
               type="date"
               value={subtaskDueDate}
               onChange={(event) => setSubtaskDueDate(event.target.value)}
-              className="h-6 border bg-background px-1 text-[9px]"
+              className="h-7 border bg-background px-1 text-base sm:h-6 sm:text-[9px]"
               aria-label="Prazo da nova subtarefa"
             />
           </label>

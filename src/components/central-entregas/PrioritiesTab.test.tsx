@@ -256,6 +256,35 @@ describe('PrioritiesTab', () => {
     ));
   });
 
+  it('keeps task completion as a circle before the task content', async () => {
+    const onToggleTask = vi.fn(async () => true);
+    renderTab({ tasks: [rootTask, ordinaryTask], onToggleTask });
+    fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
+
+    const completion = screen.getByRole('button', { name: 'Concluir tarefa' });
+    expect(completion).toHaveClass('rounded-full');
+    fireEvent.click(completion);
+
+    await waitFor(() => expect(onToggleTask).toHaveBeenCalledWith(ordinaryTask.id, client.name));
+  });
+
+  it('prevents duplicate promotion submissions while the request is running', async () => {
+    let finishPromotion: (value: Priority | null) => void = () => undefined;
+    const onPromote = vi.fn(() => new Promise<Priority | null>(resolve => { finishPromotion = resolve; }));
+    renderTab({ tasks: [rootTask, ordinaryTask], onPromote });
+    fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
+    fireEvent.click(screen.getByRole('button', { name: `Promover ${ordinaryTask.title} para prioridade` }));
+
+    const submit = screen.getByRole('button', { name: 'Promover para prioridade' });
+    fireEvent.click(submit);
+    fireEvent.click(submit);
+
+    expect(onPromote).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Processando...' })).toBeDisabled();
+    finishPromotion(priority);
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Processando...' })).not.toBeInTheDocument());
+  });
+
   it('starts collapsed when the priority has subtasks and expands from the counter', () => {
     const child = {
       ...rootTask,

@@ -70,6 +70,7 @@ export function PriorityModal({
   const [weight, setWeight] = useState(1);
   const [category, setCategory] = useState<TaskModality>('levantamento');
   const [status, setStatus] = useState<PriorityStatus>('aberta');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -100,6 +101,7 @@ export function PriorityModal({
     }
     setTargetQuery('');
     setTargetPickerOpen(false);
+    setSubmitting(false);
   }, [open, editing, defaultAssignee, presetTitle, presetClientId, presetDescription]);
 
   const selectedTarget = useUniverseRamos
@@ -126,19 +128,24 @@ export function PriorityModal({
   };
 
   const handleSubmit = async () => {
-    if (!title.trim()) return;
+    if (submitting || !title.trim()) return;
     if (!editing && !promotionMode && !clientId && !universeItemId) return;
-    await onSubmit({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      client_id: universeItemId ? null : clientId,
-      universe_item_id: universeItemId,
-      assigned_to: assignedTo.slice(0, 1),
-      due_date: dueDate || null,
-      weight: Math.min(5, Math.max(1, Number(weight) || 1)),
-      category,
-      status,
-    });
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        client_id: universeItemId ? null : clientId,
+        universe_item_id: universeItemId,
+        assigned_to: assignedTo.slice(0, 1),
+        due_date: dueDate || null,
+        weight: Math.min(5, Math.max(1, Number(weight) || 1)),
+        category,
+        status,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -256,7 +263,9 @@ export function PriorityModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit}>{editing ? 'Salvar' : (submitLabel || 'Criar')}</Button>
+          <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting ? 'Processando...' : (editing ? 'Salvar' : (submitLabel || 'Criar'))}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
