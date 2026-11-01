@@ -3479,10 +3479,10 @@ export type Database = {
       }
       promote_client_task: {
         Args: {
-          p_actor: string
-          p_category: string
+          p_actor?: string
+          p_category?: string
           p_task_id: string
-          p_weight: number
+          p_weight?: number
         }
         Returns: {
           assigned_to: string[]
@@ -3500,6 +3500,7 @@ export type Database = {
           universe_item_id: string | null
           updated_at: string
           weight: number
+          weight_changed_at: string
         }
         SetofOptions: {
           from: "*"
