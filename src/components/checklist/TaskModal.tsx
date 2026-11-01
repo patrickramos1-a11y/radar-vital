@@ -595,6 +595,12 @@ function TaskItem({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <ModalityMenu value={modality} onChange={onModalityChange} />
+            {task.priority_id && (
+              <span className="inline-flex flex-shrink-0 text-amber-500" title="Tarefa vinculada a uma prioridade">
+                <Star className="h-4 w-4 fill-amber-400" aria-hidden="true" />
+                <span className="sr-only">Tarefa vinculada a uma prioridade</span>
+              </span>
+            )}
             {!task.completed && task.status !== 'pendente' && (
               <span className={cn('flex-shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold', status.className)}>
                 {status.label}

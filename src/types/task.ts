@@ -31,6 +31,7 @@ export interface Task {
   due_date: string | null;
   scheduled_for: string | null;
   priority: TaskPriority;
+  priority_changed_at?: string;
   modality: TaskModality;
   priority_id?: string | null;
   parent_task_id: string | null;

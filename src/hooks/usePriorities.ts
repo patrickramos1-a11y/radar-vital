@@ -16,6 +16,7 @@ const dbRowToPriority = (row: Database['public']['Tables']['priorities']['Row'])
   due_date: row.due_date,
   status: row.status as PriorityStatus,
   weight: row.weight ?? 1,
+  weight_changed_at: row.weight_changed_at,
   category: row.category,
   created_by: row.created_by,
   created_at: row.created_at,
@@ -106,28 +107,46 @@ export function usePriorities() {
   const updatePriority = useCallback(async (id: string, data: Partial<PriorityFormData>) => {
     try {
       const current = priorities.find(priority => priority.id === id);
-      if (data.status === 'concluida' && current?.source_task_id) {
-        const { data: related, error: relatedError } = await supabase.from('tasks')
-          .select('id,parent_task_id,completed,status').eq('client_id', current.client_id!);
-        if (relatedError) throw relatedError;
-        const descendants = new Set([current.source_task_id]);
-        let changed = true;
-        while (changed) {
-          changed = false;
-          for (const task of related || []) {
-            if (task.parent_task_id && descendants.has(task.parent_task_id) && !descendants.has(task.id)) {
-              descendants.add(task.id);
-              changed = true;
-            }
-          }
-        }
-        const hasOpen = (related || []).some(task => task.id !== current.source_task_id && descendants.has(task.id) && !task.completed && task.status !== 'cancelada');
-        if (hasOpen && !window.confirm('Esta prioridade tem subtarefas abertas. Deseja concluir todas elas e a prioridade?')) return false;
-        const { error: finishError } = await callPriorityRpc('finish_priority_task', {
-          p_task_id: current.source_task_id,
-          p_finish_children: hasOpen,
+      if (data.status === 'concluida' && current) {
+        let finishResult = await callPriorityRpc('finish_priority_with_task_tree', {
+          p_priority_id: current.id,
+          p_finish_children: false,
         });
-        if (finishError) throw finishError;
+
+        const hasOpenChildren = (error: typeof finishResult.error) =>
+          Boolean(error && (
+            error.code === 'P0001'
+            || error.message?.toLocaleLowerCase('pt-BR').includes('subtarefas abertas')
+          ));
+
+        if (hasOpenChildren(finishResult.error)) {
+          if (!window.confirm('Esta prioridade tem subtarefas abertas. Deseja concluir todas elas e a prioridade?')) return false;
+          finishResult = await callPriorityRpc('finish_priority_with_task_tree', {
+            p_priority_id: current.id,
+            p_finish_children: true,
+          });
+        }
+
+        if (finishResult.error && ['42883', 'PGRST202'].includes(finishResult.error.code ?? '') && current.source_task_id) {
+          finishResult = await callPriorityRpc('finish_priority_task', {
+            p_task_id: current.source_task_id,
+            p_finish_children: false,
+          });
+          if (hasOpenChildren(finishResult.error)) {
+            if (!window.confirm('Esta prioridade tem subtarefas abertas. Deseja concluir todas elas e a prioridade?')) return false;
+            finishResult = await callPriorityRpc('finish_priority_task', {
+              p_task_id: current.source_task_id,
+              p_finish_children: true,
+            });
+          }
+        } else if (finishResult.error && ['42883', 'PGRST202'].includes(finishResult.error.code ?? '')) {
+          const { error: standaloneError } = await supabase.from('priorities').update({
+            status: 'concluida',
+            completed_at: new Date().toISOString(),
+          }).eq('id', current.id);
+          finishResult = { data: null, error: standaloneError };
+        }
+        if (finishResult.error) throw finishResult.error;
         const { status: _status, ...otherChanges } = data;
         if (otherChanges.assigned_to) otherChanges.assigned_to = otherChanges.assigned_to.slice(0, 1);
         if (Object.keys(otherChanges).length) {
@@ -151,7 +170,10 @@ export function usePriorities() {
       return true;
     } catch (e) {
       console.error(e);
-      toast.error('Erro ao atualizar prioridade');
+      const message = e instanceof Error
+        ? e.message
+        : (typeof e === 'object' && e && 'message' in e ? String(e.message) : 'Não foi possível atualizar a prioridade.');
+      toast.error('Erro ao atualizar prioridade', { description: message });
       return false;
     }
   }, [fetch, priorities]);
@@ -164,7 +186,10 @@ export function usePriorities() {
         toast.success('Prioridade, tarefa e subtarefas excluídas');
         return true;
       }
-      if (!['42883', 'PGRST202'].includes(atomicDelete.error.code ?? '')) throw atomicDelete.error;
+      // A database created before the current migration may expose an older,
+      // incompatible RPC. PostgreSQL rolls a failed RPC back atomically, so it
+      // is safe to finish the same operation through the public tables.
+      console.warn('Atomic priority deletion unavailable; using compatibility fallback.', atomicDelete.error);
 
       const current = priorities.find((priority) => priority.id === id);
       const { data: linkedTasks, error: linkedError } = await supabase
@@ -173,15 +198,17 @@ export function usePriorities() {
         .eq('priority_id', id);
       if (linkedError) throw linkedError;
 
+      const linkedIds = new Set((linkedTasks ?? []).map((task) => task.id));
+
       const rootIds = new Set<string>([
         ...(current?.source_task_id ? [current.source_task_id] : []),
-        ...((linkedTasks ?? []).filter((task) => !task.parent_task_id).map((task) => task.id)),
+        ...((linkedTasks ?? [])
+          .filter((task) => !task.parent_task_id || !linkedIds.has(task.parent_task_id))
+          .map((task) => task.id)),
       ]);
 
-      if (current?.source_task_id) {
-        const { error: unlinkError } = await supabase.from('priorities').update({ source_task_id: null }).eq('id', id);
-        if (unlinkError) throw unlinkError;
-      }
+      const { error: unlinkError } = await supabase.from('priorities').update({ source_task_id: null }).eq('id', id);
+      if (unlinkError) throw unlinkError;
 
       // Deleting the roots also deletes every nested subtask through the
       // parent_task_id ON DELETE CASCADE relationship.
@@ -189,6 +216,11 @@ export function usePriorities() {
         const { error: taskError } = await supabase.from('tasks').delete().in('id', [...rootIds]);
         if (taskError) throw taskError;
       }
+
+      // Handles legacy rows linked to the priority from the middle of a task
+      // tree, without deleting an unrelated parent task.
+      const { error: remainingTaskError } = await supabase.from('tasks').delete().eq('priority_id', id);
+      if (remainingTaskError) throw remainingTaskError;
 
       const { error } = await supabase.from('priorities').delete().eq('id', id);
       if (error) throw error;
@@ -204,16 +236,64 @@ export function usePriorities() {
 
   const promoteTaskToPriority = useCallback(async (taskId: string, _taskTitle: string, data: PriorityFormData, _clientName?: string) => {
     try {
-      const { data: created, error } = await callPriorityRpc('promote_client_task', {
+      const rpcResult = await callPriorityRpc('promote_client_task', {
         p_task_id: taskId,
         p_weight: data.weight ?? 1,
         p_category: data.category || null,
         p_actor: currentUserName,
       });
-      if (error) throw error;
+      let created = rpcResult.data as Database['public']['Tables']['priorities']['Row'] | null;
+
+      if (rpcResult.error) {
+        console.warn('Atomic task promotion unavailable; using compatibility fallback.', rpcResult.error);
+        const { data: task, error: taskError } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('id', taskId)
+          .single();
+        if (taskError) throw taskError;
+
+        if (task.priority_id) {
+          const { data: existing, error: existingError } = await supabase
+            .from('priorities')
+            .select('*')
+            .eq('id', task.priority_id)
+            .single();
+          if (existingError) throw existingError;
+          created = existing;
+        } else {
+          const weight = Math.min(5, Math.max(1, data.weight ?? 1));
+          const payload: Database['public']['Tables']['priorities']['Insert'] = {
+            title: data.title?.trim() || task.title,
+            description: data.description?.trim() || task.description || null,
+            client_id: task.client_id,
+            assigned_to: (data.assigned_to?.length ? data.assigned_to : task.assigned_to).slice(0, 1),
+            due_date: data.due_date || task.due_date || null,
+            status: data.status || 'aberta',
+            weight,
+            category: data.category || null,
+            created_by: currentUserName,
+            source_task_id: task.id,
+          };
+          const insertResult = await supabase.from('priorities').insert(payload).select('*').single();
+          if (insertResult.error) throw insertResult.error;
+          created = insertResult.data;
+
+          const taskPriority = weight >= 4 ? 'urgente' : weight === 3 ? 'alta' : weight === 2 ? 'normal' : 'baixa';
+          const { error: linkError } = await supabase.from('tasks').update({
+            priority_id: created.id,
+            priority: taskPriority,
+          }).eq('id', task.id);
+          if (linkError) {
+            await supabase.from('priorities').delete().eq('id', created.id);
+            throw linkError;
+          }
+        }
+      }
+
       await fetch();
       toast.success('Tarefa promovida a prioridade');
-      return created ? dbRowToPriority(created as Database['public']['Tables']['priorities']['Row']) : null;
+      return created ? dbRowToPriority(created) : null;
     } catch (e) {
       console.error(e);
       const message = e instanceof Error

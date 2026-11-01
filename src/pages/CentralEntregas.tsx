@@ -393,6 +393,7 @@ export default function CentralEntregas() {
                 onCreateSubtask={tasksHook.addTask}
                 onToggleTask={tasksHook.toggleComplete}
                 onUpdateTask={tasksHook.updateTask}
+                onDeleteTask={tasksHook.deleteTask}
                 onRefreshTasks={tasksHook.refetch}
               />
             </TabsContent>

@@ -10,6 +10,7 @@ export interface Priority {
   due_date: string | null;
   status: PriorityStatus;
   weight: number;
+  weight_changed_at?: string;
   category: string | null;
   created_by: string | null;
   created_at: string;

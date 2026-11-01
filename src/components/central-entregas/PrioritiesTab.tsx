@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { differenceInCalendarDays, format } from 'date-fns';
-import { ArrowDown, ArrowDownWideNarrow, ArrowUp, CalendarClock, Check, Circle, Clock3, Flame, LayoutGrid, List, ListChecks, Minus, MoreHorizontal, Pencil, Plus, Search, Siren, Star, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowDownWideNarrow, ArrowUp, CalendarClock, Check, Circle, Clock3, ExternalLink, Flame, LayoutGrid, Link2, List, ListChecks, Minus, MoreHorizontal, Pencil, Plus, Search, Siren, Star, Trash2, X } from 'lucide-react';
 import type { Client } from '@/types/client';
 import type { Priority, PriorityFormData } from '@/types/priority';
 import { PRIORITY_CONFIG, type Task, type TaskFormData } from '@/types/task';
@@ -35,6 +35,7 @@ interface Props {
   onCreateSubtask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
   onToggleTask: (taskId: string, clientName?: string) => Promise<boolean>;
   onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
+  onDeleteTask: (taskId: string, clientName?: string) => Promise<boolean>;
   onRefreshTasks: () => Promise<void>;
 }
 
@@ -258,7 +259,10 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
   const touchStart = useRef<number | null>(null);
   const touchMoved = useRef(false);
   const closed = priority.status === 'concluida' || priority.status === 'cancelada';
-  const age = Math.max(0, differenceInCalendarDays(new Date(priority.completed_at || new Date()), new Date(priority.created_at)));
+  const age = Math.max(0, differenceInCalendarDays(
+    new Date(priority.completed_at || new Date()),
+    new Date(priority.weight_changed_at || priority.created_at),
+  ));
   const overdue = !closed && Boolean(priority.due_date && priority.due_date < new Date().toISOString().slice(0, 10));
   const addSubtask = async () => {
     if (!root || !client || !draft.trim()) return;
@@ -269,8 +273,7 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
   };
   const remove = async () => {
     if (window.confirm('Excluir esta prioridade? A tarefa vinculada e todas as subtarefas também serão excluídas.')) {
-      await onDelete(priority.id);
-      await onRefreshTasks();
+      if (await onDelete(priority.id)) await onRefreshTasks();
     }
   };
   const toggleExpanded = () => {
@@ -300,8 +303,8 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
         <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
           <span
             className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 text-slate-600"
-            aria-label={closed ? `${age} dias de duração` : `Aberta há ${age} dias`}
-            title={closed ? `${age} dias de duração` : `Aberta há ${age} dias`}
+            aria-label={closed ? `${age} dias no último nível` : `${age} dias no nível atual`}
+            title={closed ? `${age} dias no último nível` : `${age} dias no nível atual`}
           >
             <Clock3 className="h-3 w-3" />{age}d
           </span>
@@ -401,6 +404,63 @@ function TaskAssignee({ task, responsibleList, onUpdateTask, compact = false }: 
   </Popover>;
 }
 
+function TaskLinkAction({ task, onUpdateTask }: { task: Task; onUpdateTask: Props['onUpdateTask'] }) {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState(task.external_url || '');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => setUrl(task.external_url || ''), [task.external_url]);
+
+  const normalizedUrl = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+  const save = async (nextValue: string) => {
+    setSaving(true);
+    const nextUrl = normalizedUrl(nextValue);
+    const ok = await onUpdateTask(task.id, { external_url: nextUrl || null });
+    setSaving(false);
+    if (ok) setOpen(false);
+  };
+
+  return <Popover open={open} onOpenChange={setOpen}>
+    <PopoverTrigger asChild>
+      <button
+        type="button"
+        title={task.external_url ? 'Abrir ou editar link da tarefa' : 'Adicionar link à tarefa'}
+        aria-label={task.external_url ? `Link da tarefa ${task.title}` : `Adicionar link à tarefa ${task.title}`}
+        className={cn('hidden p-1.5 hover:bg-sky-50 sm:block', task.external_url ? 'text-sky-700' : 'text-muted-foreground')}
+      >
+        <Link2 className="h-4 w-4" />
+      </button>
+    </PopoverTrigger>
+    <PopoverContent align="end" className="w-72 p-3">
+      <p className="text-xs font-semibold">Link da tarefa</p>
+      <Input
+        autoFocus
+        value={url}
+        onChange={event => setUrl(event.target.value)}
+        placeholder="https://..."
+        className="mt-2 h-8 text-xs"
+        aria-label={`URL da tarefa ${task.title}`}
+        onKeyDown={event => {
+          if (event.key === 'Enter') { event.preventDefault(); void save(url); }
+        }}
+      />
+      <div className="mt-3 flex items-center justify-end gap-2">
+        {task.external_url && <>
+          <Button type="button" size="sm" variant="ghost" disabled={saving} onClick={() => void save('')}>Remover</Button>
+          <Button type="button" size="sm" variant="outline" asChild>
+            <a href={normalizedUrl(task.external_url)} target="_blank" rel="noreferrer"><ExternalLink className="mr-1 h-3.5 w-3.5" />Abrir</a>
+          </Button>
+        </>}
+        <Button type="button" size="sm" disabled={!url.trim() || saving} onClick={() => void save(url)}>Salvar</Button>
+      </div>
+    </PopoverContent>
+  </Popover>;
+}
+
 function ClientSideRail({ client, count, kind, onClick }: {
   client?: Client;
   count: number;
@@ -422,16 +482,23 @@ function ClientSideRail({ client, count, kind, onClick }: {
   </button>;
 }
 
-function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubtask, onToggleTask, onUpdateTask, onPromote }: {
+function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubtask, onToggleTask, onUpdateTask, onDeleteTask, onPromote }: {
   task: Task; client?: Client; tasks: Task[]; rowIndex: number; responsibleList: RespOption[];
   onCreateSubtask: Props['onCreateSubtask']; onToggleTask: Props['onToggleTask']; onUpdateTask: Props['onUpdateTask'];
+  onDeleteTask: Props['onDeleteTask'];
   onPromote: () => void;
 }) {
   const children = tasks.filter(item => item.parent_task_id === task.id);
   const [expanded, setExpanded] = useState(false);
+  const [swiped, setSwiped] = useState(false);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
-  const age = Math.max(0, differenceInCalendarDays(new Date(task.completed_at || new Date()), new Date(task.created_at)));
+  const touchStart = useRef<number | null>(null);
+  const touchMoved = useRef(false);
+  const age = Math.max(0, differenceInCalendarDays(
+    new Date(task.completed_at || new Date()),
+    new Date(task.priority_changed_at || task.created_at),
+  ));
   const scheduled = Boolean(task.scheduled_for && task.scheduled_for > today());
   const overdue = !task.completed && Boolean(task.due_date && task.due_date < today());
   const config = PRIORITY_CONFIG[task.priority];
@@ -449,9 +516,31 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
     setSaving(false);
     if (ok) setDraft('');
   };
+  const remove = async () => {
+    if (!window.confirm(`Excluir a tarefa "${task.title}" e todas as suas subtarefas?`)) return;
+    await onDeleteTask(task.id, client?.name);
+  };
+  const toggleExpanded = () => {
+    if (touchMoved.current) { touchMoved.current = false; return; }
+    if (swiped) { setSwiped(false); return; }
+    setExpanded(value => !value);
+  };
 
-  return <article className={`border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : config.borderClass}`}>
-    <div className={`flex min-w-0 items-center gap-1.5 px-2 py-1.5 ${rowIndex % 2 ? 'bg-slate-50' : 'bg-white'}`}>
+  return <article className={`relative overflow-hidden border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : config.borderClass}`}>
+    <div aria-hidden={!swiped} className={`absolute right-0 top-0 flex h-full w-14 items-center justify-center bg-red-600 text-white sm:hidden ${swiped ? '' : 'invisible'}`}>
+      <button type="button" onClick={() => void remove()} className="grid h-full w-full place-items-center" title="Excluir tarefa" aria-label={`Excluir tarefa ${task.title}`}><Trash2 className="h-4 w-4" /></button>
+    </div>
+    <div
+      className={`relative flex min-w-0 items-center gap-1.5 px-2 py-1.5 transition-transform duration-200 ${rowIndex % 2 ? 'bg-slate-50' : 'bg-white'} ${swiped ? '-translate-x-14' : 'translate-x-0'}`}
+      onTouchStart={event => { touchStart.current = event.touches[0]?.clientX ?? null; touchMoved.current = false; }}
+      onTouchEnd={event => {
+        if (touchStart.current === null) return;
+        const delta = (event.changedTouches[0]?.clientX ?? touchStart.current) - touchStart.current;
+        if (delta < -45) { setSwiped(true); touchMoved.current = true; }
+        if (delta > 35) { setSwiped(false); touchMoved.current = true; }
+        touchStart.current = null;
+      }}
+    >
       <button
         type="button"
         onClick={() => void onToggleTask(task.id, client?.name)}
@@ -466,7 +555,7 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
         {task.completed && <Check className="h-3 w-3" />}
       </button>
       <div className="min-w-0 flex-1">
-        <EditableTitle title={task.title} completed={task.completed} expanded={expanded} ariaLabel={`${expanded ? 'Recolher' : 'Expandir'} tarefa ${task.title}`} onToggle={() => setExpanded(value => !value)} onSave={title => onUpdateTask(task.id, { title })} />
+        <EditableTitle title={task.title} completed={task.completed} expanded={expanded} ariaLabel={`${expanded ? 'Recolher' : 'Expandir'} tarefa ${task.title}`} onToggle={toggleExpanded} onSave={title => onUpdateTask(task.id, { title })} />
         <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
           <span className="bg-slate-100 px-1.5 py-0.5 text-slate-600">{task.completed ? `${age}d de duração` : `Aberta há ${age}d`}</span>
           <span style={{ color: config.color, backgroundColor: colorWithAlpha(config.color, '12') }} className="px-1.5 py-0.5 font-semibold">{config.label}</span>
@@ -478,7 +567,9 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
         {!task.completed && <WorkSchedule task={task} onUpdateTask={onUpdateTask} kind="tarefa" />}
+        <TaskLinkAction task={task} onUpdateTask={onUpdateTask} />
         {!task.completed && <button type="button" onClick={onPromote} title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`} className="p-1.5 text-amber-600 hover:bg-amber-50"><Star className="h-4 w-4" /></button>}
+        <button type="button" onClick={() => void remove()} title="Excluir tarefa" aria-label={`Excluir tarefa ${task.title}`} className="hidden p-1.5 text-red-600 hover:bg-red-50 sm:block"><Trash2 className="h-4 w-4" /></button>
       </div>
     </div>
     {expanded && <div className="bg-white px-3 pb-3 sm:px-4">
@@ -547,7 +638,7 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
   </Dialog>;
 }
 
-export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanPriorities = true, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onPromote, onCreateSubtask, onToggleTask, onUpdateTask, onRefreshTasks }: Props) {
+export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanPriorities = true, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onPromote, onCreateSubtask, onToggleTask, onUpdateTask, onDeleteTask, onRefreshTasks }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Priority | null>(null);
   const [presetClientId, setPresetClientId] = useState<string | null>(null);
@@ -673,7 +764,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         <ClientSideRail client={client} count={items.length} kind="tarefa" onClick={() => client && setQuickTaskClientId(client.id)} />
         <div className="min-w-0">
           {quickOpen && client && <div className="flex h-10 items-center border-b bg-slate-50 px-1"><QuickTaskInput client={client} assignee={selectedAssignee} color={color} onCreate={onCreateSubtask} onClose={() => setQuickTaskClientId(null)} /></div>}
-          {items.map((task, rowIndex) => <TaskItem key={task.id} task={task} client={client} tasks={filteredTasks} rowIndex={rowIndex} responsibleList={responsibleList} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onPromote={() => setPromotingTask(task)} />)}
+          {items.map((task, rowIndex) => <TaskItem key={task.id} task={task} client={client} tasks={filteredTasks} rowIndex={rowIndex} responsibleList={responsibleList} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onPromote={() => setPromotingTask(task)} />)}
         </div>
       </section>;
     })}</div>}

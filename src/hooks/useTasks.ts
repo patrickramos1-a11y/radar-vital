@@ -128,6 +128,7 @@ const dbRowToTask = (row: TaskRow): Task => ({
   due_date: row.due_date || null,
   scheduled_for: row.scheduled_for || null,
   priority: (row.priority as Task['priority']) || 'normal',
+  priority_changed_at: row.priority_changed_at,
   modality: (row.modality as Task['modality']) || 'levantamento',
   priority_id: row.priority_id ?? null,
   parent_task_id: row.parent_task_id ?? null,

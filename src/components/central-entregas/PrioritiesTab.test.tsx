@@ -93,6 +93,7 @@ function renderTab(overrides: Partial<React.ComponentProps<typeof PrioritiesTab>
     onCreateSubtask: vi.fn(async () => true),
     onToggleTask: vi.fn(async () => true),
     onUpdateTask: vi.fn(async () => true),
+    onDeleteTask: vi.fn(async () => true),
     onRefreshTasks: vi.fn(async () => undefined),
     ...overrides,
   };
@@ -143,7 +144,7 @@ describe('PrioritiesTab', () => {
     expect(screen.getByAltText('Logo Cliente Alfa')).toHaveAttribute('src', client.logoUrl);
     expect(screen.queryByTestId('priority-star')).not.toBeInTheDocument();
     expect(screen.queryByText(/Aberta há/)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/Aberta há \d+ dias/)).toHaveTextContent(/^\d+d$/);
+    expect(screen.getByLabelText(/\d+ dias no nível atual/)).toHaveTextContent(/^\d+d$/);
     fireEvent.click(screen.getByRole('button', { name: 'Peso 4: Urgente' }));
     fireEvent.click(screen.getByRole('button', { name: 'Definir peso 5: Extremamente urgente' }));
 
@@ -268,6 +269,29 @@ describe('PrioritiesTab', () => {
     fireEvent.click(completion);
 
     await waitFor(() => expect(onToggleTask).toHaveBeenCalledWith(ordinaryTask.id, client.name));
+  });
+
+  it('deletes an ordinary task from its desktop action', async () => {
+    const onDeleteTask = vi.fn(async () => true);
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderTab({ tasks: [rootTask, ordinaryTask], onDeleteTask });
+    fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
+
+    fireEvent.click(screen.getByRole('button', { name: `Excluir tarefa ${ordinaryTask.title}` }));
+
+    await waitFor(() => expect(onDeleteTask).toHaveBeenCalledWith(ordinaryTask.id, client.name));
+    confirm.mockRestore();
+  });
+
+  it('adds an external link to an ordinary task', async () => {
+    const onUpdateTask = vi.fn(async () => true);
+    renderTab({ tasks: [rootTask, ordinaryTask], onUpdateTask });
+    fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
+    fireEvent.click(screen.getByRole('button', { name: `Adicionar link à tarefa ${ordinaryTask.title}` }));
+    fireEvent.change(screen.getByRole('textbox', { name: `URL da tarefa ${ordinaryTask.title}` }), { target: { value: 'example.com/documento' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(onUpdateTask).toHaveBeenCalledWith(ordinaryTask.id, { external_url: 'https://example.com/documento' }));
   });
 
   it('prevents duplicate promotion submissions while the request is running', async () => {

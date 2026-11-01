@@ -2484,6 +2484,7 @@ export type Database = {
           universe_item_id: string | null
           updated_at: string
           weight: number
+          weight_changed_at: string
         }
         Insert: {
           assigned_to?: string[]
@@ -2501,6 +2502,7 @@ export type Database = {
           universe_item_id?: string | null
           updated_at?: string
           weight?: number
+          weight_changed_at?: string
         }
         Update: {
           assigned_to?: string[]
@@ -2518,6 +2520,7 @@ export type Database = {
           universe_item_id?: string | null
           updated_at?: string
           weight?: number
+          weight_changed_at?: string
         }
         Relationships: [
           {
@@ -2925,6 +2928,7 @@ export type Database = {
           modality: string
           parent_task_id: string | null
           priority: string
+          priority_changed_at: string
           priority_id: string | null
           recurrence: string
           recurrence_origin_id: string | null
@@ -2949,6 +2953,7 @@ export type Database = {
           modality?: string
           parent_task_id?: string | null
           priority?: string
+          priority_changed_at?: string
           priority_id?: string | null
           recurrence?: string
           recurrence_origin_id?: string | null
@@ -2973,6 +2978,7 @@ export type Database = {
           modality?: string
           parent_task_id?: string | null
           priority?: string
+          priority_changed_at?: string
           priority_id?: string | null
           recurrence?: string
           recurrence_origin_id?: string | null
@@ -3209,6 +3215,10 @@ export type Database = {
       finish_priority_task: {
         Args: { p_finish_children: boolean; p_task_id: string }
         Returns: undefined
+      }
+      finish_priority_with_task_tree: {
+        Args: { p_finish_children?: boolean; p_priority_id: string }
+        Returns: Json
       }
       grant_manual_stars: {
         Args: {

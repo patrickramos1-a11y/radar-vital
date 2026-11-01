@@ -37,6 +37,7 @@ export default function MyPriorities() {
           onCreateSubtask={taskData.addTask}
           onToggleTask={taskData.toggleComplete}
           onUpdateTask={taskData.updateTask}
+          onDeleteTask={taskData.deleteTask}
           onRefreshTasks={taskData.refetch}
         /> : <p className="border bg-white p-4 text-sm text-muted-foreground">Selecione um perfil para consultar suas prioridades.</p>}
       </div>
