@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { differenceInCalendarDays, format } from 'date-fns';
-import { ArrowDownWideNarrow, CalendarClock, Check, Circle, Clock3, Gauge, LayoutGrid, List, ListChecks, MoreHorizontal, Pencil, Plus, Search, Star, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowDownWideNarrow, ArrowUp, CalendarClock, Check, Circle, Clock3, Flame, LayoutGrid, List, ListChecks, Minus, MoreHorizontal, Pencil, Plus, Search, Siren, Star, Trash2, X } from 'lucide-react';
 import type { Client } from '@/types/client';
 import type { Priority, PriorityFormData } from '@/types/priority';
 import { PRIORITY_CONFIG, type Task, type TaskFormData } from '@/types/task';
@@ -40,13 +40,17 @@ interface Props {
 
 type SortMode = 'weight-time' | 'oldest';
 const today = () => format(new Date(), 'yyyy-MM-dd');
-const weightClasses: Record<number, string> = {
-  1: 'border-slate-300 bg-slate-50 text-slate-700',
-  2: 'border-sky-300 bg-sky-50 text-sky-700',
-  3: 'border-amber-300 bg-amber-50 text-amber-800',
-  4: 'border-orange-300 bg-orange-50 text-orange-800',
-  5: 'border-red-300 bg-red-50 text-red-700',
+const priorityWeightConfig = {
+  1: { label: 'Baixa', icon: ArrowDown, className: 'border-sky-200 bg-sky-50 text-sky-700', borderClass: 'border-l-sky-400' },
+  2: { label: 'Normal', icon: Minus, className: 'border-slate-200 bg-white text-slate-600', borderClass: 'border-l-slate-300' },
+  3: { label: 'Alta', icon: ArrowUp, className: 'border-orange-300 bg-orange-50 text-orange-700', borderClass: 'border-l-orange-500' },
+  4: { label: 'Urgente', icon: Flame, className: 'border-red-300 bg-red-50 text-red-700', borderClass: 'border-l-red-600' },
+  5: { label: 'Extremamente urgente', icon: Siren, className: 'border-rose-400 bg-rose-100 text-rose-800', borderClass: 'border-l-rose-700' },
 };
+
+function priorityWeight(weight: number) {
+  return priorityWeightConfig[Math.min(5, Math.max(1, weight)) as keyof typeof priorityWeightConfig];
+}
 
 function rootTaskFor(priority: Priority, tasks: Task[]) {
   return tasks.find(task => task.id === priority.source_task_id)
@@ -166,16 +170,25 @@ function WorkSchedule({ task, onUpdateTask, kind = 'prioridade' }: { task?: Task
 
 function PriorityWeight({ priority, onUpdate }: { priority: Priority; onUpdate: Props['onUpdate'] }) {
   const [open, setOpen] = useState(false);
+  const current = priorityWeight(priority.weight);
+  const CurrentIcon = current.icon;
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild>
-      <button type="button" title="Alterar peso" aria-label={`Peso ${priority.weight}`} className={`inline-flex h-5 items-center gap-1 border px-1.5 text-[10px] font-semibold ${weightClasses[priority.weight] || weightClasses[1]}`}>
-        <Gauge className="h-3 w-3" />P{priority.weight}
+      <button type="button" title={`Prioridade: ${current.label}. Clique para alterar.`} aria-label={`Peso ${priority.weight}: ${current.label}`} className={`inline-flex h-5 items-center gap-1 border px-1.5 text-[10px] font-semibold ${current.className}`}>
+        <CurrentIcon className="h-3 w-3" />{current.label}
       </button>
     </PopoverTrigger>
-    <PopoverContent align="start" className="w-48 p-2">
-      <p className="px-1 pb-2 text-xs font-semibold">Peso da prioridade</p>
-      <div className="grid grid-cols-5 gap-1">
-        {[5, 4, 3, 2, 1].map(weight => <button key={weight} type="button" aria-label={`Definir peso ${weight}`} className={`h-8 border text-xs font-semibold ${priority.weight === weight ? 'ring-2 ring-primary' : ''} ${weightClasses[weight]}`} onClick={async () => { if (await onUpdate(priority.id, { weight })) setOpen(false); }}>{weight}</button>)}
+    <PopoverContent align="start" className="w-56 p-2">
+      <p className="px-1 pb-2 text-xs font-semibold">Prioridade da entrega</p>
+      <div className="space-y-1">
+        {[5, 4, 3, 2, 1].map(weight => {
+          const config = priorityWeight(weight);
+          const Icon = config.icon;
+          return <button key={weight} type="button" aria-label={`Definir peso ${weight}: ${config.label}`} className={`flex h-9 w-full items-center gap-2 border px-2 text-left text-xs font-semibold ${priority.weight === weight ? 'ring-2 ring-primary' : ''} ${config.className}`} onClick={async () => { if (await onUpdate(priority.id, { weight })) setOpen(false); }}>
+            <Icon className="h-3.5 w-3.5" />
+            <span className="flex-1">{config.label}</span>
+          </button>;
+        })}
       </div>
     </PopoverContent>
   </Popover>;
@@ -265,7 +278,7 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
     if (swiped) { setSwiped(false); return; }
     setExpanded(value => !value);
   };
-  const weightColor = priority.weight >= 5 ? 'border-l-red-500' : priority.weight === 4 ? 'border-l-orange-400' : priority.weight === 3 ? 'border-l-amber-400' : priority.weight === 2 ? 'border-l-sky-400' : 'border-l-slate-300';
+  const weightColor = priorityWeight(priority.weight).borderClass;
   const scheduled = Boolean(root?.scheduled_for && root.scheduled_for > today());
 
   return <article className={`relative overflow-hidden border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : weightColor}`}>
@@ -285,7 +298,13 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
       <div className="min-w-0 flex-1">
         <EditableTitle title={priority.title} expanded={expanded} ariaLabel={`${expanded ? 'Recolher' : 'Expandir'} prioridade ${priority.title}`} onToggle={toggleExpanded} onSave={title => onUpdate(priority.id, { title })} />
         <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="bg-slate-100 px-1.5 py-0.5 text-slate-600">{closed ? `${age}d de duração` : `Aberta há ${age}d`}</span>
+          <span
+            className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 text-slate-600"
+            aria-label={closed ? `${age} dias de duração` : `Aberta há ${age} dias`}
+            title={closed ? `${age} dias de duração` : `Aberta há ${age} dias`}
+          >
+            <Clock3 className="h-3 w-3" />{age}d
+          </span>
           {priority.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${priority.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {new Date(`${root?.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {priority.category && <span className="hidden bg-amber-50 px-1.5 py-0.5 capitalize text-amber-800 lg:inline">{categoryLabel(priority.category)}</span>}

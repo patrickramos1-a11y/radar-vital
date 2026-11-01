@@ -142,8 +142,10 @@ describe('PrioritiesTab', () => {
 
     expect(screen.getByAltText('Logo Cliente Alfa')).toHaveAttribute('src', client.logoUrl);
     expect(screen.queryByTestId('priority-star')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Peso 4' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Definir peso 5' }));
+    expect(screen.queryByText(/Aberta há/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Aberta há \d+ dias/)).toHaveTextContent(/^\d+d$/);
+    fireEvent.click(screen.getByRole('button', { name: 'Peso 4: Urgente' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Definir peso 5: Extremamente urgente' }));
 
     await waitFor(() => expect(onUpdate).toHaveBeenCalledWith(priority.id, { weight: 5 }));
   });
