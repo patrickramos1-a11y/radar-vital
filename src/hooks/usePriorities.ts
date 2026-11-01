@@ -29,7 +29,9 @@ type PriorityRpc = (name: string, args: Record<string, unknown>) => Promise<{
   data: unknown;
   error: { code?: string; message: string } | null;
 }>;
-const callPriorityRpc = supabase.rpc as unknown as PriorityRpc;
+const callPriorityRpc: PriorityRpc = (name, args) => (
+  supabase.rpc(name as never, args as never) as unknown as ReturnType<PriorityRpc>
+);
 
 export function usePriorities() {
   const { currentUser } = useAuth();
