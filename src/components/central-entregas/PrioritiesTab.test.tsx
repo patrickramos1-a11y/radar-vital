@@ -252,14 +252,20 @@ describe('PrioritiesTab', () => {
 
     expect(screen.queryByText(rootTask.title)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: `Promover ${ordinaryTask.title} para prioridade` }));
-    fireEvent.click(screen.getByRole('button', { name: 'Promover para prioridade' }));
 
     await waitFor(() => expect(onPromote).toHaveBeenCalledWith(
       ordinaryTask.id,
       ordinaryTask.title,
-      expect.objectContaining({ title: ordinaryTask.title, client_id: client.id }),
+      expect.objectContaining({
+        title: ordinaryTask.title,
+        client_id: client.id,
+        assigned_to: ordinaryTask.assigned_to,
+        weight: 1,
+        category: ordinaryTask.modality,
+      }),
       client.name,
     ));
+    expect(screen.getByRole('button', { name: `${ordinaryTask.title} promovida para prioridade` })).toBeDisabled();
   });
 
   it('keeps task completion as a circle before the task content', async () => {
@@ -304,14 +310,28 @@ describe('PrioritiesTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tarefas' }));
     fireEvent.click(screen.getByRole('button', { name: `Promover ${ordinaryTask.title} para prioridade` }));
 
-    const submit = screen.getByRole('button', { name: 'Promover para prioridade' });
-    fireEvent.click(submit);
-    fireEvent.click(submit);
-
+    await waitFor(() => expect(onPromote).toHaveBeenCalledTimes(1));
+    const promoting = screen.getByRole('button', { name: `Promovendo ${ordinaryTask.title} para prioridade` });
+    expect(promoting).toBeDisabled();
+    fireEvent.click(promoting);
     expect(onPromote).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('button', { name: 'Processando...' })).toBeDisabled();
     finishPromotion(priority);
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Processando...' })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: `${ordinaryTask.title} promovida para prioridade` })).toBeDisabled());
+  });
+
+  it('shows a linked Universo Ramos target instead of Sem cliente', () => {
+    const institutionalPriority = {
+      ...priority,
+      id: 'priority-universe',
+      title: 'Organizar rotina do setor',
+      client_id: null,
+      universe_item_id: 'SET-01',
+    } satisfies Priority;
+
+    renderTab({ priorities: [institutionalPriority], tasks: [] });
+
+    expect(screen.getByRole('button', { name: 'Setor · Setor Projetos' })).toBeInTheDocument();
+    expect(screen.queryByText('Sem cliente')).not.toBeInTheDocument();
   });
 
   it('starts collapsed when the priority has subtasks and expands from the counter', () => {

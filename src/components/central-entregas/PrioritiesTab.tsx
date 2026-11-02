@@ -14,6 +14,9 @@ import { Label } from '@/components/ui/label';
 import { PriorityModal } from './PriorityModal';
 import { priorityTaskTreeIds } from '@/lib/taskHierarchy';
 import { cn } from '@/lib/utils';
+import { manualCatalog } from '@/features/master-plan-preview/manualDigitalModel';
+import { competencyStickerPath } from '@/features/master-plan-preview/competencyVisualAssets';
+import { functionStickerPath, nucleusStickerPath, sectorStickerPath } from '@/features/master-plan-preview/organizationVisualAssets';
 
 interface RespOption { name: string; color: string; initials: string }
 interface Props {
@@ -68,6 +71,16 @@ function categoryLabel(category?: string | null) {
   if (category === 'entregavel_migrado') return 'Entregável';
   return category.replace(/_/g, ' ');
 }
+
+type UniverseTarget = { id: string; name: string; type: 'Núcleo' | 'Setor' | 'Área' | 'Função' | 'Competência'; image?: string };
+
+const universeTargetById = new Map<string, UniverseTarget>([
+  ...manualCatalog.nuclei.map(item => [item.id, { id: item.id, name: item.name, type: 'Núcleo' as const, image: nucleusStickerPath(item.id) }]),
+  ...manualCatalog.sectors.map(item => [item.id, { id: item.id, name: item.name, type: 'Setor' as const, image: sectorStickerPath(item.id) }]),
+  ...manualCatalog.areas.map(item => [item.id, { id: item.id, name: item.name, type: 'Área' as const, image: sectorStickerPath(item.sectorId) }]),
+  ...manualCatalog.functions.map(item => [item.id, { id: item.id, name: item.name, type: 'Função' as const, image: functionStickerPath(item.id) }]),
+  ...manualCatalog.competencies.map(item => [item.id, { id: item.id, name: item.name, type: 'Competência' as const, image: competencyStickerPath(item.id) }]),
+]);
 
 function EditableTitle({ title, ariaLabel, completed = false, expanded, onToggle, onSave }: {
   title: string;
@@ -461,29 +474,34 @@ function TaskLinkAction({ task, onUpdateTask }: { task: Task; onUpdateTask: Prop
   </Popover>;
 }
 
-function ClientSideRail({ client, count, kind, onClick }: {
+function ClientSideRail({ client, universeTarget, count, kind, onClick }: {
   client?: Client;
+  universeTarget?: UniverseTarget;
   count: number;
   kind: 'prioridade' | 'tarefa';
-  onClick: () => void;
+  onClick?: () => void;
 }) {
-  const name = client?.name || 'Sem cliente';
+  const name = client?.name || universeTarget?.name || 'Sem cliente';
+  const image = client?.logoUrl || universeTarget?.image;
+  const canCreate = Boolean(client && onClick);
   return <button
     type="button"
     onClick={onClick}
-    disabled={!client}
-    title={client ? `Adicionar ${kind} para ${name}` : 'Sem cliente'}
-    aria-label={client ? `Adicionar ${kind} para ${name}` : 'Sem cliente'}
+    disabled={!canCreate}
+    title={canCreate ? `Adicionar ${kind} para ${name}` : universeTarget ? `${universeTarget.type} · ${name}` : 'Sem cliente'}
+    aria-label={canCreate ? `Adicionar ${kind} para ${name}` : universeTarget ? `${universeTarget.type} · ${name}` : 'Sem cliente'}
     className="relative flex min-h-[58px] w-full flex-col items-center justify-center gap-1 overflow-hidden border-r bg-slate-50 px-1.5 py-2 text-center hover:bg-slate-100 disabled:cursor-default"
   >
     <span className="absolute right-1 top-1 min-w-4 bg-white px-1 text-[9px] font-semibold text-slate-500">{count}</span>
-    {client?.logoUrl ? <img src={client.logoUrl} alt={`Logo ${name}`} className="max-h-11 w-full object-contain" /> : <span className="max-w-full break-words text-[10px] font-bold leading-tight text-slate-800 sm:text-[11px]">{name}</span>}
-    {client && <Plus className="absolute bottom-1 right-1 h-3 w-3 text-primary" />}
+    {image ? <img src={image} alt={client ? `Logo ${name}` : `Figurinha de ${name}`} className="max-h-11 w-full object-contain" /> : <span className="max-w-full break-words text-[10px] font-bold leading-tight text-slate-800 sm:text-[11px]">{name}</span>}
+    {universeTarget && <span className="max-w-full truncate text-[9px] font-medium text-teal-700">{universeTarget.type}</span>}
+    {canCreate && <Plus className="absolute bottom-1 right-1 h-3 w-3 text-primary" />}
   </button>;
 }
 
-function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubtask, onToggleTask, onUpdateTask, onDeleteTask, onPromote }: {
+function TaskItem({ task, client, tasks, rowIndex, responsibleList, contextOnly = false, promoted = false, promoting = false, onCreateSubtask, onToggleTask, onUpdateTask, onDeleteTask, onPromote }: {
   task: Task; client?: Client; tasks: Task[]; rowIndex: number; responsibleList: RespOption[];
+  contextOnly?: boolean; promoted?: boolean; promoting?: boolean;
   onCreateSubtask: Props['onCreateSubtask']; onToggleTask: Props['onToggleTask']; onUpdateTask: Props['onUpdateTask'];
   onDeleteTask: Props['onDeleteTask'];
   onPromote: () => void;
@@ -544,6 +562,7 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
       <button
         type="button"
         onClick={() => void onToggleTask(task.id, client?.name)}
+        disabled={contextOnly}
         title={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'}
         aria-label={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'}
         className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors ${
@@ -562,20 +581,28 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, onCreateSubt
           {task.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${task.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {new Date(`${task.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {!!children.length && <span className="inline-flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 text-indigo-700"><ListChecks className="h-3 w-3" />{children.filter(item => item.completed).length}/{children.length} subtarefas</span>}
-          <TaskAssignee task={task} responsibleList={responsibleList} onUpdateTask={onUpdateTask} />
+          {contextOnly && <span className="bg-slate-100 px-1.5 py-0.5 text-slate-600">Tarefa principal</span>}
+          {!contextOnly && <TaskAssignee task={task} responsibleList={responsibleList} onUpdateTask={onUpdateTask} />}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
-        {!task.completed && <WorkSchedule task={task} onUpdateTask={onUpdateTask} kind="tarefa" />}
-        <TaskLinkAction task={task} onUpdateTask={onUpdateTask} />
-        {!task.completed && <button type="button" onClick={onPromote} title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`} className="p-1.5 text-amber-600 hover:bg-amber-50"><Star className="h-4 w-4" /></button>}
-        <button type="button" onClick={() => void remove()} title="Excluir tarefa" aria-label={`Excluir tarefa ${task.title}`} className="hidden p-1.5 text-red-600 hover:bg-red-50 sm:block"><Trash2 className="h-4 w-4" /></button>
+        {!contextOnly && !task.completed && <WorkSchedule task={task} onUpdateTask={onUpdateTask} kind="tarefa" />}
+        {!contextOnly && <TaskLinkAction task={task} onUpdateTask={onUpdateTask} />}
+        {!contextOnly && !task.completed && <button
+          type="button"
+          onClick={onPromote}
+          disabled={promoted || promoting}
+          title={promoted ? 'Tarefa promovida para prioridade' : promoting ? 'Promovendo tarefa' : 'Promover para prioridade'}
+          aria-label={promoted ? `${task.title} promovida para prioridade` : promoting ? `Promovendo ${task.title} para prioridade` : `Promover ${task.title} para prioridade`}
+          className={cn('p-1.5 text-amber-600 hover:bg-amber-50 disabled:cursor-default', promoting && 'animate-pulse', promoted && 'bg-amber-50')}
+        ><Star className={cn('h-4 w-4', promoted && 'fill-current')} /></button>}
+        {!contextOnly && <button type="button" onClick={() => void remove()} title="Excluir tarefa" aria-label={`Excluir tarefa ${task.title}`} className="hidden p-1.5 text-red-600 hover:bg-red-50 sm:block"><Trash2 className="h-4 w-4" /></button>}
       </div>
     </div>
     {expanded && <div className="bg-white px-3 pb-3 sm:px-4">
       {task.description && <p className="mb-2 text-xs text-muted-foreground">{task.description}</p>}
       <Subtasks parentId={task.id} tasks={tasks} clientName={client?.name || 'Cliente'} responsibleList={responsibleList} onToggle={onToggleTask} onUpdateTask={onUpdateTask} />
-      {!task.completed && <form className="mt-2 flex gap-2" onSubmit={event => { event.preventDefault(); void addSubtask(); }}>
+      {!contextOnly && !task.completed && <form className="mt-2 flex gap-2" onSubmit={event => { event.preventDefault(); void addSubtask(); }}>
         <Input value={draft} onChange={event => setDraft(event.target.value)} placeholder="Nova subtarefa" aria-label={`Nova subtarefa para ${task.title}`} className="h-8 text-xs" />
         <Button type="submit" size="sm" variant="outline" disabled={!draft.trim() || saving} title="Adicionar subtarefa"><Plus className="h-4 w-4" /></Button>
       </form>}
@@ -645,7 +672,8 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   const [quickClientId, setQuickClientId] = useState<string | null>(null);
   const [quickTaskClientId, setQuickTaskClientId] = useState<string | null>(null);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
-  const [promotingTask, setPromotingTask] = useState<Task | null>(null);
+  const [promotingTaskIds, setPromotingTaskIds] = useState<Set<string>>(() => new Set());
+  const [promotedTaskIdsThisSession, setPromotedTaskIdsThisSession] = useState<Set<string>>(() => new Set());
   const [showAll, setShowAll] = useState(false);
   const [showScheduled, setShowScheduled] = useState(false);
   const [search, setSearch] = useState('');
@@ -667,23 +695,50 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
     : b.weight - a.weight || a.created_at.localeCompare(b.created_at)), [priorities, tasks, isTeamView, initialClientId, collaboratorFilter, showAll, showScheduled, clientFilter, search, clientById, sortMode]);
   const groups = useMemo(() => {
     const byClient = new Map<string, Priority[]>();
-    filtered.forEach(priority => { const key = priority.client_id || 'sem-cliente'; byClient.set(key, [...(byClient.get(key) || []), priority]); });
+    filtered.forEach(priority => {
+      const key = priority.client_id || (priority.universe_item_id ? `universe:${priority.universe_item_id}` : 'sem-cliente');
+      byClient.set(key, [...(byClient.get(key) || []), priority]);
+    });
     return [...byClient].sort(([a, aItems], [b, bItems]) => bItems[0].weight - aItems[0].weight
       || aItems[0].created_at.localeCompare(bItems[0].created_at)
-      || (clientById.get(a)?.name || 'Sem cliente').localeCompare(clientById.get(b)?.name || 'Sem cliente', 'pt-BR'));
+      || (clientById.get(a)?.name || universeTargetById.get(a.replace('universe:', ''))?.name || 'Sem cliente').localeCompare(clientById.get(b)?.name || universeTargetById.get(b.replace('universe:', ''))?.name || 'Sem cliente', 'pt-BR'));
   }, [filtered, clientById]);
   const promotedTaskIds = useMemo(() => priorityTaskTreeIds(tasks), [tasks]);
-  const filteredTasks = useMemo(() => tasks.filter(task =>
-    !promotedTaskIds.has(task.id)
-    &&
-    (isTeamView || collaboratorFilter === 'all' || Boolean(initialClientId) || assigneeMatches(task.assigned_to, collaboratorFilter))
-    && (showAll || !task.completed)
-    && (showScheduled || !(task.scheduled_for && task.scheduled_for > today()))
-    && (clientFilter === 'all' || task.client_id === clientFilter)
-    && (!search.trim() || `${task.title} ${task.description || ''} ${clientById.get(task.client_id)?.name || ''}`.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
-  ).sort((a, b) => sortMode === 'oldest'
+  const taskById = useMemo(() => new Map(tasks.map(task => [task.id, task])), [tasks]);
+  const taskList = useMemo(() => {
+    const matchesCommonFilters = (task: Task) => (
+      (showAll || !task.completed)
+      && (showScheduled || !(task.scheduled_for && task.scheduled_for > today()))
+      && (clientFilter === 'all' || task.client_id === clientFilter)
+      && (!search.trim() || `${task.title} ${task.description || ''} ${clientById.get(task.client_id)?.name || ''}`.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
+    );
+    const matchesCollaborator = (task: Task) => (
+      isTeamView || collaboratorFilter === 'all' || Boolean(initialClientId) || assigneeMatches(task.assigned_to, collaboratorFilter)
+    );
+    const selected = tasks.filter(task =>
+      matchesCommonFilters(task)
+      && matchesCollaborator(task)
+      && (!promotedTaskIds.has(task.id) || Boolean(task.parent_task_id) || promotedTaskIdsThisSession.has(task.id))
+    );
+    const selectedIds = new Set(selected.map(task => task.id));
+    const visibleIds = new Set(selectedIds);
+    selected.forEach(task => {
+      let current = task;
+      const visited = new Set<string>();
+      while (current.parent_task_id && !visited.has(current.id)) {
+        visited.add(current.id);
+        const parent = taskById.get(current.parent_task_id);
+        if (!parent) break;
+        visibleIds.add(parent.id);
+        current = parent;
+      }
+    });
+    const visible = tasks.filter(task => visibleIds.has(task.id)).sort((a, b) => sortMode === 'oldest'
     ? a.created_at.localeCompare(b.created_at) || PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order
-    : PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order || a.created_at.localeCompare(b.created_at)), [tasks, promotedTaskIds, isTeamView, collaboratorFilter, initialClientId, showAll, showScheduled, clientFilter, search, clientById, sortMode]);
+      : PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order || a.created_at.localeCompare(b.created_at));
+    return { visible, selectedIds };
+  }, [tasks, promotedTaskIds, promotedTaskIdsThisSession, taskById, isTeamView, collaboratorFilter, initialClientId, showAll, showScheduled, clientFilter, search, clientById, sortMode]);
+  const filteredTasks = taskList.visible;
   const rootFilteredTasks = useMemo(() => {
     const visibleIds = new Set(filteredTasks.map(task => task.id));
     return filteredTasks.filter(task => !task.parent_task_id || !visibleIds.has(task.parent_task_id));
@@ -697,6 +752,26 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   }, [rootFilteredTasks, clientById]);
   const showingTasks = viewMode === 'tasks';
   const selectedAssignee = collaboratorFilter !== 'all' ? collaboratorFilter : collaborator;
+  const promoteImmediately = async (task: Task) => {
+    if (promotingTaskIds.has(task.id) || promotedTaskIdsThisSession.has(task.id)) return;
+    setPromotingTaskIds(current => new Set(current).add(task.id));
+    const client = clientById.get(task.client_id);
+    try {
+      const created = await onPromote(task.id, task.title, {
+        title: task.title,
+        description: task.description || undefined,
+        client_id: task.client_id,
+        assigned_to: task.assigned_to.slice(0, 1),
+        due_date: task.due_date,
+        status: 'aberta',
+        weight: 1,
+        category: task.modality,
+      }, client?.name);
+      if (created) setPromotedTaskIdsThisSession(current => new Set(current).add(task.id));
+    } finally {
+      setPromotingTaskIds(current => { const next = new Set(current); next.delete(task.id); return next; });
+    }
+  };
 
   return <div className="space-y-3">
     <div className="flex items-center gap-3 border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-amber-950">
@@ -722,7 +797,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
       </div>
     </div>
     <div className="flex items-center justify-between gap-3 border-b pb-2">
-      <p className="text-xs text-muted-foreground">{showingTasks ? `${filteredTasks.length} tarefas em ${taskGroups.length} clientes` : `${filtered.length} prioridades em ${groups.length} clientes`}</p>
+      <p className="text-xs text-muted-foreground">{showingTasks ? `${taskList.selectedIds.size} tarefas em ${taskGroups.length} clientes` : `${filtered.length} prioridades em ${groups.length} clientes`}</p>
       <div className="flex border" role="group" aria-label="Modo de visualização">
         <button type="button" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')} className={`inline-flex h-8 items-center gap-1 px-2 text-xs ${viewMode === 'list' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'}`}><List className="h-3.5 w-3.5" />Lista</button>
         <button type="button" aria-pressed={viewMode === 'panel'} onClick={() => setViewMode('panel')} className={`inline-flex h-8 items-center gap-1 border-l px-2 text-xs ${viewMode === 'panel' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'}`}><LayoutGrid className="h-3.5 w-3.5" />Painel</button>
@@ -733,6 +808,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
     {showingTasks && taskGroups.length === 0 && <div className="border px-4 py-8 text-center text-sm text-muted-foreground">Nenhuma tarefa para este filtro.</div>}
     {!showingTasks && <div className={viewMode === 'panel' ? 'grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4' : 'space-y-3'}>{groups.map(([clientId, items]) => {
       const client = clientById.get(clientId);
+      const universeTarget = client ? undefined : universeTargetById.get(clientId.replace('universe:', ''));
       const colors = [...new Set(items.flatMap(item => item.assigned_to).map(name => responsibleList.find(person => person.name === name)?.color).filter(Boolean))] as string[];
       const headerBackground = colors.length > 1 ? `linear-gradient(90deg, ${colors.map((item, index) => `${colorWithAlpha(item, '22')} ${Math.round(index * 100 / Math.max(1, colors.length - 1))}%`).join(', ')})` : colorWithAlpha(colors[0] || color, '18');
       const quickOpen = quickClientId === clientId;
@@ -741,18 +817,19 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
 
       if (viewMode === 'panel') return <section key={clientId} className="client-card-compact min-w-0 overflow-hidden border-t-2 bg-white" style={{ borderTopColor: colors[0] || color }}>
         <header className="flex h-11 min-w-0 items-center border-b px-2" style={{ background: headerBackground }}>
-          {quickOpen && client ? <QuickPriorityInput client={client} assignee={quickAssignee} color={color} onCreate={onCreate} onRefreshTasks={onRefreshTasks} onClose={() => setQuickClientId(null)} /> : <button type="button" onClick={() => client && setQuickClientId(client.id)} disabled={!client} title={client ? `Adicionar prioridade para ${client.name}` : 'Sem cliente'} aria-label={client ? `Adicionar prioridade para ${client.name}` : 'Sem cliente'} className="flex h-full min-w-0 flex-1 items-center gap-2 text-left">
-            {client?.logoUrl ? <img src={client.logoUrl} alt={`Logo ${client.name}`} className="h-8 w-12 shrink-0 object-contain" /> : null}
-            <span className={`min-w-0 flex-1 truncate font-bold text-slate-800 ${client?.logoUrl ? 'text-xs' : 'text-sm'}`}>{client?.name || 'Sem cliente'}</span>
+          {quickOpen && client ? <QuickPriorityInput client={client} assignee={quickAssignee} color={color} onCreate={onCreate} onRefreshTasks={onRefreshTasks} onClose={() => setQuickClientId(null)} /> : <button type="button" onClick={() => client && setQuickClientId(client.id)} disabled={!client} title={client ? `Adicionar prioridade para ${client.name}` : universeTarget ? `${universeTarget.type} · ${universeTarget.name}` : 'Sem cliente'} aria-label={client ? `Adicionar prioridade para ${client.name}` : universeTarget ? `${universeTarget.type} · ${universeTarget.name}` : 'Sem cliente'} className="flex h-full min-w-0 flex-1 items-center gap-2 text-left">
+            {(client?.logoUrl || universeTarget?.image) ? <img src={client?.logoUrl || universeTarget?.image} alt={client ? `Logo ${client.name}` : `Figurinha de ${universeTarget?.name}`} className="h-8 w-12 shrink-0 object-contain" /> : null}
+            <span className={`min-w-0 flex-1 truncate font-bold text-slate-800 ${(client?.logoUrl || universeTarget?.image) ? 'text-xs' : 'text-sm'}`}>{client?.name || universeTarget?.name || 'Sem cliente'}</span>
+            {universeTarget && <span className="shrink-0 text-[9px] font-medium text-teal-700">{universeTarget.type}</span>}
             <span className="shrink-0 bg-white/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{items.length}</span>
-            <Plus className="h-3.5 w-3.5 shrink-0 text-primary" />
+            {client && <Plus className="h-3.5 w-3.5 shrink-0 text-primary" />}
           </button>}
         </header>
         {rows}
       </section>;
 
       return <section key={clientId} className="client-card-compact grid min-w-0 grid-cols-[72px_minmax(0,1fr)] overflow-hidden border-t-2 bg-white sm:grid-cols-[96px_minmax(0,1fr)]" style={{ borderTopColor: colors[0] || color }}>
-        <ClientSideRail client={client} count={items.length} kind="prioridade" onClick={() => client && setQuickClientId(client.id)} />
+        <ClientSideRail client={client} universeTarget={universeTarget} count={items.length} kind="prioridade" onClick={client ? () => setQuickClientId(client.id) : undefined} />
         {rows}
       </section>;
     })}</div>}
@@ -761,24 +838,16 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
       const colors = [...new Set(items.flatMap(item => item.assigned_to).map(name => responsibleList.find(person => person.name === name)?.color).filter(Boolean))] as string[];
       const quickOpen = quickTaskClientId === clientId;
       return <section key={clientId} className="client-card-compact grid min-w-0 grid-cols-[72px_minmax(0,1fr)] overflow-hidden border-t-2 bg-white sm:grid-cols-[96px_minmax(0,1fr)]" style={{ borderTopColor: colors[0] || color }}>
-        <ClientSideRail client={client} count={items.length} kind="tarefa" onClick={() => client && setQuickTaskClientId(client.id)} />
+        <ClientSideRail client={client} count={items.length} kind="tarefa" onClick={client ? () => setQuickTaskClientId(client.id) : undefined} />
         <div className="min-w-0">
           {quickOpen && client && <div className="flex h-10 items-center border-b bg-slate-50 px-1"><QuickTaskInput client={client} assignee={selectedAssignee} color={color} onCreate={onCreateSubtask} onClose={() => setQuickTaskClientId(null)} /></div>}
-          {items.map((task, rowIndex) => <TaskItem key={task.id} task={task} client={client} tasks={filteredTasks} rowIndex={rowIndex} responsibleList={responsibleList} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onPromote={() => setPromotingTask(task)} />)}
+          {items.map((task, rowIndex) => <TaskItem key={task.id} task={task} client={client} tasks={filteredTasks} rowIndex={rowIndex} responsibleList={responsibleList} contextOnly={!taskList.selectedIds.has(task.id)} promoted={promotedTaskIdsThisSession.has(task.id)} promoting={promotingTaskIds.has(task.id)} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onPromote={() => void promoteImmediately(task)} />)}
         </div>
       </section>;
     })}</div>}
     <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} linkedTaskTitle={editing ? rootTaskFor(editing, tasks)?.title : undefined} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async data => {
       if (editing) { if (await onUpdate(editing.id, data)) { await onRefreshTasks(); setModalOpen(false); } }
       else { const created = await onCreate(data, data.client_id ? clientById.get(data.client_id)?.name : undefined); if (created) { await onRefreshTasks(); setModalOpen(false); } }
-    }} />
-    <PriorityModal open={Boolean(promotingTask)} onOpenChange={open => { if (!open) setPromotingTask(null); }} editing={null} defaultAssignee={selectedAssignee} presetTitle={promotingTask?.title} presetClientId={promotingTask?.client_id} lockClientId promotionMode clients={clients} responsibleList={responsibleList} submitLabel="Promover para prioridade" onSubmit={async data => {
-      if (!promotingTask) return;
-      const clientName = data.client_id ? clientById.get(data.client_id)?.name : undefined;
-      if (await onPromote(promotingTask.id, promotingTask.title, data, clientName)) {
-        await onRefreshTasks();
-        setPromotingTask(null);
-      }
     }} />
     <NewTaskModal open={taskModalOpen} onOpenChange={setTaskModalOpen} clients={clients} responsibleList={responsibleList} defaultAssignee={selectedAssignee} color={color} presetClientId={clientFilter === 'all' ? null : clientFilter} onCreate={onCreateSubtask} />
   </div>;
