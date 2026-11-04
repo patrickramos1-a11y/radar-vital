@@ -75,11 +75,11 @@ function categoryLabel(category?: string | null) {
 type UniverseTarget = { id: string; name: string; type: 'Núcleo' | 'Setor' | 'Área' | 'Função' | 'Competência'; image?: string };
 
 const universeTargetById = new Map<string, UniverseTarget>([
-  ...manualCatalog.nuclei.map(item => [item.id, { id: item.id, name: item.name, type: 'Núcleo' as const, image: nucleusStickerPath(item.id) }]),
-  ...manualCatalog.sectors.map(item => [item.id, { id: item.id, name: item.name, type: 'Setor' as const, image: sectorStickerPath(item.id) }]),
-  ...manualCatalog.areas.map(item => [item.id, { id: item.id, name: item.name, type: 'Área' as const, image: sectorStickerPath(item.sectorId) }]),
-  ...manualCatalog.functions.map(item => [item.id, { id: item.id, name: item.name, type: 'Função' as const, image: functionStickerPath(item.id) }]),
-  ...manualCatalog.competencies.map(item => [item.id, { id: item.id, name: item.name, type: 'Competência' as const, image: competencyStickerPath(item.id) }]),
+  ...manualCatalog.nuclei.map((item): [string, UniverseTarget] => [item.id, { id: item.id, name: item.name, type: 'Núcleo' as const, image: nucleusStickerPath(item.id) }]),
+  ...manualCatalog.sectors.map((item): [string, UniverseTarget] => [item.id, { id: item.id, name: item.name, type: 'Setor' as const, image: sectorStickerPath(item.id) }]),
+  ...manualCatalog.areas.map((item): [string, UniverseTarget] => [item.id, { id: item.id, name: item.name, type: 'Área' as const, image: sectorStickerPath(item.sectorId) }]),
+  ...manualCatalog.functions.map((item): [string, UniverseTarget] => [item.id, { id: item.id, name: item.name, type: 'Função' as const, image: functionStickerPath(item.id) }]),
+  ...manualCatalog.competencies.map((item): [string, UniverseTarget] => [item.id, { id: item.id, name: item.name, type: 'Competência' as const, image: competencyStickerPath(item.id) }]),
 ]);
 
 function EditableTitle({ title, ariaLabel, completed = false, expanded, onToggle, onSave }: {
