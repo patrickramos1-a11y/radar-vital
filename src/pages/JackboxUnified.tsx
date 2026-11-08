@@ -16,6 +16,7 @@ export default function JackboxUnified() {
   const { activeClients } = useClients();
   const {
     tasks,
+    addTask,
     toggleComplete,
     updateTask,
     deleteTask,
@@ -79,6 +80,7 @@ export default function JackboxUnified() {
           onUpdateTask={updateTask}
           onDeleteTask={deleteTask}
           onBulkUpdateTasks={bulkUpdateTasks}
+          onCreateTask={addTask}
           onPromoteTask={setPromotingTask}
         />
         <PriorityModal

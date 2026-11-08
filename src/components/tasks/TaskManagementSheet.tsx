@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { differenceInCalendarDays, format, parseISO } from 'date-fns';
 import {
   ArrowUpDown,
@@ -10,6 +10,7 @@ import {
   CalendarClock,
   Check,
   CheckCircle2,
+  CheckSquare,
   ChevronDown,
   ChevronRight,
   Circle,
@@ -33,6 +34,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { normalizeAssignee } from '@/lib/taskAssignee';
@@ -44,12 +46,14 @@ import {
   TASK_MODALITY_CONFIG,
   TASK_STATUS_CONFIG,
   Task,
+  TaskFormData,
   TaskModality,
   TaskPriority,
 } from '@/types/task';
 
 type StatusFilter = 'pending' | 'scheduled' | 'completed' | 'all';
 type DeadlineFilter = 'all' | 'overdue' | 'today' | 'next7' | 'no_date';
+type ItemScope = 'tasks' | 'priorities' | 'all';
 type SortKey = 'client' | 'title' | 'assignees' | 'modality' | 'priority' | 'createdAt' | 'daysOpen' | 'dueDate';
 type SortDirection = 'asc' | 'desc';
 type BulkTaskUpdate = Partial<Pick<Task, 'assigned_to' | 'priority' | 'modality' | 'scheduled_for'>>;
@@ -66,6 +70,7 @@ interface Props {
   onDeleteTask: (taskId: string) => Promise<boolean>;
   onBulkUpdateTasks: (taskIds: string[], data: BulkTaskUpdate) => Promise<boolean>;
   onPromoteTask?: (task: Task) => void;
+  onCreateTask?: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
 }
 
 const priorityOptions = Object.keys(PRIORITY_CONFIG) as TaskPriority[];
@@ -97,11 +102,13 @@ export function TaskManagementSheet({
   onDeleteTask,
   onBulkUpdateTasks,
   onPromoteTask,
+  onCreateTask,
 }: Props) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [clientFilter, setClientFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [itemScope, setItemScope] = useState<ItemScope>('tasks');
   const [modalityFilter, setModalityFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilter>('all');
@@ -112,6 +119,7 @@ export function TaskManagementSheet({
   const [expandedClientIds, setExpandedClientIds] = useState<Set<string>>(() => new Set());
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [createTaskOpen, setCreateTaskOpen] = useState(false);
 
   const clientById = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
   const sortedClients = useMemo(
@@ -125,9 +133,14 @@ export function TaskManagementSheet({
 
   const priorityTreeIds = useMemo(() => priorityTaskTreeIds(tasks), [tasks]);
   const ordinaryTasks = useMemo(() => tasks.filter(task => !priorityTreeIds.has(task.id)), [priorityTreeIds, tasks]);
-  const taskById = useMemo(() => new Map(ordinaryTasks.map(task => [task.id, task])), [ordinaryTasks]);
-  const pendingTasks = useMemo(() => ordinaryTasks.filter(task => !task.completed && !isScheduled(task)), [ordinaryTasks]);
-  const scheduledTasks = useMemo(() => ordinaryTasks.filter(isScheduled), [ordinaryTasks]);
+  const scopedTasks = useMemo(() => {
+    if (itemScope === 'priorities') return tasks.filter(task => priorityTreeIds.has(task.id));
+    if (itemScope === 'all') return tasks;
+    return ordinaryTasks;
+  }, [itemScope, ordinaryTasks, priorityTreeIds, tasks]);
+  const taskById = useMemo(() => new Map(scopedTasks.map(task => [task.id, task])), [scopedTasks]);
+  const pendingTasks = useMemo(() => scopedTasks.filter(task => !task.completed && !isScheduled(task)), [scopedTasks]);
+  const scheduledTasks = useMemo(() => scopedTasks.filter(isScheduled), [scopedTasks]);
   const overdueCount = useMemo(() => pendingTasks.filter(isOverdue).length, [pendingTasks]);
   const nextSevenDaysCount = useMemo(
     () => pendingTasks.filter(task => {
@@ -145,7 +158,7 @@ export function TaskManagementSheet({
     const normalizedSearch = search.trim().toLocaleLowerCase('pt-BR');
     const direction = sortDirection === 'asc' ? 1 : -1;
 
-    return ordinaryTasks
+    return scopedTasks
       .filter(task => {
         if (statusFilter === 'pending' && (task.completed || isScheduled(task))) return false;
         if (statusFilter === 'scheduled' && !isScheduled(task)) return false;
@@ -185,7 +198,7 @@ export function TaskManagementSheet({
         if (result !== 0) return result * direction;
         return parseISO(a.created_at).getTime() - parseISO(b.created_at).getTime();
       });
-  }, [assigneeFilter, clientById, clientFilter, deadlineFilter, getDaysOpen, modalityFilter, ordinaryTasks, priorityFilter, search, sortDirection, sortKey, statusFilter]);
+  }, [assigneeFilter, clientById, clientFilter, deadlineFilter, getDaysOpen, modalityFilter, priorityFilter, scopedTasks, search, sortDirection, sortKey, statusFilter]);
 
   const matchingIds = useMemo(() => new Set(matchingTasks.map(task => task.id)), [matchingTasks]);
   const filteredTasks = useMemo(() => {
@@ -251,6 +264,7 @@ export function TaskManagementSheet({
     setStatusFilter('pending');
     setClientFilter('all');
     setAssigneeFilter('all');
+    setItemScope('tasks');
     setModalityFilter('all');
     setPriorityFilter('all');
     setDeadlineFilter('all');
@@ -318,6 +332,18 @@ export function TaskManagementSheet({
               onChange={setAssigneeFilter}
             />
             <FilterPopover
+              icon={<Star className="h-3.5 w-3.5" />}
+              value={itemScope}
+              defaultValue="tasks"
+              ariaLabel="Selecionar tarefas e prioridades exibidas"
+              options={[
+                { value: 'tasks', label: 'Tarefas' },
+                { value: 'priorities', label: 'Prioridades' },
+                { value: 'all', label: 'Tudo' },
+              ]}
+              onChange={value => setItemScope(value as ItemScope)}
+            />
+            <FilterPopover
               icon={<Shapes className="h-3.5 w-3.5" />}
               value={modalityFilter}
               defaultValue="all"
@@ -347,6 +373,7 @@ export function TaskManagementSheet({
               ]}
               onChange={value => setDeadlineFilter(value as DeadlineFilter)}
             />
+            {onCreateTask && <Button type="button" size="sm" className="h-9 gap-2 px-3 text-xs" onClick={() => setCreateTaskOpen(true)}><CheckSquare className="h-4 w-4" /> Criar tarefa</Button>}
             <Button variant="outline" size="icon" className="h-9 w-9" onClick={resetFilters} title="Limpar filtros" aria-label="Limpar filtros"><FilterX className="h-4 w-4" /></Button>
             <Button
               variant={groupByClient ? 'outline' : 'default'}
@@ -362,7 +389,7 @@ export function TaskManagementSheet({
         </div>
 
         <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span>{filteredTasks.length} tarefa(s) em {groupedTasks.length} cliente(s)</span>
+          <span>{filteredTasks.length} {itemScope === 'priorities' ? 'prioridade(s)' : itemScope === 'all' ? 'itens' : 'tarefa(s)'} em {groupedTasks.length} cliente(s)</span>
           <span>{sortDirection === 'asc' ? 'Ordem crescente' : 'Ordem decrescente'}</span>
         </div>
       </div>
@@ -410,8 +437,9 @@ export function TaskManagementSheet({
           onUpdate={update}
           onDelete={onDeleteTask}
           onPromote={onPromoteTask}
-          allTasks={ordinaryTasks}
+          allTasks={scopedTasks}
           matchingIds={matchingIds}
+          priorityTaskIds={priorityTreeIds}
           onToggleClient={(clientId) => setExpandedClientIds(current => {
             const next = new Set(current);
             if (next.has(clientId)) next.delete(clientId);
@@ -420,17 +448,27 @@ export function TaskManagementSheet({
           })}
         />
       )}
+      {onCreateTask && <CreateTaskDialog
+        open={createTaskOpen}
+        onOpenChange={setCreateTaskOpen}
+        clients={sortedClients}
+        collaborators={sortedCollaborators}
+        defaultClientId={clientFilter === 'all' ? undefined : clientFilter}
+        defaultAssignee={assigneeFilter === 'all' || assigneeFilter === 'unassigned' ? undefined : assigneeFilter}
+        onCreate={onCreateTask}
+      />}
     </section>
   );
 }
 
 interface TaskGroup { clientId: string; client?: Client; tasks: Task[] }
 
-function TaskResults({ groups, tasks, allTasks, matchingIds, clientById, grouped, expandedClientIds, visibleIds, selectedIds, allVisibleSelected, someVisibleSelected, collaborators, sortKey, sortDirection, updatingTaskId, getDaysOpen, onToggleSort, onToggleSelection, onToggleComplete, onUpdate, onDelete, onPromote, onToggleClient }: {
+function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, clientById, grouped, expandedClientIds, visibleIds, selectedIds, allVisibleSelected, someVisibleSelected, collaborators, sortKey, sortDirection, updatingTaskId, getDaysOpen, onToggleSort, onToggleSelection, onToggleComplete, onUpdate, onDelete, onPromote, onToggleClient }: {
   groups: TaskGroup[];
   tasks: Task[];
   allTasks: Task[];
   matchingIds: Set<string>;
+  priorityTaskIds: Set<string>;
   clientById: Map<string, Client>;
   grouped: boolean;
   expandedClientIds: Set<string>;
@@ -499,8 +537,8 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, clientById, grouped
                   const children = visibleDescendants(task.id);
                   const taskExpanded = expandedTaskIds.has(task.id);
                   return <Fragment key={task.id}>
-                    <TaskRow key={task.id} task={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, group.client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />
-                    {taskExpanded && children.map(child => <TaskRow key={child.id} task={child} parentTask={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, group.client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}
+                    <TaskRow key={task.id} task={task} isPriority={priorityTaskIds.has(task.id)} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, group.client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />
+                    {taskExpanded && children.map(child => <TaskRow key={child.id} task={child} isPriority={priorityTaskIds.has(child.id)} parentTask={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, group.client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}
                   </Fragment>;
                 })}
               </tbody>
@@ -511,7 +549,7 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, clientById, grouped
                 const client = clientById.get(task.client_id);
                 const children = visibleDescendants(task.id);
                 const taskExpanded = expandedTaskIds.has(task.id);
-                return <Fragment key={task.id}><TaskRow task={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskRow key={child.id} task={child} parentTask={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</Fragment>;
+                return <Fragment key={task.id}><TaskRow task={task} isPriority={priorityTaskIds.has(task.id)} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskRow key={child.id} task={child} isPriority={priorityTaskIds.has(child.id)} parentTask={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</Fragment>;
               })}
             </tbody>
           )}
@@ -533,7 +571,7 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, clientById, grouped
               {group.tasks.map(task => {
                 const children = visibleDescendants(task.id);
                 const taskExpanded = expandedTaskIds.has(task.id);
-                return <div key={task.id} className="space-y-2"><TaskMobileCard task={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, group.client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskMobileCard key={child.id} task={child} parentTask={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, group.client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</div>;
+                return <div key={task.id} className="space-y-2"><TaskMobileCard task={task} isPriority={priorityTaskIds.has(task.id)} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, group.client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskMobileCard key={child.id} task={child} isPriority={priorityTaskIds.has(child.id)} parentTask={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, group.client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</div>;
               })}
             </div>}
           </section>
@@ -544,7 +582,7 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, clientById, grouped
               const client = clientById.get(task.client_id);
               const children = visibleDescendants(task.id);
               const taskExpanded = expandedTaskIds.has(task.id);
-              return <div key={task.id} className="space-y-2"><TaskMobileCard task={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskMobileCard key={child.id} task={child} parentTask={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</div>;
+              return <div key={task.id} className="space-y-2"><TaskMobileCard task={task} isPriority={priorityTaskIds.has(task.id)} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskMobileCard key={child.id} task={child} isPriority={priorityTaskIds.has(child.id)} parentTask={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</div>;
             })}
           </div>
         )}
@@ -746,7 +784,7 @@ function SortHeader({ label, sortKey, width, activeKey, direction, onSort }: {
   );
 }
 
-function TaskRow({ task, parentTask, client, showClient = false, collaborators, daysOpen, selected, updating, childCount = 0, childrenExpanded = false, onToggleChildren, onPromote, onSelect, onToggleComplete, onUpdate, onDelete }: TaskItemProps) {
+function TaskRow({ task, isPriority = false, parentTask, client, showClient = false, collaborators, daysOpen, selected, updating, childCount = 0, childrenExpanded = false, onToggleChildren, onPromote, onSelect, onToggleComplete, onUpdate, onDelete }: TaskItemProps) {
   const overdue = isOverdue(task);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
@@ -782,7 +820,10 @@ function TaskRow({ task, parentTask, client, showClient = false, collaborators, 
                 aria-label={`Editar titulo ${task.title}`}
               />
             ) : (
-              <p className={cn('break-words font-medium leading-snug', task.completed && 'line-through')} onDoubleClick={() => { setTitleDraft(task.title); setEditingTitle(true); }} title="Clique duas vezes para editar">{task.title}</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <p className={cn('break-words font-medium leading-snug', task.completed && 'line-through')} onDoubleClick={() => { setTitleDraft(task.title); setEditingTitle(true); }} title="Clique duas vezes para editar">{task.title}</p>
+                {isPriority && <span className="inline-flex items-center gap-1 border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"><Star className="h-3 w-3 fill-current" /> Prioridade</span>}
+              </div>
             )}
             <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
               <span>{TASK_STATUS_CONFIG[task.status].label}{task.parent_task_id ? ' · Subtarefa' : ''}</span>
@@ -799,7 +840,7 @@ function TaskRow({ task, parentTask, client, showClient = false, collaborators, 
         <div className="flex items-center gap-1">
           {updating ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : <AgeBadge days={daysOpen} completed={task.completed} />}
           <ReplanEditor task={task} disabled={updating} onUpdate={onUpdate} />
-          {!parentTask && !task.completed && onPromote && <button type="button" disabled={updating} onClick={onPromote} className="grid h-8 w-8 place-items-center border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50" title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`}><Star className="h-4 w-4" /></button>}
+          {!isPriority && !parentTask && !task.completed && onPromote && <button type="button" disabled={updating} onClick={onPromote} className="grid h-8 w-8 place-items-center border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50" title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`}><Star className="h-4 w-4" /></button>}
           <button type="button" disabled={updating} onClick={() => { if (window.confirm(`Excluir a tarefa "${task.title}"?`)) void onDelete(); }} className="grid h-8 w-8 place-items-center border text-muted-foreground hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-50" title="Excluir tarefa" aria-label={`Excluir tarefa ${task.title}`}><Trash2 className="h-4 w-4" /></button>
         </div>
       </td>
@@ -807,7 +848,7 @@ function TaskRow({ task, parentTask, client, showClient = false, collaborators, 
   );
 }
 
-function TaskMobileCard({ task, parentTask, client, showClient = false, collaborators, daysOpen, selected, updating, childCount = 0, childrenExpanded = false, onToggleChildren, onPromote, onSelect, onToggleComplete, onUpdate, onDelete }: TaskItemProps) {
+function TaskMobileCard({ task, isPriority = false, parentTask, client, showClient = false, collaborators, daysOpen, selected, updating, childCount = 0, childrenExpanded = false, onToggleChildren, onPromote, onSelect, onToggleComplete, onUpdate, onDelete }: TaskItemProps) {
   const priority = PRIORITY_CONFIG[task.priority];
   return (
     <article className={cn('border bg-card p-3', parentTask && 'ml-4 border-l-4 border-l-sky-300', selected && 'border-emerald-400 bg-emerald-50/50', task.completed && 'opacity-55', isOverdue(task) && !selected && 'border-red-300 bg-red-50/40')}>
@@ -817,7 +858,7 @@ function TaskMobileCard({ task, parentTask, client, showClient = false, collabor
         <button type="button" onClick={onToggleComplete} className="mt-0.5 shrink-0" title={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'}>
           {task.completed ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <Circle className="h-5 w-5 text-muted-foreground" />}
         </button>
-        <div className="min-w-0 flex-1"><p className={cn('break-words font-medium leading-snug', task.completed && 'line-through')}>{task.title}</p><p className="mt-1 text-[10px] text-muted-foreground">{TASK_STATUS_CONFIG[task.status].label}{parentTask ? ` · Criada por: ${task.created_by || 'não registrado'} · Principal: ${parentTask.title}` : ''}</p>{!parentTask && childCount > 0 && <button type="button" onClick={onToggleChildren} className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-primary" aria-expanded={childrenExpanded}>{childrenExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}{childCount} {childCount === 1 ? 'subtarefa' : 'subtarefas'}</button>}</div>
+        <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-1.5"><p className={cn('break-words font-medium leading-snug', task.completed && 'line-through')}>{task.title}</p>{isPriority && <span className="inline-flex items-center gap-1 border border-amber-300 bg-amber-50 px-1 py-0.5 text-[9px] font-semibold text-amber-800"><Star className="h-2.5 w-2.5 fill-current" /> Prioridade</span>}</div><p className="mt-1 text-[10px] text-muted-foreground">{TASK_STATUS_CONFIG[task.status].label}{parentTask ? ` · Criada por: ${task.created_by || 'não registrado'} · Principal: ${parentTask.title}` : ''}</p>{!parentTask && childCount > 0 && <button type="button" onClick={onToggleChildren} className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-primary" aria-expanded={childrenExpanded}>{childrenExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}{childCount} {childCount === 1 ? 'subtarefa' : 'subtarefas'}</button>}</div>
         {updating ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : <AgeBadge days={daysOpen} completed={task.completed} />}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -829,10 +870,106 @@ function TaskMobileCard({ task, parentTask, client, showClient = false, collabor
       <div className="mt-2 flex items-center gap-2 border-t pt-2">
         <div className="h-1 flex-1" style={{ backgroundColor: priority.color }} />
         <ReplanEditor task={task} disabled={updating} onUpdate={onUpdate} />
-        {!parentTask && !task.completed && onPromote && <button type="button" disabled={updating} onClick={onPromote} className="grid h-8 w-8 place-items-center border border-amber-300 bg-amber-50 text-amber-700" title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`}><Star className="h-4 w-4" /></button>}
+        {!isPriority && !parentTask && !task.completed && onPromote && <button type="button" disabled={updating} onClick={onPromote} className="grid h-8 w-8 place-items-center border border-amber-300 bg-amber-50 text-amber-700" title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`}><Star className="h-4 w-4" /></button>}
         <button type="button" disabled={updating} onClick={() => { if (window.confirm(`Excluir a tarefa "${task.title}"?`)) void onDelete(); }} className="grid h-8 w-8 place-items-center border text-muted-foreground hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-50" title="Excluir tarefa" aria-label={`Excluir tarefa ${task.title}`}><Trash2 className="h-4 w-4" /></button>
       </div>
     </article>
+  );
+}
+
+function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultClientId, defaultAssignee, onCreate }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  clients: Client[];
+  collaborators: Collaborator[];
+  defaultClientId?: string;
+  defaultAssignee?: string;
+  onCreate: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
+}) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [clientId, setClientId] = useState('');
+  const [assignee, setAssignee] = useState('');
+  const [modality, setModality] = useState<TaskModality>('levantamento');
+  const [priority, setPriority] = useState<TaskPriority>('normal');
+  const [dueDate, setDueDate] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle('');
+    setDescription('');
+    setClientId(defaultClientId || '');
+    setAssignee(defaultAssignee || '');
+    setModality('levantamento');
+    setPriority('normal');
+    setDueDate('');
+  }, [defaultAssignee, defaultClientId, open]);
+
+  const selectedClient = clients.find(client => client.id === clientId);
+  const create = async () => {
+    if (!title.trim() || !selectedClient) return;
+    setSaving(true);
+    try {
+      const created = await onCreate(selectedClient.id, {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        assigned_to: assignee ? [assignee] : [],
+        modality,
+        priority,
+        due_date: dueDate || undefined,
+      }, selectedClient.name);
+      if (created) onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader><DialogTitle>Criar tarefa</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <label className="grid gap-1 text-sm font-medium">Tarefa
+            <Input autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="Descreva a tarefa" />
+          </label>
+          <label className="grid gap-1 text-sm font-medium">Descrição
+            <textarea value={description} onChange={event => setDescription(event.target.value)} placeholder="Contexto ou resultado esperado" className="min-h-20 w-full border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1 text-sm font-medium">Cliente
+              <select value={clientId} onChange={event => setClientId(event.target.value)} className="h-9 border bg-background px-2 text-sm">
+                <option value="">Selecione um cliente</option>
+                {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium">Responsável
+              <select value={assignee} onChange={event => setAssignee(event.target.value)} className="h-9 border bg-background px-2 text-sm">
+                <option value="">Sem responsável</option>
+                {collaborators.map(collaborator => <option key={collaborator.id} value={collaborator.name}>{collaborator.name}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium">Modalidade
+              <select value={modality} onChange={event => setModality(event.target.value as TaskModality)} className="h-9 border bg-background px-2 text-sm">
+                {modalityOptions.map(option => <option key={option} value={option}>{TASK_MODALITY_CONFIG[option].label}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium">Importância
+              <select value={priority} onChange={event => setPriority(event.target.value as TaskPriority)} className="h-9 border bg-background px-2 text-sm">
+                {priorityOptions.map(option => <option key={option} value={option}>{PRIORITY_CONFIG[option].label}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium">Prazo
+              <Input type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} />
+            </label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button type="button" disabled={!title.trim() || !selectedClient || saving} onClick={() => void create()}>{saving ? 'Criando...' : 'Criar tarefa'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -842,6 +979,7 @@ function EditorField({ label, children }: { label: string; children: React.React
 
 interface TaskItemProps {
   task: Task;
+  isPriority?: boolean;
   parentTask?: Task;
   client?: Client;
   showClient?: boolean;
