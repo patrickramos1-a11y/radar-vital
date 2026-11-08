@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { differenceInCalendarDays, format } from 'date-fns';
-import { ArrowDown, ArrowDownWideNarrow, ArrowUp, CalendarClock, Check, Circle, Clock3, ExternalLink, Flame, LayoutGrid, Link2, List, ListChecks, Minus, MoreHorizontal, Pencil, Plus, Search, Siren, Star, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowDownWideNarrow, ArrowUp, CalendarClock, Check, Circle, Clock3, ExternalLink, Flame, Layers, LayoutGrid, Link2, List, ListChecks, Minus, MoreHorizontal, Pencil, Plus, Search, Siren, Star, Trash2, X } from 'lucide-react';
 import type { Client } from '@/types/client';
 import type { Priority, PriorityFormData } from '@/types/priority';
 import { PRIORITY_CONFIG, type Task, type TaskFormData } from '@/types/task';
@@ -243,18 +243,41 @@ function Subtasks({ parentId, tasks, clientName, responsibleList, onToggle, onUp
   parentId: string; tasks: Task[]; clientName: string; responsibleList: RespOption[];
   onToggle: Props['onToggleTask']; onUpdateTask: Props['onUpdateTask']; depth?: number;
 }) {
-  return <>{tasks.filter(task => task.parent_task_id === parentId)
-    .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
-    .map(task => <div key={task.id}>
-      <div className="flex items-center gap-2 border-t py-2 text-xs" style={{ paddingLeft: `${Math.min(depth, 5) * 14}px` }}>
-        <button type="button" onClick={() => void onToggle(task.id, clientName)} aria-label={task.completed ? `Reabrir ${task.title}` : `Concluir ${task.title}`} className="shrink-0 text-emerald-700">
-          {task.completed ? <Check className="h-4 w-4" /> : <Circle className="h-4 w-4 text-slate-400" />}
-        </button>
-        <span className={`min-w-0 flex-1 ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</span>
-        <TaskAssignee compact task={task} responsibleList={responsibleList} onUpdateTask={onUpdateTask} />
-      </div>
-      <Subtasks parentId={task.id} tasks={tasks} clientName={clientName} responsibleList={responsibleList} onToggle={onToggle} onUpdateTask={onUpdateTask} depth={depth + 1} />
-    </div>)}</>;
+  const [showCompleted, setShowCompleted] = useState(false);
+  const children = tasks
+    .filter(task => task.parent_task_id === parentId)
+    .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at));
+  const openTasks = children.filter(task => !task.completed);
+  const completedTasks = children.filter(task => task.completed);
+  const taskAge = (task: Task) => Math.max(0, differenceInCalendarDays(new Date(), new Date(task.created_at)));
+
+  const renderTask = (task: Task) => <div key={task.id}>
+    <div className="flex items-center gap-2 border-t py-2 text-xs" style={{ paddingLeft: `${Math.min(depth, 5) * 14}px` }}>
+      <button type="button" onClick={() => void onToggle(task.id, clientName)} aria-label={task.completed ? `Reabrir ${task.title}` : `Concluir ${task.title}`} className="shrink-0 text-emerald-700">
+        {task.completed ? <Check className="h-4 w-4" /> : <Circle className="h-4 w-4 text-slate-400" />}
+      </button>
+      <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] text-slate-500" title={`${taskAge(task)} dias desde o cadastro`}><Clock3 className="h-3 w-3" />{taskAge(task)}d</span>
+      <span className={`min-w-0 flex-1 ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</span>
+      <TaskAssignee compact task={task} responsibleList={responsibleList} onUpdateTask={onUpdateTask} />
+    </div>
+    <Subtasks parentId={task.id} tasks={tasks} clientName={clientName} responsibleList={responsibleList} onToggle={onToggle} onUpdateTask={onUpdateTask} depth={depth + 1} />
+  </div>;
+
+  return <>
+    {openTasks.map(renderTask)}
+    {completedTasks.length > 0 && <button
+      type="button"
+      onClick={() => setShowCompleted(value => !value)}
+      aria-expanded={showCompleted}
+      className="flex w-full items-center gap-1.5 border-t py-2 text-left text-[11px] font-medium text-emerald-700 hover:bg-emerald-50"
+      style={{ paddingLeft: `${Math.min(depth, 5) * 14}px` }}
+    >
+      <Check className="h-3.5 w-3.5" />
+      {completedTasks.length} {completedTasks.length === 1 ? 'subtarefa concluída' : 'subtarefas concluídas'}
+      <span className="text-emerald-600">{showCompleted ? '· recolher' : '· ver'}</span>
+    </button>}
+    {showCompleted && completedTasks.map(renderTask)}
+  </>;
 }
 
 function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canPlanPriorities, onUpdate, onDelete, onCreateSubtask, onToggleTask, onUpdateTask, onEdit, onRefreshTasks }: {
@@ -679,7 +702,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   const [search, setSearch] = useState('');
   const [clientFilter, setClientFilter] = useState(initialClientId || 'all');
   const [collaboratorFilter, setCollaboratorFilter] = useState(collaborator);
-  const [viewMode, setViewMode] = useState<'list' | 'panel' | 'tasks'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'panel' | 'tasks' | 'all'>('list');
   const [sortMode, setSortMode] = useState<SortMode>('weight-time');
   useEffect(() => setClientFilter(initialClientId || 'all'), [initialClientId]);
   useEffect(() => setCollaboratorFilter(collaborator), [collaborator]);
@@ -718,7 +741,10 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
     const selected = tasks.filter(task =>
       matchesCommonFilters(task)
       && matchesCollaborator(task)
-      && (!promotedTaskIds.has(task.id) || Boolean(task.parent_task_id) || promotedTaskIdsThisSession.has(task.id))
+      // A promoted root and its descendants belong to the priority view. Keep
+      // the root visible only for the current interaction so the promoted star
+      // confirms the action until the next refresh.
+      && (!promotedTaskIds.has(task.id) || promotedTaskIdsThisSession.has(task.id))
     );
     const selectedIds = new Set(selected.map(task => task.id));
     const visibleIds = new Set(selectedIds);
@@ -750,7 +776,31 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
       || aItems[0].created_at.localeCompare(bItems[0].created_at)
       || (clientById.get(a)?.name || 'Sem cliente').localeCompare(clientById.get(b)?.name || 'Sem cliente', 'pt-BR'));
   }, [rootFilteredTasks, clientById]);
+  const combinedGroups = useMemo(() => {
+    const byClient = new Map<string, { priorities: Priority[]; tasks: Task[] }>();
+    const ensureGroup = (clientId: string) => {
+      const existing = byClient.get(clientId);
+      if (existing) return existing;
+      const group = { priorities: [], tasks: [] };
+      byClient.set(clientId, group);
+      return group;
+    };
+
+    filtered.forEach(priority => ensureGroup(priority.client_id || (priority.universe_item_id ? `universe:${priority.universe_item_id}` : 'sem-cliente')).priorities.push(priority));
+    rootFilteredTasks.forEach(task => ensureGroup(task.client_id || 'sem-cliente').tasks.push(task));
+
+    return [...byClient].sort(([a, aItems], [b, bItems]) => {
+      const aFirst = aItems.priorities[0] || aItems.tasks[0];
+      const bFirst = bItems.priorities[0] || bItems.tasks[0];
+      const aWeight = aItems.priorities[0]?.weight || PRIORITY_CONFIG[aItems.tasks[0]?.priority || 'normal'].order;
+      const bWeight = bItems.priorities[0]?.weight || PRIORITY_CONFIG[bItems.tasks[0]?.priority || 'normal'].order;
+      return sortMode === 'oldest'
+        ? aFirst.created_at.localeCompare(bFirst.created_at) || bWeight - aWeight
+        : bWeight - aWeight || aFirst.created_at.localeCompare(bFirst.created_at);
+    });
+  }, [filtered, rootFilteredTasks, sortMode]);
   const showingTasks = viewMode === 'tasks';
+  const showingEverything = viewMode === 'all';
   const selectedAssignee = collaboratorFilter !== 'all' ? collaboratorFilter : collaborator;
   const promoteImmediately = async (task: Task) => {
     if (promotingTaskIds.has(task.id) || promotedTaskIdsThisSession.has(task.id)) return;
@@ -785,7 +835,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
           <button type="button" aria-pressed={sortMode === 'weight-time'} onClick={() => setSortMode('weight-time')} title="Maior peso e depois maior tempo em aberto" className={`flex h-8 w-8 items-center justify-center ${sortMode === 'weight-time' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-white'}`}><ArrowDownWideNarrow className="h-4 w-4" /></button>
           <button type="button" aria-pressed={sortMode === 'oldest'} onClick={() => setSortMode('oldest')} title="Mais antigas primeiro" className={`flex h-8 w-8 items-center justify-center ${sortMode === 'oldest' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-white'}`}><Clock3 className="h-4 w-4" /></button>
         </div>
-        <div className="relative min-w-[190px] flex-1"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><Input className="h-8 pl-8 text-xs" placeholder={showingTasks ? 'Buscar tarefa ou cliente' : 'Buscar prioridade ou cliente'} value={search} onChange={event => setSearch(event.target.value)} /></div>
+        <div className="relative min-w-[190px] flex-1"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><Input className="h-8 pl-8 text-xs" placeholder={showingEverything ? 'Buscar prioridade, tarefa ou cliente' : showingTasks ? 'Buscar tarefa ou cliente' : 'Buscar prioridade ou cliente'} value={search} onChange={event => setSearch(event.target.value)} /></div>
         <select aria-label="Filtrar cliente" value={clientFilter} onChange={event => setClientFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os clientes</option>{clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}</select>
         {allowCollaboratorFilter && <select aria-label="Filtrar colaborador" value={collaboratorFilter} onChange={event => setCollaboratorFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os colaboradores</option>{responsibleList.map(person => <option key={person.name} value={person.name}>{person.name}</option>)}</select>}
         <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showAll} onChange={event => setShowAll(event.target.checked)} />Concluídas</label>
@@ -797,16 +847,18 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
       </div>
     </div>
     <div className="flex items-center justify-between gap-3 border-b pb-2">
-      <p className="text-xs text-muted-foreground">{showingTasks ? `${taskList.selectedIds.size} tarefas em ${taskGroups.length} clientes` : `${filtered.length} prioridades em ${groups.length} clientes`}</p>
+      <p className="text-xs text-muted-foreground">{showingEverything ? `${filtered.length} ${filtered.length === 1 ? 'prioridade' : 'prioridades'} e ${taskList.selectedIds.size} ${taskList.selectedIds.size === 1 ? 'tarefa' : 'tarefas'} em ${combinedGroups.length} ${combinedGroups.length === 1 ? 'cliente' : 'clientes'}` : showingTasks ? `${taskList.selectedIds.size} tarefas em ${taskGroups.length} clientes` : `${filtered.length} prioridades em ${groups.length} clientes`}</p>
       <div className="flex border" role="group" aria-label="Modo de visualização">
         <button type="button" aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')} className={`inline-flex h-8 items-center gap-1 px-2 text-xs ${viewMode === 'list' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'}`}><List className="h-3.5 w-3.5" />Lista</button>
         <button type="button" aria-pressed={viewMode === 'panel'} onClick={() => setViewMode('panel')} className={`inline-flex h-8 items-center gap-1 border-l px-2 text-xs ${viewMode === 'panel' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'}`}><LayoutGrid className="h-3.5 w-3.5" />Painel</button>
         <button type="button" aria-pressed={viewMode === 'tasks'} onClick={() => setViewMode('tasks')} className={`inline-flex h-8 items-center gap-1 border-l px-2 text-xs ${viewMode === 'tasks' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'}`}><ListChecks className="h-3.5 w-3.5" />Tarefas</button>
+        <button type="button" aria-pressed={viewMode === 'all'} onClick={() => setViewMode('all')} className={`inline-flex h-8 items-center gap-1 border-l px-2 text-xs ${viewMode === 'all' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'}`}><Layers className="h-3.5 w-3.5" />Tudo</button>
       </div>
     </div>
-    {!showingTasks && groups.length === 0 && <div className="border px-4 py-8 text-center text-sm text-muted-foreground">Nenhuma prioridade para este filtro.</div>}
+    {showingEverything && combinedGroups.length === 0 && <div className="border px-4 py-8 text-center text-sm text-muted-foreground">Nenhuma prioridade ou tarefa para este filtro.</div>}
+    {!showingEverything && !showingTasks && groups.length === 0 && <div className="border px-4 py-8 text-center text-sm text-muted-foreground">Nenhuma prioridade para este filtro.</div>}
     {showingTasks && taskGroups.length === 0 && <div className="border px-4 py-8 text-center text-sm text-muted-foreground">Nenhuma tarefa para este filtro.</div>}
-    {!showingTasks && <div className={viewMode === 'panel' ? 'grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4' : 'space-y-3'}>{groups.map(([clientId, items]) => {
+    {!showingEverything && !showingTasks && <div className={viewMode === 'panel' ? 'grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4' : 'space-y-3'}>{groups.map(([clientId, items]) => {
       const client = clientById.get(clientId);
       const universeTarget = client ? undefined : universeTargetById.get(clientId.replace('universe:', ''));
       const colors = [...new Set(items.flatMap(item => item.assigned_to).map(name => responsibleList.find(person => person.name === name)?.color).filter(Boolean))] as string[];
@@ -831,6 +883,23 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
       return <section key={clientId} className="client-card-compact grid min-w-0 grid-cols-[72px_minmax(0,1fr)] overflow-hidden border-t-2 bg-white sm:grid-cols-[96px_minmax(0,1fr)]" style={{ borderTopColor: colors[0] || color }}>
         <ClientSideRail client={client} universeTarget={universeTarget} count={items.length} kind="prioridade" onClick={client ? () => setQuickClientId(client.id) : undefined} />
         {rows}
+      </section>;
+    })}</div>}
+    {showingEverything && <div className="space-y-3">{combinedGroups.map(([clientId, items]) => {
+      const client = clientById.get(clientId);
+      const universeTarget = client ? undefined : universeTargetById.get(clientId.replace('universe:', ''));
+      const colors = [...new Set([...items.priorities.flatMap(item => item.assigned_to), ...items.tasks.flatMap(item => item.assigned_to)].map(name => responsibleList.find(person => person.name === name)?.color).filter(Boolean))] as string[];
+      const quickOpen = quickClientId === clientId;
+      const count = items.priorities.length + items.tasks.length;
+      return <section key={clientId} className="client-card-compact grid min-w-0 grid-cols-[72px_minmax(0,1fr)] overflow-hidden border-t-2 bg-white sm:grid-cols-[96px_minmax(0,1fr)]" style={{ borderTopColor: colors[0] || color }}>
+        <ClientSideRail client={client} universeTarget={universeTarget} count={count} kind="prioridade" onClick={client ? () => setQuickClientId(client.id) : undefined} />
+        <div className="min-w-0">
+          {quickOpen && client && <div className="flex h-10 items-center border-b bg-slate-50 px-1"><QuickPriorityInput client={client} assignee={selectedAssignee} color={color} onCreate={onCreate} onRefreshTasks={onRefreshTasks} onClose={() => setQuickClientId(null)} /></div>}
+          {items.priorities.length > 0 && <div className="flex items-center gap-1.5 border-b bg-amber-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-800"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-600" />Prioridades</div>}
+          {items.priorities.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanPriorities={canPlanPriorities} onUpdate={onUpdate} onDelete={onDelete} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}
+          {items.tasks.length > 0 && <div className="flex items-center gap-1.5 border-b bg-sky-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-800"><ListChecks className="h-3.5 w-3.5" />Tarefas</div>}
+          {items.tasks.map((task, rowIndex) => <TaskItem key={task.id} task={task} client={client} tasks={filteredTasks} rowIndex={rowIndex} responsibleList={responsibleList} contextOnly={!taskList.selectedIds.has(task.id)} promoted={promotedTaskIdsThisSession.has(task.id)} promoting={promotingTaskIds.has(task.id)} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onPromote={() => void promoteImmediately(task)} />)}
+        </div>
       </section>;
     })}</div>}
     {showingTasks && <div className="space-y-3">{taskGroups.map(([clientId, items]) => {

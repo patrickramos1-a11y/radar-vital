@@ -208,6 +208,19 @@ describe('PrioritiesTab', () => {
     expect(screen.queryByText('Tarefa da Gabi')).not.toBeInTheDocument();
   });
 
+  it('shows priorities and ordinary tasks together in the Tudo view', () => {
+    renderTab({ tasks: [rootTask, ordinaryTask] });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tudo' }));
+
+    expect(screen.getByRole('button', { name: 'Tudo' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('1 prioridade e 1 tarefa em 1 cliente')).toBeInTheDocument();
+    expect(screen.getByText('Prioridades', { selector: 'div' })).toBeInTheDocument();
+    expect(screen.getByText('Tarefas', { selector: 'div' })).toBeInTheDocument();
+    expect(screen.getByText(priority.title)).toBeInTheDocument();
+    expect(screen.getByText(ordinaryTask.title)).toBeInTheDocument();
+  });
+
   it('creates a task inline from the client header', async () => {
     const onCreateSubtask = vi.fn(async () => true);
     renderTab({ onCreateSubtask, tasks: [rootTask, ordinaryTask] });
