@@ -39,6 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { normalizeAssignee } from '@/lib/taskAssignee';
 import { priorityTaskTreeIds, taskChildrenByParent, taskRoot } from '@/lib/taskHierarchy';
+import { ClientMultiPicker } from '@/components/shared/ClientMultiPicker';
 import { Client } from '@/types/client';
 import { Collaborator } from '@/types/collaborator';
 import {
@@ -888,7 +889,7 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
 }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [clientId, setClientId] = useState('');
+  const [clientIds, setClientIds] = useState<string[]>([]);
   const [assignee, setAssignee] = useState('');
   const [modality, setModality] = useState<TaskModality>('levantamento');
   const [priority, setPriority] = useState<TaskPriority>('normal');
@@ -899,27 +900,28 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
     if (!open) return;
     setTitle('');
     setDescription('');
-    setClientId(defaultClientId || '');
+    setClientIds(defaultClientId ? [defaultClientId] : []);
     setAssignee(defaultAssignee || '');
     setModality('levantamento');
     setPriority('normal');
     setDueDate('');
   }, [defaultAssignee, defaultClientId, open]);
 
-  const selectedClient = clients.find(client => client.id === clientId);
+  const selectedClients = clients.filter(client => clientIds.includes(client.id));
   const create = async () => {
-    if (!title.trim() || !selectedClient) return;
+    if (!title.trim() || selectedClients.length === 0) return;
     setSaving(true);
     try {
-      const created = await onCreate(selectedClient.id, {
+      const payload: TaskFormData = {
         title: title.trim(),
         description: description.trim() || undefined,
         assigned_to: assignee ? [assignee] : [],
         modality,
         priority,
         due_date: dueDate || undefined,
-      }, selectedClient.name);
-      if (created) onOpenChange(false);
+      };
+      const created = await Promise.all(selectedClients.map(client => onCreate(client.id, payload, client.name)));
+      if (created.every(Boolean)) onOpenChange(false);
     } finally {
       setSaving(false);
     }
@@ -937,12 +939,9 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
             <textarea value={description} onChange={event => setDescription(event.target.value)} placeholder="Contexto ou resultado esperado" className="min-h-20 w-full border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-1 text-sm font-medium">Cliente
-              <select value={clientId} onChange={event => setClientId(event.target.value)} className="h-9 border bg-background px-2 text-sm">
-                <option value="">Selecione um cliente</option>
-                {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
-              </select>
-            </label>
+            <div className="grid gap-1 text-sm font-medium">Clientes
+              <ClientMultiPicker clients={clients} selectedClientIds={clientIds} onChange={setClientIds} includeUniverseRamos />
+            </div>
             <label className="grid gap-1 text-sm font-medium">Responsável
               <select value={assignee} onChange={event => setAssignee(event.target.value)} className="h-9 border bg-background px-2 text-sm">
                 <option value="">Sem responsável</option>
@@ -966,7 +965,7 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button type="button" disabled={!title.trim() || !selectedClient || saving} onClick={() => void create()}>{saving ? 'Criando...' : 'Criar tarefa'}</Button>
+          <Button type="button" disabled={!title.trim() || selectedClients.length === 0 || saving} onClick={() => void create()}>{saving ? 'Criando...' : 'Criar tarefa'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronDown, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, ChevronDown, Flame, Minus, Search, Siren } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Priority, PriorityFormData, PriorityStatus, PRIORITY_STATUS_CONFIG } from '@/types/priority';
 import { Client } from '@/types/client';
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { manualCatalog } from '@/features/master-plan-preview/manualDigitalModel';
 import { normalizeAssignee } from '@/lib/taskAssignee';
 import { cn } from '@/lib/utils';
+import { ClientMultiPicker } from '@/components/shared/ClientMultiPicker';
 
 interface RespOption { name: string; color: string; initials: string; }
 
@@ -28,11 +29,18 @@ interface Props {
   promotionMode?: boolean;
   clients: Client[];
   responsibleList: RespOption[];
-  onSubmit: (data: PriorityFormData) => Promise<void>;
+  onSubmit: (data: PriorityFormData, clientIds?: string[]) => Promise<void>;
   submitLabel?: string;
 }
 
 type UniverseOption = { id: string; name: string; type: string };
+const weightOptions = [
+  { value: 1, label: 'Baixa', Icon: ArrowDown, className: 'border-sky-200 bg-sky-50 text-sky-700' },
+  { value: 2, label: 'Normal', Icon: Minus, className: 'border-slate-200 bg-slate-50 text-slate-700' },
+  { value: 3, label: 'Alta', Icon: ArrowUp, className: 'border-orange-200 bg-orange-50 text-orange-700' },
+  { value: 4, label: 'Urgente', Icon: Flame, className: 'border-red-200 bg-red-50 text-red-700' },
+  { value: 5, label: 'Extremamente urgente', Icon: Siren, className: 'border-rose-300 bg-rose-50 text-rose-700' },
+] as const;
 
 const universeOptions: UniverseOption[] = [
   ...manualCatalog.nuclei.map(item => ({ id: item.id, name: item.name, type: 'Nucleo' })),
@@ -50,6 +58,7 @@ export function PriorityModal({
   presetTitle,
   presetClientId,
   presetDescription,
+  allowMultipleClients = false,
   lockClientId = false,
   promotionMode = false,
   clients,
@@ -60,7 +69,7 @@ export function PriorityModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [descriptionOpen, setDescriptionOpen] = useState(false);
-  const [clientId, setClientId] = useState<string | null>(null);
+  const [clientIds, setClientIds] = useState<string[]>([]);
   const [universeItemId, setUniverseItemId] = useState<string | null>(null);
   const [useUniverseRamos, setUseUniverseRamos] = useState(false);
   const [targetQuery, setTargetQuery] = useState('');
@@ -78,7 +87,7 @@ export function PriorityModal({
       setTitle(editing.title);
       setDescription(editing.description || '');
       setDescriptionOpen(Boolean(editing.description));
-      setClientId(editing.client_id);
+      setClientIds(editing.client_id ? [editing.client_id] : []);
       setUniverseItemId(editing.universe_item_id || null);
       setUseUniverseRamos(Boolean(editing.universe_item_id));
       setAssignedTo(editing.assigned_to.slice(0, 1));
@@ -90,7 +99,7 @@ export function PriorityModal({
       setTitle(presetTitle || '');
       setDescription(presetDescription || '');
       setDescriptionOpen(Boolean(presetDescription));
-      setClientId(presetClientId || null);
+      setClientIds(presetClientId ? [presetClientId] : []);
       setUniverseItemId(null);
       setUseUniverseRamos(false);
       setAssignedTo(defaultAssignee ? [defaultAssignee] : []);
@@ -104,16 +113,14 @@ export function PriorityModal({
     setSubmitting(false);
   }, [open, editing, defaultAssignee, presetTitle, presetClientId, presetDescription]);
 
-  const selectedTarget = useUniverseRamos
-    ? universeOptions.find(item => item.id === universeItemId)
-    : clients.find(client => client.id === clientId);
+  const selectedUniverseTarget = universeOptions.find(item => item.id === universeItemId);
 
   const filteredTargets = useMemo(() => {
     const query = targetQuery.trim().toLocaleLowerCase('pt-BR');
-    const options = useUniverseRamos ? universeOptions : clients;
+    const options = universeOptions;
     if (!query) return options.slice(0, 50);
     return options.filter(option => `${'type' in option ? option.type : ''} ${option.name}`.toLocaleLowerCase('pt-BR').includes(query)).slice(0, 50);
-  }, [clients, targetQuery, useUniverseRamos]);
+  }, [targetQuery]);
 
   const toggleAssignee = (name: string) => {
     setAssignedTo(current => current.some(item => normalizeAssignee(item) === normalizeAssignee(name)) ? [] : [name]);
@@ -121,7 +128,7 @@ export function PriorityModal({
 
   const handleUniverseChange = (checked: boolean) => {
     setUseUniverseRamos(checked);
-    setClientId(null);
+    setClientIds([]);
     setUniverseItemId(null);
     setTargetQuery('');
     setTargetPickerOpen(false);
@@ -129,20 +136,21 @@ export function PriorityModal({
 
   const handleSubmit = async () => {
     if (submitting || !title.trim()) return;
-    if (!editing && !promotionMode && !clientId && !universeItemId) return;
+    if (!editing && !promotionMode && clientIds.length === 0 && !universeItemId) return;
     setSubmitting(true);
     try {
-      await onSubmit({
+      const data: PriorityFormData = {
         title: title.trim(),
         description: description.trim() || undefined,
-        client_id: universeItemId ? null : clientId,
+        client_id: universeItemId ? null : (clientIds[0] || null),
         universe_item_id: universeItemId,
         assigned_to: assignedTo.slice(0, 1),
         due_date: dueDate || null,
         weight: Math.min(5, Math.max(1, Number(weight) || 1)),
         category,
         status,
-      });
+      };
+      await onSubmit(data, !editing && !promotionMode && !universeItemId && allowMultipleClients ? clientIds : undefined);
     } finally {
       setSubmitting(false);
     }
@@ -180,16 +188,16 @@ export function PriorityModal({
           {!promotionMode && (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <Label>{useUniverseRamos ? 'Universo Ramos' : 'Cliente'}</Label>
+                <Label>{useUniverseRamos ? 'Universo Ramos' : (allowMultipleClients && !editing ? 'Clientes' : 'Cliente')}</Label>
                 <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <input type="checkbox" checked={useUniverseRamos} disabled={lockClientId} onChange={event => handleUniverseChange(event.target.checked)} />
                   Vincular ao Universo Ramos
                 </label>
               </div>
-              <div className="relative">
+              {useUniverseRamos ? <div className="relative">
                 <button type="button" disabled={lockClientId} onClick={() => setTargetPickerOpen(current => !current)} className="flex h-10 w-full items-center justify-between border bg-background px-3 text-left text-sm disabled:opacity-60">
-                  <span className={cn('truncate', !selectedTarget && 'text-muted-foreground')}>
-                    {selectedTarget ? ('type' in selectedTarget ? `${selectedTarget.type} · ${selectedTarget.name}` : selectedTarget.name) : `Pesquisar ${useUniverseRamos ? 'nucleo, setor, area ou funcao' : 'cliente'}`}
+                  <span className={cn('truncate', !selectedUniverseTarget && 'text-muted-foreground')}>
+                    {selectedUniverseTarget ? `${selectedUniverseTarget.type} · ${selectedUniverseTarget.name}` : 'Pesquisar nucleo, setor, area ou funcao'}
                   </span>
                   <Search className="h-4 w-4 shrink-0" />
                 </button>
@@ -198,11 +206,10 @@ export function PriorityModal({
                     <Input autoFocus value={targetQuery} onChange={event => setTargetQuery(event.target.value)} placeholder="Digite para pesquisar..." />
                     <div className="mt-2 max-h-48 overflow-y-auto">
                       {filteredTargets.map(option => {
-                        const selected = useUniverseRamos ? option.id === universeItemId : option.id === clientId;
+                        const selected = option.id === universeItemId;
                         return (
                           <button key={option.id} type="button" onClick={() => {
-                            if (useUniverseRamos) setUniverseItemId(option.id);
-                            else setClientId(option.id);
+                            setUniverseItemId(option.id);
                             setTargetPickerOpen(false);
                             setTargetQuery('');
                           }} className="flex w-full items-center justify-between border-b px-2 py-2 text-left text-sm last:border-b-0 hover:bg-muted">
@@ -215,7 +222,13 @@ export function PriorityModal({
                     </div>
                   </div>
                 )}
-              </div>
+              </div> : <ClientMultiPicker
+                clients={clients}
+                selectedClientIds={clientIds}
+                onChange={setClientIds}
+                allowMultiple={allowMultipleClients && !editing}
+                disabled={lockClientId}
+              />}
               <div>
                 <Label>Prazo</Label>
                 <Input type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} />
@@ -240,9 +253,14 @@ export function PriorityModal({
           )}
 
           <div className={cn('grid gap-3', promotionMode ? 'grid-cols-2' : 'grid-cols-3')}>
-            <div>
+            <div className={promotionMode ? 'col-span-2' : ''}>
               <Label>Peso (1-5)</Label>
-              <Input type="number" min={1} max={5} value={weight} onChange={event => setWeight(Number(event.target.value))} />
+              <div className="mt-1 grid grid-cols-5 gap-1">
+                {weightOptions.map(option => {
+                  const Icon = option.Icon;
+                  return <button key={option.value} type="button" title={option.label} aria-label={`Peso ${option.value}: ${option.label}`} onClick={() => setWeight(option.value)} className={cn('flex h-10 items-center justify-center gap-1 border text-sm font-semibold transition-colors', option.className, weight === option.value && 'ring-2 ring-primary ring-offset-1')}><Icon className="h-4 w-4" /><span>{option.value}</span></button>;
+                })}
+              </div>
             </div>
             <div>
               <Label>Modalidade</Label>

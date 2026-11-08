@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { manualCatalog } from '@/features/master-plan-preview/manualDigitalModel';
 import { competencyStickerPath } from '@/features/master-plan-preview/competencyVisualAssets';
 import { functionStickerPath, nucleusStickerPath, sectorStickerPath } from '@/features/master-plan-preview/organizationVisualAssets';
+import { ClientMultiPicker } from '@/components/shared/ClientMultiPicker';
 
 interface RespOption { name: string; color: string; initials: string }
 interface Props {
@@ -657,18 +658,18 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
   defaultAssignee: string; color: string; presetClientId: string | null; onCreate: Props['onCreateSubtask'];
 }) {
   const [title, setTitle] = useState('');
-  const [clientId, setClientId] = useState(presetClientId || '');
+  const [clientIds, setClientIds] = useState<string[]>(presetClientId ? [presetClientId] : []);
   const [assignee, setAssignee] = useState(defaultAssignee);
   const [dueDate, setDueDate] = useState('');
   const [saving, setSaving] = useState(false);
-  useEffect(() => { if (open) { setTitle(''); setClientId(presetClientId || ''); setAssignee(defaultAssignee); setDueDate(''); } }, [open, presetClientId, defaultAssignee]);
-  const client = clients.find(item => item.id === clientId);
+  useEffect(() => { if (open) { setTitle(''); setClientIds(presetClientId ? [presetClientId] : []); setAssignee(defaultAssignee); setDueDate(''); } }, [open, presetClientId, defaultAssignee]);
+  const selectedClients = clients.filter(item => clientIds.includes(item.id));
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-md">
       <DialogHeader><DialogTitle>Nova tarefa</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div><Label htmlFor="new-task-title">Tarefa</Label><Input id="new-task-title" autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="Descreva a tarefa" /></div>
-        <div><Label htmlFor="new-task-client">Cliente</Label><select id="new-task-client" value={clientId} onChange={event => setClientId(event.target.value)} className="mt-1 h-9 w-full border bg-white px-2 text-sm"><option value="">Selecione</option>{clients.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
+        <div><Label>Clientes</Label><div className="mt-1"><ClientMultiPicker clients={clients} selectedClientIds={clientIds} onChange={setClientIds} includeUniverseRamos /></div></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label htmlFor="new-task-assignee">Responsável</Label><select id="new-task-assignee" value={assignee} onChange={event => setAssignee(event.target.value)} className="mt-1 h-9 w-full border bg-white px-2 text-sm">{responsibleList.map(item => <option key={item.name} value={item.name}>{item.name}</option>)}</select></div>
           <div><Label htmlFor="new-task-due">Prazo</Label><Input id="new-task-due" type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} /></div>
@@ -676,12 +677,12 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
       </div>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-        <Button type="button" disabled={!title.trim() || !client || !assignee || saving} style={{ backgroundColor: color }} onClick={async () => {
-          if (!client) return;
+        <Button type="button" disabled={!title.trim() || selectedClients.length === 0 || !assignee || saving} style={{ backgroundColor: color }} onClick={async () => {
+          if (selectedClients.length === 0) return;
           setSaving(true);
-          const created = await onCreate(client.id, { title: title.trim(), assigned_to: [assignee], due_date: dueDate || undefined }, client.name);
+          const created = await Promise.all(selectedClients.map(client => onCreate(client.id, { title: title.trim(), assigned_to: [assignee], due_date: dueDate || undefined }, client.name)));
           setSaving(false);
-          if (created) onOpenChange(false);
+          if (created.every(Boolean)) onOpenChange(false);
         }}>Criar tarefa</Button>
       </DialogFooter>
     </DialogContent>
@@ -914,9 +915,14 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         </div>
       </section>;
     })}</div>}
-    <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} linkedTaskTitle={editing ? rootTaskFor(editing, tasks)?.title : undefined} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async data => {
+    <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} linkedTaskTitle={editing ? rootTaskFor(editing, tasks)?.title : undefined} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} allowMultipleClients={!editing} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async (data, clientIds) => {
       if (editing) { if (await onUpdate(editing.id, data)) { await onRefreshTasks(); setModalOpen(false); } }
-      else { const created = await onCreate(data, data.client_id ? clientById.get(data.client_id)?.name : undefined); if (created) { await onRefreshTasks(); setModalOpen(false); } }
+      else {
+        const created = clientIds && clientIds.length > 1
+          ? await onCreateMany(data, clientIds)
+          : [await onCreate(data, data.client_id ? clientById.get(data.client_id)?.name : undefined)].filter(Boolean);
+        if (created.length) { await onRefreshTasks(); setModalOpen(false); }
+      }
     }} />
     <NewTaskModal open={taskModalOpen} onOpenChange={setTaskModalOpen} clients={clients} responsibleList={responsibleList} defaultAssignee={selectedAssignee} color={color} presetClientId={clientFilter === 'all' ? null : clientFilter} onCreate={onCreateSubtask} />
   </div>;

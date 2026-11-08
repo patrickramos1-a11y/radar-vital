@@ -29,9 +29,26 @@ type PriorityRpc = (name: string, args: Record<string, unknown>) => Promise<{
   data: unknown;
   error: { code?: string; message: string } | null;
 }>;
-const callPriorityRpc: PriorityRpc = (name, args) => (
-  supabase.rpc(name as never, args as never) as unknown as ReturnType<PriorityRpc>
-);
+const callPriorityRpc: PriorityRpc = async (name, args) => {
+  try {
+    return await supabase.rpc(name as never, args as never) as unknown as Awaited<ReturnType<PriorityRpc>>;
+  } catch (error) {
+    // A stale generated API client can throw before Supabase returns an RPC
+    // response. Returning a normal error keeps the compatibility path below
+    // available instead of breaking the action in the interface.
+    return {
+      data: null,
+      error: {
+        message: error instanceof Error ? error.message : 'Não foi possível executar a ação no banco.',
+      },
+    };
+  }
+};
+
+const isOpenSubtaskError = (error: { code?: string; message: string } | null) => Boolean(error && (
+  error.code === 'P0001'
+  || error.message?.toLocaleLowerCase('pt-BR').includes('subtarefas abertas')
+));
 
 export function usePriorities() {
   const { currentUser } = useAuth();
@@ -101,52 +118,123 @@ export function usePriorities() {
   }, [currentUserName, fetch]);
 
   const addPrioritiesForClients = useCallback(async (data: PriorityFormData, clientIds: string[]) => {
-    const clientId = [...new Set(clientIds.filter(Boolean))][0] || data.client_id || null;
-    const inserted = await addPriority({ ...data, client_id: clientId, universe_item_id: null });
-    return inserted ? [inserted] : [];
+    const uniqueClientIds = [...new Set(clientIds.filter(Boolean))];
+    const targets = uniqueClientIds.length ? uniqueClientIds : (data.client_id ? [data.client_id] : []);
+    if (!targets.length) return [];
+    const inserted = await Promise.all(targets.map(clientId => addPriority({
+      ...data,
+      client_id: clientId,
+      universe_item_id: null,
+    })));
+    return inserted.filter((priority): priority is Priority => Boolean(priority));
   }, [addPriority]);
+
+  const finishPriorityThroughTables = useCallback(async (priority: Priority, finishChildren: boolean) => {
+    const taskColumns = 'id,parent_task_id,completed,status';
+    const { data: linkedTasks, error: linkedError } = await supabase
+      .from('tasks')
+      .select(taskColumns)
+      .eq('priority_id', priority.id);
+    if (linkedError) return { data: null, error: linkedError };
+
+    let taskPool = linkedTasks ?? [];
+    if (priority.client_id) {
+      const { data: clientTasks, error: clientError } = await supabase
+        .from('tasks')
+        .select(taskColumns)
+        .eq('client_id', priority.client_id);
+      if (clientError) return { data: null, error: clientError };
+      taskPool = clientTasks ?? taskPool;
+    }
+
+    if (priority.source_task_id && !taskPool.some(task => task.id === priority.source_task_id)) {
+      const { data: sourceTask, error: sourceError } = await supabase
+        .from('tasks')
+        .select(taskColumns)
+        .eq('id', priority.source_task_id)
+        .maybeSingle();
+      if (sourceError) return { data: null, error: sourceError };
+      if (sourceTask) taskPool = [...taskPool, sourceTask];
+    }
+
+    const linkedIds = new Set((linkedTasks ?? []).map(task => task.id));
+    const rootIds = new Set<string>([
+      ...(priority.source_task_id ? [priority.source_task_id] : []),
+      ...((linkedTasks ?? [])
+        .filter(task => !task.parent_task_id || !linkedIds.has(task.parent_task_id))
+        .map(task => task.id)),
+    ]);
+    const childrenByParent = new Map<string, string[]>();
+    taskPool.forEach(task => {
+      if (!task.parent_task_id) return;
+      childrenByParent.set(task.parent_task_id, [...(childrenByParent.get(task.parent_task_id) ?? []), task.id]);
+    });
+
+    const descendants = new Set<string>();
+    const queue = [...rootIds];
+    while (queue.length) {
+      const parentId = queue.shift()!;
+      (childrenByParent.get(parentId) ?? []).forEach(childId => {
+        if (descendants.has(childId)) return;
+        descendants.add(childId);
+        queue.push(childId);
+      });
+    }
+
+    const taskById = new Map(taskPool.map(task => [task.id, task]));
+    const openDescendants = [...descendants].filter(taskId => {
+      const task = taskById.get(taskId);
+      return task && !task.completed && task.status !== 'concluida' && task.status !== 'cancelada';
+    });
+    if (openDescendants.length && !finishChildren) {
+      return { data: null, error: { code: 'P0001', message: 'Existem subtarefas abertas.' } };
+    }
+
+    const completedAt = new Date().toISOString();
+    const taskPatch: Database['public']['Tables']['tasks']['Update'] = {
+      completed: true,
+      completed_at: completedAt,
+      scheduled_for: null,
+      status: 'concluida',
+    };
+    if (finishChildren && descendants.size) {
+      const { error: childrenError } = await supabase.from('tasks').update(taskPatch).in('id', [...descendants]);
+      if (childrenError) return { data: null, error: childrenError };
+    }
+    if (rootIds.size) {
+      const { error: rootError } = await supabase.from('tasks').update(taskPatch).in('id', [...rootIds]);
+      if (rootError) return { data: null, error: rootError };
+    }
+
+    const { error: priorityError } = await supabase.from('priorities').update({
+      status: 'concluida',
+      completed_at: completedAt,
+    }).eq('id', priority.id);
+    return { data: null, error: priorityError };
+  }, []);
 
   const updatePriority = useCallback(async (id: string, data: Partial<PriorityFormData>) => {
     try {
       const current = priorities.find(priority => priority.id === id);
       if (data.status === 'concluida' && current) {
-        let finishResult = await callPriorityRpc('finish_priority_with_task_tree', {
-          p_priority_id: current.id,
-          p_finish_children: false,
-        });
-
-        const hasOpenChildren = (error: typeof finishResult.error) =>
-          Boolean(error && (
-            error.code === 'P0001'
-            || error.message?.toLocaleLowerCase('pt-BR').includes('subtarefas abertas')
-          ));
-
-        if (hasOpenChildren(finishResult.error)) {
-          if (!window.confirm('Esta prioridade tem subtarefas abertas. Deseja concluir todas elas e a prioridade?')) return false;
-          finishResult = await callPriorityRpc('finish_priority_with_task_tree', {
+        const finish = async (finishChildren: boolean) => {
+          const rpcResult = await callPriorityRpc('finish_priority_with_task_tree', {
             p_priority_id: current.id,
-            p_finish_children: true,
+            p_finish_children: finishChildren,
           });
-        }
+          if (!rpcResult.error) return rpcResult;
 
-        if (finishResult.error && ['42883', 'PGRST202'].includes(finishResult.error.code ?? '') && current.source_task_id) {
-          finishResult = await callPriorityRpc('finish_priority_task', {
-            p_task_id: current.source_task_id,
-            p_finish_children: false,
-          });
-          if (hasOpenChildren(finishResult.error)) {
-            if (!window.confirm('Esta prioridade tem subtarefas abertas. Deseja concluir todas elas e a prioridade?')) return false;
-            finishResult = await callPriorityRpc('finish_priority_task', {
-              p_task_id: current.source_task_id,
-              p_finish_children: true,
-            });
-          }
-        } else if (finishResult.error && ['42883', 'PGRST202'].includes(finishResult.error.code ?? '')) {
-          const { error: standaloneError } = await supabase.from('priorities').update({
-            status: 'concluida',
-            completed_at: new Date().toISOString(),
-          }).eq('id', current.id);
-          finishResult = { data: null, error: standaloneError };
+          // The application can run against a database that has not refreshed
+          // the RPC signature yet. Preserve the task-tree rule with a direct
+          // table fallback rather than leaving the priority impossible to close.
+          console.warn('Priority completion RPC unavailable; using compatibility fallback.', rpcResult.error);
+          return finishPriorityThroughTables(current, finishChildren);
+        };
+
+        let finishResult = await finish(false);
+        if (isOpenSubtaskError(finishResult.error)) {
+          if (!window.confirm('Esta prioridade tem subtarefas abertas. Deseja concluir todas elas e a prioridade?')) return false;
+          finishResult = await finish(true);
         }
         if (finishResult.error) throw finishResult.error;
         const { status: _status, ...otherChanges } = data;
@@ -178,7 +266,7 @@ export function usePriorities() {
       toast.error('Erro ao atualizar prioridade', { description: message });
       return false;
     }
-  }, [fetch, priorities]);
+  }, [fetch, finishPriorityThroughTables, priorities]);
 
   const deletePriority = useCallback(async (id: string) => {
     try {

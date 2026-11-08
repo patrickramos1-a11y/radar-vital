@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { normalizeAssignee } from '@/lib/taskAssignee';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { priorityTaskTreeIds } from '@/lib/taskHierarchy';
+import { ClientMultiPicker } from '@/components/shared/ClientMultiPicker';
 
 interface RespOption { name: string; color: string; initials: string; }
 
@@ -344,14 +345,14 @@ function NewTaskDialog({
   onSubmit: (clientId: string, data: TaskFormData) => Promise<void>;
 }) {
   const [title, setTitle] = useState('');
-  const [clientId, setClientId] = useState<string>('');
+  const [clientIds, setClientIds] = useState<string[]>([]);
   const [assigned, setAssigned] = useState<string[]>(defaultAssignee ? [defaultAssignee] : []);
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('normal');
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
-      setTitle(''); setClientId(''); setDueDate(''); setPriority('normal');
+      setTitle(''); setClientIds([]); setDueDate(''); setPriority('normal');
       setAssigned(defaultAssignee ? [defaultAssignee] : []);
     }
     onOpenChange(nextOpen);
@@ -362,8 +363,9 @@ function NewTaskDialog({
     : [...prev, name]);
 
   const submit = async () => {
-    if (!title.trim() || !clientId) return;
-    await onSubmit(clientId, { title: title.trim(), assigned_to: assigned, due_date: dueDate || undefined, priority });
+    if (!title.trim() || clientIds.length === 0) return;
+    await Promise.all(clientIds.map(clientId => onSubmit(clientId, { title: title.trim(), assigned_to: assigned.slice(0, 1), due_date: dueDate || undefined, priority })));
+    onOpenChange(false);
   };
 
   return (
@@ -377,13 +379,8 @@ function NewTaskDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Cliente *</Label>
-              <select value={clientId} onChange={e => setClientId(e.target.value)} className="w-full px-2 py-2 border rounded-md bg-background text-sm">
-                <option value="">— Selecione —</option>
-                {clients.filter(c => c.isActive).sort((a, b) => a.name.localeCompare(b.name)).map(c =>
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                )}
-              </select>
+              <Label>Clientes *</Label>
+              <div className="mt-1"><ClientMultiPicker clients={clients} selectedClientIds={clientIds} onChange={setClientIds} includeUniverseRamos /></div>
             </div>
             <div>
               <Label>Prazo</Label>
@@ -416,7 +413,7 @@ function NewTaskDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={!title.trim() || !clientId} style={{ backgroundColor: color }}>Criar tarefa</Button>
+          <Button onClick={submit} disabled={!title.trim() || clientIds.length === 0} style={{ backgroundColor: color }}>Criar tarefa</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
