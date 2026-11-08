@@ -324,6 +324,91 @@ export function usePriorities() {
     }
   }, [fetch, priorities]);
 
+  const demotePriorityToTask = useCallback(async (id: string) => {
+    try {
+      const current = priorities.find((priority) => priority.id === id);
+      if (!current) throw new Error('Prioridade não encontrada.');
+
+      const rpcResult = await callPriorityRpc('demote_priority_to_task', {
+        p_priority_id: id,
+        p_actor: currentUserName,
+      });
+      if (!rpcResult.error) {
+        await fetch();
+        toast.success('Prioridade voltou a ser uma tarefa');
+        return true;
+      }
+
+      // Compatibility path for databases that have not received the helper
+      // function yet. Keep the original task tree intact and only remove the
+      // priority relationship from it.
+      const { data: linkedTasks, error: linkedError } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('priority_id', id);
+      if (linkedError) throw linkedError;
+
+      const source = linkedTasks?.find((task) => task.id === current.source_task_id)
+        || linkedTasks?.find((task) => !task.parent_task_id)
+        || null;
+
+      if (source) {
+        const { error: unlinkTasksError } = await supabase
+          .from('tasks')
+          .update({ priority_id: null, priority: 'normal' })
+          .eq('priority_id', id);
+        if (unlinkTasksError) throw unlinkTasksError;
+      } else if (current.client_id) {
+        const { data: createdTask, error: createTaskError } = await supabase
+          .from('tasks')
+          .insert({
+            client_id: current.client_id,
+            title: current.title,
+            description: current.description,
+            assigned_to: current.assigned_to.slice(0, 1),
+            due_date: current.due_date,
+            priority: 'normal',
+            modality: current.category || 'Levantamento',
+            status: current.status === 'concluida' ? 'concluida' : 'pendente',
+            completed: current.status === 'concluida',
+            completed_at: current.completed_at,
+            created_by: current.created_by,
+          })
+          .select('id')
+          .single();
+        if (createTaskError) throw createTaskError;
+
+        if (linkedTasks?.length && createdTask) {
+          const { error: relinkError } = await supabase
+            .from('tasks')
+            .update({ priority_id: null, parent_task_id: createdTask.id, priority: 'normal' })
+            .eq('priority_id', id);
+          if (relinkError) throw relinkError;
+        }
+      } else {
+        throw new Error('Esta prioridade do Universo Ramos não possui uma tarefa vinculada para restaurar.');
+      }
+
+      const { error: clearSourceError } = await supabase
+        .from('priorities')
+        .update({ source_task_id: null })
+        .eq('id', id);
+      if (clearSourceError) throw clearSourceError;
+      const { error: deleteError } = await supabase.from('priorities').delete().eq('id', id);
+      if (deleteError) throw deleteError;
+
+      await fetch();
+      toast.success('Prioridade voltou a ser uma tarefa');
+      return true;
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao despromover prioridade', {
+        description: e instanceof Error ? e.message : 'Não foi possível restaurar a tarefa.',
+      });
+      return false;
+    }
+  }, [currentUserName, fetch, priorities]);
+
   const promoteTaskToPriority = useCallback(async (taskId: string, _taskTitle: string, data: PriorityFormData, _clientName?: string) => {
     try {
       const rpcResult = await callPriorityRpc('promote_client_task', {
@@ -394,5 +479,5 @@ export function usePriorities() {
     }
   }, [currentUserName, fetch]);
 
-  return { priorities, isLoading, error, addPriority, addPrioritiesForClients, updatePriority, deletePriority, promoteTaskToPriority, refetch: fetch };
+  return { priorities, isLoading, error, addPriority, addPrioritiesForClients, updatePriority, deletePriority, demotePriorityToTask, promoteTaskToPriority, refetch: fetch };
 }

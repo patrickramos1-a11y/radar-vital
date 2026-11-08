@@ -389,6 +389,7 @@ export default function CentralEntregas() {
                 onCreateMany={prioritiesHook.addPrioritiesForClients}
                 onUpdate={prioritiesHook.updatePriority}
                 onDelete={prioritiesHook.deletePriority}
+                onDemote={prioritiesHook.demotePriorityToTask}
                 onPromote={prioritiesHook.promoteTaskToPriority}
                 onCreateSubtask={tasksHook.addTask}
                 onToggleTask={tasksHook.toggleComplete}
@@ -439,6 +440,7 @@ export default function CentralEntregas() {
                 onCreate={deliverablesHook.addDeliverable}
                 onUpdate={deliverablesHook.updateDeliverable}
                 onDelete={deliverablesHook.deleteDeliverable}
+                onUpdateTask={tasksHook.updateTask}
               />
             </TabsContent>
 

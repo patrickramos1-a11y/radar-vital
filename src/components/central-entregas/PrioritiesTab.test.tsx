@@ -89,6 +89,7 @@ function renderTab(overrides: Partial<React.ComponentProps<typeof PrioritiesTab>
     onCreateMany: vi.fn(async () => []),
     onUpdate: vi.fn(async () => true),
     onDelete: vi.fn(async () => true),
+    onDemote: vi.fn(async () => true),
     onPromote: vi.fn(async () => null),
     onCreateSubtask: vi.fn(async () => true),
     onToggleTask: vi.fn(async () => true),
@@ -215,8 +216,8 @@ describe('PrioritiesTab', () => {
 
     expect(screen.getByRole('button', { name: 'Tudo' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('1 prioridade e 1 tarefa em 1 cliente')).toBeInTheDocument();
-    expect(screen.getByText('Prioridades', { selector: 'div' })).toBeInTheDocument();
-    expect(screen.getByText('Tarefas', { selector: 'div' })).toBeInTheDocument();
+    expect(screen.queryByText('Prioridades', { selector: 'div' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Tarefas', { selector: 'div' })).not.toBeInTheDocument();
     expect(screen.getByText(priority.title)).toBeInTheDocument();
     expect(screen.getByText(ordinaryTask.title)).toBeInTheDocument();
   });
@@ -400,7 +401,7 @@ describe('PrioritiesTab', () => {
     const olderLight = { ...priority, id: 'priority-light', title: 'Peso dois antiga', weight: 2, created_at: '2026-08-20T12:00:00.000Z' };
     renderTab({ priorities: [olderLight, newestHeavy, oldestHeavy] });
 
-    const titles = screen.getAllByRole('button', { name: /prioridade (Peso cinco antiga|Peso cinco recente|Peso dois antiga)/ });
+    const titles = screen.getAllByRole('button', { name: /^(Expandir|Recolher) prioridade (Peso cinco antiga|Peso cinco recente|Peso dois antiga)$/ });
     expect(titles.map(item => item.textContent)).toEqual(['Peso cinco antiga', 'Peso cinco recente', 'Peso dois antiga']);
   });
 
@@ -482,6 +483,6 @@ describe('PrioritiesTab', () => {
     expect(row).toBeTruthy();
     fireEvent.touchStart(row!, { touches: [{ clientX: 220 }] });
     fireEvent.touchEnd(row!, { changedTouches: [{ clientX: 120 }] });
-    expect(row).toHaveClass('-translate-x-24');
+    expect(row).toHaveClass('-translate-x-48');
   });
 });

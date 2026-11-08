@@ -40,6 +40,7 @@ interface Props {
   onCreate: (data: DeliverableFormData) => Promise<unknown>;
   onUpdate: (id: string, data: Partial<DeliverableFormData>) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
+  onUpdateTask: (id: string, data: Partial<Task>) => Promise<boolean>;
 }
 
 type ReviewView = 'pending' | 'reviewed' | 'all';
@@ -56,6 +57,7 @@ export function DeliverablesTab({
   onCreate,
   onUpdate,
   onDelete,
+  onUpdateTask,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Deliverable | null>(null);
@@ -89,6 +91,39 @@ export function DeliverablesTab({
       if (clientId) return clientById.get(clientId);
     }
     return undefined;
+  };
+
+  const taskForDeliverable = (deliverable: Deliverable): Task | undefined => {
+    const fromPriority = (priorityId: string | null) => {
+      if (!priorityId) return undefined;
+      const priority = priorityById.get(priorityId);
+      return (priority?.source_task_id ? taskById.get(priority.source_task_id) : undefined)
+        || tasks.find(task => task.priority_id === priorityId);
+    };
+
+    const sourceTask = fromPriority(deliverable.source_priority_id);
+    if (sourceTask) return sourceTask;
+
+    for (const item of deliverable.items) {
+      if (item.item_type === 'task') {
+        const task = taskById.get(item.item_id);
+        if (task) return task;
+      }
+      const task = fromPriority(item.item_id);
+      if (task) return task;
+    }
+    return undefined;
+  };
+
+  const openOrEditLink = async (task: Task | undefined) => {
+    if (!task) return;
+    if (task.external_url) {
+      window.open(task.external_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    const url = window.prompt('Cole o link desta entrega');
+    if (!url?.trim()) return;
+    await onUpdateTask(task.id, { external_url: url.trim() });
   };
 
   const availableRequesters = useMemo(() => {
@@ -288,6 +323,7 @@ export function DeliverablesTab({
 
                   {group.deliveries.map(deliverable => {
                     const client = clientForDeliverable(deliverable);
+                    const sourceTask = taskForDeliverable(deliverable);
                     const deliveredAt = deliveryDate(deliverable);
                     const deliveryRatings = ratingsByDeliverable.get(deliverable.id) || [];
                     return (
@@ -328,6 +364,9 @@ export function DeliverablesTab({
                             onRemove={removeRating}
                           />
                           <div className="flex justify-end gap-1">
+                            {sourceTask && <button className="grid h-8 w-8 place-items-center rounded text-sky-700 hover:bg-sky-50" onClick={() => void openOrEditLink(sourceTask)} title={sourceTask.external_url ? 'Abrir link da entrega' : 'Adicionar link à entrega'}>
+                              <Link2 className="h-3.5 w-3.5" />
+                            </button>}
                             {!deliverable.source_priority_id && (
                               <>
                                 <button className="grid h-8 w-8 place-items-center rounded hover:bg-muted" onClick={() => edit(deliverable)} title="Editar entrega">
@@ -357,6 +396,9 @@ export function DeliverablesTab({
                               {deliverable.assigned_to.map(name => <CollaboratorAvatar key={name} name={name} size={22} ring />)}
                             </div>
                             <div className="flex items-center gap-1">
+                              {sourceTask && <button className="grid h-8 w-8 place-items-center rounded text-sky-700 hover:bg-sky-50" onClick={() => void openOrEditLink(sourceTask)} title={sourceTask.external_url ? 'Abrir link da entrega' : 'Adicionar link à entrega'}>
+                                <Link2 className="h-3.5 w-3.5" />
+                              </button>}
                               {!deliverable.source_priority_id && (
                                 <>
                                   <button className="grid h-8 w-8 place-items-center rounded hover:bg-muted" onClick={() => edit(deliverable)} title="Editar entrega">

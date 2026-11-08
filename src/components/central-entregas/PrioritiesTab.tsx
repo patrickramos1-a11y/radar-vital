@@ -35,6 +35,7 @@ interface Props {
   onCreateMany: (data: PriorityFormData, clientIds: string[]) => Promise<Priority[]>;
   onUpdate: (id: string, data: Partial<PriorityFormData>) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
+  onDemote: (id: string) => Promise<boolean>;
   onPromote: (taskId: string, taskTitle: string, data: PriorityFormData, clientName?: string) => Promise<Priority | null>;
   onCreateSubtask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
   onToggleTask: (taskId: string, clientName?: string) => Promise<boolean>;
@@ -281,10 +282,10 @@ function Subtasks({ parentId, tasks, clientName, responsibleList, onToggle, onUp
   </>;
 }
 
-function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canPlanPriorities, onUpdate, onDelete, onCreateSubtask, onToggleTask, onUpdateTask, onEdit, onRefreshTasks }: {
+function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canPlanPriorities, onUpdate, onDelete, onDemote, onCreateSubtask, onToggleTask, onUpdateTask, onEdit, onRefreshTasks }: {
   priority: Priority; client?: Client; tasks: Task[]; rowIndex: number; responsibleList: RespOption[];
   canPlanPriorities: boolean;
-  onUpdate: Props['onUpdate']; onDelete: Props['onDelete']; onCreateSubtask: Props['onCreateSubtask'];
+  onUpdate: Props['onUpdate']; onDelete: Props['onDelete']; onDemote: Props['onDemote']; onCreateSubtask: Props['onCreateSubtask'];
   onToggleTask: Props['onToggleTask']; onUpdateTask: Props['onUpdateTask']; onEdit: () => void; onRefreshTasks: Props['onRefreshTasks'];
 }) {
   const root = rootTaskFor(priority, tasks);
@@ -313,6 +314,11 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
       if (await onDelete(priority.id)) await onRefreshTasks();
     }
   };
+  const demote = async () => {
+    if (window.confirm('Voltar esta prioridade para uma tarefa normal? A tarefa e as subtarefas serão preservadas.')) {
+      if (await onDemote(priority.id)) await onRefreshTasks();
+    }
+  };
   const toggleExpanded = () => {
     if (touchMoved.current) { touchMoved.current = false; return; }
     if (swiped) { setSwiped(false); return; }
@@ -321,12 +327,14 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
   const weightColor = priorityWeight(priority.weight).borderClass;
   const scheduled = Boolean(root?.scheduled_for && root.scheduled_for > today());
 
-  return <article className={`relative overflow-hidden border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : weightColor}`}>
-    <div className={`absolute right-0 top-0 h-12 w-24 items-stretch sm:hidden ${swiped ? 'flex' : 'hidden'}`} aria-hidden={!swiped}>
+  return <article className={`relative overflow-hidden border-b border-l-2 last:border-b-0 ${overdue ? 'border-l-red-600' : 'border-l-amber-400'}`}>
+    <div className={`absolute right-0 top-0 h-12 w-48 items-stretch sm:hidden ${swiped ? 'flex' : 'hidden'}`} aria-hidden={!swiped}>
       <button type="button" onClick={onEdit} className="flex w-12 items-center justify-center bg-sky-600 text-white" title="Editar prioridade" aria-label="Editar prioridade"><Pencil className="h-4 w-4" /></button>
+      {root && <TaskLinkAction task={root} onUpdateTask={onUpdateTask} mobile />}
+      <button type="button" onClick={() => void demote()} className="flex w-12 items-center justify-center bg-amber-500 text-white" title="Voltar para tarefa" aria-label="Voltar prioridade para tarefa"><Star className="h-4 w-4 fill-current" /></button>
       <button type="button" onClick={() => void remove()} className="flex w-12 items-center justify-center bg-red-600 text-white" title="Excluir prioridade" aria-label="Excluir prioridade"><Trash2 className="h-4 w-4" /></button>
     </div>
-    <div className={`relative flex min-w-0 items-center gap-1.5 px-2 py-1.5 transition-transform duration-200 ${rowIndex % 2 ? 'bg-slate-50' : 'bg-white'} ${swiped ? '-translate-x-24' : 'translate-x-0'}`}
+    <div className={`relative flex min-w-0 items-center gap-1.5 px-2 py-1.5 transition-transform duration-200 ${rowIndex % 2 ? 'bg-amber-50/50' : 'bg-amber-50/25'} ${swiped ? '-translate-x-48' : 'translate-x-0'}`}
       onTouchStart={event => { touchStart.current = event.touches[0]?.clientX ?? null; touchMoved.current = false; }}
       onTouchEnd={event => {
         if (touchStart.current === null) return;
@@ -354,6 +362,16 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
         {!closed && canPlanPriorities && <WorkSchedule task={root} onUpdateTask={onUpdateTask} />}
+        {root && <TaskLinkAction task={root} onUpdateTask={onUpdateTask} />}
+        <button
+          type="button"
+          onClick={() => void demote()}
+          title="Voltar prioridade para tarefa"
+          aria-label={`Voltar prioridade ${priority.title} para tarefa`}
+          className="p-1.5 text-amber-600 hover:bg-amber-100"
+        >
+          <Star className="h-4 w-4 fill-current" />
+        </button>
         {!!children.length && <button
           type="button"
           onClick={toggleExpanded}
@@ -375,6 +393,7 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
           <DropdownMenuTrigger asChild><button type="button" title="Mais ações" aria-label="Mais ações da prioridade" className="hidden p-1.5 text-muted-foreground hover:bg-muted sm:block"><MoreHorizontal className="h-4 w-4" /></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={onEdit}><Pencil className="mr-2 h-4 w-4" />Editar prioridade</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => void demote()}><Star className="mr-2 h-4 w-4 fill-amber-400 text-amber-600" />Voltar para tarefa</DropdownMenuItem>
             <DropdownMenuItem className="text-red-700 focus:text-red-700" onSelect={() => void remove()}><Trash2 className="mr-2 h-4 w-4" />Excluir prioridade</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -441,7 +460,7 @@ function TaskAssignee({ task, responsibleList, onUpdateTask, compact = false }: 
   </Popover>;
 }
 
-function TaskLinkAction({ task, onUpdateTask }: { task: Task; onUpdateTask: Props['onUpdateTask'] }) {
+function TaskLinkAction({ task, onUpdateTask, mobile = false }: { task: Task; onUpdateTask: Props['onUpdateTask']; mobile?: boolean }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState(task.external_url || '');
   const [saving, setSaving] = useState(false);
@@ -467,7 +486,10 @@ function TaskLinkAction({ task, onUpdateTask }: { task: Task; onUpdateTask: Prop
         type="button"
         title={task.external_url ? 'Abrir ou editar link da tarefa' : 'Adicionar link à tarefa'}
         aria-label={task.external_url ? `Link da tarefa ${task.title}` : `Adicionar link à tarefa ${task.title}`}
-        className={cn('hidden p-1.5 hover:bg-sky-50 sm:block', task.external_url ? 'text-sky-700' : 'text-muted-foreground')}
+        className={cn(
+          mobile ? 'flex w-12 items-center justify-center bg-violet-600 text-white' : 'hidden p-1.5 hover:bg-sky-50 sm:block',
+          !mobile && (task.external_url ? 'text-sky-700' : 'text-muted-foreground'),
+        )}
       >
         <Link2 className="h-4 w-4" />
       </button>
@@ -573,7 +595,7 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, contextOnly 
       <button type="button" onClick={() => void remove()} className="grid h-full w-full place-items-center" title="Excluir tarefa" aria-label={`Excluir tarefa ${task.title}`}><Trash2 className="h-4 w-4" /></button>
     </div>
     <div
-      className={`relative flex min-w-0 items-center gap-1.5 px-2 py-1.5 transition-transform duration-200 ${rowIndex % 2 ? 'bg-slate-50' : 'bg-white'} ${swiped ? '-translate-x-14' : 'translate-x-0'}`}
+      className={`relative flex min-w-0 items-center gap-1.5 px-2 py-1.5 transition-transform duration-200 ${rowIndex % 2 ? 'bg-sky-50/60' : 'bg-sky-50/30'} ${swiped ? '-translate-x-14' : 'translate-x-0'}`}
       onTouchStart={event => { touchStart.current = event.touches[0]?.clientX ?? null; touchMoved.current = false; }}
       onTouchEnd={event => {
         if (touchStart.current === null) return;
@@ -689,7 +711,7 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
   </Dialog>;
 }
 
-export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanPriorities = true, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onPromote, onCreateSubtask, onToggleTask, onUpdateTask, onDeleteTask, onRefreshTasks }: Props) {
+export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanPriorities = true, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onDemote, onPromote, onCreateSubtask, onToggleTask, onUpdateTask, onDeleteTask, onRefreshTasks }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Priority | null>(null);
   const [presetClientId, setPresetClientId] = useState<string | null>(null);
@@ -866,7 +888,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
       const headerBackground = colors.length > 1 ? `linear-gradient(90deg, ${colors.map((item, index) => `${colorWithAlpha(item, '22')} ${Math.round(index * 100 / Math.max(1, colors.length - 1))}%`).join(', ')})` : colorWithAlpha(colors[0] || color, '18');
       const quickOpen = quickClientId === clientId;
       const quickAssignee = selectedAssignee;
-      const rows = <div className="min-w-0">{quickOpen && client && <div className="flex h-10 items-center border-b bg-slate-50 px-1"><QuickPriorityInput client={client} assignee={quickAssignee} color={color} onCreate={onCreate} onRefreshTasks={onRefreshTasks} onClose={() => setQuickClientId(null)} /></div>}{items.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanPriorities={canPlanPriorities} onUpdate={onUpdate} onDelete={onDelete} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}</div>;
+      const rows = <div className="min-w-0">{quickOpen && client && <div className="flex h-10 items-center border-b bg-slate-50 px-1"><QuickPriorityInput client={client} assignee={quickAssignee} color={color} onCreate={onCreate} onRefreshTasks={onRefreshTasks} onClose={() => setQuickClientId(null)} /></div>}{items.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanPriorities={canPlanPriorities} onUpdate={onUpdate} onDelete={onDelete} onDemote={onDemote} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}</div>;
 
       if (viewMode === 'panel') return <section key={clientId} className="client-card-compact min-w-0 overflow-hidden border-t-2 bg-white" style={{ borderTopColor: colors[0] || color }}>
         <header className="flex h-11 min-w-0 items-center border-b px-2" style={{ background: headerBackground }}>
@@ -896,9 +918,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         <ClientSideRail client={client} universeTarget={universeTarget} count={count} kind="prioridade" onClick={client ? () => setQuickClientId(client.id) : undefined} />
         <div className="min-w-0">
           {quickOpen && client && <div className="flex h-10 items-center border-b bg-slate-50 px-1"><QuickPriorityInput client={client} assignee={selectedAssignee} color={color} onCreate={onCreate} onRefreshTasks={onRefreshTasks} onClose={() => setQuickClientId(null)} /></div>}
-          {items.priorities.length > 0 && <div className="flex items-center gap-1.5 border-b bg-amber-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-800"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-600" />Prioridades</div>}
-          {items.priorities.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanPriorities={canPlanPriorities} onUpdate={onUpdate} onDelete={onDelete} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}
-          {items.tasks.length > 0 && <div className="flex items-center gap-1.5 border-b bg-sky-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-sky-800"><ListChecks className="h-3.5 w-3.5" />Tarefas</div>}
+          {items.priorities.map((priority, rowIndex) => <PriorityItem key={priority.id} priority={priority} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanPriorities={canPlanPriorities} onUpdate={onUpdate} onDelete={onDelete} onDemote={onDemote} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} onEdit={() => { setEditing(priority); setPresetClientId(priority.client_id); setModalOpen(true); }} />)}
           {items.tasks.map((task, rowIndex) => <TaskItem key={task.id} task={task} client={client} tasks={filteredTasks} rowIndex={rowIndex} responsibleList={responsibleList} contextOnly={!taskList.selectedIds.has(task.id)} promoted={promotedTaskIdsThisSession.has(task.id)} promoting={promotingTaskIds.has(task.id)} onCreateSubtask={onCreateSubtask} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onPromote={() => void promoteImmediately(task)} />)}
         </div>
       </section>;

@@ -32,7 +32,11 @@ export const navigationModules: NavigationModule[] = [
     ],
   },
   {
-    key: "entregas", label: "Central de Entregas", href: "/central-entregas", icon: Target, context: "ac",
+    key: "minhas-prioridades", label: "Minhas prioridades", href: "/minhas-prioridades", icon: Star, context: "ac",
+    views: [{ key: "minhas-prioridades", label: "Minhas prioridades", href: "/minhas-prioridades", icon: Star }],
+  },
+  {
+    key: "entregas", label: "Central", href: "/central-entregas", icon: Target, context: "ac",
     views: [
       { key: "priorities", label: "Prioridades", href: deliveries("priorities"), icon: Star },
       { key: "tasks", label: "Tarefas", href: deliveries("tasks"), icon: CheckSquare },
@@ -84,12 +88,13 @@ const detailParent: Record<string, string> = {
 };
 
 export function activeModule(pathname: string): NavigationModule {
-  if (pathname.startsWith("/universo-ramos/plano-mestre")) return navigationModules[4];
-  if (pathname.startsWith("/universo-ramos")) return navigationModules[3];
-  if (pathname.startsWith("/central-entregas")) return navigationModules[2];
+  if (pathname.startsWith("/universo-ramos/plano-mestre")) return navigationModules[5];
+  if (pathname.startsWith("/universo-ramos")) return navigationModules[4];
+  if (pathname.startsWith("/central-entregas")) return navigationModules[3];
+  if (pathname.startsWith("/minhas-prioridades")) return navigationModules[2];
   if (pathname.startsWith("/jackbox")) return navigationModules[1];
-  if (pathname.startsWith("/auditorias")) return navigationModules[5];
-  if (pathname.startsWith("/tesouro")) return navigationModules[6];
+  if (pathname.startsWith("/auditorias")) return navigationModules[6];
+  if (pathname.startsWith("/tesouro")) return navigationModules[7];
   return navigationModules[0];
 }
 

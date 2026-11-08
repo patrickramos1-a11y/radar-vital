@@ -33,6 +33,7 @@ export default function MyPriorities() {
           onCreateMany={priorityData.addPrioritiesForClients}
           onUpdate={priorityData.updatePriority}
           onDelete={priorityData.deletePriority}
+          onDemote={priorityData.demotePriorityToTask}
           onPromote={priorityData.promoteTaskToPriority}
           onCreateSubtask={taskData.addTask}
           onToggleTask={taskData.toggleComplete}
