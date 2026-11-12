@@ -213,7 +213,7 @@ export function PriorityModal({
                             setTargetPickerOpen(false);
                             setTargetQuery('');
                           }} className="flex w-full items-center justify-between border-b px-2 py-2 text-left text-sm last:border-b-0 hover:bg-muted">
-                            <span className="truncate">{'type' in option ? `${option.type} · ${option.name}` : option.name}</span>
+                            <span className="truncate">{(option as { type?: string; name: string }).type ? `${(option as { type?: string }).type} · ${option.name}` : option.name}</span>
                             {selected && <Check className="h-4 w-4 text-emerald-700" />}
                           </button>
                         );

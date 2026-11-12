@@ -38,7 +38,7 @@ export function ClientMultiPicker({
   );
   const options = useMemo(() => {
     const regularClients = activeClients.filter(client => client.id !== universeClient?.id);
-    const all = includeUniverseRamos && universeClient
+    const all: { client: Client; label: string; detail?: string }[] = includeUniverseRamos && universeClient
       ? [{ client: universeClient, label: 'Universo Ramos', detail: 'Ramos Engenharia' }, ...regularClients.map(client => ({ client, label: client.name }))]
       : activeClients.map(client => ({ client, label: client.name }));
     const normalizedQuery = normalize(query.trim());
