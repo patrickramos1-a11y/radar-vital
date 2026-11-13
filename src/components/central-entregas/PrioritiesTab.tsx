@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Label } from '@/components/ui/label';
 import { PriorityModal } from './PriorityModal';
 import { priorityTaskTreeIds } from '@/lib/taskHierarchy';
+import { isScheduledPriority, rootTaskFor } from '@/lib/centralMetrics';
 import { cn } from '@/lib/utils';
 import { manualCatalog } from '@/features/master-plan-preview/manualDigitalModel';
 import { competencyStickerPath } from '@/features/master-plan-preview/competencyVisualAssets';
@@ -56,11 +57,6 @@ const priorityWeightConfig = {
 
 function priorityWeight(weight: number) {
   return priorityWeightConfig[Math.min(5, Math.max(1, weight)) as keyof typeof priorityWeightConfig];
-}
-
-function rootTaskFor(priority: Priority, tasks: Task[]) {
-  return tasks.find(task => task.id === priority.source_task_id)
-    || tasks.find(task => task.priority_id === priority.id && !task.parent_task_id);
 }
 
 function colorWithAlpha(color: string, alpha: string) {
@@ -426,7 +422,7 @@ function QuickPriorityInput({ client, assignee, color, onCreate, onRefreshTasks,
     setSaving(false);
   }}>
     <Input autoFocus value={title} onChange={event => setTitle(event.target.value)} aria-label={`Nova prioridade para ${client.name}`} placeholder="Descreva a nova prioridade" className="h-7 min-w-0 flex-1 border-0 bg-white/90 text-[11px] shadow-none focus-visible:ring-1" />
-    <button type="submit" disabled={!title.trim() || saving} title="Adicionar prioridade" aria-label="Adicionar prioridade" className="flex h-7 w-7 shrink-0 items-center justify-center text-white disabled:opacity-40" style={{ backgroundColor: color }}><Plus className="h-4 w-4" /></button>
+    <button type="submit" disabled={!title.trim() || saving} title="Adicionar prioridade" aria-label="Adicionar prioridade" className="flex h-7 w-7 shrink-0 items-center justify-center bg-primary text-primary-foreground disabled:opacity-40"><Plus className="h-4 w-4" /></button>
     <button type="button" onClick={onClose} title="Cancelar" aria-label="Cancelar nova prioridade" className="flex h-7 w-7 shrink-0 items-center justify-center text-slate-500 hover:bg-white"><X className="h-4 w-4" /></button>
   </form>;
 }
@@ -670,7 +666,7 @@ function QuickTaskInput({ client, assignee, color, onCreate, onClose }: {
     setSaving(false);
   }}>
     <Input autoFocus value={title} onChange={event => setTitle(event.target.value)} aria-label={`Nova tarefa para ${client.name}`} placeholder="Descreva a nova tarefa" className="h-7 min-w-0 flex-1 border-0 bg-white/90 text-[11px] shadow-none focus-visible:ring-1" />
-    <button type="submit" disabled={!title.trim() || saving} title="Adicionar tarefa" aria-label="Adicionar tarefa" className="flex h-7 w-7 shrink-0 items-center justify-center text-white disabled:opacity-40" style={{ backgroundColor: color }}><Plus className="h-4 w-4" /></button>
+    <button type="submit" disabled={!title.trim() || saving} title="Adicionar tarefa" aria-label="Adicionar tarefa" className="flex h-7 w-7 shrink-0 items-center justify-center bg-primary text-primary-foreground disabled:opacity-40"><Plus className="h-4 w-4" /></button>
     <button type="button" onClick={onClose} title="Cancelar" aria-label="Cancelar nova tarefa" className="flex h-7 w-7 shrink-0 items-center justify-center text-slate-500 hover:bg-white"><X className="h-4 w-4" /></button>
   </form>;
 }
@@ -699,7 +695,7 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
       </div>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-        <Button type="button" disabled={!title.trim() || selectedClients.length === 0 || !assignee || saving} style={{ backgroundColor: color }} onClick={async () => {
+        <Button type="button" disabled={!title.trim() || selectedClients.length === 0 || !assignee || saving} onClick={async () => {
           if (selectedClients.length === 0) return;
           setSaving(true);
           const created = await Promise.all(selectedClients.map(client => onCreate(client.id, { title: title.trim(), assigned_to: [assignee], due_date: dueDate || undefined }, client.name)));
@@ -733,7 +729,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   const filtered = useMemo(() => priorities.filter(priority =>
     (isTeamView || collaboratorFilter === 'all' || Boolean(initialClientId) || assigneeMatches(priority.assigned_to, collaboratorFilter))
     && (showAll || (priority.status !== 'concluida' && priority.status !== 'cancelada'))
-    && (showScheduled || !(() => { const root = rootTaskFor(priority, tasks); return Boolean(root?.scheduled_for && root.scheduled_for > today()); })())
+    && (showScheduled || !isScheduledPriority(priority, tasks))
     && (clientFilter === 'all' || priority.client_id === clientFilter)
     && (!search.trim() || `${priority.title} ${priority.description || ''} ${clientById.get(priority.client_id || '')?.name || ''}`.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
   ).sort((a, b) => sortMode === 'oldest'
@@ -847,10 +843,6 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   };
 
   return <div className="space-y-3">
-    <div className="flex items-center gap-3 border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-amber-950">
-      <Star className="h-7 w-7 fill-amber-400 text-amber-600" />
-      <div><h2 className="text-xl font-bold">Prioridades</h2><p className="text-xs text-amber-800">Foco atual organizado por cliente, peso e tempo em aberto.</p></div>
-    </div>
     <div className="border bg-white p-2 shadow-sm">
       <div className="flex flex-wrap items-center gap-1.5">
         <div className="flex h-8 items-center border bg-slate-50" role="group" aria-label="Ordenar prioridades">
@@ -866,7 +858,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         <Button size="sm" className="h-8" onClick={() => {
           if (showingTasks) setTaskModalOpen(true);
           else { setEditing(null); setPresetClientId(clientFilter === 'all' ? null : clientFilter); setModalOpen(true); }
-        }} style={{ backgroundColor: color }}><Plus className="mr-1 h-4 w-4" />{showingTasks ? 'Nova tarefa' : 'Nova prioridade'}</Button>
+        }}><Plus className="mr-1 h-4 w-4" />{showingTasks ? 'Nova tarefa' : 'Nova prioridade'}</Button>
       </div>
     </div>
     <div className="flex items-center justify-between gap-3 border-b pb-2">

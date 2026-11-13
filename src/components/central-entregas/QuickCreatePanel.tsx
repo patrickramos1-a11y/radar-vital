@@ -73,10 +73,9 @@ export function QuickCreatePanel({
           <button
             onClick={() => setOpen(v => !v)}
             className={cn(
-              'w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-white transition-transform',
+              'w-14 h-14 rounded-full shadow-xl flex items-center justify-center bg-primary text-primary-foreground transition-transform hover:bg-primary/90',
               open && 'rotate-45'
             )}
-            style={{ backgroundColor: color }}
             aria-label="Criar rápido"
           >
             {open ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
@@ -233,7 +232,7 @@ function QuickTaskDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={!title.trim() || !clientId} style={{ backgroundColor: color }}>Criar</Button>
+          <Button onClick={submit} disabled={!title.trim() || !clientId}>Criar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -294,7 +293,7 @@ function QuickCollabCommentDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={!text.trim()} style={{ backgroundColor: color }}>Registrar</Button>
+          <Button onClick={submit} disabled={!text.trim()}>Registrar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
