@@ -32,8 +32,8 @@ export const navigationModules: NavigationModule[] = [
     ],
   },
   {
-    key: "minhas-prioridades", label: "Minhas prioridades", href: "/minhas-prioridades", icon: Star, context: "ac",
-    views: [{ key: "minhas-prioridades", label: "Minhas prioridades", href: "/minhas-prioridades", icon: Star }],
+    key: "minhas-prioridades", label: "Prioridades", href: "/minhas-prioridades", icon: Star, context: "ac",
+    views: [{ key: "minhas-prioridades", label: "Prioridades", href: "/minhas-prioridades", icon: Star }],
   },
   {
     key: "entregas", label: "Central", href: "/central-entregas", icon: Target, context: "ac",
