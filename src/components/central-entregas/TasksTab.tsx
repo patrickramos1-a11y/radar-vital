@@ -118,7 +118,7 @@ export function TasksTab({ collaborator, color, isTeamView, tasks, priorities, c
           incluir concluídas
         </label>
         <div className="text-xs text-muted-foreground">{filtered.length} tarefa(s)</div>
-        <Button onClick={() => setNewTaskOpen(true)} size="sm" className="ml-auto" style={{ backgroundColor: color }}>
+        <Button onClick={() => setNewTaskOpen(true)} size="sm" className="ml-auto">
           <Plus className="w-4 h-4 mr-1" /> Nova tarefa
         </Button>
       </div>
@@ -413,7 +413,7 @@ function NewTaskDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={!title.trim() || clientIds.length === 0} style={{ backgroundColor: color }}>Criar tarefa</Button>
+          <Button onClick={submit} disabled={!title.trim() || clientIds.length === 0}>Criar tarefa</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Task } from '@/types/task';
 import { Priority } from '@/types/priority';
 import { Deliverable } from '@/types/deliverable';
@@ -9,6 +10,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ClientCell } from './ClientCell';
+import { periodStart, type PeriodKey } from '@/lib/period';
+import { PeriodSelect } from '@/components/common/PeriodSelect';
 
 interface Props {
   collaborator: string;
@@ -16,24 +19,38 @@ interface Props {
   tasks: Task[];
   priorities: Priority[];
   deliverables: Deliverable[];
-  comments: any[];
+  comments: HistoryComment[];
   clients: Client[];
 }
 
-type Period = '7' | '30' | '90' | 'all';
+interface HistoryComment {
+  id?: string;
+  client_id: string;
+  author_name?: string | null;
+  comment_text?: string | null;
+  created_at?: string;
+  is_archived?: boolean;
+  is_closed?: boolean;
+  [field: string]: unknown;
+}
+
+interface SectionProps {
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  count: number;
+  tint: string;
+  children: ReactNode;
+}
 
 export function HistoryTab({ collaborator, isTeamView, tasks, priorities, deliverables, comments, clients }: Props) {
-  const [period, setPeriod] = useState<Period>('30');
+  const [period, setPeriod] = useState<PeriodKey>('30d');
   const [open, setOpen] = useState<Record<string, boolean>>({ tasks: false, priorities: false, deliverables: false, comments: false });
 
   const clientById = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
   const readField = `read_${collaborator.toLowerCase()}`;
 
-  const since = useMemo(() => {
-    if (period === 'all') return 0;
-    const days = parseInt(period);
-    return Date.now() - days * 86400000;
-  }, [period]);
+  const since = useMemo(() => periodStart(period) ?? 0, [period]);
 
   const doneTasks = useMemo(() => tasks
     .filter(t => t.completed && (isTeamView || assigneeMatches(t.assigned_to, collaborator)))
@@ -55,12 +72,12 @@ export function HistoryTab({ collaborator, isTeamView, tasks, priorities, delive
 
   const resolvedComments = useMemo(() => comments
     .filter(c => c.is_archived || c.is_closed)
-    .filter(c => isTeamView || !!(c as any)[readField])
-    .filter(c => new Date(c.created_at).getTime() >= since)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    .filter(c => isTeamView || !!c[readField])
+    .filter(c => new Date(c.created_at ?? 0).getTime() >= since)
+    .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()),
     [comments, isTeamView, readField, since]);
 
-  const Section = ({ id, title, icon: Icon, count, tint, children }: any) => (
+  const Section = ({ id, title, icon: Icon, count, tint, children }: SectionProps) => (
     <div className="rounded-xl border bg-card overflow-hidden">
       <button
         onClick={() => setOpen(o => ({ ...o, [id]: !o[id] }))}
@@ -77,19 +94,9 @@ export function HistoryTab({ collaborator, isTeamView, tasks, priorities, delive
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">Período:</span>
-        {(['7', '30', '90', 'all'] as Period[]).map(p => (
-          <button
-            key={p}
-            onClick={() => setPeriod(p)}
-            className={cn('px-2.5 py-1 rounded-full text-xs font-medium border',
-              period === p ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted')}
-          >
-            {p === 'all' ? 'Tudo' : `${p}d`}
-          </button>
-        ))}
-        <span className="ml-auto text-xs text-muted-foreground">Histórico minimizado — clique para expandir</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <PeriodSelect value={period} onChange={setPeriod} />
+        <span className="ml-auto text-xs text-muted-foreground">Clique em uma seção para expandir</span>
       </div>
 
       <Section id="tasks" title="Tarefas concluídas" icon={CheckCircle2} count={doneTasks.length} tint="#10B981">

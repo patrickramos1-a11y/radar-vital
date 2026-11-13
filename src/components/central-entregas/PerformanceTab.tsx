@@ -21,6 +21,10 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { isInPeriod, type PeriodKey } from '@/lib/period';
+import { isPastDue, ordinaryTasks, startOfToday } from '@/lib/centralMetrics';
+import { PeriodSelect } from '@/components/common/PeriodSelect';
+import { SegmentedControl } from '@/components/common/SegmentedControl';
 
 interface RespOption { name: string; color: string; initials: string; }
 interface ClientCommentRow {
@@ -38,6 +42,8 @@ interface Props {
   clients?: Client[];
   responsibleList?: RespOption[];
   getDaysOpen: (t: Task) => number;
+  /** Team selected in the Central: only the team ranking makes sense. */
+  teamOnly?: boolean;
 }
 
 type MetricKey =
@@ -48,7 +54,7 @@ type MetricKey =
   | 'clients' | 'priorities' | 'prioritiesDone'
   | 'auditsAssigned' | 'auditsDone' | 'challengesActive' | 'challengesWon';
 
-type PerformancePeriod = 'all' | 'month' | 'year';
+type PerformancePeriod = PeriodKey;
 
 interface PerformanceSources {
   collaborators: Collaborator[];
@@ -83,23 +89,16 @@ const METRICS: { key: MetricKey; label: string; icon: LucideIcon; higherIsBetter
   { key: 'challengesWon', label: 'Desafios cumpridos', icon: Trophy },
 ];
 
-function isInPeriod(value: string | null | undefined, period: PerformancePeriod) {
-  if (!value || period === 'all') return true;
-  const date = new Date(value);
-  const now = new Date();
-  if (period === 'month') {
-    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
-  }
-  return date.getFullYear() === now.getFullYear();
-}
-
 function computeStats(name: string, tasks: Task[], priorities: Priority[], comments: ClientCommentRow[], deliverables: Deliverable[], ratings: ReturnType<typeof useDeliverableRatings>['ratings'], sources: PerformanceSources) {
   const isCurrent = (value: string | null | undefined) => isInPeriod(value, sources.period);
   const myTasks = tasks.filter(t => assigneeMatches(t.assigned_to, name) && isCurrent(t.created_at));
   const doneTasks = myTasks.filter(t => t.completed);
-  const openTasks = myTasks.filter(t => !t.completed);
+  // Open and overdue follow the Central's rule: tasks inside a priority tree
+  // are counted under the priority, and a task due today is not late.
+  const openTasks = ordinaryTasks(tasks).filter(t => !t.completed && assigneeMatches(t.assigned_to, name) && isCurrent(t.created_at));
+  const today = startOfToday();
+  const overdue = openTasks.filter(t => isPastDue(t.due_date, today)).length;
   const now = Date.now();
-  const overdue = openTasks.filter(t => t.due_date && new Date(t.due_date).getTime() < now).length;
 
   const avgDays = doneTasks.length > 0
     ? Math.round(doneTasks.reduce((s, t) => {
@@ -204,13 +203,14 @@ function computeStats(name: string, tasks: Task[], priorities: Priority[], comme
   };
 }
 
-export function PerformanceTab({ collaborator, color, tasks, priorities, deliverables = [], comments, clients = [], responsibleList = [], getDaysOpen: _getDaysOpen }: Props) {
+export function PerformanceTab({ collaborator, color, tasks, priorities, deliverables = [], comments, clients = [], responsibleList = [], getDaysOpen: _getDaysOpen, teamOnly = false }: Props) {
   const { ratings } = useDeliverableRatings();
   const { collaborators } = useCollaborators();
   const audits = useAudits();
   const challenges = useChallenges();
   const treasury = useTreasury();
-  const [view, setView] = useState<'individual' | 'team'>('individual');
+  const [selectedView, setView] = useState<'individual' | 'team'>('individual');
+  const view = teamOnly ? 'team' : selectedView;
   const [metric, setMetric] = useState<MetricKey>('score');
   const [period, setPeriod] = useState<PerformancePeriod>('all');
   const scopedClientIds = useMemo(
@@ -285,39 +285,20 @@ export function PerformanceTab({ collaborator, color, tasks, priorities, deliver
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex gap-1 rounded-xl border bg-card/60 p-1 w-fit">
-          <button
-            onClick={() => setView('individual')}
-            className={cn('px-3 py-1.5 rounded-lg text-xs font-medium transition',
-              view === 'individual' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted')}>
-            Visão Individual
-          </button>
-          <button
-            onClick={() => setView('team')}
-            className={cn('px-3 py-1.5 rounded-lg text-xs font-medium transition',
-              view === 'team' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted')}>
-            Performance da Equipe
-          </button>
-        </div>
-        <div className="inline-flex border bg-card p-0.5 text-xs">
-          {([
-            ['all', 'Todo período'],
-            ['month', 'Este mês'],
-            ['year', 'Este ano'],
-          ] as const).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setPeriod(value)}
-              className={cn(
-                'px-2.5 py-1.5 transition-colors',
-                period === value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {teamOnly ? (
+          <h3 className="text-sm font-semibold">Performance da equipe</h3>
+        ) : (
+          <SegmentedControl
+            ariaLabel="Visão de performance"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: 'individual', label: 'Individual' },
+              { value: 'team', label: 'Equipe' },
+            ]}
+          />
+        )}
+        <PeriodSelect value={period} onChange={setPeriod} />
       </div>
 
       {view === 'individual' ? (
