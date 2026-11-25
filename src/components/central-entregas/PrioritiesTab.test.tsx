@@ -58,6 +58,7 @@ const rootTask = {
   due_date: null,
   scheduled_for: null,
   priority: 'alta',
+  weight: 3,
   modality: 'levantamento',
   priority_id: priority.id,
   parent_task_id: null,

@@ -8,6 +8,7 @@ import { assigneeMatches } from '@/lib/taskAssignee';
 import { useAuth } from '@/contexts/AuthContext';
 import { actorName } from '@/lib/auth';
 import { canCompleteTask, getNextRecurrenceDate } from '@/lib/taskOperations';
+import { normalizeProcessWeight, urgencyForWeight, weightForUrgency } from '@/lib/processWeight';
 
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
@@ -71,7 +72,7 @@ function readLocalWorkspace(): LocalWorkspaceState | null {
     const parsed = JSON.parse(value) as LocalWorkspaceState;
     return {
       ...parsed,
-      tasks: parsed.tasks.map((task) => ({ ...task, modality: task.modality || 'levantamento', scheduled_for: task.scheduled_for || null, external_url: task.external_url || null })),
+      tasks: parsed.tasks.map((task) => ({ ...task, modality: task.modality || 'levantamento', scheduled_for: task.scheduled_for || null, external_url: task.external_url || null, weight: normalizeProcessWeight(task.weight, weightForUrgency(task.priority)) })),
     };
   } catch {
     return null;
@@ -99,7 +100,9 @@ function createLocalTask(clientId: string, data: TaskFormData, createdBy?: strin
     completed_at: data.status === 'concluida' ? now : null,
     due_date: data.due_date || null,
     scheduled_for: data.scheduled_for || null,
-    priority: data.priority || 'normal',
+    priority: data.weight ? urgencyForWeight(data.weight) : data.priority || 'normal',
+    weight: data.weight ? normalizeProcessWeight(data.weight) : weightForUrgency(data.priority),
+    weight_changed_at: now,
     modality: data.modality || 'levantamento',
     parent_task_id: data.parent_task_id || null,
     sort_order: data.sort_order || 0,
@@ -126,6 +129,8 @@ const dbRowToTask = (row: TaskRow): Task => ({
   scheduled_for: row.scheduled_for || null,
   priority: (row.priority as Task['priority']) || 'normal',
   priority_changed_at: row.priority_changed_at,
+  weight: normalizeProcessWeight(row.weight, weightForUrgency(row.priority as Task['priority'])),
+  weight_changed_at: row.weight_changed_at,
   modality: (row.modality as Task['modality']) || 'levantamento',
   priority_id: row.priority_id ?? null,
   parent_task_id: row.parent_task_id ?? null,
@@ -164,8 +169,8 @@ export function useTasks() {
         return;
       }
 
-      // Idempotent: when the policy migration is available, this keeps aged
-      // tasks and their automatic priorities in sync before rendering them.
+      // Idempotente: desde Processos v2 so sobe o peso dos processos parados
+      // que vieram do envelhecimento; nao cria mais prioridades.
       const { error: automationError } = await (supabase.rpc as unknown as TaskPriorityAutomationRpc)(
         'reconcile_stale_task_priorities',
         { p_actor_name: currentUserName || 'Sistema' },
@@ -239,7 +244,8 @@ export function useTasks() {
         created_by: currentUserName || null,
         due_date: data.due_date || null,
         scheduled_for: data.scheduled_for || null,
-        priority: data.priority || 'normal',
+        priority: data.weight ? urgencyForWeight(data.weight) : data.priority || 'normal',
+        ...(data.weight ? { weight: normalizeProcessWeight(data.weight) } : {}),
         modality: data.modality || 'levantamento',
         status: data.status || 'pendente',
         parent_task_id: data.parent_task_id || null,
@@ -412,6 +418,7 @@ export function useTasks() {
             assigned_to: currentTask.assigned_to,
             due_date: getNextRecurrenceDate(currentTask.due_date, currentTask.recurrence) ?? undefined,
             priority: currentTask.priority,
+            weight: currentTask.weight,
             modality: currentTask.modality,
             recurrence: currentTask.recurrence,
           });
@@ -424,6 +431,7 @@ export function useTasks() {
               external_url: child.external_url ?? undefined,
               assigned_to: child.assigned_to,
               priority: child.priority,
+              weight: child.weight,
               modality: child.modality,
               parent_task_id: nextTask.id,
               sort_order: child.sort_order,
@@ -485,6 +493,7 @@ export function useTasks() {
           assigned_to: currentTask.assigned_to,
           due_date: nextDueDate,
           priority: currentTask.priority,
+          weight: currentTask.weight,
           modality: currentTask.modality,
           status: 'pendente',
           recurrence: currentTask.recurrence,
@@ -503,6 +512,7 @@ export function useTasks() {
               assigned_to: child.assigned_to,
               due_date: null,
               priority: child.priority,
+              weight: child.weight,
               modality: child.modality,
               status: 'pendente',
               parent_task_id: nextTask.id,

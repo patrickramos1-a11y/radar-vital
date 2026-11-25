@@ -39,6 +39,7 @@ const baseTask = (overrides: Partial<Task> = {}): Task => ({
   due_date: '2027-01-31',
   scheduled_for: '2027-01-29',
   priority: 'normal',
+  weight: 2,
   modality: 'acompanhamento',
   priority_id: null,
   parent_task_id: null,

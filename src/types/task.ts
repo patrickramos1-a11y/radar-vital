@@ -32,6 +32,9 @@ export interface Task {
   scheduled_for: string | null;
   priority: TaskPriority;
   priority_changed_at?: string;
+  /** Peso do processo, 1 a 5 (5 = Máxima). Fonte da verdade desde Processos v2. */
+  weight: number;
+  weight_changed_at?: string;
   modality: TaskModality;
   priority_id?: string | null;
   parent_task_id: string | null;
@@ -50,6 +53,7 @@ export type TaskFormData = {
   due_date?: string;
   scheduled_for?: string;
   priority?: TaskPriority;
+  weight?: number;
   modality?: TaskModality;
   status?: TaskStatus;
   parent_task_id?: string | null;

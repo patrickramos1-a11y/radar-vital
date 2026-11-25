@@ -428,6 +428,13 @@ Pendencias: aplicar a migration e conferir as quatro consultas; depois seguir o 
 Resumo: o usuario aplicou `docs/lovable/processos-v2/1_aplicar_processos_v2.sql` no Lovable, sem erros (commit do Lovable `321562b`, registrado em `drizzle/migrations/0017_processos_v2.sql`). Conferencia: 0 prioridades abertas sem processo; 15 processos criados pela conversao; nenhum processo aberto sem peso (peso 1: 53, 2: 85, 3: 49, 4: 11, 5: 72); 4 colunas novas.
 Achados: (1) o gatilho antigo `sync_task_to_priority` (drizzle 0012, ausente de `supabase/migrations`) marcou como concluidas 17 prioridades abertas cuja tarefa raiz ja estava concluida, com a data de conclusao da tarefa; e o mesmo que a tela ja mostrava, e nenhum entregavel novo foi criado. (2) A conversao criou 15 processos, nao 16: a prioridade que tinha cliente e nao tinha tarefa provavelmente mudou durante o dia, antes da migration. (3) Existem prioridades concluidas de envelhecimento com tarefa raiz ainda pendente (ex.: EDIFICACAO MULTIFAMILIAR VERTICAL - LO); o passo 2 decide como elas aparecem.
 Pendencias: passo 2; incluir os gatilhos de `drizzle/migrations/0012_client_priority_tasks.sql` no teste local.
+2026-11-25 - Processos v2, passo 2 de 8 (modelo de processo no codigo)
+Resumo: a tarefa ganhou `weight` (1 a 5) no tipo, na leitura e na gravacao; criar com peso grava tambem a urgencia equivalente, e repeticoes copiam o peso. Novo `src/lib/processWeight.ts` (rotulos, Maxima = 5, mapas iguais aos do banco). `src/lib/processModel.ts` passa a montar processos so a partir das tarefas: tarefa raiz = processo, subtarefas = etapas, ordem por peso, vencimento e idade, Painel = abertos de peso 5. Prioridades nao entram mais no modelo.
+Arquivos: `src/lib/processWeight.ts`, `src/lib/processModel.ts`, `src/lib/processModel.test.ts`, `src/hooks/useTasks.ts`, `src/types/task.ts`, dados de teste com peso.
+Migrations: nenhuma.
+Testes: TypeScript sem erros, ESLint dos arquivos alterados sem erros, 246 testes Vitest aprovados, build aprovado.
+Resultado: branch `feature/processos-v2`. Nada publicado. As telas atuais ainda usam prioridades; os botoes de promover/rebaixar saem com elas nos passos 3 e 4.
+Pendencias: passo 3 (tela Processos + Painel e Novo processo).
 ```
 
 ## Modelo para proximos registros

@@ -17,6 +17,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     scheduled_for: null,
     modality: 'levantamento',
     priority: 'normal',
+    weight: 2,
 
 
     parent_task_id: null,

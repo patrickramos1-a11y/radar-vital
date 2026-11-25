@@ -21,6 +21,7 @@ const task: Task = {
   due_date: "2026-07-10",
   scheduled_for: null,
   priority: "alta",
+  weight: 3,
 
   modality: "levantamento",
   parent_task_id: null,
