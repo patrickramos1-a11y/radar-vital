@@ -6,7 +6,6 @@ import {
   ListChecks,
   MessageCircle,
   MonitorUp,
-  Star,
   Sparkles,
   UserPlus,
   Users,
@@ -57,7 +56,6 @@ export default function UniversoRamos() {
     toggleChecked,
     toggleCollaborator,
     toggleHighlight,
-    togglePriority,
     updateClient,
   } = useClients();
   const {
@@ -84,7 +82,6 @@ export default function UniversoRamos() {
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
-    priority: false,
     highlighted: false,
     selected: false,
     hasCollaborators: false,
@@ -161,7 +158,6 @@ export default function UniversoRamos() {
 
   const clearFilters = () => {
     setFilterFlags({
-      priority: false,
       highlighted: false,
       selected: false,
       hasCollaborators: false,
@@ -200,7 +196,6 @@ export default function UniversoRamos() {
       if (universeCategories.length > 0 && !universeCategories.includes(category)) return false;
 
       const activeFilters = [
-        filterFlags.priority,
         filterFlags.highlighted,
         filterFlags.selected,
         filterFlags.hasCollaborators,
@@ -225,7 +220,6 @@ export default function UniversoRamos() {
             ));
 
       return (
-        (filterFlags.priority && client.isPriority) ||
         (filterFlags.highlighted && highlightedClients.has(client.id)) ||
         (filterFlags.selected && client.isChecked) ||
         (filterFlags.hasCollaborators && assignedIds.length > 0) ||
@@ -245,9 +239,6 @@ export default function UniversoRamos() {
         categoryOrder[right.universeCategory ?? "SEM_CATEGORIA"];
       if (categoryDifference !== 0) return categoryDifference;
 
-      if (sortBy === "priority") {
-        return (Number(right.isPriority) - Number(left.isPriority)) * multiplier;
-      }
       if (sortBy === "jackbox") {
         return (
           (getActiveTaskCount(right.id) - getActiveTaskCount(left.id)) * multiplier
@@ -298,7 +289,6 @@ export default function UniversoRamos() {
         (sum, client) => sum + getCommentCount(client.id),
         0,
       ),
-      priority: universeClients.filter((client) => client.isPriority).length,
       assigned: universeClients.filter(
         (client) => getAssignedCollaboratorIds(client.id).length > 0,
       ).length,
@@ -385,7 +375,6 @@ export default function UniversoRamos() {
               onClick={() => handleFilterFlagToggle("withComments")}
               active={filterFlags.withComments}
             />
-            <Summary label="Prioridades" value={stats.priority} icon={Star} onClick={() => handleFilterFlagToggle("priority")} active={filterFlags.priority} />
             <Summary label="Com responsáveis" value={stats.assigned} icon={Users} onClick={() => handleFilterFlagToggle("hasCollaborators")} active={filterFlags.hasCollaborators} />
             <Summary label="Desafios" value={universeChallenges.length} icon={Sparkles} onClick={() => setWorkspace("challenges")} active={workspace === "challenges"} />
           </div>
@@ -403,7 +392,6 @@ export default function UniversoRamos() {
           filterFlags={filterFlags}
           collaboratorFilters={collaboratorFilters}
           clientTypeFilter={"all" as ClientTypeFilter}
-          priorityCount={stats.priority}
           highlightedCount={universeClients.filter((client) => highlightedClients.has(client.id)).length}
           selectedCount={universeClients.filter((client) => client.isChecked).length}
           jackboxCount={stats.tasks}
@@ -505,7 +493,6 @@ export default function UniversoRamos() {
               getAssignedCollaboratorIds={getAssignedCollaboratorIds}
               onSelectClient={(id) => { setUnitTab("overview"); setSelectedClientId(id); }}
               onHighlightClient={toggleHighlight}
-              onTogglePriority={togglePriority}
               onOpenChecklist={(id) => { setUnitTab("tasks"); setSelectedClientId(id); }}
               onOpenTab={(id, tab) => { setUnitTab(tab); setSelectedClientId(id); }}
 

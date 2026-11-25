@@ -24,7 +24,6 @@ import {
   Search,
   Settings2,
   Shapes,
-  Star,
   Trash2,
   Ungroup,
   User,
@@ -40,23 +39,24 @@ import { cn } from '@/lib/utils';
 import { normalizeAssignee } from '@/lib/taskAssignee';
 import { taskChildrenByParent, taskRoot } from '@/lib/taskHierarchy';
 import { ClientMultiPicker } from '@/components/shared/ClientMultiPicker';
+import { WeightOptions } from '@/components/processos/processParts';
+import { PROCESS_WEIGHTS, PROCESS_WEIGHT_CONFIG, DEFAULT_PROCESS_WEIGHT, normalizeProcessWeight, urgencyForWeight, type ProcessWeight } from '@/lib/processWeight';
+import { weightVisual } from '@/lib/processDisplay';
 import { Client } from '@/types/client';
 import { Collaborator } from '@/types/collaborator';
 import {
-  PRIORITY_CONFIG,
   TASK_MODALITY_CONFIG,
   TASK_STATUS_CONFIG,
   Task,
   TaskFormData,
   TaskModality,
-  TaskPriority,
 } from '@/types/task';
 
 type StatusFilter = 'pending' | 'scheduled' | 'completed' | 'all';
 type DeadlineFilter = 'all' | 'overdue' | 'today' | 'next7' | 'no_date';
-type SortKey = 'client' | 'title' | 'assignees' | 'modality' | 'priority' | 'createdAt' | 'daysOpen' | 'dueDate';
+type SortKey = 'client' | 'title' | 'assignees' | 'modality' | 'weight' | 'createdAt' | 'daysOpen' | 'dueDate';
 type SortDirection = 'asc' | 'desc';
-type BulkTaskUpdate = Partial<Pick<Task, 'assigned_to' | 'priority' | 'modality' | 'scheduled_for'>>;
+type BulkTaskUpdate = Partial<Pick<Task, 'assigned_to' | 'weight' | 'priority' | 'modality' | 'scheduled_for'>>;
 
 interface Props {
   tasks: Task[];
@@ -72,7 +72,19 @@ interface Props {
   onCreateTask?: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
 }
 
-const priorityOptions = Object.keys(PRIORITY_CONFIG) as TaskPriority[];
+/** Cor da faixa lateral do peso, igual à borda usada na tela Processos. */
+const weightRailClasses: Record<ProcessWeight, string> = {
+  5: 'bg-rose-700',
+  4: 'bg-red-600',
+  3: 'bg-orange-500',
+  2: 'bg-sky-400',
+  1: 'bg-slate-300',
+};
+
+/** Grava o peso e espelha a urgência antiga (D-025). */
+function weightUpdate(weight: ProcessWeight): Pick<Task, 'weight' | 'priority'> {
+  return { weight, priority: urgencyForWeight(weight) };
+}
 const modalityOptions = Object.keys(TASK_MODALITY_CONFIG) as TaskModality[];
 const modalityIcons: Record<TaskModality, typeof Search> = {
   levantamento: Search,
@@ -107,7 +119,7 @@ export function TaskManagementSheet({
   const [clientFilter, setClientFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [modalityFilter, setModalityFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [weightFilter, setWeightFilter] = useState('all');
   const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -130,7 +142,6 @@ export function TaskManagementSheet({
 
   // Processos v2 (D-025): tudo é processo; não há mais recorte de prioridades.
   const scopedTasks = tasks;
-  const noPriorityIds = useMemo(() => new Set<string>(), []);
   const taskById = useMemo(() => new Map(scopedTasks.map(task => [task.id, task])), [scopedTasks]);
   const pendingTasks = useMemo(() => scopedTasks.filter(task => !task.completed && !isScheduled(task)), [scopedTasks]);
   const scheduledTasks = useMemo(() => scopedTasks.filter(isScheduled), [scopedTasks]);
@@ -157,7 +168,7 @@ export function TaskManagementSheet({
         if (statusFilter === 'scheduled' && !isScheduled(task)) return false;
         if (statusFilter === 'completed' && !task.completed) return false;
         if (clientFilter !== 'all' && task.client_id !== clientFilter) return false;
-        if (priorityFilter !== 'all' && task.priority !== priorityFilter) return false;
+        if (weightFilter !== 'all' && String(normalizeProcessWeight(task.weight)) !== weightFilter) return false;
         if (modalityFilter !== 'all' && task.modality !== modalityFilter) return false;
         if (assigneeFilter === 'unassigned' && task.assigned_to.length > 0) return false;
         if (assigneeFilter !== 'all' && assigneeFilter !== 'unassigned') {
@@ -182,7 +193,7 @@ export function TaskManagementSheet({
           title: text(a.title, b.title),
           assignees: text(a.assigned_to.join(', '), b.assigned_to.join(', ')),
           modality: text(TASK_MODALITY_CONFIG[a.modality].label, TASK_MODALITY_CONFIG[b.modality].label),
-          priority: PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order,
+          weight: normalizeProcessWeight(b.weight) - normalizeProcessWeight(a.weight),
           createdAt: parseISO(a.created_at).getTime() - parseISO(b.created_at).getTime(),
           daysOpen: getDaysOpen(a) - getDaysOpen(b),
           dueDate: nullableDate(a.due_date) - nullableDate(b.due_date),
@@ -191,7 +202,7 @@ export function TaskManagementSheet({
         if (result !== 0) return result * direction;
         return parseISO(a.created_at).getTime() - parseISO(b.created_at).getTime();
       });
-  }, [assigneeFilter, clientById, clientFilter, deadlineFilter, getDaysOpen, modalityFilter, priorityFilter, scopedTasks, search, sortDirection, sortKey, statusFilter]);
+  }, [assigneeFilter, clientById, clientFilter, deadlineFilter, getDaysOpen, modalityFilter, weightFilter, scopedTasks, search, sortDirection, sortKey, statusFilter]);
 
   const matchingIds = useMemo(() => new Set(matchingTasks.map(task => task.id)), [matchingTasks]);
   const filteredTasks = useMemo(() => {
@@ -258,7 +269,7 @@ export function TaskManagementSheet({
     setClientFilter('all');
     setAssigneeFilter('all');
     setModalityFilter('all');
-    setPriorityFilter('all');
+    setWeightFilter('all');
     setDeadlineFilter('all');
     setSortKey('dueDate');
     setSortDirection('asc');
@@ -269,25 +280,25 @@ export function TaskManagementSheet({
       <div className="border-b bg-muted/20 px-3 py-3 sm:px-6">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           <SummaryItem icon={CheckCircle2} value={pendingTasks.length} label="Pendentes" tone="text-amber-700" />
-          <SummaryItem icon={CalendarClock} value={overdueCount} label="Atrasadas" tone="text-red-700" />
+          <SummaryItem icon={CalendarClock} value={overdueCount} label="Atrasados" tone="text-red-700" />
           <SummaryItem icon={Clock3} value={nextSevenDaysCount} label="Próximos 7 dias" tone="text-blue-700" />
           <SummaryItem icon={UserRoundX} value={unassignedCount} label="Sem responsável" tone="text-slate-700" />
-          <SummaryItem icon={CalendarDays} value={scheduledTasks.length} label="Agendadas" tone="text-violet-700" />
+          <SummaryItem icon={CalendarDays} value={scheduledTasks.length} label="Agendados" tone="text-violet-700" />
         </div>
 
         <div className="mt-3">
           <label className="relative block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar tarefa, cliente ou responsável" className="h-9 pl-9" />
+            <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar processo, cliente ou responsável" className="h-9 pl-9" />
           </label>
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <div className="inline-flex h-9 items-center border bg-background p-0.5">
               {([
                 { value: 'pending', label: 'Pendentes' },
-                { value: 'scheduled', label: 'Agendadas' },
-                { value: 'completed', label: 'Concluídas' },
-                { value: 'all', label: 'Todas' },
+                { value: 'scheduled', label: 'Agendados' },
+                { value: 'completed', label: 'Concluídos' },
+                { value: 'all', label: 'Todos' },
               ] as { value: StatusFilter; label: string }[]).map(option => (
                 <Button
                   key={option.value}
@@ -333,11 +344,11 @@ export function TaskManagementSheet({
             />
             <FilterPopover
               icon={<Flag className="h-3.5 w-3.5" />}
-              value={priorityFilter}
+              value={weightFilter}
               defaultValue="all"
-              ariaLabel="Filtrar por prioridade"
-              options={[{ value: 'all', label: 'Todas as prioridades' }, ...priorityOptions.map(priority => ({ value: priority, label: PRIORITY_CONFIG[priority].label }))]}
-              onChange={setPriorityFilter}
+              ariaLabel="Filtrar por peso"
+              options={[{ value: 'all', label: 'Todos os pesos' }, ...PROCESS_WEIGHTS.map(weight => ({ value: String(weight), label: `${PROCESS_WEIGHT_CONFIG[weight].label} (peso ${weight})` }))]}
+              onChange={setWeightFilter}
             />
             <FilterPopover
               icon={<CalendarClock className="h-3.5 w-3.5" />}
@@ -346,14 +357,14 @@ export function TaskManagementSheet({
               ariaLabel="Filtrar por prazo"
               options={[
                 { value: 'all', label: 'Todos os prazos' },
-                { value: 'overdue', label: 'Atrasadas' },
+                { value: 'overdue', label: 'Atrasados' },
                 { value: 'today', label: 'Vencem hoje' },
                 { value: 'next7', label: 'Próximos 7 dias' },
                 { value: 'no_date', label: 'Sem prazo' },
               ]}
               onChange={value => setDeadlineFilter(value as DeadlineFilter)}
             />
-            {onCreateTask && <Button type="button" size="sm" className="h-9 gap-2 px-3 text-xs" onClick={() => setCreateTaskOpen(true)}><CheckSquare className="h-4 w-4" /> Criar tarefa</Button>}
+            {onCreateTask && <Button type="button" size="sm" className="h-9 gap-2 px-3 text-xs" onClick={() => setCreateTaskOpen(true)}><CheckSquare className="h-4 w-4" /> Novo processo</Button>}
             <Button variant="outline" size="icon" className="h-9 w-9" onClick={resetFilters} title="Limpar filtros" aria-label="Limpar filtros"><FilterX className="h-4 w-4" /></Button>
             <Button
               variant={groupByClient ? 'outline' : 'default'}
@@ -381,19 +392,19 @@ export function TaskManagementSheet({
           disabled={isBulkUpdating}
           onAssign={name => void applyBulkUpdate({ assigned_to: name ? [name] : [] })}
           onModality={modality => void applyBulkUpdate({ modality })}
-          onPriority={priority => void applyBulkUpdate({ priority })}
+          onWeight={weight => void applyBulkUpdate(weightUpdate(weight))}
           onSchedule={date => void applyBulkUpdate({ scheduled_for: date || null })}
           onClear={() => setSelectedIds(new Set())}
         />
       )}
 
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Carregando tarefas...</div>
+        <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Carregando processos...</div>
       ) : error ? (
         <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-destructive">{error}</div>
       ) : filteredTasks.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-muted-foreground">
-          <FilterX className="mb-3 h-10 w-10 opacity-40" /><p className="font-medium text-foreground">Nenhuma tarefa encontrada</p><p className="mt-1 text-sm">Ajuste os filtros para ampliar a consulta.</p>
+          <FilterX className="mb-3 h-10 w-10 opacity-40" /><p className="font-medium text-foreground">Nenhum processo encontrado</p><p className="mt-1 text-sm">Ajuste os filtros para ampliar a consulta.</p>
         </div>
       ) : (
         <TaskResults
@@ -418,7 +429,6 @@ export function TaskManagementSheet({
           onDelete={onDeleteTask}
           allTasks={scopedTasks}
           matchingIds={matchingIds}
-          priorityTaskIds={noPriorityIds}
           onToggleClient={(clientId) => setExpandedClientIds(current => {
             const next = new Set(current);
             if (next.has(clientId)) next.delete(clientId);
@@ -442,12 +452,11 @@ export function TaskManagementSheet({
 
 interface TaskGroup { clientId: string; client?: Client; tasks: Task[] }
 
-function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, clientById, grouped, expandedClientIds, visibleIds, selectedIds, allVisibleSelected, someVisibleSelected, collaborators, sortKey, sortDirection, updatingTaskId, getDaysOpen, onToggleSort, onToggleSelection, onToggleComplete, onUpdate, onDelete, onPromote, onToggleClient }: {
+function TaskResults({ groups, tasks, allTasks, matchingIds, clientById, grouped, expandedClientIds, visibleIds, selectedIds, allVisibleSelected, someVisibleSelected, collaborators, sortKey, sortDirection, updatingTaskId, getDaysOpen, onToggleSort, onToggleSelection, onToggleComplete, onUpdate, onDelete, onToggleClient }: {
   groups: TaskGroup[];
   tasks: Task[];
   allTasks: Task[];
   matchingIds: Set<string>;
-  priorityTaskIds: Set<string>;
   clientById: Map<string, Client>;
   grouped: boolean;
   expandedClientIds: Set<string>;
@@ -465,7 +474,6 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, cl
   onToggleComplete: (taskId: string, clientName?: string) => Promise<boolean>;
   onUpdate: (task: Task, data: Partial<Task>) => Promise<void>;
   onDelete: (taskId: string) => Promise<boolean>;
-  onPromote?: (task: Task) => void;
   onToggleClient: (clientId: string) => void;
 }) {
   const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(() => new Set());
@@ -487,9 +495,9 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, cl
         <table className="w-full min-w-[1080px] table-fixed text-sm">
           <thead className="sticky top-0 z-20 border-b bg-muted/95 text-[11px] uppercase text-muted-foreground backdrop-blur">
             <tr>
-              <th className="w-11 px-3 py-2"><Checkbox checked={allVisibleSelected ? true : someVisibleSelected ? 'indeterminate' : false} onCheckedChange={checked => onToggleSelection(visibleIds, checked === true)} aria-label="Selecionar todas as tarefas visíveis" /></th>
+              <th className="w-11 px-3 py-2"><Checkbox checked={allVisibleSelected ? true : someVisibleSelected ? 'indeterminate' : false} onCheckedChange={checked => onToggleSelection(visibleIds, checked === true)} aria-label="Selecionar todos os processos visíveis" /></th>
               {!grouped && <SortHeader label="Empresa" sortKey="client" width="w-[15%]" activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />}
-              <SortHeader label="Tarefa" sortKey="title" width={grouped ? 'w-[49%]' : 'w-[36%]'} activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />
+              <SortHeader label="Processo" sortKey="title" width={grouped ? 'w-[49%]' : 'w-[36%]'} activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />
               <SortHeader label="Responsáveis" sortKey="assignees" width="w-[13%]" activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />
               <SortHeader label="Modalidade" sortKey="modality" width="w-[12%]" activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />
               <SortHeader label="Prazo" sortKey="dueDate" width="w-[13%]" activeKey={sortKey} direction={sortDirection} onSort={onToggleSort} />
@@ -504,7 +512,7 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, cl
             return (
               <tbody key={group.clientId} className="divide-y border-b-2">
                 <tr className="sticky top-[33px] z-10 border-y bg-slate-50/95">
-                  <td className="px-3 py-2"><Checkbox checked={allGroupSelected ? true : someGroupSelected ? 'indeterminate' : false} onCheckedChange={checked => onToggleSelection(groupIds, checked === true)} aria-label={`Selecionar tarefas de ${group.client?.name ?? 'cliente'}`} /></td>
+                  <td className="px-3 py-2"><Checkbox checked={allGroupSelected ? true : someGroupSelected ? 'indeterminate' : false} onCheckedChange={checked => onToggleSelection(groupIds, checked === true)} aria-label={`Selecionar processos de ${group.client?.name ?? 'cliente'}`} /></td>
                   <td colSpan={5} className="p-0">
                     <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-slate-100" onClick={() => onToggleClient(group.clientId)} aria-expanded={expanded}>
                       {expanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
@@ -516,8 +524,8 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, cl
                   const children = visibleDescendants(task.id);
                   const taskExpanded = expandedTaskIds.has(task.id);
                   return <Fragment key={task.id}>
-                    <TaskRow key={task.id} task={task} isPriority={priorityTaskIds.has(task.id)} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, group.client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />
-                    {taskExpanded && children.map(child => <TaskRow key={child.id} task={child} isPriority={priorityTaskIds.has(child.id)} parentTask={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, group.client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}
+                    <TaskRow key={task.id} task={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, group.client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />
+                    {taskExpanded && children.map(child => <TaskRow key={child.id} task={child} parentTask={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, group.client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}
                   </Fragment>;
                 })}
               </tbody>
@@ -528,7 +536,7 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, cl
                 const client = clientById.get(task.client_id);
                 const children = visibleDescendants(task.id);
                 const taskExpanded = expandedTaskIds.has(task.id);
-                return <Fragment key={task.id}><TaskRow task={task} isPriority={priorityTaskIds.has(task.id)} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskRow key={child.id} task={child} isPriority={priorityTaskIds.has(child.id)} parentTask={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</Fragment>;
+                return <Fragment key={task.id}><TaskRow task={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskRow key={child.id} task={child} parentTask={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</Fragment>;
               })}
             </tbody>
           )}
@@ -540,7 +548,7 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, cl
           return (
           <section key={group.clientId} className="border-b">
             <div className="sticky top-0 z-10 flex items-center gap-3 border-y bg-slate-50/95 px-3 py-2">
-              <Checkbox checked={group.tasks.every(task => selectedIds.has(task.id))} onCheckedChange={checked => onToggleSelection(group.tasks.map(task => task.id), checked === true)} aria-label={`Selecionar tarefas de ${group.client?.name ?? 'cliente'}`} />
+              <Checkbox checked={group.tasks.every(task => selectedIds.has(task.id))} onCheckedChange={checked => onToggleSelection(group.tasks.map(task => task.id), checked === true)} aria-label={`Selecionar processos de ${group.client?.name ?? 'cliente'}`} />
               <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => onToggleClient(group.clientId)} aria-expanded={expanded}>
                 {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 <ClientGroupHeader client={group.client} tasks={group.tasks} />
@@ -550,7 +558,7 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, cl
               {group.tasks.map(task => {
                 const children = visibleDescendants(task.id);
                 const taskExpanded = expandedTaskIds.has(task.id);
-                return <div key={task.id} className="space-y-2"><TaskMobileCard task={task} isPriority={priorityTaskIds.has(task.id)} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, group.client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskMobileCard key={child.id} task={child} isPriority={priorityTaskIds.has(child.id)} parentTask={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, group.client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</div>;
+                return <div key={task.id} className="space-y-2"><TaskMobileCard task={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, group.client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskMobileCard key={child.id} task={child} parentTask={task} client={group.client} collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, group.client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</div>;
               })}
             </div>}
           </section>
@@ -561,7 +569,7 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, cl
               const client = clientById.get(task.client_id);
               const children = visibleDescendants(task.id);
               const taskExpanded = expandedTaskIds.has(task.id);
-              return <div key={task.id} className="space-y-2"><TaskMobileCard task={task} isPriority={priorityTaskIds.has(task.id)} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onPromote={onPromote ? () => onPromote(task) : undefined} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskMobileCard key={child.id} task={child} isPriority={priorityTaskIds.has(child.id)} parentTask={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</div>;
+              return <div key={task.id} className="space-y-2"><TaskMobileCard task={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(task)} selected={selectedIds.has(task.id)} updating={updatingTaskId === task.id} childCount={children.length} childrenExpanded={taskExpanded} onToggleChildren={() => toggleTask(task.id)} onSelect={checked => onToggleSelection([task.id], checked)} onToggleComplete={() => void onToggleComplete(task.id, client?.name)} onUpdate={data => onUpdate(task, data)} onDelete={() => onDelete(task.id)} />{taskExpanded && children.map(child => <TaskMobileCard key={child.id} task={child} parentTask={task} client={client} showClient collaborators={collaborators} daysOpen={getDaysOpen(child)} selected={selectedIds.has(child.id)} updating={updatingTaskId === child.id} onSelect={checked => onToggleSelection([child.id], checked)} onToggleComplete={() => void onToggleComplete(child.id, client?.name)} onUpdate={data => onUpdate(child, data)} onDelete={() => onDelete(child.id)} />)}</div>;
             })}
           </div>
         )}
@@ -570,20 +578,20 @@ function TaskResults({ groups, tasks, allTasks, matchingIds, priorityTaskIds, cl
   );
 }
 
-function BulkActionBar({ count, collaborators, disabled, onAssign, onModality, onPriority, onSchedule, onClear }: {
+function BulkActionBar({ count, collaborators, disabled, onAssign, onModality, onWeight, onSchedule, onClear }: {
   count: number;
   collaborators: Collaborator[];
   disabled: boolean;
   onAssign: (name: string) => void;
   onModality: (modality: TaskModality) => void;
-  onPriority: (priority: TaskPriority) => void;
+  onWeight: (weight: ProcessWeight) => void;
   onSchedule: (date: string) => void;
   onClear: () => void;
 }) {
   const [scheduleDate, setScheduleDate] = useState('');
   return (
     <div className="z-30 flex flex-wrap items-center gap-2 border-b border-emerald-200 bg-emerald-50 px-3 py-2 sm:px-6">
-      <span className="mr-1 text-sm font-semibold text-emerald-900">{count} selecionada(s)</span>
+      <span className="mr-1 text-sm font-semibold text-emerald-900">{count} selecionado(s)</span>
       <ActionSelect ariaLabel="Atribuir responsável em massa" disabled={disabled} onChange={onAssign} placeholder="Atribuir responsável">
         <option value="">Sem responsável</option>
         {collaborators.map(collaborator => <option key={collaborator.id} value={collaborator.name}>{collaborator.name}</option>)}
@@ -591,8 +599,8 @@ function BulkActionBar({ count, collaborators, disabled, onAssign, onModality, o
       <ActionSelect ariaLabel="Alterar modalidade em massa" disabled={disabled} onChange={value => onModality(value as TaskModality)} placeholder="Alterar modalidade">
         {modalityOptions.map(modality => <option key={modality} value={modality}>{TASK_MODALITY_CONFIG[modality].label}</option>)}
       </ActionSelect>
-      <ActionSelect ariaLabel="Alterar prioridade em massa" disabled={disabled} onChange={value => onPriority(value as TaskPriority)} placeholder="Alterar prioridade">
-        {priorityOptions.map(priority => <option key={priority} value={priority}>{PRIORITY_CONFIG[priority].label}</option>)}
+      <ActionSelect ariaLabel="Alterar peso em massa" disabled={disabled} onChange={value => onWeight(normalizeProcessWeight(value))} placeholder="Alterar peso">
+        {PROCESS_WEIGHTS.map(weight => <option key={weight} value={weight}>{PROCESS_WEIGHT_CONFIG[weight].label} (peso {weight})</option>)}
       </ActionSelect>
       <div className="flex h-8 items-center border border-violet-300 bg-white pl-2">
         <CalendarPlus className="h-3.5 w-3.5 text-violet-700" />
@@ -653,9 +661,9 @@ function ClientGroupHeader({ client, tasks }: { client?: Client; tasks: Task[] }
         <span className="grid h-7 w-7 shrink-0 place-items-center border bg-white text-[9px] font-bold text-muted-foreground">{client?.initials ?? '?'}</span>
       )}
       <span className="truncate font-semibold text-foreground">{client?.name ?? 'Cliente não encontrado'}</span>
-      <span className="text-xs text-muted-foreground">{tasks.length} tarefa(s)</span>
+      <span className="text-xs text-muted-foreground">{tasks.length} processo(s)</span>
       {pending > 0 && <span className="text-xs font-medium text-amber-700">{pending} pendente(s)</span>}
-      {overdue > 0 && <span className="text-xs font-semibold text-red-700">{overdue} atrasada(s)</span>}
+      {overdue > 0 && <span className="text-xs font-semibold text-red-700">{overdue} atrasado(s)</span>}
     </div>
   );
 }
@@ -763,7 +771,7 @@ function SortHeader({ label, sortKey, width, activeKey, direction, onSort }: {
   );
 }
 
-function TaskRow({ task, isPriority = false, parentTask, client, showClient = false, collaborators, daysOpen, selected, updating, childCount = 0, childrenExpanded = false, onToggleChildren, onPromote, onSelect, onToggleComplete, onUpdate, onDelete }: TaskItemProps) {
+function TaskRow({ task, parentTask, client, showClient = false, collaborators, daysOpen, selected, updating, childCount = 0, childrenExpanded = false, onToggleChildren, onSelect, onToggleComplete, onUpdate, onDelete }: TaskItemProps) {
   const overdue = isOverdue(task);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
@@ -779,12 +787,12 @@ function TaskRow({ task, isPriority = false, parentTask, client, showClient = fa
       {showClient && <td className="px-3 py-2 align-top"><ClientCompactLabel client={client} /></td>}
       <td className="px-3 py-2 align-top">
         <div className="flex gap-2">
-          <button type="button" onClick={onToggleComplete} className="mt-0.5 shrink-0 rounded p-0.5 hover:bg-muted" title={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'}>
+          <button type="button" onClick={onToggleComplete} className="mt-0.5 shrink-0 rounded p-0.5 hover:bg-muted" title={`${task.completed ? 'Reabrir' : 'Concluir'} ${parentTask ? 'etapa' : 'processo'}`}>
             {task.completed ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
           </button>
-          <PriorityRail task={task} disabled={updating} onUpdate={onUpdate} />
+          <WeightRail task={task} disabled={updating} onUpdate={onUpdate} />
           <div className="min-w-0 flex-1">
-            {!parentTask && childCount > 0 && <button type="button" onClick={onToggleChildren} className="mb-1 inline-flex items-center gap-1 text-[10px] font-semibold text-primary" aria-expanded={childrenExpanded}>{childrenExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}{childCount} {childCount === 1 ? 'subtarefa' : 'subtarefas'}</button>}
+            {!parentTask && childCount > 0 && <button type="button" onClick={onToggleChildren} className="mb-1 inline-flex items-center gap-1 text-[10px] font-semibold text-primary" aria-expanded={childrenExpanded}>{childrenExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}{childCount} {childCount === 1 ? 'etapa' : 'etapas'}</button>}
             {editingTitle ? (
               <Input
                 autoFocus
@@ -801,12 +809,11 @@ function TaskRow({ task, isPriority = false, parentTask, client, showClient = fa
             ) : (
               <div className="flex flex-wrap items-center gap-1.5">
                 <p className={cn('break-words font-medium leading-snug', task.completed && 'line-through')} onDoubleClick={() => { setTitleDraft(task.title); setEditingTitle(true); }} title="Clique duas vezes para editar">{task.title}</p>
-                {isPriority && <span className="inline-flex items-center gap-1 border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"><Star className="h-3 w-3 fill-current" /> Prioridade</span>}
               </div>
             )}
             <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span>{TASK_STATUS_CONFIG[task.status].label}{task.parent_task_id ? ' · Subtarefa' : ''}</span>
-              {parentTask && <span>Criada por: {task.created_by || 'não registrado'} · Principal: {parentTask.title} · responsável: {parentTask.assigned_to[0] || 'sem responsável'}</span>}
+              <span>{TASK_STATUS_CONFIG[task.status].label}{task.parent_task_id ? ' · Etapa' : ''}</span>
+              {parentTask && <span>Criada por: {task.created_by || 'não registrado'} · Processo: {parentTask.title} · responsável: {parentTask.assigned_to[0] || 'sem responsável'}</span>}
               {isScheduled(task) && <span className="inline-flex items-center gap-1 font-semibold text-violet-700"><CalendarClock className="h-3 w-3" /> Volta em {format(parseISO(task.scheduled_for!), 'dd/MM/yy')}</span>}
             </p>
           </div>
@@ -819,38 +826,36 @@ function TaskRow({ task, isPriority = false, parentTask, client, showClient = fa
         <div className="flex items-center gap-1">
           {updating ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : <AgeBadge days={daysOpen} completed={task.completed} />}
           <ReplanEditor task={task} disabled={updating} onUpdate={onUpdate} />
-          {!isPriority && !parentTask && !task.completed && onPromote && <button type="button" disabled={updating} onClick={onPromote} className="grid h-8 w-8 place-items-center border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50" title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`}><Star className="h-4 w-4" /></button>}
-          <button type="button" disabled={updating} onClick={() => { if (window.confirm(`Excluir a tarefa "${task.title}"?`)) void onDelete(); }} className="grid h-8 w-8 place-items-center border text-muted-foreground hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-50" title="Excluir tarefa" aria-label={`Excluir tarefa ${task.title}`}><Trash2 className="h-4 w-4" /></button>
+          <button type="button" disabled={updating} onClick={() => { if (window.confirm(`Excluir ${parentTask ? 'a etapa' : 'o processo'} "${task.title}"?`)) void onDelete(); }} className="grid h-8 w-8 place-items-center border text-muted-foreground hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-50" title={parentTask ? 'Excluir etapa' : 'Excluir processo'} aria-label={`Excluir ${parentTask ? 'etapa' : 'processo'} ${task.title}`}><Trash2 className="h-4 w-4" /></button>
         </div>
       </td>
     </tr>
   );
 }
 
-function TaskMobileCard({ task, isPriority = false, parentTask, client, showClient = false, collaborators, daysOpen, selected, updating, childCount = 0, childrenExpanded = false, onToggleChildren, onPromote, onSelect, onToggleComplete, onUpdate, onDelete }: TaskItemProps) {
-  const priority = PRIORITY_CONFIG[task.priority];
+function TaskMobileCard({ task, parentTask, client, showClient = false, collaborators, daysOpen, selected, updating, childCount = 0, childrenExpanded = false, onToggleChildren, onSelect, onToggleComplete, onUpdate, onDelete }: TaskItemProps) {
+  const railClass = weightRailClasses[normalizeProcessWeight(task.weight)];
   return (
     <article className={cn('border bg-card p-3', parentTask && 'ml-4 border-l-4 border-l-sky-300', selected && 'border-emerald-400 bg-emerald-50/50', task.completed && 'opacity-55', isOverdue(task) && !selected && 'border-red-300 bg-red-50/40')}>
       {showClient && <div className="mb-2 border-b pb-2"><ClientCompactLabel client={client} /></div>}
       <div className="flex items-start gap-2">
         <Checkbox checked={selected} onCheckedChange={checked => onSelect(checked === true)} aria-label={`Selecionar ${task.title}`} className="mt-0.5" />
-        <button type="button" onClick={onToggleComplete} className="mt-0.5 shrink-0" title={task.completed ? 'Reabrir tarefa' : 'Concluir tarefa'}>
+        <button type="button" onClick={onToggleComplete} className="mt-0.5 shrink-0" title={`${task.completed ? 'Reabrir' : 'Concluir'} ${parentTask ? 'etapa' : 'processo'}`}>
           {task.completed ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <Circle className="h-5 w-5 text-muted-foreground" />}
         </button>
-        <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-1.5"><p className={cn('break-words font-medium leading-snug', task.completed && 'line-through')}>{task.title}</p>{isPriority && <span className="inline-flex items-center gap-1 border border-amber-300 bg-amber-50 px-1 py-0.5 text-[9px] font-semibold text-amber-800"><Star className="h-2.5 w-2.5 fill-current" /> Prioridade</span>}</div><p className="mt-1 text-[10px] text-muted-foreground">{TASK_STATUS_CONFIG[task.status].label}{parentTask ? ` · Criada por: ${task.created_by || 'não registrado'} · Principal: ${parentTask.title}` : ''}</p>{!parentTask && childCount > 0 && <button type="button" onClick={onToggleChildren} className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-primary" aria-expanded={childrenExpanded}>{childrenExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}{childCount} {childCount === 1 ? 'subtarefa' : 'subtarefas'}</button>}</div>
+        <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-1.5"><p className={cn('break-words font-medium leading-snug', task.completed && 'line-through')}>{task.title}</p></div><p className="mt-1 text-[10px] text-muted-foreground">{TASK_STATUS_CONFIG[task.status].label}{parentTask ? ` · Criada por: ${task.created_by || 'não registrado'} · Processo: ${parentTask.title}` : ''}</p>{!parentTask && childCount > 0 && <button type="button" onClick={onToggleChildren} className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-primary" aria-expanded={childrenExpanded}>{childrenExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}{childCount} {childCount === 1 ? 'etapa' : 'etapas'}</button>}</div>
         {updating ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : <AgeBadge days={daysOpen} completed={task.completed} />}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <EditorField label="Responsáveis"><AssigneeEditor task={task} collaborators={collaborators} disabled={updating} onUpdate={onUpdate} /></EditorField>
         <EditorField label="Modalidade"><ModalityEditor task={task} disabled={updating} onUpdate={onUpdate} /></EditorField>
-        <EditorField label="Prioridade"><PriorityEditor task={task} disabled={updating} onUpdate={onUpdate} /></EditorField>
+        <EditorField label="Peso"><WeightEditor task={task} disabled={updating} onUpdate={onUpdate} /></EditorField>
         <EditorField label="Prazo"><DueDateEditor task={task} disabled={updating} onUpdate={onUpdate} /></EditorField>
       </div>
       <div className="mt-2 flex items-center gap-2 border-t pt-2">
-        <div className="h-1 flex-1" style={{ backgroundColor: priority.color }} />
+        <div className={cn("h-1 flex-1", railClass)} />
         <ReplanEditor task={task} disabled={updating} onUpdate={onUpdate} />
-        {!isPriority && !parentTask && !task.completed && onPromote && <button type="button" disabled={updating} onClick={onPromote} className="grid h-8 w-8 place-items-center border border-amber-300 bg-amber-50 text-amber-700" title="Promover para prioridade" aria-label={`Promover ${task.title} para prioridade`}><Star className="h-4 w-4" /></button>}
-        <button type="button" disabled={updating} onClick={() => { if (window.confirm(`Excluir a tarefa "${task.title}"?`)) void onDelete(); }} className="grid h-8 w-8 place-items-center border text-muted-foreground hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-50" title="Excluir tarefa" aria-label={`Excluir tarefa ${task.title}`}><Trash2 className="h-4 w-4" /></button>
+        <button type="button" disabled={updating} onClick={() => { if (window.confirm(`Excluir ${parentTask ? 'a etapa' : 'o processo'} "${task.title}"?`)) void onDelete(); }} className="grid h-8 w-8 place-items-center border text-muted-foreground hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-50" title={parentTask ? 'Excluir etapa' : 'Excluir processo'} aria-label={`Excluir ${parentTask ? 'etapa' : 'processo'} ${task.title}`}><Trash2 className="h-4 w-4" /></button>
       </div>
     </article>
   );
@@ -870,7 +875,7 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
   const [clientIds, setClientIds] = useState<string[]>([]);
   const [assignee, setAssignee] = useState('');
   const [modality, setModality] = useState<TaskModality>('levantamento');
-  const [priority, setPriority] = useState<TaskPriority>('normal');
+  const [weight, setWeight] = useState<ProcessWeight>(DEFAULT_PROCESS_WEIGHT);
   const [dueDate, setDueDate] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -881,7 +886,7 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
     setClientIds(defaultClientId ? [defaultClientId] : []);
     setAssignee(defaultAssignee || '');
     setModality('levantamento');
-    setPriority('normal');
+    setWeight(DEFAULT_PROCESS_WEIGHT);
     setDueDate('');
   }, [defaultAssignee, defaultClientId, open]);
 
@@ -895,7 +900,7 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
         description: description.trim() || undefined,
         assigned_to: assignee ? [assignee] : [],
         modality,
-        priority,
+        ...weightUpdate(weight),
         due_date: dueDate || undefined,
       };
       const created = await Promise.all(selectedClients.map(client => onCreate(client.id, payload, client.name)));
@@ -908,10 +913,10 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
-        <DialogHeader><DialogTitle>Criar tarefa</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Novo processo</DialogTitle></DialogHeader>
         <div className="grid gap-3">
-          <label className="grid gap-1 text-sm font-medium">Tarefa
-            <Input autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="Descreva a tarefa" />
+          <label className="grid gap-1 text-sm font-medium">Processo
+            <Input autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="Descreva o processo" />
           </label>
           <label className="grid gap-1 text-sm font-medium">Descrição
             <textarea value={description} onChange={event => setDescription(event.target.value)} placeholder="Contexto ou resultado esperado" className="min-h-20 w-full border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
@@ -931,9 +936,9 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
                 {modalityOptions.map(option => <option key={option} value={option}>{TASK_MODALITY_CONFIG[option].label}</option>)}
               </select>
             </label>
-            <label className="grid gap-1 text-sm font-medium">Importância
-              <select value={priority} onChange={event => setPriority(event.target.value as TaskPriority)} className="h-9 border bg-background px-2 text-sm">
-                {priorityOptions.map(option => <option key={option} value={option}>{PRIORITY_CONFIG[option].label}</option>)}
+            <label className="grid gap-1 text-sm font-medium">Peso
+              <select value={weight} onChange={event => setWeight(normalizeProcessWeight(event.target.value))} className="h-9 border bg-background px-2 text-sm">
+                {PROCESS_WEIGHTS.map(option => <option key={option} value={option}>{PROCESS_WEIGHT_CONFIG[option].label} (peso {option})</option>)}
               </select>
             </label>
             <label className="grid gap-1 text-sm font-medium">Prazo
@@ -943,7 +948,7 @@ function CreateTaskDialog({ open, onOpenChange, clients, collaborators, defaultC
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button type="button" disabled={!title.trim() || selectedClients.length === 0 || saving} onClick={() => void create()}>{saving ? 'Criando...' : 'Criar tarefa'}</Button>
+          <Button type="button" disabled={!title.trim() || selectedClients.length === 0 || saving} onClick={() => void create()}>{saving ? 'Criando...' : 'Criar processo'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -956,7 +961,6 @@ function EditorField({ label, children }: { label: string; children: React.React
 
 interface TaskItemProps {
   task: Task;
-  isPriority?: boolean;
   parentTask?: Task;
   client?: Client;
   showClient?: boolean;
@@ -967,7 +971,6 @@ interface TaskItemProps {
   childCount?: number;
   childrenExpanded?: boolean;
   onToggleChildren?: () => void;
-  onPromote?: () => void;
   onSelect: (checked: boolean) => void;
   onToggleComplete: () => void;
   onUpdate: (data: Partial<Task>) => Promise<void>;
@@ -1017,7 +1020,7 @@ function ModalityEditor({ task, disabled, onUpdate }: { task: Task; disabled: bo
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" disabled={disabled} className={cn('flex h-8 w-full items-center gap-1.5 border px-2 text-xs font-medium disabled:opacity-50', modalityClasses[task.modality])} aria-label={`Modalidade da tarefa ${task.title}`}>
+        <button type="button" disabled={disabled} className={cn('flex h-8 w-full items-center gap-1.5 border px-2 text-xs font-medium disabled:opacity-50', modalityClasses[task.modality])} aria-label={`Modalidade de ${task.title}`}>
           <Icon className="h-3.5 w-3.5" />
           <span className="truncate">{TASK_MODALITY_CONFIG[task.modality].shortLabel}</span>
           <ChevronDown className="ml-auto h-3 w-3 opacity-50" />
@@ -1033,41 +1036,43 @@ function ModalityEditor({ task, disabled, onUpdate }: { task: Task; disabled: bo
   );
 }
 
-function PriorityEditor({ task, disabled, onUpdate }: { task: Task; disabled: boolean; onUpdate: (data: Partial<Task>) => Promise<void> }) {
-  const config = PRIORITY_CONFIG[task.priority];
+/** Editor de peso (1 a 5): grava `weight` e espelha a urgência em `priority`. */
+function WeightEditor({ task, disabled, onUpdate }: { task: Task; disabled: boolean; onUpdate: (data: Partial<Task>) => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const visual = weightVisual(task.weight);
+  const Icon = visual.icon;
   return (
-    <Popover>
-      <PopoverTrigger asChild><button type="button" disabled={disabled} className="flex h-8 w-full items-center gap-2 border bg-background px-2 text-xs font-semibold disabled:opacity-50" style={{ color: config.color }} aria-label={`Prioridade da tarefa ${task.title}`}><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: config.color }} /><span>{config.label}</span></button></PopoverTrigger>
-      <PriorityOptions value={task.priority} onChange={priority => void onUpdate({ priority })} />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild><button type="button" disabled={disabled} className={cn('flex h-8 w-full items-center gap-2 border px-2 text-xs font-semibold disabled:opacity-50', visual.className)} aria-label={`Peso de ${task.title}: ${visual.label}`}><Icon className="h-3.5 w-3.5" /><span>{visual.label}</span></button></PopoverTrigger>
+      <WeightPopoverContent value={visual.weight} onChange={weight => { setOpen(false); void onUpdate(weightUpdate(weight)); }} />
     </Popover>
   );
 }
 
-function PriorityRail({ task, disabled, onUpdate }: { task: Task; disabled: boolean; onUpdate: (data: Partial<Task>) => Promise<void> }) {
-  const config = PRIORITY_CONFIG[task.priority];
+function WeightRail({ task, disabled, onUpdate }: { task: Task; disabled: boolean; onUpdate: (data: Partial<Task>) => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const visual = weightVisual(task.weight);
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" disabled={disabled} className="w-1.5 shrink-0 self-stretch transition-[width] hover:w-3 disabled:opacity-50" style={{ backgroundColor: config.color }} title={`Prioridade: ${config.label}. Clique para alterar.`} aria-label={`Alterar prioridade da tarefa ${task.title}. Atual: ${config.label}`} />
+        <button type="button" disabled={disabled} className={cn('w-1.5 shrink-0 self-stretch transition-[width] hover:w-3 disabled:opacity-50', weightRailClasses[visual.weight])} title={`Peso ${visual.weight}: ${visual.label}. Clique para alterar.`} aria-label={`Alterar peso de ${task.title}. Atual: ${visual.label}`} />
       </PopoverTrigger>
-      <PriorityOptions value={task.priority} onChange={priority => void onUpdate({ priority })} />
+      <WeightPopoverContent value={visual.weight} onChange={weight => { setOpen(false); void onUpdate(weightUpdate(weight)); }} />
     </Popover>
   );
 }
 
-function PriorityOptions({ value, onChange }: { value: TaskPriority; onChange: (priority: TaskPriority) => void }) {
+function WeightPopoverContent({ value, onChange }: { value: ProcessWeight; onChange: (weight: ProcessWeight) => void }) {
   return (
-    <PopoverContent align="start" className="w-44 p-1.5">
-      {priorityOptions.map(priority => {
-        const config = PRIORITY_CONFIG[priority];
-        return <button key={priority} type="button" onClick={() => onChange(priority)} className={cn('flex w-full items-center gap-2 px-2 py-2 text-left text-xs hover:bg-muted', value === priority && 'bg-muted font-semibold')}><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: config.color }} /><span className="flex-1">{config.label}</span>{value === priority && <Check className="h-3.5 w-3.5" />}</button>;
-      })}
+    <PopoverContent align="start" className="w-56 p-2">
+      <p className="px-1 pb-2 text-xs font-semibold">Peso</p>
+      <WeightOptions value={value} onSelect={onChange} />
     </PopoverContent>
   );
 }
 
 function DueDateEditor({ task, disabled, onUpdate }: { task: Task; disabled: boolean; onUpdate: (data: Partial<Task>) => Promise<void> }) {
-  return <Input type="date" value={task.due_date ?? ''} disabled={disabled} onChange={event => void onUpdate({ due_date: event.target.value || null })} className={cn('h-8 min-w-[125px] px-2 text-xs', isOverdue(task) && 'border-red-300 text-red-700')} aria-label={`Prazo da tarefa ${task.title}`} />;
+  return <Input type="date" value={task.due_date ?? ''} disabled={disabled} onChange={event => void onUpdate({ due_date: event.target.value || null })} className={cn('h-8 min-w-[125px] px-2 text-xs', isOverdue(task) && 'border-red-300 text-red-700')} aria-label={`Prazo de ${task.title}`} />;
 }
 
 function ReplanEditor({ task, disabled, onUpdate }: { task: Task; disabled: boolean; onUpdate: (data: Partial<Task>) => Promise<void> }) {
@@ -1085,15 +1090,15 @@ function ReplanEditor({ task, disabled, onUpdate }: { task: Task; disabled: bool
           type="button"
           disabled={disabled || task.completed}
           className={cn('grid h-7 w-7 shrink-0 place-items-center border transition-colors disabled:opacity-40', scheduled ? 'border-violet-300 bg-violet-100 text-violet-700' : 'bg-background text-muted-foreground hover:border-violet-300 hover:text-violet-700')}
-          title={scheduled ? `Replanejada para ${format(parseISO(task.scheduled_for!), 'dd/MM/yyyy')}` : 'Replanejar tarefa'}
-          aria-label={`Replanejar tarefa ${task.title}`}
+          title={scheduled ? `Replanejado para ${format(parseISO(task.scheduled_for!), 'dd/MM/yyyy')}` : 'Replanejar'}
+          aria-label={`Replanejar ${task.title}`}
         >
           <CalendarPlus className="h-3.5 w-3.5" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-3">
-        <p className="text-sm font-semibold">Replanejar tarefa</p>
-        <p className="mt-1 text-xs text-muted-foreground">A demanda ficará em Agendadas e voltará às Pendentes na data escolhida.</p>
+        <p className="text-sm font-semibold">Replanejar</p>
+        <p className="mt-1 text-xs text-muted-foreground">Fica em Agendados e volta aos Pendentes na data escolhida.</p>
         <Input type="date" value={date} min={format(new Date(), 'yyyy-MM-dd')} onChange={event => setDate(event.target.value)} className="mt-3 h-9 text-xs" aria-label={`Nova data para ${task.title}`} />
         <div className="mt-3 flex items-center gap-2">
           {task.scheduled_for && <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-xs" onClick={() => { void onUpdate({ scheduled_for: null }); setOpen(false); }}><CalendarX2 className="h-3.5 w-3.5" /> Ativar agora</Button>}

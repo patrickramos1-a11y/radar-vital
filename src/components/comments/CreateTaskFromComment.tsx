@@ -53,17 +53,17 @@ export function CreateTaskFromComment({ commentText, commentId, clientId, client
       <PopoverTrigger asChild>
         <button
           className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
-          title="Criar tarefa vinculada a este comentário"
+          title="Criar processo vinculado a este comentário"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[260px] p-3 space-y-3" align="end">
-        <p className="text-xs font-semibold text-foreground">Criar tarefa vinculada</p>
+        <p className="text-xs font-semibold text-foreground">Criar processo (vinculado)</p>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Título da tarefa"
+          placeholder="Título do processo"
           className="h-8 text-xs"
         />
         <Select value={assignedTo} onValueChange={setAssignedTo}>
@@ -95,7 +95,7 @@ export function CreateTaskFromComment({ commentText, commentId, clientId, client
           disabled={!title.trim() || isCreating}
         >
           {isCreating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Plus className="w-3 h-3 mr-1" />}
-          Criar Tarefa
+          Criar processo
         </Button>
       </PopoverContent>
     </Popover>

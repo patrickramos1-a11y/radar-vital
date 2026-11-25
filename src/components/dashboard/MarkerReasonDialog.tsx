@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bomb, Star } from "lucide-react";
+import { Bomb } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,49 +10,31 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-type MarkerKind = "priority" | "bo";
-
-const PRESET_REASONS: Record<MarkerKind, string[]> = {
-  priority: [
-    "Comentário importante",
-    "Tarefa criada",
-    "Risco de prazo",
-    "Cliente cobrou retorno",
-    "Pendência crítica",
-    "Demanda parada",
-    "Reunião/decisão necessária",
-  ],
-  bo: [
-    "Cliente insatisfeito",
-    "Risco de conflito",
-    "Cobrança recorrente",
-    "Prazo sensível",
-    "Falha de comunicação",
-    "Assunto travado",
-    "Exige alinhamento urgente",
-  ],
-};
+const PRESET_REASONS: string[] = [
+  "Cliente insatisfeito",
+  "Risco de conflito",
+  "Cobrança recorrente",
+  "Prazo sensível",
+  "Falha de comunicação",
+  "Assunto travado",
+  "Exige alinhamento urgente",
+];
 
 interface MarkerReasonDialogProps {
   open: boolean;
-  kind: MarkerKind;
   defaultValue?: string | null;
   onOpenChange: (open: boolean) => void;
   onConfirm: (reason: string) => void;
 }
 
+/** Diálogo do motivo da marca "Pode dar BO". */
 export function MarkerReasonDialog({
   open,
-  kind,
   defaultValue,
   onOpenChange,
   onConfirm,
 }: MarkerReasonDialogProps) {
   const [reason, setReason] = useState(defaultValue || "");
-  const isPriority = kind === "priority";
-  const title = isPriority ? "Motivo da prioridade" : "Motivo do Pode dar BO";
-  const Icon = isPriority ? Star : Bomb;
-  const accent = isPriority ? "text-amber-500" : "text-red-500";
 
   useEffect(() => {
     if (open) setReason(defaultValue || "");
@@ -68,8 +50,8 @@ export function MarkerReasonDialog({
       <DialogContent className="w-[calc(100vw-24px)] max-w-[420px] gap-3 rounded-xl p-4 sm:p-4">
         <DialogHeader className="space-y-1 pr-7 text-left">
           <DialogTitle className="flex items-center gap-2 text-base">
-            <Icon className={cn("h-4 w-4", accent)} />
-            {title}
+            <Bomb className="h-4 w-4 text-red-500" />
+            Motivo do Pode dar BO
           </DialogTitle>
           <DialogDescription className="text-xs">
             Escolha uma frase pronta ou escreva um motivo curto.
@@ -88,7 +70,7 @@ export function MarkerReasonDialog({
           />
 
           <div className="grid grid-cols-2 gap-1.5">
-            {PRESET_REASONS[kind].map((preset) => (
+            {PRESET_REASONS.map((preset) => (
               <button
                 key={preset}
                 type="button"
@@ -96,9 +78,7 @@ export function MarkerReasonDialog({
                 className={cn(
                   "min-h-8 rounded-lg border px-2 py-1 text-left text-[11px] font-medium leading-tight transition-colors",
                   reason === preset
-                    ? isPriority
-                      ? "border-amber-400 bg-amber-50 text-amber-800"
-                      : "border-red-400 bg-red-50 text-red-700"
+                    ? "border-red-400 bg-red-50 text-red-700"
                     : "border-border bg-muted/30 text-foreground hover:bg-muted"
                 )}
               >
@@ -119,10 +99,7 @@ export function MarkerReasonDialog({
           <button
             type="button"
             onClick={handleConfirm}
-            className={cn(
-              "h-9 rounded-lg text-sm font-semibold text-white transition-colors",
-              isPriority ? "bg-amber-500 hover:bg-amber-600" : "bg-red-500 hover:bg-red-600"
-            )}
+            className="h-9 rounded-lg bg-red-500 text-sm font-semibold text-white transition-colors hover:bg-red-600"
           >
             Confirmar
           </button>

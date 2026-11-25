@@ -99,7 +99,7 @@ export function DeliverableModal({
           {editing?.source_priority_id && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Link2 className="h-3.5 w-3.5" />
-              Criado automaticamente a partir de uma prioridade concluída.
+              Criado automaticamente quando o processo foi concluído.
             </div>
           )}
 

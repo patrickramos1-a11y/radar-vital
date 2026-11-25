@@ -20,8 +20,8 @@ import { HistoryTab } from '@/components/central-entregas/HistoryTab';
 import { PerformanceTab } from '@/components/central-entregas/PerformanceTab';
 import { ChallengesTab } from '@/components/central-entregas/ChallengesTab';
 import { assigneeMatches } from '@/lib/taskAssignee';
-import { ordinaryTasks, workloadFor } from '@/lib/centralMetrics';
-import { Star, CheckSquare, MessageSquare, Package, Trophy, AlertTriangle } from 'lucide-react';
+import { processWorkloadFor } from '@/lib/centralMetrics';
+import { Workflow, Siren, MessageSquare, Package, Trophy, AlertTriangle } from 'lucide-react';
 import { KpiStrip, type KpiItem } from '@/components/common/KpiStrip';
 import { SegmentedControl } from '@/components/common/SegmentedControl';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -202,18 +202,16 @@ export default function CentralEntregas() {
     universeClientIds,
   ]);
 
-  // Workload numbers come from one helper so the picker, the KPI strip and
-  // the Tasks tab always agree (tasks inside priority trees count as priorities).
-  const scopedOrdinaryTasks = useMemo(() => ordinaryTasks(scopedTasks), [scopedTasks]);
-
+  // Os números vêm de um único helper, para o seletor, os indicadores e a aba
+  // Processos sempre concordarem (D-025: contam processos, não prioridades).
   const statsByName = useMemo(() => {
-    const map = new Map<string, { openTasks: number; openPriorities: number }>();
+    const map = new Map<string, { openProcesses: number; maximumProcesses: number }>();
     responsibleList.forEach(r => {
-      const workload = workloadFor(r.name, scopedOrdinaryTasks, scopedPriorities, undefined, scopedTasks);
-      map.set(r.name, { openTasks: workload.openTasks, openPriorities: workload.openPriorities });
+      const workload = processWorkloadFor(r.name, scopedTasks);
+      map.set(r.name, { openProcesses: workload.openProcesses, maximumProcesses: workload.maximumProcesses });
     });
     return map;
-  }, [responsibleList, scopedOrdinaryTasks, scopedPriorities, scopedTasks]);
+  }, [responsibleList, scopedTasks]);
 
   const pointsByCollaboratorId = useMemo(() => {
     const now = new Date();
@@ -232,7 +230,7 @@ export default function CentralEntregas() {
 
   const kpis = useMemo<KpiItem[]>(() => {
     const name = isTeamView ? null : selectedInfo.name;
-    const workload = workloadFor(name, scopedOrdinaryTasks, scopedPriorities, undefined, scopedTasks);
+    const workload = processWorkloadFor(name, scopedTasks);
     const readField = `read_${selectedInfo.name.toLowerCase()}`;
     const pendingComments = scopedComments.filter(
       comment => !comment.is_archived && (isTeamView || !comment[readField]),
@@ -250,18 +248,19 @@ export default function CentralEntregas() {
 
     const items: KpiItem[] = [
       {
-        key: 'priorities', label: 'Prioridades', value: workload.openPriorities, icon: Star,
-        detail: workload.scheduledPriorities > 0 ? `+${workload.scheduledPriorities} planejadas` : undefined,
-        hint: 'Prioridades ativas (as planejadas para depois aparecem à parte)', active: activeTab === 'processos', onClick: goTo('processos'),
+        key: 'processes', label: 'Processos', value: workload.openProcesses, icon: Workflow,
+        detail: workload.plannedProcesses > 0 ? `+${workload.plannedProcesses} planejados` : undefined,
+        hint: 'Processos em aberto (os planejados para depois aparecem à parte)', active: activeTab === 'processos', onClick: goTo('processos'),
       },
       {
-        key: 'tasks', label: 'Tarefas', value: workload.openTasks, icon: CheckSquare,
-        hint: 'Tarefas em aberto fora das prioridades', active: activeTab === 'processos', onClick: goTo('processos'),
+        key: 'maximum', label: 'Peso Máxima', value: workload.maximumProcesses, icon: Siren,
+        tone: workload.maximumProcesses > 0 ? 'warning' : 'default',
+        hint: 'Processos em aberto com peso Máxima (aparecem no Painel)', active: activeTab === 'processos', onClick: goTo('processos'),
       },
       {
         key: 'overdue', label: 'Atrasos', value: workload.overdue, icon: AlertTriangle,
         tone: workload.overdue > 0 ? 'danger' : 'default',
-        hint: `${workload.overdueTasks} tarefa(s) e ${workload.overduePriorities} prioridade(s) com prazo vencido`,
+        hint: `${workload.overdue} processo(s) com vencimento passado`,
       },
       {
         key: 'comments', label: 'Comentários', value: pendingComments, icon: MessageSquare,
@@ -296,7 +295,7 @@ export default function CentralEntregas() {
     return items;
   }, [
     activeTab, collaborators, isTeamView, pointsByCollaboratorId, scopedComments, scopedDeliverables,
-    scopedOrdinaryTasks, scopedPriorities, scopedTasks, searchParams, selectedCollaboratorId, selectedInfo.name, setSearchParams,
+    scopedTasks, searchParams, selectedCollaboratorId, selectedInfo.name, setSearchParams,
   ]);
 
   const isMobile = useIsMobile();
@@ -409,7 +408,6 @@ export default function CentralEntregas() {
                 collaborator={selectedInfo.name}
                 isTeamView={isTeamView}
                 tasks={scopedTasks}
-                priorities={scopedPriorities}
                 deliverables={scopedDeliverables}
                 comments={scopedComments}
                 clients={scopedClients}

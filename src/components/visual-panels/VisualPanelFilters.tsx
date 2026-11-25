@@ -6,12 +6,11 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export const NO_RESPONSIBLE = '__none__';
 
-export type VisualSortOption = 'order' | 'name' | 'priority' | 'tasks' | 'comments' | 'days_open';
+export type VisualSortOption = 'order' | 'name' | 'tasks' | 'comments' | 'days_open';
 export type VisualSortDirection = 'asc' | 'desc';
 export type VisualClientTypeFilter = 'all' | 'AC' | 'AV';
 
 export interface FilterFlags {
-  priority: boolean;
   highlighted: boolean;
   selected: boolean;
   hasCollaborators: boolean;
@@ -142,7 +141,6 @@ export function VisualPanelFilters({
   sortOptions = [
     { value: 'order', label: 'Ordem' },
     { value: 'name', label: 'Nome' },
-    { value: 'priority', label: 'Prioridade' },
     { value: 'tasks', label: 'Tarefas' },
   ],
   showCollaborators = true,

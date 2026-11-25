@@ -17,7 +17,6 @@ interface ClientGridProps {
   getAssignedCollaboratorIds: (clientId: string) => string[];
   onSelectClient: (id: string) => void;
   onHighlightClient: (id: string) => void;
-  onTogglePriority: (id: string) => void;
   onOpenChecklist: (id: string) => void;
   onEditClient?: (client: Client) => void;
   showHighlight?: boolean;
@@ -30,7 +29,7 @@ interface ClientGridProps {
   getAuditStatus?: (clientId: string) => AuditClientStatus | undefined;
   useUnitProfileAction?: boolean;
   onCreateChallenge?: (clientId: string) => void;
-  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks' | 'priorities') => void;
+  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks') => void;
   getChallengeCount?: (clientId: string) => number;
 
 }
@@ -45,7 +44,6 @@ export function ClientGrid({
   getAssignedCollaboratorIds,
   onSelectClient,
   onHighlightClient,
-  onTogglePriority,
   onOpenChecklist,
   onEditClient,
   showHighlight = true,
@@ -171,7 +169,6 @@ export function ClientGrid({
           assignedCollaboratorIds={getAssignedCollaboratorIds(client.id)}
           onSelect={onSelectClient}
           onHighlight={onHighlightClient}
-          onTogglePriority={onTogglePriority}
           onOpenChecklist={onOpenChecklist}
           onEdit={onEditClient}
           showHighlight={showHighlight}

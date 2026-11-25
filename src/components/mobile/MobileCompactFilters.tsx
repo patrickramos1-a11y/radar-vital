@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, X, RotateCcw, Building2, Landmark, Briefcase, MapPin, Check, UserPlus, Target, Star } from "lucide-react";
+import { Search, X, RotateCcw, Building2, Landmark, Briefcase, MapPin, Check, UserPlus, Target, Workflow } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Municipality } from "@/hooks/useMunicipalities";
@@ -63,7 +63,6 @@ export function MobileCompactFilters({
 
   const sortOptions: { key: SortOption; label: string }[] = [
     { key: 'order', label: 'Nome' },
-    { key: 'priority', label: 'Prioridade' },
     { key: 'jackbox', label: 'Tarefas' },
     { key: 'comments', label: 'Coment.' },
     { key: 'name', label: 'A-Z' },
@@ -106,7 +105,7 @@ export function MobileCompactFilters({
           aria-label="Meus processos"
           className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg border border-amber-400/40 bg-amber-50 text-amber-700"
         >
-          <Star className="w-4 h-4" />
+          <Workflow className="w-4 h-4" />
         </Link>
         <Link
           to="/central-entregas"

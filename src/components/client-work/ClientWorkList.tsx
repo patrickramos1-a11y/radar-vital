@@ -4,7 +4,6 @@ import {
   Circle,
   ClipboardCheck,
   ExternalLink,
-  Flag,
   PackageCheck,
   ShieldCheck,
   Sparkles,
@@ -23,7 +22,8 @@ const kindConfig: Record<
   { icon: typeof Circle; className: string }
 > = {
   task: { icon: ClipboardCheck, className: "text-sky-700 bg-sky-50" },
-  priority: { icon: Flag, className: "text-amber-700 bg-amber-50" },
+  // Prioridades viraram processos (D-025): mesmo visual do processo.
+  priority: { icon: ClipboardCheck, className: "text-sky-700 bg-sky-50" },
   deliverable: {
     icon: PackageCheck,
     className: "text-emerald-700 bg-emerald-50",

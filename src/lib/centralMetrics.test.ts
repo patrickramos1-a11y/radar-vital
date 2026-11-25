@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Priority } from '@/types/priority';
 import type { Task } from '@/types/task';
-import { isPastDue, ordinaryTasks, workloadFor } from './centralMetrics';
+import { deliverableWeight, isPastDue, ordinaryTasks, processWorkloadFor, workloadFor } from './centralMetrics';
 import { isInPeriod, periodStart } from './period';
 
 const task = (overrides: Partial<Task>): Task => ({
@@ -93,5 +93,39 @@ describe('period', () => {
     expect(isInPeriod(null, '30d', now)).toBe(true);
     expect(isInPeriod(new Date(2026, 9, 20).toISOString(), '30d', now)).toBe(true);
     expect(isInPeriod(new Date(2026, 8, 1).toISOString(), '30d', now)).toBe(false);
+  });
+});
+
+describe('processWorkloadFor', () => {
+  const tasks = [
+    task({ id: 'a', weight: 5, status: 'pendente', due_date: '2026-11-10' }),
+    task({ id: 'b', weight: 2, status: 'pendente', scheduled_for: '2026-11-20' }),
+    task({ id: 'c', weight: 3, status: 'concluida', completed: true }),
+    task({ id: 'step', parent_task_id: 'c', assigned_to: ['Gabi'], status: 'pendente' }),
+    task({ id: 'd', weight: 4, status: 'pendente', assigned_to: ['Celine'] }),
+    task({ id: 'd1', parent_task_id: 'd', assigned_to: ['Patrick'], status: 'pendente' }),
+  ];
+
+  it('counts open processes, planned apart, Máxima and overdue for the team', () => {
+    expect(processWorkloadFor(null, tasks, today)).toEqual({
+      openProcesses: 2, maximumProcesses: 1, plannedProcesses: 1, overdue: 1,
+    });
+  });
+
+  it('includes processes where the collaborator has an open step', () => {
+    expect(processWorkloadFor('Patrick', tasks, today).openProcesses).toBe(2);
+    expect(processWorkloadFor('Celine', tasks, today).openProcesses).toBe(1);
+    expect(processWorkloadFor('Gabi', tasks, today).openProcesses).toBe(0);
+  });
+});
+
+describe('deliverableWeight', () => {
+  const taskById = new Map([['t5', { weight: 5, priority: 'urgente' as const }]]);
+  const priorityById = new Map([['p3', { weight: 3 }]]);
+
+  it('uses the weight of the process, then the old priority, then 1', () => {
+    expect(deliverableWeight({ source_task_id: 't5', source_priority_id: 'p3' }, taskById, priorityById)).toBe(5);
+    expect(deliverableWeight({ source_task_id: null, source_priority_id: 'p3' }, taskById, priorityById)).toBe(3);
+    expect(deliverableWeight({ source_task_id: null, source_priority_id: null }, taskById, priorityById)).toBe(1);
   });
 });

@@ -17,7 +17,6 @@ interface ClientContextType {
   deleteSelectedClients: (ids: string[]) => Promise<void>;
   clearAllClients: () => Promise<void>;
   toggleClientActive: (id: string) => void;
-  togglePriority: (id: string, reason?: string) => void;
   toggleChecked: (id: string) => void;
   toggleCollaborator: (id: string, collaborator: keyof Client['collaborators']) => void;
   toggleHighlight: (id: string, reason?: string) => void;
@@ -408,19 +407,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clients, updateClient]);
 
-  const togglePriority = useCallback((id: string, reason?: string) => {
-    const client = clients.find(c => c.id === id);
-    if (client) {
-      const newValue = !client.isPriority;
-      const nextReason = newValue ? (reason ?? client.priorityReason ?? '') : null;
-      setStoredClientReason(id, 'priority', nextReason);
-      updateClient(id, {
-        isPriority: newValue,
-        priorityReason: nextReason,
-      });
-    }
-  }, [clients, updateClient]);
-
   const toggleChecked = useCallback((id: string) => {
     const client = clients.find(c => c.id === id);
     if (client) {
@@ -687,7 +673,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       deleteSelectedClients,
       clearAllClients,
       toggleClientActive,
-      togglePriority,
       toggleChecked,
       toggleCollaborator,
       toggleHighlight,

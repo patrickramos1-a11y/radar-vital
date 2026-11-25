@@ -11,7 +11,7 @@ import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments
 import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippets";
 import { useAuth } from "@/contexts/AuthContext";
 import { Client } from "@/types/client";
-import { Users, Star, Bomb, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "lucide-react";
+import { Users, Bomb, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -35,7 +35,6 @@ const Index = () => {
     highlightedClients, 
     toggleHighlight, 
     clearHighlights,
-    togglePriority,
     isLoading,
     getClient,
     updateClient,
@@ -114,7 +113,6 @@ const Index = () => {
 
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
-    priority: false,
     highlighted: false,
     selected: false,
     hasCollaborators: false,
@@ -152,7 +150,6 @@ const Index = () => {
     activeClients.filter(c => getCommentCount(c.id) > 0).length,
     [activeClients, getCommentCount]
   );
-  const priorityCount = useMemo(() => activeClients.filter(c => c.isPriority).length, [activeClients]);
   const selectedCount = useMemo(() => activeClients.filter(c => c.isChecked).length, [activeClients]);
   
   // Count of clients with at least one collaborator assigned (responsáveis)
@@ -165,10 +162,9 @@ const Index = () => {
     [activeClients, clientsWithAssignments]
   );
 
-  // "De Boa" classification: client has no priority, highlight or active tasks
+  // "De Boa" classification: client has no "Pode dar BO" mark or active tasks
   const isClienteDeBoa = useCallback((client: Client) => {
-    return !client.isPriority &&
-      !client.isHighlighted &&
+    return !client.isHighlighted &&
       getActiveTaskCount(client.id) === 0;
   }, [getActiveTaskCount]);
 
@@ -191,7 +187,6 @@ const Index = () => {
 
   const handleClearAllFilters = () => {
     setFilterFlags({
-      priority: false,
       highlighted: false,
       selected: false,
       hasCollaborators: false,
@@ -277,9 +272,8 @@ const Index = () => {
       result = result.filter(c => !isClienteDeBoa(c));
     }
 
-    const hasAnyFilterActive = 
-      filterFlags.priority || 
-      filterFlags.highlighted || 
+    const hasAnyFilterActive =
+      filterFlags.highlighted ||
       filterFlags.selected ||
       filterFlags.hasCollaborators ||
       filterFlags.withJackbox || 
@@ -290,7 +284,6 @@ const Index = () => {
 
     if (hasAnyFilterActive) {
       result = result.filter(c => {
-        const matchesPriority = filterFlags.priority && c.isPriority;
         const matchesHighlighted = filterFlags.highlighted && highlightedClients.has(c.id);
         const matchesSelected = filterFlags.selected && c.isChecked;
         const matchesHasCollaborators = filterFlags.hasCollaborators && getAssignedCollaboratorIds(c.id).length > 0;
@@ -309,7 +302,7 @@ const Index = () => {
           }))
         );
 
-        return matchesPriority || matchesHighlighted || matchesSelected || matchesHasCollaborators ||
+        return matchesHighlighted || matchesSelected || matchesHasCollaborators ||
                matchesWithJackbox || matchesWithoutJackbox || 
                matchesWithComments || matchesWithoutComments || matchesCollaborator;
       });
@@ -323,14 +316,7 @@ const Index = () => {
           const aTaskCount = getActiveTaskCount(a.id);
           const bTaskCount = getActiveTaskCount(b.id);
           if (aTaskCount !== bTaskCount) return (bTaskCount - aTaskCount) * multiplier;
-          if (a.isPriority !== b.isPriority) return (a.isPriority ? -1 : 1) * multiplier;
           return a.name.localeCompare(b.name);
-        });
-        break;
-      case 'priority':
-        result.sort((a, b) => {
-          if (a.isPriority === b.isPriority) return (a.order - b.order) * multiplier;
-          return (a.isPriority ? -1 : 1) * multiplier;
         });
         break;
       case 'comments':
@@ -374,9 +360,8 @@ const Index = () => {
   const mobileJackboxClient = mobileJackboxClientId ? getClient(mobileJackboxClientId) : null;
 
   // Calculate hasActiveFilters for mobile
-  const hasActiveFilters = 
-    filterFlags.priority || 
-    filterFlags.highlighted || 
+  const hasActiveFilters =
+    filterFlags.highlighted ||
     filterFlags.selected ||
     filterFlags.hasCollaborators ||
     filterFlags.withJackbox || 
@@ -399,7 +384,6 @@ const Index = () => {
             acCount={acCount}
             avCount={avCount}
             collaboratorSelectedStats={collaboratorStats}
-            priorityCount={priorityCount}
             highlightedCount={highlightedClients.size}
             responsaveisCount={responsaveisCount}
             commentsCount={withCommentsCount}
@@ -408,7 +392,6 @@ const Index = () => {
             deBoaCount={deBoaCount}
             comAlertaCount={comAlertaCount}
             filterFlags={{
-              priority: filterFlags.priority,
               highlighted: filterFlags.highlighted,
               hasCollaborators: filterFlags.hasCollaborators,
               withComments: filterFlags.withComments,
@@ -486,7 +469,6 @@ const Index = () => {
             tasks={mobileDetailClientId ? getTasksForClient(mobileDetailClientId) : []}
             dependencies={dependencies}
             templates={templates}
-            onTogglePriority={togglePriority}
             onToggleHighlight={toggleHighlight}
             collaborators={allCollaborators.filter((person) => person.isActive)}
             assignedCollaboratorIds={mobileDetailClientId ? getAssignedCollaboratorIds(mobileDetailClientId) : []}
@@ -560,7 +542,7 @@ const Index = () => {
               color="#10B981"
               active={alertFilter === 'deBoa'}
               onClick={() => setAlertFilter(alertFilter === 'deBoa' ? 'all' : 'deBoa')}
-              tooltip="Clientes estáveis — sem prioridade, Pode dar BO ou tarefas ativas."
+              tooltip="Clientes estáveis — sem Pode dar BO ou tarefas ativas."
             />
             <AlertFilterButton
               icon={<AlertTriangle className="w-3.5 h-3.5" />}
@@ -569,7 +551,7 @@ const Index = () => {
               color="#EF4444"
               active={alertFilter === 'comAlerta'}
               onClick={() => setAlertFilter(alertFilter === 'comAlerta' ? 'all' : 'comAlerta')}
-              tooltip="Clientes que demandam atenção — possuem prioridade, Pode dar BO ou tarefas ativas."
+              tooltip="Clientes que demandam atenção — possuem Pode dar BO ou tarefas ativas."
             />
             <div className="w-px h-6 bg-border/40 mx-1" />
             {allCollaborators.map((collab) => (
@@ -583,7 +565,6 @@ const Index = () => {
               </div>
             ))}
             <div className="w-px h-6 bg-border/40 mx-1" />
-            <StatBadge icon={<Star className="w-3.5 h-3.5" />} value={priorityCount} label="Prioridade" color="rgb(245, 158, 11)" active={filterFlags.priority} onClick={() => handleFilterFlagToggle('priority')} />
             <StatBadge icon={<Bomb className="w-3.5 h-3.5" />} value={highlightedClients.size} label="Pode dar BO" color="rgb(239, 68, 68)" active={filterFlags.highlighted} onClick={() => handleFilterFlagToggle('highlighted')} />
             <StatBadge icon={<UserCheck className="w-3.5 h-3.5" />} value={responsaveisCount} label="Responsáveis" color="rgb(16, 185, 129)" active={filterFlags.hasCollaborators} onClick={() => handleFilterFlagToggle('hasCollaborators')} />
             <StatBadge icon={<MessageCircle className="w-3.5 h-3.5" />} value={withCommentsCount} label="Comentários" color="rgb(129, 140, 248)" active={filterFlags.withComments} onClick={() => handleFilterFlagToggle('withComments')} />
@@ -612,7 +593,6 @@ const Index = () => {
             filterFlags={filterFlags}
             collaboratorFilters={collaboratorFilters}
             clientTypeFilter={clientTypeFilter}
-            priorityCount={priorityCount}
             highlightedCount={highlightedClients.size}
             selectedCount={selectedCount}
             jackboxCount={jackboxCount}
@@ -672,15 +652,10 @@ const Index = () => {
                 getAssignedCollaboratorIds={getAssignedCollaboratorIds}
                 onSelectClient={handleSelectClient}
                 onHighlightClient={toggleHighlight}
-                onTogglePriority={togglePriority}
                 onOpenChecklist={handleOpenChecklist}
                 onOpenTab={(clientId, tab) => {
                   if (tab === 'tasks') {
                     handleOpenChecklist(clientId, 'task');
-                    return;
-                  }
-                  if (tab === 'priorities') {
-                    handleOpenChecklist(clientId, 'priority');
                     return;
                   }
                   handleOpenChecklist(clientId);

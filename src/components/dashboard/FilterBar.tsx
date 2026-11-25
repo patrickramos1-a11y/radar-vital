@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, Star, ListChecks, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check, UserX } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, ListChecks, Workflow, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check, UserX } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import type { ReactNode } from "react";
@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Municipality } from "@/hooks/useMunicipalities";
 import type { Collaborator } from "@/types/collaborator";
 
-export type SortOption = 'order' | 'name' | 'priority' | 'jackbox' | 'comments';
+export type SortOption = 'order' | 'name' | 'jackbox' | 'comments';
 export type SortDirection = 'asc' | 'desc';
 export type ClientTypeFilter = 'all' | 'AC' | 'AV';
 export type ViewMode = 'fit-all' | 'scroll';
@@ -19,7 +19,6 @@ export type GridSize = { cols: number; rows: number } | null;
 
 // Multi-select filter flags
 export interface FilterFlags {
-  priority: boolean;
   highlighted: boolean;
   selected: boolean;
   hasCollaborators: boolean;
@@ -35,7 +34,6 @@ interface FilterBarProps {
   filterFlags: FilterFlags;
   collaboratorFilters: string[];
   clientTypeFilter: ClientTypeFilter;
-  priorityCount: number;
   highlightedCount: number;
   selectedCount: number;
   jackboxCount: number;
@@ -119,8 +117,7 @@ export function FilterBar({
 
   // Check if any filter is active
   const hasActiveFilters = 
-    filterFlags.priority || 
-    filterFlags.highlighted || 
+    filterFlags.highlighted ||
     filterFlags.selected ||
     filterFlags.hasCollaborators ||
     filterFlags.withJackbox || 
@@ -152,13 +149,6 @@ export function FilterBar({
               onClick={() => handleSortClick('order')}
               icon={<ArrowUpDown className="w-3.5 h-3.5" />}
               tooltip="Ordem"
-            />
-            <SortIconButton 
-              active={sortBy === 'priority'} 
-              direction={sortBy === 'priority' ? sortDirection : undefined}
-              onClick={() => handleSortClick('priority')}
-              icon={<Star className="w-3.5 h-3.5" />}
-              tooltip="Prioridade"
             />
             <SortIconButton 
               active={sortBy === 'jackbox'} 
@@ -216,7 +206,7 @@ export function FilterBar({
 
         {extraControls}
 
-        {/* Priority shortcut + Grid Size Picker + Lock Toggle + TV Mode */}
+        {/* Processos shortcut + Grid Size Picker + Lock Toggle + TV Mode */}
         <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -225,7 +215,7 @@ export function FilterBar({
                 aria-label="Meus processos"
                 className="rounded-md border border-amber-300 bg-amber-50 p-1.5 text-amber-700 transition-all hover:border-amber-500 hover:bg-amber-100"
               >
-                <Star className="h-4 w-4" />
+                <Workflow className="h-4 w-4" />
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">

@@ -1,5 +1,12 @@
+/**
+ * Processos v2 (D-025): o item "task" é o processo (tarefa raiz). O tipo
+ * "priority" só continua aqui para telas antigas que ainda abrem a Central
+ * pela aba de prioridades; nenhuma lista gera mais itens desse tipo e a
+ * Central trata essa visão como a de processos.
+ */
 export type WorkItemKind =
   | "task"
+  /** @deprecated prioridades viraram processos (D-025); use "task". */
   | "priority"
   | "deliverable"
   | "audit"
@@ -30,9 +37,14 @@ export interface WorkItem {
 
 export type WorkItemFilter = "all" | WorkItemKind;
 
+/** Visão que a Central realmente mostra: prioridade antiga abre os processos. */
+export function normalizeWorkItemFilter(filter: WorkItemFilter): WorkItemFilter {
+  return filter === "priority" ? "task" : filter;
+}
+
 export const WORK_ITEM_LABELS: Record<WorkItemKind, string> = {
-  task: "Tarefa",
-  priority: "Prioridade",
+  task: "Processo",
+  priority: "Processo",
   deliverable: "Entregável",
   audit: "Auditoria",
   challenge: "Desafio",

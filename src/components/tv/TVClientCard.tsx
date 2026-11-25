@@ -1,4 +1,4 @@
-import { Star, MessageSquare, CheckSquare, Building2 } from "lucide-react";
+import { MessageSquare, CheckSquare, Building2 } from "lucide-react";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES } from "@/types/client";
 import { TVDensidade } from "@/types/tvMode";
 import { cn } from "@/lib/utils";
@@ -95,8 +95,7 @@ export function TVClientCard({
         "rounded-lg border-2 bg-card overflow-hidden transition-all",
         "hover:shadow-lg",
         isHighlighted && "border-blue-500 ring-2 ring-blue-500/30",
-        client.isPriority && !isHighlighted && "border-amber-500",
-        !isHighlighted && !client.isPriority && "border-border"
+        !isHighlighted && "border-border"
       )}
     >
       {/* Header */}
@@ -116,9 +115,6 @@ export function TVClientCard({
         
         {/* Badges */}
         <div className="flex items-center gap-0.5">
-          {client.isPriority && (
-            <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-          )}
           {commentCount > 0 && (
             <div className="flex items-center">
               <MessageSquare className="w-3 h-3 text-emerald-500" />
