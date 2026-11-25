@@ -274,7 +274,7 @@ export function useTasks() {
 
   const addTask = useCallback(async (clientId: string, data: TaskFormData, clientName?: string) => {
     const task = await createTask(clientId, data, clientName);
-    if (task) toast.success(data.parent_task_id ? 'Subtarefa criada!' : 'Tarefa criada!');
+    if (task) toast.success(data.parent_task_id ? 'Etapa criada!' : 'Processo criado!');
     return !!task;
   }, [createTask]);
 

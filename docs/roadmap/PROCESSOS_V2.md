@@ -88,7 +88,7 @@ envelhecimento automático continuam subindo um ponto de peso a cada 15 dias.
 
 1. Migration + texto para colar no Lovable. **Feito em 25/11** (`20261125180000_processos_v2.sql`). **Aplicada em produção em 25/11.**
 2. Modelo de processo no código (tarefa raiz com peso), sem promover/rebaixar. **Feito em 25/11** (`src/lib/processWeight.ts`, `src/lib/processModel.ts`, peso em `useTasks`). Os botões de promover/rebaixar saem junto com as telas antigas, nos passos 3 e 4.
-3. Tela Processos (Processos + Painel) e Novo processo.
+3. Tela Processos (Processos + Painel) e Novo processo. **Feito em 25/11** (`src/components/processos/`; a antiga `PrioritiesTab` saiu).
 4. Gestão de processos (Todos, Planejados, Recorrentes) e processo-mãe.
 5. Entregáveis: Em acompanhamento, comentários por processo, faixas de dias.
 6. Nomenclatura em todo o sistema e remoção da marca de cliente.

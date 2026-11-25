@@ -436,6 +436,13 @@ Testes: TypeScript sem erros, ESLint dos arquivos alterados sem erros, 246 teste
 Resultado: branch `feature/processos-v2`. Nada publicado. As telas atuais ainda usam prioridades; os botoes de promover/rebaixar saem com elas nos passos 3 e 4.
 Pendencias: passo 3 (tela Processos + Painel e Novo processo).
 Decisao do usuario (25/11): as 3 prioridades concluidas cuja tarefa principal segue pendente (RENOVACAO LO; MONTAR PROCESSO DE LP - FLORECER; EDIFICACAO MULTIFAMILIAR VERTICAL - LO, todas peso 5) ficam abertas como processos de peso Maxima. Nenhum dado alterado.
+2026-11-25 - Processos v2, passo 3 de 8 (tela Processos, Painel e Novo processo)
+Resumo: nova aba unica `ProcessesTab` em `/processos` e na aba Processos da Central, montada so a partir das tarefas (`buildProcesses`). Duas visoes: Processos (todos, agrupados por cliente) e Painel (so abertos de peso Maxima, em cartoes). Cada processo mostra idade, peso (troca no proprio selo), repeticao, vencimento/atraso, planejamento, responsavel e participantes das etapas abertas; acoes: concluir, planejar, link, editar, excluir; etapas com conclusao e nova etapa. Botao unico Novo processo (peso, detalhes, clientes, responsavel, vencimento, planejamento, repeticao); criar pelo cartao do Painel ja grava peso Maxima. Sem estrela, sem promover e sem voltar para tarefa. `PrioritiesTab` removida. Filtro por responsavel conta so etapas abertas. Planejar processo de peso Maxima em `/processos` segue restrito ao Patrick, como era com prioridades; os demais pesos qualquer um planeja.
+Arquivos: `src/components/processos/ProcessesTab.tsx`, `ProcessModal.tsx`, `processParts.tsx`, `ProcessesTab.test.tsx`, `src/lib/processDisplay.ts`, `src/lib/processModel.ts` (+ teste), `src/pages/Processos.tsx`, `src/pages/CentralEntregas.tsx`, `src/hooks/useTasks.ts` (aviso "Processo criado!"/"Etapa criada!"); removidos `PrioritiesTab.tsx` e seu teste.
+Migrations: nenhuma.
+Testes: TypeScript sem erros, ESLint dos arquivos novos sem erros, 228 testes Vitest aprovados (10 novos da aba; os da aba antiga sairam junto com ela), build aprovado. Conferido no navegador com os dados reais (perfil Patrick: 103 processos em 48 clientes; Painel com 12 de peso Maxima), sem gravar nada; Central e tela de celular conferidas.
+Resultado: branch `feature/processos-v2`. Nada publicado.
+Pendencias: passo 4 (Gestao de processos e processo-mae; `JackboxUnified` e `QuickCreatePanel` ainda usam `PriorityModal`). Os indicadores da Central ainda dizem "Prioridades/Tarefas" (passo 6).
 ```
 
 ## Modelo para proximos registros

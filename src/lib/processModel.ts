@@ -107,9 +107,10 @@ function sameName(a: string, b: string): boolean {
   return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }) === 0;
 }
 
-/** Processos do responsável: os dele e aqueles em que ele tem alguma etapa. */
+/** Processos do responsável: os dele e aqueles em que ele tem alguma etapa aberta. */
 export function processesForAssignee(processes: Process[], assignee: string): Process[] {
   return processes.filter(process =>
     process.assignees.some(name => sameName(name, assignee))
-    || process.descendants.some(step => step.assigned_to.some(name => sameName(name, assignee))));
+    || process.descendants.some(step => !step.completed && step.status !== 'cancelada'
+      && step.assigned_to.some(name => sameName(name, assignee))));
 }

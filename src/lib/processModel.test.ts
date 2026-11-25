@@ -45,6 +45,14 @@ describe('processos v2', () => {
     expect(processesForAssignee(processes, 'júnior').map(process => process.id)).toEqual(['parent']);
   });
 
+  it('ignores finished steps of another assignee', () => {
+    const processes = buildProcesses([
+      task('parent'),
+      task('child', { parent_task_id: 'parent', assigned_to: ['Junior'], completed: true, status: 'concluida' }),
+    ]);
+    expect(processesForAssignee(processes, 'Junior')).toEqual([]);
+  });
+
   it('lists only open Máxima processes on the panel, most urgent first', () => {
     const processes = buildProcesses([
       task('late', { weight: 5, due_date: '2026-12-10' }),

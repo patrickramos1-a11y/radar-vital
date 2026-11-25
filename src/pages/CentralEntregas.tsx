@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { TeamSelector, TEAM_VIEW } from '@/components/central-entregas/TeamSelector';
 import { TeamOverview } from '@/components/central-entregas/TeamOverview';
-import { PrioritiesTab } from '@/components/central-entregas/PrioritiesTab';
+import { ProcessesTab } from '@/components/processos/ProcessesTab';
 import { CommentsTab } from '@/components/central-entregas/CommentsTab';
 import { DeliverablesTab } from '@/components/central-entregas/DeliverablesTab';
 import { HistoryTab } from '@/components/central-entregas/HistoryTab';
@@ -336,27 +336,18 @@ export default function CentralEntregas() {
             className="w-full"
           >
             <TabsContent value="processos" className="mt-0">
-              <PrioritiesTab
+              <ProcessesTab
                 collaborator={selectedInfo.name}
                 color={selectedInfo.color}
                 isTeamView={isTeamView}
-                initialViewMode="all"
-                priorities={scopedPriorities}
                 tasks={scopedTasks}
                 clients={scopedClients}
                 responsibleList={responsibleList}
                 initialClientId={searchParams.get('clientId')}
-                onCreate={prioritiesHook.addPriority}
-                onCreateMany={prioritiesHook.addPrioritiesForClients}
-                onUpdate={prioritiesHook.updatePriority}
-                onDelete={prioritiesHook.deletePriority}
-                onDemote={prioritiesHook.demotePriorityToTask}
-                onPromote={prioritiesHook.promoteTaskToPriority}
-                onCreateSubtask={tasksHook.addTask}
+                onCreate={tasksHook.addTask}
                 onToggleTask={tasksHook.toggleComplete}
                 onUpdateTask={tasksHook.updateTask}
                 onDeleteTask={tasksHook.deleteTask}
-                onRefreshTasks={tasksHook.refetch}
               />
             </TabsContent>
 
