@@ -414,8 +414,8 @@ Resumo: menu unico Processos e aba unica na Central, com as melhorias que estava
 Arquivos: `src/pages/Processos.tsx`, `src/App.tsx`, `src/components/layout/navigationModel.ts`, `src/pages/CentralEntregas.tsx`, `src/components/central-entregas/PrioritiesTab.tsx`, `PriorityModal.tsx`, `src/hooks/usePriorities.ts`, `src/lib/processRecurrence.ts`, `src/lib/taskOperations.ts`; `TasksTab.tsx` removido por ficar sem uso.
 Migrations: nenhuma. A coluna `tasks.recurrence` ja existe em producao (conferido por leitura em 25/11).
 Testes: TypeScript sem erros, ESLint dos arquivos alterados sem erros, 241 testes Vitest aprovados (no Node 26 rodar com `NODE_OPTIONS=--no-webstorage`), build aprovado e tela conferida no navegador local sem gravar dados.
-Resultado: implementacao concluida na branch `feature/processos-publicacao`, ainda sem publicacao.
-Pendencias: testar criacao e conclusao de um processo repetido num banco de teste; decidir a publicacao; intervalos livres de repeticao exigem migration futura.
+Resultado: implementacao concluida na branch `feature/processos-publicacao` e publicada por solicitacao expressa do usuario em 25/11/2026 (mesclagem em `main` com deploy automatico na Vercel), como excecao a publicacao unica, no mesmo espirito de D-021. Sem migrations.
+Pendencias: acompanhar a primeira criacao e conclusao real de um processo repetido; intervalos livres de repeticao exigem migration futura.
 ```
 
 ## Modelo para proximos registros
