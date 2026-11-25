@@ -78,7 +78,7 @@ export function priorityToWorkItem(priority: Priority): WorkItem | null {
     dueDate: priority.due_date,
     completedAt: priority.completed_at,
     assignees: priority.assigned_to,
-    sourcePath: "/central-entregas?tab=priorities",
+    sourcePath: "/central-entregas?tab=processos",
   };
 }
 

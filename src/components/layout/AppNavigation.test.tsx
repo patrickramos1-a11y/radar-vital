@@ -30,9 +30,9 @@ describe("AppNavigation", () => {
     expect(views.getByRole("link", { name: "Solicitações" }).getAttribute("href")).toBe("/universo-ramos/plano-mestre?view=solicitacoes");
   });
 
-  it("updates the selected Central de Entregas view from the URL", () => {
+  it("updates the selected Central view from the URL", () => {
     open("/central-entregas?tab=deliverables");
-    const views = within(screen.getByRole("navigation", { name: "Visões de Central de Entregas" }));
+    const views = within(screen.getByRole("navigation", { name: "Visões de Central" }));
     expect(views.getByRole("link", { name: "Entregáveis" }).getAttribute("aria-current")).toBe("page");
   });
 

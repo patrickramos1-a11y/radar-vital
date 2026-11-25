@@ -3,8 +3,8 @@ import {
   Archive, BarChart3, BookOpen, BriefcaseBusiness, CalendarDays,
   ClipboardList, FileUp, GitBranch, Globe2, GraduationCap, Landmark,
   Layers3, LayoutDashboard, ListChecks, MessageSquare, Settings,
-  ShieldCheck, ShieldAlert, Sparkles, Star, Target, TrendingUp, Users,
-  CheckSquare, Package,
+  ShieldCheck, ShieldAlert, Sparkles, Target, TrendingUp, Users,
+  Package, Workflow,
 } from "lucide-react";
 
 export type NavigationItem = { label: string; href: string; icon: LucideIcon; key: string };
@@ -25,21 +25,17 @@ export const navigationModules: NavigationModule[] = [
     ],
   },
   {
-    key: "tarefas", label: "Tarefas", href: "/jackbox-unificado", icon: ListChecks, context: "ac",
+    key: "processos", label: "Processos", href: "/processos", icon: Workflow, context: "ac",
     views: [
-      { key: "gestao", label: "Gestão de tarefas", href: "/jackbox-unificado", icon: ListChecks },
+      { key: "processos", label: "Processos", href: "/processos", icon: Workflow },
+      { key: "gestao", label: "Gestão por cliente", href: "/jackbox-unificado", icon: ListChecks },
       { key: "quadro", label: "Quadro de clientes", href: "/jackbox", icon: LayoutDashboard },
     ],
   },
   {
-    key: "minhas-prioridades", label: "Prioridades", href: "/minhas-prioridades", icon: Star, context: "ac",
-    views: [{ key: "minhas-prioridades", label: "Prioridades", href: "/minhas-prioridades", icon: Star }],
-  },
-  {
     key: "entregas", label: "Central", href: "/central-entregas", icon: Target, context: "ac",
     views: [
-      { key: "priorities", label: "Prioridades", href: deliveries("priorities"), icon: Star },
-      { key: "tasks", label: "Tarefas", href: deliveries("tasks"), icon: CheckSquare },
+      { key: "processos", label: "Processos", href: deliveries("processos"), icon: Workflow },
       { key: "comments", label: "Comentários", href: deliveries("comments"), icon: MessageSquare },
       { key: "deliverables", label: "Entregáveis", href: deliveries("deliverables"), icon: Package },
       { key: "challenges", label: "Desafios", href: deliveries("challenges"), icon: Sparkles },
@@ -87,14 +83,21 @@ const detailParent: Record<string, string> = {
   capacidade: "capacidades", solicitacao: "solicitacoes", pessoa: "jornada",
 };
 
+const moduleByKey = (key: string) => navigationModules.find((module) => module.key === key) ?? navigationModules[0];
+
+/** Old Central tabs "priorities" and "tasks" now open the unified Processos tab. */
+export function normalizeCentralTab(tab: string | null): string {
+  if (!tab || tab === "priorities" || tab === "tasks") return "processos";
+  return tab;
+}
+
 export function activeModule(pathname: string): NavigationModule {
-  if (pathname.startsWith("/universo-ramos/plano-mestre")) return navigationModules[5];
-  if (pathname.startsWith("/universo-ramos")) return navigationModules[4];
-  if (pathname.startsWith("/central-entregas")) return navigationModules[3];
-  if (pathname.startsWith("/minhas-prioridades")) return navigationModules[2];
-  if (pathname.startsWith("/jackbox")) return navigationModules[1];
-  if (pathname.startsWith("/auditorias")) return navigationModules[6];
-  if (pathname.startsWith("/tesouro")) return navigationModules[7];
+  if (pathname.startsWith("/universo-ramos/plano-mestre")) return moduleByKey("plano");
+  if (pathname.startsWith("/universo-ramos")) return moduleByKey("universo");
+  if (pathname.startsWith("/central-entregas")) return moduleByKey("entregas");
+  if (pathname.startsWith("/processos") || pathname.startsWith("/minhas-prioridades") || pathname.startsWith("/jackbox")) return moduleByKey("processos");
+  if (pathname.startsWith("/auditorias")) return moduleByKey("auditorias");
+  if (pathname.startsWith("/tesouro")) return moduleByKey("tesouro");
   return navigationModules[0];
 }
 
@@ -103,8 +106,12 @@ export function activeView(module: NavigationModule, pathname: string, search: s
     const view = new URLSearchParams(search).get("view") ?? "empresa";
     return detailParent[view] ?? view;
   }
-  if (module.key === "entregas") return new URLSearchParams(search).get("tab") ?? "priorities";
+  if (module.key === "entregas") return normalizeCentralTab(new URLSearchParams(search).get("tab"));
   if (module.key === "painel") return module.views.find((view) => view.href === pathname)?.key ?? "inicio";
-  if (module.key === "tarefas") return pathname === "/jackbox" ? "quadro" : "gestao";
+  if (module.key === "processos") {
+    if (pathname === "/jackbox") return "quadro";
+    if (pathname.startsWith("/jackbox-unificado")) return "gestao";
+    return "processos";
+  }
   return module.views[0].key;
 }

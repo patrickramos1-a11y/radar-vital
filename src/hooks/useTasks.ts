@@ -23,10 +23,7 @@ const LOCAL_WORKSPACE_PREVIEW = import.meta.env.VITE_CLIENT_WORKSPACE_PREVIEW ==
 const LOCAL_WORKSPACE_KEY = 'radar-vital:client-workspace-preview:v1';
 const LOCAL_WORKSPACE_EVENT = 'radar-vital:client-workspace-preview-change';
 
-const isFutureScheduled = (task: Task) => {
-  if (!task.scheduled_for) return false;
-  return task.scheduled_for > new Date().toISOString().slice(0, 10);
-};
+const isOpenTask = (task: Task) => !task.completed && task.status !== 'cancelada';
 
 const PREVIEW_TEMPLATES: TaskTemplate[] = [
   {
@@ -639,7 +636,7 @@ export function useTasks() {
   }, [tasks, updateTask]);
 
   const getActiveTasksForClient = useCallback((clientId: string) => {
-    return tasks.filter(t => t.client_id === clientId && !t.completed && !isFutureScheduled(t));
+    return tasks.filter(t => t.client_id === clientId && isOpenTask(t));
   }, [tasks]);
 
   const getTasksForClient = useCallback((clientId: string) => {
@@ -647,15 +644,15 @@ export function useTasks() {
   }, [tasks]);
 
   const getActiveTaskCount = useCallback((clientId: string) => {
-    return tasks.filter(t => t.client_id === clientId && !t.completed && !isFutureScheduled(t)).length;
+    return tasks.filter(t => t.client_id === clientId && isOpenTask(t)).length;
   }, [tasks]);
 
   const clientsWithActiveTasks = new Set(
-    tasks.filter(t => !t.completed && !isFutureScheduled(t)).map(t => t.client_id)
+    tasks.filter(isOpenTask).map(t => t.client_id)
   );
 
   const getTasksByCollaborator = useCallback((collaborator: string) => {
-    return tasks.filter(t => assigneeMatches(t.assigned_to, collaborator) && !t.completed && !isFutureScheduled(t));
+    return tasks.filter(t => assigneeMatches(t.assigned_to, collaborator) && isOpenTask(t));
   }, [tasks]);
 
   const getDaysOpen = useCallback((task: Task) => {
@@ -665,7 +662,7 @@ export function useTasks() {
   }, []);
 
   const getOldestTask = useCallback(() => {
-    const pending = tasks.filter(t => !t.completed && !isFutureScheduled(t));
+    const pending = tasks.filter(isOpenTask);
     if (pending.length === 0) return null;
     return pending.reduce((oldest, t) =>
       new Date(t.created_at) < new Date(oldest.created_at) ? t : oldest
@@ -673,7 +670,7 @@ export function useTasks() {
   }, [tasks]);
 
   const getAverageDaysOpen = useCallback(() => {
-    const pending = tasks.filter(t => !t.completed && !isFutureScheduled(t));
+    const pending = tasks.filter(isOpenTask);
     if (pending.length === 0) return 0;
     const totalDays = pending.reduce((sum, t) => sum + getDaysOpen(t), 0);
     return Math.round(totalDays / pending.length);
@@ -683,7 +680,7 @@ export function useTasks() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return tasks
-      .filter(t => !t.completed && !isFutureScheduled(t) && t.due_date && new Date(t.due_date) < today)
+      .filter(t => isOpenTask(t) && t.due_date && new Date(t.due_date) < today)
       .map(t => {
         const dueDate = new Date(t.due_date!);
         const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));

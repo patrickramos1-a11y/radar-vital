@@ -55,12 +55,17 @@ export function useDeliverables() {
 
   useEffect(() => {
     fetch();
+    // Do not reuse a subscribed channel when this panel remounts quickly.
+    // Supabase rejects callbacks added to an already-subscribed channel.
+    const channelId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const ch = supabase
-      .channel('deliverables_realtime')
+      .channel(`deliverables_realtime_${channelId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deliverables' }, () => setTimeout(fetch, 100))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deliverable_items' }, () => setTimeout(fetch, 100))
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { void supabase.removeChannel(ch); };
   }, [fetch]);
 
   const addDeliverable = useCallback(async (data: DeliverableFormData) => {

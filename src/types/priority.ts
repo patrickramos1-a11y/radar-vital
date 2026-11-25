@@ -1,3 +1,5 @@
+import type { TaskRecurrence } from './task';
+
 export type PriorityStatus = 'aberta' | 'em_andamento' | 'concluida' | 'cancelada';
 
 export interface Priority {
@@ -26,6 +28,9 @@ export interface PriorityFormData {
   universe_item_id?: string | null;
   assigned_to: string[];
   due_date?: string | null;
+  scheduled_for?: string | null;
+  /** Stored on the linked task: a finished period opens the next one. */
+  recurrence?: TaskRecurrence;
   status?: PriorityStatus;
   weight?: number;
   category?: string | null;

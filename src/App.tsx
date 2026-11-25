@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ClientProvider } from "@/contexts/ClientContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 const Index = lazy(() => import("./pages/Index"));
@@ -12,7 +12,12 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const JackboxPanel = lazy(() => import("./pages/JackboxPanel"));
 const JackboxUnified = lazy(() => import("./pages/JackboxUnified"));
 const CentralEntregas = lazy(() => import("./pages/CentralEntregas"));
-const MyPriorities = lazy(() => import("./pages/MyPriorities"));
+const Processos = lazy(() => import("./pages/Processos"));
+
+function LegacyPrioritiesRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/processos${search}`} replace />;
+}
 const UniversoRamos = lazy(() => import("./pages/UniversoRamos"));
 const PlanoMestrePreview = lazy(() => import("./pages/PlanoMestrePreview"));
 const Auditorias = lazy(() => import("./pages/Auditorias"));
@@ -58,7 +63,8 @@ const App = () => {
                   <Route path="/jackbox" element={<JackboxPanel />} />
                   <Route path="/jackbox-unificado" element={<JackboxUnified />} />
                   <Route path="/central-entregas" element={<CentralEntregas />} />
-                  <Route path="/minhas-prioridades" element={<MyPriorities />} />
+                  <Route path="/processos" element={<Processos />} />
+                  <Route path="/minhas-prioridades" element={<LegacyPrioritiesRedirect />} />
                   <Route path="/universo-ramos" element={<UniversoRamos />} />
                   <Route path="/universo-ramos/plano-mestre" element={<PlanoMestrePreview />} />
                   <Route path="/auditorias" element={<Auditorias />} />

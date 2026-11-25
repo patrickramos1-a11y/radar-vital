@@ -5,7 +5,7 @@ describe("global navigation routes", () => {
   it("keeps every module and view linked to an existing application route", () => {
     const knownPaths = new Set([
       "/", "/dashboard", "/comentarios", "/relatorios-pdf", "/config",
-      "/jackbox", "/jackbox-unificado", "/central-entregas",
+      "/jackbox", "/jackbox-unificado", "/processos", "/central-entregas",
       "/universo-ramos", "/universo-ramos/plano-mestre", "/auditorias", "/tesouro",
     ]);
     for (const module of navigationModules) {
@@ -17,7 +17,9 @@ describe("global navigation routes", () => {
   it("selects the deepest module before its parent", () => {
     expect(activeModule("/universo-ramos/plano-mestre").key).toBe("plano");
     expect(activeModule("/universo-ramos").key).toBe("universo");
-    expect(activeModule("/jackbox").key).toBe("tarefas");
+    expect(activeModule("/jackbox").key).toBe("processos");
+    expect(activeModule("/processos").key).toBe("processos");
+    expect(activeModule("/minhas-prioridades").key).toBe("processos");
   });
 
   it("reflects query-driven views, including detail pages", () => {
@@ -27,6 +29,8 @@ describe("global navigation routes", () => {
     expect(activeView(master, "/universo-ramos/plano-mestre", "")).toBe("empresa");
     const central = activeModule("/central-entregas");
     expect(activeView(central, "/central-entregas", "?tab=deliverables")).toBe("deliverables");
-    expect(activeView(central, "/central-entregas", "")).toBe("priorities");
+    expect(activeView(central, "/central-entregas", "")).toBe("processos");
+    expect(activeView(central, "/central-entregas", "?tab=priorities")).toBe("processos");
+    expect(activeView(central, "/central-entregas", "?tab=tasks")).toBe("processos");
   });
 });

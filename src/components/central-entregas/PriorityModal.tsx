@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Check, ChevronDown, Flame, Minus, Search, Siren } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Priority, PriorityFormData, PriorityStatus, PRIORITY_STATUS_CONFIG } from '@/types/priority';
+import { Priority, PriorityFormData, PriorityStatus } from '@/types/priority';
 import { Client } from '@/types/client';
-import { TASK_MODALITY_CONFIG, TaskModality } from '@/types/task';
+import { TASK_MODALITY_CONFIG, TASK_RECURRENCE_LABELS, TaskModality, TaskRecurrence } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +20,8 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   editing: Priority | null;
   linkedTaskTitle?: string;
+  linkedTaskScheduledFor?: string | null;
+  linkedTaskRecurrence?: TaskRecurrence;
   defaultAssignee?: string;
   presetTitle?: string;
   presetClientId?: string | null;
@@ -39,7 +41,7 @@ const weightOptions = [
   { value: 2, label: 'Normal', Icon: Minus, className: 'border-slate-200 bg-slate-50 text-slate-700' },
   { value: 3, label: 'Alta', Icon: ArrowUp, className: 'border-orange-200 bg-orange-50 text-orange-700' },
   { value: 4, label: 'Urgente', Icon: Flame, className: 'border-red-200 bg-red-50 text-red-700' },
-  { value: 5, label: 'Extremamente urgente', Icon: Siren, className: 'border-rose-300 bg-rose-50 text-rose-700' },
+  { value: 5, label: 'Máxima', Icon: Siren, className: 'border-rose-300 bg-rose-50 text-rose-700' },
 ] as const;
 
 const universeOptions: UniverseOption[] = [
@@ -54,6 +56,8 @@ export function PriorityModal({
   onOpenChange,
   editing,
   linkedTaskTitle,
+  linkedTaskScheduledFor,
+  linkedTaskRecurrence,
   defaultAssignee,
   presetTitle,
   presetClientId,
@@ -76,6 +80,8 @@ export function PriorityModal({
   const [targetPickerOpen, setTargetPickerOpen] = useState(false);
   const [assignedTo, setAssignedTo] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
+  const [scheduledFor, setScheduledFor] = useState('');
+  const [recurrence, setRecurrence] = useState<TaskRecurrence>('none');
   const [weight, setWeight] = useState(1);
   const [category, setCategory] = useState<TaskModality>('levantamento');
   const [status, setStatus] = useState<PriorityStatus>('aberta');
@@ -92,6 +98,8 @@ export function PriorityModal({
       setUseUniverseRamos(Boolean(editing.universe_item_id));
       setAssignedTo(editing.assigned_to.slice(0, 1));
       setDueDate(editing.due_date || '');
+      setScheduledFor(linkedTaskScheduledFor || '');
+      setRecurrence(linkedTaskRecurrence || 'none');
       setWeight(editing.weight || 1);
       setCategory((editing.category as TaskModality) || 'levantamento');
       setStatus(editing.status);
@@ -104,6 +112,8 @@ export function PriorityModal({
       setUseUniverseRamos(false);
       setAssignedTo(defaultAssignee ? [defaultAssignee] : []);
       setDueDate('');
+      setScheduledFor('');
+      setRecurrence('none');
       setWeight(1);
       setCategory('levantamento');
       setStatus('aberta');
@@ -111,7 +121,7 @@ export function PriorityModal({
     setTargetQuery('');
     setTargetPickerOpen(false);
     setSubmitting(false);
-  }, [open, editing, defaultAssignee, presetTitle, presetClientId, presetDescription]);
+  }, [open, editing, defaultAssignee, presetTitle, presetClientId, presetDescription, linkedTaskScheduledFor, linkedTaskRecurrence]);
 
   const selectedUniverseTarget = universeOptions.find(item => item.id === universeItemId);
 
@@ -146,6 +156,8 @@ export function PriorityModal({
         universe_item_id: universeItemId,
         assigned_to: assignedTo.slice(0, 1),
         due_date: dueDate || null,
+        scheduled_for: scheduledFor || null,
+        ...(universeItemId ? {} : { recurrence }),
         weight: Math.min(5, Math.max(1, Number(weight) || 1)),
         category,
         status,
@@ -229,10 +241,23 @@ export function PriorityModal({
                 allowMultiple={allowMultipleClients && !editing}
                 disabled={lockClientId}
               />}
-              <div>
-                <Label>Prazo</Label>
-                <Input type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Vencimento</Label>
+                  <Input type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} />
+                </div>
+                <div>
+                  <Label>Planejamento</Label>
+                  <Input type="date" value={scheduledFor} onChange={event => setScheduledFor(event.target.value)} />
+                </div>
               </div>
+              {!useUniverseRamos && <div>
+                <Label htmlFor="priority-recurrence">Repetição</Label>
+                <select id="priority-recurrence" value={recurrence} onChange={event => setRecurrence(event.target.value as TaskRecurrence)} className="h-10 w-full border bg-background px-2 text-sm">
+                  {(Object.keys(TASK_RECURRENCE_LABELS) as TaskRecurrence[]).map(item => <option key={item} value={item}>{TASK_RECURRENCE_LABELS[item]}</option>)}
+                </select>
+                {recurrence !== 'none' && <p className="mt-1 text-[11px] text-muted-foreground">Ao concluir, o próximo período abre sozinho, com o mesmo cliente e responsável.</p>}
+              </div>}
             </div>
           )}
 
@@ -252,7 +277,7 @@ export function PriorityModal({
             </div>
           )}
 
-          <div className={cn('grid gap-3', promotionMode ? 'grid-cols-2' : 'grid-cols-3')}>
+          <div className={cn('grid gap-3', promotionMode ? 'grid-cols-2' : 'grid-cols-2')}>
             <div className={promotionMode ? 'col-span-2' : ''}>
               <Label>Peso (1-5)</Label>
               <div className="mt-1 grid grid-cols-5 gap-1">
@@ -268,14 +293,6 @@ export function PriorityModal({
                 {(Object.keys(TASK_MODALITY_CONFIG) as TaskModality[]).map(modality => <option key={modality} value={modality}>{TASK_MODALITY_CONFIG[modality].label}</option>)}
               </select>
             </div>
-            {!promotionMode && (
-              <div>
-                <Label>Status</Label>
-                <select value={status} onChange={event => setStatus(event.target.value as PriorityStatus)} className="h-10 w-full border bg-background px-2 text-sm">
-                  {(Object.keys(PRIORITY_STATUS_CONFIG) as PriorityStatus[]).map(item => <option key={item} value={item}>{PRIORITY_STATUS_CONFIG[item].label}</option>)}
-                </select>
-              </div>
-            )}
           </div>
         </div>
 

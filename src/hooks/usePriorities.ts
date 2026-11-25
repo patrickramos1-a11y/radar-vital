@@ -5,6 +5,8 @@ import { Priority, PriorityFormData, PriorityStatus } from '@/types/priority';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { actorName } from '@/lib/auth';
+import { buildNextProcessOccurrence, taskUrgencyForWeight } from '@/lib/processRecurrence';
+import type { TaskModality, TaskPriority, TaskRecurrence } from '@/types/task';
 
 const dbRowToPriority = (row: Database['public']['Tables']['priorities']['Row']): Priority => ({
   id: row.id,
@@ -78,13 +80,18 @@ export function usePriorities() {
 
   useEffect(() => {
     fetch();
+    // A channel cannot receive callbacks after it subscribes. Give each hook
+    // mount its own channel so rapid remounts never reuse a subscribed one.
+    const channelId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const ch = supabase
-      .channel('priorities_realtime')
+      .channel(`priorities_realtime_${channelId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'priorities' }, () => {
         setTimeout(fetch, 100);
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { void supabase.removeChannel(ch); };
   }, [fetch]);
 
   const addPriority = useCallback(async (data: PriorityFormData, _clientName?: string) => {
@@ -93,20 +100,46 @@ export function usePriorities() {
         toast.error('Selecione um cliente ou um item do Universo Ramos');
         return null;
       }
+      const { scheduled_for: scheduledFor, recurrence = 'none', ...priorityData } = data;
       const payload: Database['public']['Tables']['priorities']['Insert'] = {
-        title: data.title,
-        description: data.description || null,
-        client_id: data.universe_item_id ? null : data.client_id || null,
-        assigned_to: (data.assigned_to || []).slice(0, 1),
-        due_date: data.due_date || null,
-        status: data.status || 'aberta',
-        weight: data.weight ?? 1,
-        category: data.category || null,
+        title: priorityData.title,
+        description: priorityData.description || null,
+        client_id: priorityData.universe_item_id ? null : priorityData.client_id || null,
+        assigned_to: (priorityData.assigned_to || []).slice(0, 1),
+        due_date: priorityData.due_date || null,
+        status: priorityData.status || 'aberta',
+        weight: priorityData.weight ?? 1,
+        category: priorityData.category || null,
         created_by: currentUserName,
-        ...(data.universe_item_id ? { universe_item_id: data.universe_item_id } : {}),
+        ...(priorityData.universe_item_id ? { universe_item_id: priorityData.universe_item_id } : {}),
       };
       const { data: inserted, error } = await supabase.from('priorities').insert(payload).select().single();
       if (error) throw error;
+      // Planning dates and repetition live on the linked task, so a priority
+      // that needs either one gets its root task right away.
+      if ((scheduledFor || recurrence !== 'none') && inserted.client_id) {
+        const { data: task, error: taskError } = await supabase.from('tasks').insert({
+          client_id: inserted.client_id,
+          title: inserted.title,
+          description: inserted.description,
+          assigned_to: Array.isArray(inserted.assigned_to) ? inserted.assigned_to.slice(0, 1) : [],
+          due_date: inserted.due_date,
+          scheduled_for: scheduledFor || null,
+          priority: taskUrgencyForWeight(inserted.weight),
+          priority_id: inserted.id,
+          modality: inserted.category || 'levantamento',
+          status: 'pendente',
+          completed: false,
+          recurrence,
+          created_by: currentUserName,
+        }).select('id').single();
+        if (taskError) {
+          await supabase.from('priorities').delete().eq('id', inserted.id);
+          throw taskError;
+        }
+        const { error: linkError } = await supabase.from('priorities').update({ source_task_id: task.id }).eq('id', inserted.id);
+        if (linkError) throw linkError;
+      }
       await fetch();
       toast.success('Prioridade criada');
       return inserted ? dbRowToPriority(inserted) : null;
@@ -213,10 +246,59 @@ export function usePriorities() {
     return { data: null, error: priorityError };
   }, []);
 
+  /** Reads the linked root task before completion clears its planning date. */
+  const loadRecurringRoot = useCallback(async (priority: Priority) => {
+    if (!priority.source_task_id) return null;
+    const { data: row, error } = await supabase.from('tasks').select('*').eq('id', priority.source_task_id).maybeSingle();
+    if (error || !row || row.recurrence === 'none' || row.parent_task_id) return null;
+    return { ...row, priority: row.priority as TaskPriority, modality: row.modality as TaskModality, recurrence: row.recurrence as TaskRecurrence, assigned_to: row.assigned_to ?? [] };
+  }, []);
+
+  /**
+   * Opens the next period of a repeating priority: a new root task and a new
+   * open priority linked to it, plus fresh copies of the direct subtasks.
+   * Returns the new due date, or null when it already existed.
+   */
+  const openNextOccurrence = useCallback(async (root: NonNullable<Awaited<ReturnType<typeof loadRecurringRoot>>>, priority: Priority) => {
+    const next = buildNextProcessOccurrence(root, priority, currentUserName);
+    if (!next) return null;
+    const { data: task, error: taskError } = await supabase.from('tasks').insert(next.task).select('id').single();
+    if (taskError) {
+      if (taskError.code === '23505') return null;
+      throw taskError;
+    }
+    if (next.priority) {
+      const { data: created, error: priorityError } = await supabase.from('priorities')
+        .insert({ ...next.priority, source_task_id: task.id }).select('id').single();
+      if (priorityError) {
+        await supabase.from('tasks').delete().eq('id', task.id);
+        throw priorityError;
+      }
+      const { error: linkError } = await supabase.from('tasks').update({ priority_id: created.id }).eq('id', task.id);
+      if (linkError) throw linkError;
+    }
+    const { data: children, error: childrenError } = await supabase.from('tasks')
+      .select('title,description,external_url,assigned_to,priority,modality,sort_order,client_id')
+      .eq('parent_task_id', root.id);
+    if (childrenError) throw childrenError;
+    if (children?.length) {
+      const { error: copyError } = await supabase.from('tasks').insert(children.map(child => ({
+        ...child,
+        parent_task_id: task.id,
+        status: 'pendente',
+        completed: false,
+        created_by: currentUserName,
+      })));
+      if (copyError) throw copyError;
+    }
+    return next.dueDate;
+  }, [currentUserName]);
+
   const updatePriority = useCallback(async (id: string, data: Partial<PriorityFormData>) => {
     try {
       const current = priorities.find(priority => priority.id === id);
       if (data.status === 'concluida' && current) {
+        const recurringRoot = await loadRecurringRoot(current);
         const finish = async (finishChildren: boolean) => {
           const rpcResult = await callPriorityRpc('finish_priority_with_task_tree', {
             p_priority_id: current.id,
@@ -237,17 +319,33 @@ export function usePriorities() {
           finishResult = await finish(true);
         }
         if (finishResult.error) throw finishResult.error;
-        const { status: _status, ...otherChanges } = data;
+        const { status: _status, scheduled_for: scheduledFor, recurrence: _recurrence, ...otherChanges } = data;
         if (otherChanges.assigned_to) otherChanges.assigned_to = otherChanges.assigned_to.slice(0, 1);
         if (Object.keys(otherChanges).length) {
           const { error: editError } = await supabase.from('priorities').update(otherChanges).eq('id', id);
           if (editError) throw editError;
         }
+        if (Object.prototype.hasOwnProperty.call(data, 'scheduled_for') && current.source_task_id) {
+          const { error: scheduleError } = await supabase.from('tasks').update({ scheduled_for: scheduledFor || null }).eq('id', current.source_task_id);
+          if (scheduleError) throw scheduleError;
+        }
+        let nextDueDate: string | null = null;
+        if (recurringRoot) {
+          try {
+            nextDueDate = await openNextOccurrence(recurringRoot, { ...current, ...otherChanges, assigned_to: otherChanges.assigned_to ?? current.assigned_to });
+          } catch (recurrenceError) {
+            console.error(recurrenceError);
+            toast.error('Prioridade concluída, mas a próxima repetição não foi criada');
+          }
+        }
         await fetch();
-        toast.success('Prioridade concluída');
+        toast.success('Prioridade concluída', nextDueDate
+          ? { description: `Próxima repetição aberta para ${new Date(`${nextDueDate}T12:00:00`).toLocaleDateString('pt-BR')}.` }
+          : undefined);
         return true;
       }
-      const patchData = { ...data };
+      const { scheduled_for: scheduledFor, recurrence, ...patchData } = data;
+      const scheduleWasSupplied = Object.prototype.hasOwnProperty.call(data, 'scheduled_for');
       if (patchData.assigned_to) patchData.assigned_to = patchData.assigned_to.slice(0, 1);
       if (patchData.universe_item_id === null && !current?.universe_item_id) delete patchData.universe_item_id;
       const patch: Database['public']['Tables']['priorities']['Update'] = { ...patchData };
@@ -255,6 +353,34 @@ export function usePriorities() {
       if (data.status && data.status !== 'concluida') patch.completed_at = null;
       const { error } = await supabase.from('priorities').update(patch).eq('id', id);
       if (error) throw error;
+      const taskChanges: Database['public']['Tables']['tasks']['Update'] = {};
+      if (scheduleWasSupplied) taskChanges.scheduled_for = scheduledFor || null;
+      if (recurrence) taskChanges.recurrence = recurrence;
+      if (Object.keys(taskChanges).length && current?.source_task_id) {
+        const { error: taskError } = await supabase.from('tasks').update(taskChanges).eq('id', current.source_task_id);
+        if (taskError) throw taskError;
+      } else if (current && !current.source_task_id && current.client_id && (scheduledFor || (recurrence && recurrence !== 'none'))) {
+        // An older priority without a root task gets one the first time it is
+        // planned or set to repeat.
+        const { data: task, error: taskError } = await supabase.from('tasks').insert({
+          client_id: current.client_id,
+          title: patch.title ?? current.title,
+          description: patch.description ?? current.description,
+          assigned_to: (patch.assigned_to ?? current.assigned_to).slice(0, 1),
+          due_date: patch.due_date !== undefined ? patch.due_date : current.due_date,
+          scheduled_for: scheduledFor || null,
+          priority: taskUrgencyForWeight(patch.weight ?? current.weight),
+          priority_id: current.id,
+          modality: patch.category ?? current.category ?? 'levantamento',
+          status: 'pendente',
+          completed: false,
+          recurrence: recurrence ?? 'none',
+          created_by: currentUserName,
+        }).select('id').single();
+        if (taskError) throw taskError;
+        const { error: linkError } = await supabase.from('priorities').update({ source_task_id: task.id }).eq('id', current.id);
+        if (linkError) throw linkError;
+      }
       await fetch();
       toast.success('Prioridade atualizada');
       return true;
@@ -266,7 +392,7 @@ export function usePriorities() {
       toast.error('Erro ao atualizar prioridade', { description: message });
       return false;
     }
-  }, [fetch, finishPriorityThroughTables, priorities]);
+  }, [currentUserName, fetch, finishPriorityThroughTables, loadRecurringRoot, openNextOccurrence, priorities]);
 
   const deletePriority = useCallback(async (id: string) => {
     try {

@@ -408,6 +408,14 @@ Migrations: `20261018050305_client_workspace_upgrade.sql`, aditiva e pendente de
 Testes: TypeScript sem erros, ESLint dos arquivos alterados sem erros, 26 testes Vitest aprovados e build de producao aprovado.
 Resultado: implementacao local concluida, com resumo gerencial do cliente, linha do tempo, comentarios integrados, descricao, situacao operacional, responsaveis, prazo, prioridade, subtarefas, dependencias, modelos e recorrencia.
 Pendencias: o conector Supabase atual nao tem permissao no projeto `ixiffabjunvpoizdhwtk`; aplicar a migration, regenerar os tipos a partir do banco, validar o fluxo autenticado e somente entao publicar no Vercel.
+
+2026-11-25 - Processos (prioridades e tarefas unificadas)
+Resumo: menu unico Processos e aba unica na Central, com as melhorias que estavam paradas na pasta radar-vital-visual-release: Vencimento e Planejamento, planejadas contando como abertas, status fora do formulario, peso 5 "Maxima", subtarefas visiveis com participantes, cor do responsavel e canais realtime unicos. Repeticao semanal ou mensal no cadastro de prioridades e tarefas; concluir uma prioridade repetida abre o proximo periodo. Decisao registrada em D-024.
+Arquivos: `src/pages/Processos.tsx`, `src/App.tsx`, `src/components/layout/navigationModel.ts`, `src/pages/CentralEntregas.tsx`, `src/components/central-entregas/PrioritiesTab.tsx`, `PriorityModal.tsx`, `src/hooks/usePriorities.ts`, `src/lib/processRecurrence.ts`, `src/lib/taskOperations.ts`; `TasksTab.tsx` removido por ficar sem uso.
+Migrations: nenhuma. A coluna `tasks.recurrence` ja existe em producao (conferido por leitura em 25/11).
+Testes: TypeScript sem erros, ESLint dos arquivos alterados sem erros, 241 testes Vitest aprovados (no Node 26 rodar com `NODE_OPTIONS=--no-webstorage`), build aprovado e tela conferida no navegador local sem gravar dados.
+Resultado: implementacao concluida na branch `feature/processos-publicacao` e publicada por solicitacao expressa do usuario em 25/11/2026 (mesclagem em `main` com deploy automatico na Vercel), como excecao a publicacao unica, no mesmo espirito de D-021. Sem migrations.
+Pendencias: acompanhar a primeira criacao e conclusao real de um processo repetido; intervalos livres de repeticao exigem migration futura.
 ```
 
 ## Modelo para proximos registros

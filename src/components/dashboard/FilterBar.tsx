@@ -221,15 +221,15 @@ export function FilterBar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                to="/minhas-prioridades"
-                aria-label="Minhas prioridades"
+                to="/processos"
+                aria-label="Meus processos"
                 className="rounded-md border border-amber-300 bg-amber-50 p-1.5 text-amber-700 transition-all hover:border-amber-500 hover:bg-amber-100"
               >
                 <Star className="h-4 w-4" />
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              Minhas prioridades
+              Meus processos
             </TooltipContent>
           </Tooltip>
           <GridSizePicker 

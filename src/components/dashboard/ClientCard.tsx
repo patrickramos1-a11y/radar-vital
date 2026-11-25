@@ -158,7 +158,7 @@ export function ClientCard({
       onOpenTab(client.id, 'priorities');
       return;
     }
-    navigate(`/central-entregas?tab=priorities&clientId=${encodeURIComponent(client.id)}`);
+    navigate(`/central-entregas?tab=processos&clientId=${encodeURIComponent(client.id)}`);
   };
 
   const handleChecklistClick = (e: React.MouseEvent) => {

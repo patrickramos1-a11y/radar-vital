@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, CalendarDays, CalendarPlus, CalendarX2, Check, ClipboardCheck, Clock3, ExternalLink, Eye, FileCheck2, Flame, History, Link2, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, CalendarDays, CalendarPlus, CalendarX2, Check, ClipboardCheck, Clock3, ExternalLink, Eye, FileCheck2, Flame, History, Link2, ListChecks, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -54,10 +54,6 @@ const PRIORITY_VISUALS: Record<TaskPriority, { icon: typeof Flame; shortLabel: s
   baixa: { icon: ArrowDown, shortLabel: 'Baixa', className: 'border-sky-200 bg-sky-50 text-sky-700' },
 };
 
-const isFutureScheduled = (task: Task) => Boolean(
-  task.scheduled_for && task.scheduled_for > new Date().toISOString().slice(0, 10),
-);
-
 export interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -107,8 +103,14 @@ export function TaskModal({
   const collaboratorColorMap: Record<string, string> = {};
   collaborators.forEach(c => { collaboratorColorMap[c.name] = c.color; });
 
+  const taskById = new Map(tasks.map(task => [task.id, task]));
   const activeTasks = tasks
-    .filter(t => !t.parent_task_id && !t.completed && t.status !== 'cancelada' && !isFutureScheduled(t))
+    .filter(t => {
+      if (t.completed || t.status === 'cancelada') return false;
+      if (!t.parent_task_id) return true;
+      const parent = taskById.get(t.parent_task_id);
+      return !parent || parent.completed || parent.status === 'cancelada';
+    })
     .sort((a, b) => (PRIORITY_CONFIG[a.priority]?.order ?? 9) - (PRIORITY_CONFIG[b.priority]?.order ?? 9));
   const completedTasks = tasks.filter(t => !t.parent_task_id && (t.completed || t.status === 'cancelada'));
   const openTasks = activeTasks.length;
@@ -620,7 +622,6 @@ function TaskItem({
               <span className="inline-flex h-6 items-center gap-1 bg-slate-100 px-1.5 font-medium text-slate-600" title={`Criada há ${daysOpen} ${daysOpen === 1 ? 'dia' : 'dias'}`}>
                 <Clock3 className="h-3 w-3" />{daysOpen}d
               </span>
-              {progress.total > 0 && <span>{progress.completed}/{progress.total} etapas</span>}
               <TaskDueDateMenu value={task.due_date} title={task.title} onChange={onDueDateChange} />
               <button
                 type="button"
@@ -651,6 +652,8 @@ function TaskItem({
           )}
         </div>
       )}
+
+      {subtasks.length > 0 && <button type="button" onClick={() => setSubtasksExpanded(current => !current)} className="inline-flex h-7 shrink-0 items-center gap-1 border border-blue-200 bg-blue-50 px-1.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100" aria-label={`${subtasksExpanded ? 'Recolher' : 'Mostrar'} ${subtasks.length} ${subtasks.length === 1 ? 'subtarefa' : 'subtarefas'} de ${task.title}`} aria-expanded={subtasksExpanded} title={`${progress.completed}/${progress.total} subtarefas concluídas`}><ListChecks className="h-3.5 w-3.5" />{subtasks.length}</button>}
 
       <button
         type="button"
@@ -712,18 +715,6 @@ function TaskItem({
             />
           </label>
         </div>
-      )}
-
-      {subtasks.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setSubtasksExpanded(current => !current)}
-          className="ml-9 flex h-7 items-center gap-1.5 px-2 text-[10px] font-semibold text-primary hover:bg-primary/5"
-          aria-expanded={subtasksExpanded}
-        >
-          <ArrowDown className={cn('h-3.5 w-3.5 transition-transform', !subtasksExpanded && '-rotate-90')} />
-          {subtasks.length} {subtasks.length === 1 ? 'subtarefa' : 'subtarefas'}
-        </button>
       )}
 
       {subtasksExpanded && [...subtasks]

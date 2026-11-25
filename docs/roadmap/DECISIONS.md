@@ -251,6 +251,23 @@ autenticados. Permissoes publicas dos dominios operacionais permanecem intactas.
   competencias. Seus marcos de promocao serao liberados somente depois da
   definicao formal dos respectivos PACs, metas e cargos.
 
+## D-024 - Processos como caminho final de prioridades e tarefas (2026-11-25)
+
+- Prioridades e tarefas passam a ser apresentadas como Processos: um menu
+  unico (`/processos`) e uma unica aba na Central (`?tab=processos`).
+- As tabelas continuam separadas, como em D-004. A uniao acontece no
+  adaptador `reconcileProcesses` e na tela.
+- Endereços antigos continuam funcionando: `/minhas-prioridades` leva a
+  `/processos`, e `?tab=priorities` ou `?tab=tasks` abrem a aba Processos.
+- Planejamento e repeticao ficam na tarefa raiz. Uma prioridade planejada ou
+  repetida ganha a tarefa raiz no momento em que e criada ou editada.
+- Repeticao usa a coluna existente `tasks.recurrence` (semanal ou mensal).
+  Ao concluir um periodo, o proximo abre como um novo processo com o mesmo
+  cliente, responsavel, peso e subtarefas diretas; o indice unico
+  `(recurrence_origin_id, due_date)` impede repeticoes duplicadas.
+- Intervalos livres (a cada N dias ou meses) ja tem regra em
+  `processRecurrence.ts`, mas dependem de migration futura.
+
 ## Decisoes pendentes
 
 
