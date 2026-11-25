@@ -1,7 +1,7 @@
 # Processos v2 — tudo vira processo
 
 Desenho combinado com o Patrick em 25/11/2026. Substitui a ideia de "prioridade"
-como coisa separada. Complementa D-024.
+como coisa separada. Decisão registrada em D-025.
 
 ## 1. Conceito
 
@@ -80,9 +80,13 @@ vale 1; de peso 5 vale 5.
 Antes do SQL valer, o sistema publicado continua como está. O código novo só é
 publicado depois que a migration estiver aplicada e conferida.
 
+### Envelhecimento
+Tarefa parada não vira mais prioridade sozinha. Os processos que já vieram do
+envelhecimento automático continuam subindo um ponto de peso a cada 15 dias.
+
 ## 5. Ordem de execução
 
-1. Migration + texto para colar no Lovable.
+1. Migration + texto para colar no Lovable. **Feito em 25/11** (`20261125180000_processos_v2.sql`, `PROMPT_APLICAR_PROCESSOS_V2_SQL.md`); falta aplicar.
 2. Modelo de processo no código (tarefa raiz com peso), sem promover/rebaixar.
 3. Tela Processos (Processos + Painel) e Novo processo.
 4. Gestão de processos (Todos, Planejados, Recorrentes) e processo-mãe.

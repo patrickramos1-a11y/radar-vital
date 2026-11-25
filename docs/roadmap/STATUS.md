@@ -1,6 +1,6 @@
 # Estado de Execucao
 
-Atualizado em: 2026-10-27
+Atualizado em: 2026-11-25
 
 ## Entrega recente
 
@@ -416,6 +416,14 @@ Migrations: nenhuma. A coluna `tasks.recurrence` ja existe em producao (conferid
 Testes: TypeScript sem erros, ESLint dos arquivos alterados sem erros, 241 testes Vitest aprovados (no Node 26 rodar com `NODE_OPTIONS=--no-webstorage`), build aprovado e tela conferida no navegador local sem gravar dados.
 Resultado: implementacao concluida na branch `feature/processos-publicacao` e publicada por solicitacao expressa do usuario em 25/11/2026 (mesclagem em `main` com deploy automatico na Vercel), como excecao a publicacao unica, no mesmo espirito de D-021. Sem migrations.
 Pendencias: acompanhar a primeira criacao e conclusao real de um processo repetido; intervalos livres de repeticao exigem migration futura.
+
+2026-11-25 - Processos v2, passo 1 de 8 (migration)
+Resumo: inicio do desenho "tudo vira processo" (docs/roadmap/PROCESSOS_V2.md, D-025). Migration aditiva: peso 1 a 5 e relogio do peso na tarefa; prioridades abertas viram processos (sem cliente vao para RAMOS ENGENHARIA, sem tarefa raiz ganham uma); repeticao com intervalo livre; comentario ligado ao processo; processo principal concluido gera entregavel sem duplicar o da prioridade; envelhecimento nao cria mais prioridades. Gatilhos mantem peso e urgencia iguais enquanto o codigo atual estiver publicado.
+Arquivos: `supabase/migrations/20261125180000_processos_v2.sql`, `docs/roadmap/PROMPT_APLICAR_PROCESSOS_V2_SQL.md`, `docs/roadmap/PROCESSOS_V2.md`, `supabase/tests/processos_v2/`.
+Migrations: `20261125180000_processos_v2.sql`, pendente de aplicacao pelo usuario no Lovable (texto pronto no PROMPT). Numeros lidos em producao em 25/11: 206 prioridades abertas, 190 com tarefa raiz, 15 sem cliente e sem tarefa, 1 com cliente e sem tarefa, 18 com tarefa raiz ja concluida (seguem concluidas).
+Testes: migration executada duas vezes em Postgres local (PGlite) com casos reais simulados; 34 verificacoes aprovadas, inclusive o texto do PROMPT exatamente como sera colado.
+Resultado: branch `feature/processos-v2`. Nada publicado; o app atual continua funcionando antes e depois da migration.
+Pendencias: aplicar a migration e conferir as quatro consultas; depois seguir o passo 2 (modelo de processo no codigo). No dia da publicacao, rodar de novo `convert_open_priorities_to_processes`.
 ```
 
 ## Modelo para proximos registros

@@ -268,6 +268,25 @@ autenticados. Permissoes publicas dos dominios operacionais permanecem intactas.
 - Intervalos livres (a cada N dias ou meses) ja tem regra em
   `processRecurrence.ts`, mas dependem de migration futura.
 
+## D-025 - Processos v2: tudo vira processo (2026-11-25)
+
+- Substitui a parte de D-024 que mantinha prioridade e tarefa lado a lado.
+  O processo e a tarefa raiz; etapas sao as subtarefas.
+- Peso de 1 a 5 em `tasks.weight`; peso 5 = Maxima. Nao existe mais promover
+  para prioridade nem voltar para tarefa. A urgencia (`tasks.priority`) passa
+  a acompanhar o peso.
+- A tabela `priorities` fica so como historico. As prioridades abertas foram
+  convertidas em processos; as sem cliente foram para RAMOS ENGENHARIA.
+- Todo processo principal concluido vira entregavel
+  (`deliverables.source_task_id`). Etapas nao viram entregavel.
+- Comentario de acompanhamento fica ligado ao processo
+  (`client_comments.task_id`).
+- Repeticao: processo-mae aberto, com uma etapa por periodo; aceita intervalo
+  livre (`recurrence = 'custom'`).
+- Envelhecimento automatico nao cria mais prioridades. Os processos que ja
+  vieram dele continuam subindo um ponto de peso a cada `weight_step_days`.
+- Desenho completo em `docs/roadmap/PROCESSOS_V2.md`.
+
 ## Decisoes pendentes
 
 
