@@ -831,6 +831,7 @@ export type Database = {
           read_vanessa: boolean
           reply_to_id: string | null
           required_readers: string[]
+          task_id: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -856,6 +857,7 @@ export type Database = {
           read_vanessa?: boolean
           reply_to_id?: string | null
           required_readers?: string[]
+          task_id?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -881,6 +883,7 @@ export type Database = {
           read_vanessa?: boolean
           reply_to_id?: string | null
           required_readers?: string[]
+          task_id?: string | null
         }
         Relationships: [
           {
@@ -895,6 +898,13 @@ export type Database = {
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "client_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -1259,6 +1269,7 @@ export type Database = {
           name: string
           requester: string | null
           source_priority_id: string | null
+          source_task_id: string | null
           status: string
           updated_at: string
         }
@@ -1274,6 +1285,7 @@ export type Database = {
           name: string
           requester?: string | null
           source_priority_id?: string | null
+          source_task_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -1289,6 +1301,7 @@ export type Database = {
           name?: string
           requester?: string | null
           source_priority_id?: string | null
+          source_task_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -1305,6 +1318,13 @@ export type Database = {
             columns: ["source_priority_id"]
             isOneToOne: true
             referencedRelation: "priorities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliverables_source_task_id_fkey"
+            columns: ["source_task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -2931,13 +2951,17 @@ export type Database = {
           priority_changed_at: string
           priority_id: string | null
           recurrence: string
+          recurrence_interval: number | null
           recurrence_origin_id: string | null
+          recurrence_unit: string | null
           scheduled_for: string | null
           sort_order: number
           source_comment_id: string | null
           status: string
           title: string
           updated_at: string
+          weight: number
+          weight_changed_at: string
         }
         Insert: {
           assigned_to?: string[]
@@ -2956,13 +2980,17 @@ export type Database = {
           priority_changed_at?: string
           priority_id?: string | null
           recurrence?: string
+          recurrence_interval?: number | null
           recurrence_origin_id?: string | null
+          recurrence_unit?: string | null
           scheduled_for?: string | null
           sort_order?: number
           source_comment_id?: string | null
           status?: string
           title: string
           updated_at?: string
+          weight?: number
+          weight_changed_at?: string
         }
         Update: {
           assigned_to?: string[]
@@ -2981,13 +3009,17 @@ export type Database = {
           priority_changed_at?: string
           priority_id?: string | null
           recurrence?: string
+          recurrence_interval?: number | null
           recurrence_origin_id?: string | null
+          recurrence_unit?: string | null
           scheduled_for?: string | null
           sort_order?: number
           source_comment_id?: string | null
           status?: string
           title?: string
           updated_at?: string
+          weight?: number
+          weight_changed_at?: string
         }
         Relationships: [
           {
@@ -3161,6 +3193,10 @@ export type Database = {
           p_reward_superstars?: number
         }
         Returns: number
+      }
+      convert_open_priorities_to_processes: {
+        Args: { p_actor_name?: string }
+        Returns: Json
       }
       create_challenge: {
         Args: {
@@ -3622,6 +3658,8 @@ export type Database = {
         }
         Returns: string
       }
+      task_urgency_for_weight: { Args: { p_weight: number }; Returns: string }
+      task_weight_for_urgency: { Args: { p_urgency: string }; Returns: number }
       update_audit_client_item: {
         Args: {
           p_actor_name?: string
