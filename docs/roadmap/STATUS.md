@@ -435,6 +435,7 @@ Migrations: nenhuma.
 Testes: TypeScript sem erros, ESLint dos arquivos alterados sem erros, 246 testes Vitest aprovados, build aprovado.
 Resultado: branch `feature/processos-v2`. Nada publicado. As telas atuais ainda usam prioridades; os botoes de promover/rebaixar saem com elas nos passos 3 e 4.
 Pendencias: passo 3 (tela Processos + Painel e Novo processo).
+Decisao do usuario (25/11): as 3 prioridades concluidas cuja tarefa principal segue pendente (RENOVACAO LO; MONTAR PROCESSO DE LP - FLORECER; EDIFICACAO MULTIFAMILIAR VERTICAL - LO, todas peso 5) ficam abertas como processos de peso Maxima. Nenhum dado alterado.
 ```
 
 ## Modelo para proximos registros
