@@ -86,7 +86,7 @@ envelhecimento automático continuam subindo um ponto de peso a cada 15 dias.
 
 ## 5. Ordem de execução
 
-1. Migration + texto para colar no Lovable. **Feito em 25/11** (`20261125180000_processos_v2.sql`, `PROMPT_APLICAR_PROCESSOS_V2_SQL.md`); falta aplicar.
+1. Migration + texto para colar no Lovable. **Feito em 25/11** (`20261125180000_processos_v2.sql`). **Aplicada em produção em 25/11.**
 2. Modelo de processo no código (tarefa raiz com peso), sem promover/rebaixar.
 3. Tela Processos (Processos + Painel) e Novo processo.
 4. Gestão de processos (Todos, Planejados, Recorrentes) e processo-mãe.

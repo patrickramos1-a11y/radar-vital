@@ -424,6 +424,10 @@ Migrations: `20261125180000_processos_v2.sql`, pendente de aplicacao pelo usuari
 Testes: migration executada duas vezes em Postgres local (PGlite) com casos reais simulados; 34 verificacoes aprovadas, inclusive o texto do PROMPT exatamente como sera colado.
 Resultado: branch `feature/processos-v2`. Nada publicado; o app atual continua funcionando antes e depois da migration.
 Pendencias: aplicar a migration e conferir as quatro consultas; depois seguir o passo 2 (modelo de processo no codigo). No dia da publicacao, rodar de novo `convert_open_priorities_to_processes`.
+2026-11-25 - Processos v2, migration aplicada em producao
+Resumo: o usuario aplicou `docs/lovable/processos-v2/1_aplicar_processos_v2.sql` no Lovable, sem erros (commit do Lovable `321562b`, registrado em `drizzle/migrations/0017_processos_v2.sql`). Conferencia: 0 prioridades abertas sem processo; 15 processos criados pela conversao; nenhum processo aberto sem peso (peso 1: 53, 2: 85, 3: 49, 4: 11, 5: 72); 4 colunas novas.
+Achados: (1) o gatilho antigo `sync_task_to_priority` (drizzle 0012, ausente de `supabase/migrations`) marcou como concluidas 17 prioridades abertas cuja tarefa raiz ja estava concluida, com a data de conclusao da tarefa; e o mesmo que a tela ja mostrava, e nenhum entregavel novo foi criado. (2) A conversao criou 15 processos, nao 16: a prioridade que tinha cliente e nao tinha tarefa provavelmente mudou durante o dia, antes da migration. (3) Existem prioridades concluidas de envelhecimento com tarefa raiz ainda pendente (ex.: EDIFICACAO MULTIFAMILIAR VERTICAL - LO); o passo 2 decide como elas aparecem.
+Pendencias: passo 2; incluir os gatilhos de `drizzle/migrations/0012_client_priority_tasks.sql` no teste local.
 ```
 
 ## Modelo para proximos registros
