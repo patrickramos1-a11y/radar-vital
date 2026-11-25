@@ -464,7 +464,8 @@ Observacao: o atalho "Prioridades" na barra de Painéis do Painel AC e um link c
 2026-11-25 - Processos v2, passo 8 de 8 (publicacao)
 Resumo: publicacao feita por pedido expresso do usuario em 25/11/2026 ("Pode publicar"): PR #5 mesclado em `main` (commit `defc339`), deploy da Vercel com sucesso e site conferido em radar-vital.vercel.app (Processos com 103 processos do Patrick em 48 clientes, sem erros no console). Mesmo espirito de D-021 e da publicacao de Processos v1.
 Testes antes de publicar: TypeScript sem erros, 258 testes Vitest aprovados, build aprovado; ESLint sem erros novos (2 erros antigos em `ClientContext.tsx`). Navegador local com dados reais, sem gravar: Processos, Painel, Gestao de processos e Em acompanhamento.
-Pendencias: o usuario roda no Lovable `SELECT public.convert_open_priorities_to_processes('Publicacao Processos v2');`; conferir o primeiro processo recorrente real (a geracao de etapas so roda na versao publicada).
+Conversao final: o usuario rodou `convert_open_priorities_to_processes('Publicacao Processos v2')` no Lovable em 25/11; 191 prioridades abertas verificadas, 0 processos criados, 0 atualizados, 0 movidas (todas ja tinham processo).
+Pendencias: conferir o primeiro processo recorrente real (a geracao de etapas so roda na versao publicada).
 ```
 
 ## Modelo para proximos registros
