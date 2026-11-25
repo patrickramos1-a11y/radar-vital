@@ -32,6 +32,7 @@ import {
   type TaskStatus,
 } from '@/types/task';
 import { getTaskProgress } from '@/lib/taskOperations';
+import { recurrenceLabel } from '@/lib/processRecurrence';
 
 interface CollaboratorOption {
   id: string;
@@ -219,9 +220,14 @@ export function TaskDetailSheet({
                 onChange={(event) => saveField({ recurrence: event.target.value as TaskRecurrence })}
                 className="h-9 w-full rounded-md border bg-background px-2 text-sm"
               >
-                {(Object.keys(TASK_RECURRENCE_LABELS) as TaskRecurrence[]).map((recurrence) => (
-                  <option key={recurrence} value={recurrence}>{TASK_RECURRENCE_LABELS[recurrence]}</option>
-                ))}
+                {/* Intervalo livre só se edita no formulário de processo. */}
+                {(Object.keys(TASK_RECURRENCE_LABELS) as TaskRecurrence[])
+                  .filter((recurrence) => recurrence !== 'custom' || task.recurrence === 'custom')
+                  .map((recurrence) => (
+                    <option key={recurrence} value={recurrence} disabled={recurrence === 'custom'}>
+                      {recurrence === 'custom' ? recurrenceLabel(task) ?? TASK_RECURRENCE_LABELS.custom : TASK_RECURRENCE_LABELS[recurrence]}
+                    </option>
+                  ))}
               </select>
             </Field>
           </section>

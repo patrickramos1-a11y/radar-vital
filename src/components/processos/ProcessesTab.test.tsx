@@ -176,7 +176,58 @@ describe('ProcessesTab', () => {
       due_date: '2026-12-15',
       scheduled_for: '2026-12-01',
       recurrence: 'monthly',
+      recurrence_interval: null,
+      recurrence_unit: null,
     }, client.name));
+  });
+
+  it('creates a process that repeats every N days', async () => {
+    const { props } = renderTab({ tasks: [] });
+    fireEvent.change(screen.getByLabelText('Filtrar cliente'), { target: { value: client.id } });
+    fireEvent.click(screen.getByRole('button', { name: 'Novo processo' }));
+
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Processo'), { target: { value: 'Vistoria' } });
+    fireEvent.change(within(dialog).getByLabelText('Repetição'), { target: { value: 'every-days' } });
+    fireEvent.change(within(dialog).getByLabelText('Quantos dias'), { target: { value: '10' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Criar processo' }));
+
+    await waitFor(() => expect(props.onCreate).toHaveBeenCalledWith(client.id, expect.objectContaining({
+      title: 'Vistoria', recurrence: 'custom', recurrence_interval: 10, recurrence_unit: 'days',
+    }), client.name));
+  });
+
+  it('lists only planned processes in the planned section', () => {
+    renderTab({ section: 'planned', isTeamView: true, tasks: [task('Aberto'), task('Planejado', { scheduled_for: '2099-12-31' })] });
+    expect(screen.getByText('Planejado')).toBeInTheDocument();
+    expect(screen.queryByText('Aberto')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Painel' })).not.toBeInTheDocument();
+    expect(screen.getByText('1 processo planejado em 1 cliente')).toBeInTheDocument();
+  });
+
+  it('lists repeating processes with their periods open', () => {
+    renderTab({
+      section: 'recurring',
+      isTeamView: true,
+      tasks: [
+        task('Relatório', { recurrence: 'custom', recurrence_interval: 14, recurrence_unit: 'days', due_date: '2026-11-10' }),
+        task('Relatório · 24/11/2026', { parent_task_id: 'Relatório', recurrence_origin_id: 'Relatório', due_date: '2026-11-24', sort_order: 20261124 }),
+        task('Sem repetição'),
+      ],
+    });
+    expect(screen.getByText('Relatório')).toBeInTheDocument();
+    expect(screen.getByText('Quinzenal')).toBeInTheDocument();
+    expect(screen.getByText('Relatório · 24/11/2026')).toBeInTheDocument();
+    expect(screen.queryByText('Sem repetição')).not.toBeInTheDocument();
+    expect(screen.getByText(/Período atrasado|Próximo período/)).toBeInTheDocument();
+  });
+
+  it('lets the team view filter by person', () => {
+    renderTab({ isTeamView: true, allowCollaboratorFilter: true, tasks: [task('Da Celine'), task('Da Gabi', { assigned_to: ['Gabi'] })] });
+    expect(screen.getByText('Da Gabi')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Filtrar responsável'), { target: { value: 'Celine' } });
+    expect(screen.queryByText('Da Gabi')).not.toBeInTheDocument();
+    expect(screen.getByText('Da Celine')).toBeInTheDocument();
   });
 
   it('edits a process from the actions menu', async () => {

@@ -441,10 +441,8 @@ export default function CentralEntregas() {
           isTeamView={isTeamView}
           clients={scopedClients}
           responsibleList={responsibleList}
-          priorities={scopedPriorities}
-          tasks={scopedTasks}
-          onCreatePriority={prioritiesHook.addPriority}
-          onCreateTask={tasksHook.addTask}
+          onCreateProcess={tasksHook.addTask}
+          onUpdateTask={tasksHook.updateTask}
           onCreateDeliverable={deliverablesHook.addDeliverable}
           variant="fab"
         />

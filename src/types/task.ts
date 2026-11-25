@@ -14,7 +14,9 @@ export type TaskStatus =
   | 'em_validacao'
   | 'concluida'
   | 'cancelada';
-export type TaskRecurrence = 'none' | 'weekly' | 'monthly';
+/** 'custom' usa `recurrence_interval` + `recurrence_unit` (a cada N dias ou meses). */
+export type TaskRecurrence = 'none' | 'weekly' | 'monthly' | 'custom';
+export type TaskRecurrenceUnit = 'days' | 'months';
 
 export interface Task {
   id: string;
@@ -41,6 +43,8 @@ export interface Task {
   sort_order: number;
   source_comment_id: string | null;
   recurrence: TaskRecurrence;
+  recurrence_interval?: number | null;
+  recurrence_unit?: TaskRecurrenceUnit | null;
   recurrence_origin_id: string | null;
   updated_at: string;
 }
@@ -59,6 +63,8 @@ export type TaskFormData = {
   parent_task_id?: string | null;
   source_comment_id?: string | null;
   recurrence?: TaskRecurrence;
+  recurrence_interval?: number | null;
+  recurrence_unit?: TaskRecurrenceUnit | null;
   sort_order?: number;
 };
 
@@ -99,6 +105,7 @@ export const TASK_RECURRENCE_LABELS: Record<TaskRecurrence, string> = {
   none: 'Não repetir',
   weekly: 'Semanal',
   monthly: 'Mensal',
+  custom: 'Personalizada',
 };
 
 export const TASK_MODALITY_CONFIG: Record<TaskModality, { label: string; shortLabel: string }> = {

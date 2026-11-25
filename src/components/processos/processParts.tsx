@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { CalendarClock, Check, Circle, Clock3, ExternalLink, Link2, Plus, Repeat, X } from 'lucide-react';
 import type { Client } from '@/types/client';
-import { TASK_RECURRENCE_LABELS, type Task, type TaskRecurrence } from '@/types/task';
+import type { Task } from '@/types/task';
+import { recurrenceLabel } from '@/lib/processRecurrence';
 import { PROCESS_WEIGHTS, type ProcessWeight } from '@/lib/processWeight';
 import { colorWithAlpha, daysOpen, formatDay, today, weightVisual } from '@/lib/processDisplay';
 import { Button } from '@/components/ui/button';
@@ -13,9 +14,9 @@ export interface RespOption { name: string; color: string; initials: string }
 export type UpdateTask = (taskId: string, data: Partial<Task>) => Promise<boolean>;
 export type ToggleTask = (taskId: string, clientName?: string) => Promise<boolean>;
 
-export function RecurrenceBadge({ recurrence }: { recurrence?: TaskRecurrence }) {
-  if (!recurrence || recurrence === 'none') return null;
-  const label = TASK_RECURRENCE_LABELS[recurrence] ?? 'Repete';
+export function RecurrenceBadge({ task }: { task: Pick<Task, 'recurrence' | 'recurrence_interval' | 'recurrence_unit'> }) {
+  const label = recurrenceLabel(task);
+  if (!label) return null;
   return <span className="inline-flex items-center gap-1 bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700" title={`Repete: ${label.toLocaleLowerCase('pt-BR')}`} aria-label={`Repete: ${label.toLocaleLowerCase('pt-BR')}`}><Repeat className="h-3 w-3" />{label}</span>;
 }
 

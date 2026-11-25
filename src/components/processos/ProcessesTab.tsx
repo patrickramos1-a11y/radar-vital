@@ -16,6 +16,8 @@ import {
 } from './processParts';
 
 export type ProcessView = 'processes' | 'panel';
+/** Recorte fixo usado na Gestão de processos. 'all' mantém as duas visões. */
+export type ProcessSection = 'all' | 'planned' | 'recurring';
 type SortMode = 'weight' | 'oldest';
 
 interface Props {
@@ -30,18 +32,19 @@ interface Props {
   canPlanMaximum?: boolean;
   initialClientId?: string | null;
   initialView?: ProcessView;
+  section?: ProcessSection;
   onCreate: CreateProcess;
   onToggleTask: ToggleTask;
   onUpdateTask: UpdateTask;
   onDeleteTask: (taskId: string, clientName?: string) => Promise<boolean>;
 }
 
-function ProcessRow({ process, client, tasks, rowIndex, responsibleList, canPlanMaximum, compact = false, onEdit, onCreate, onToggleTask, onUpdateTask, onDeleteTask }: {
-  process: Process; client?: Client; tasks: Task[]; rowIndex: number; responsibleList: RespOption[]; canPlanMaximum: boolean; compact?: boolean;
+function ProcessRow({ process, client, tasks, rowIndex, responsibleList, canPlanMaximum, compact = false, startExpanded = false, onEdit, onCreate, onToggleTask, onUpdateTask, onDeleteTask }: {
+  process: Process; client?: Client; tasks: Task[]; rowIndex: number; responsibleList: RespOption[]; canPlanMaximum: boolean; compact?: boolean; startExpanded?: boolean;
   onEdit: () => void; onCreate: CreateProcess; onToggleTask: ToggleTask; onUpdateTask: UpdateTask; onDeleteTask: Props['onDeleteTask'];
 }) {
   const { task } = process;
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(startExpanded);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const open = isProcessOpen(process);
@@ -65,7 +68,9 @@ function ProcessRow({ process, client, tasks, rowIndex, responsibleList, canPlan
     if (ok) setDraft('');
   };
   const remove = async () => {
-    const message = process.completed
+    const message = process.isRecurring && !process.completed
+      ? `Excluir o processo "${task.title}" e todas as etapas, inclusive o histórico dos períodos? Para só parar a repetição, conclua o processo.`
+      : process.completed
       ? `Excluir o processo "${task.title}", as etapas e o entregável gerado por ele?`
       : `Excluir o processo "${task.title}" e todas as etapas?`;
     if (window.confirm(message)) await onDeleteTask(task.id, clientName);
@@ -87,8 +92,8 @@ function ProcessRow({ process, client, tasks, rowIndex, responsibleList, canPlan
         <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
           <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 text-slate-600" title={process.completed ? `${age} dias de duração` : `${age} dias desde a criação`} aria-label={process.completed ? `${age} dias de duração` : `${age} dias desde a criação`}><Clock3 className="h-3 w-3" />{age}d</span>
           {open ? <ProcessWeightPicker task={task} onUpdateTask={onUpdateTask} /> : <span className={cn('border px-1.5 py-0.5 font-semibold', visual.className)}>{visual.label}</span>}
-          <RecurrenceBadge recurrence={task.recurrence} />
-          {process.dueDate && <span className={cn('px-1.5 py-0.5', overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700')}>{overdue ? 'Atrasado · ' : 'Vencimento '}{formatDay(process.dueDate)}</span>}
+          <RecurrenceBadge task={task} />
+          {process.dueDate && <span className={cn('px-1.5 py-0.5', overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700')}>{process.isRecurring ? (overdue ? 'Período atrasado · ' : 'Próximo período ') : (overdue ? 'Atrasado · ' : 'Vencimento ')}{formatDay(process.dueDate)}</span>}
           {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {formatDay(process.scheduledFor!)}</span>}
           <AssigneePicker task={task} responsibleList={responsibleList} onUpdateTask={onUpdateTask} />
           {participants.length > 0 && <span className="flex -space-x-1" aria-label={`Também nas etapas: ${participants.map(person => person.name).join(', ')}`} title={`Também nas etapas: ${participants.map(person => person.name).join(', ')}`}>
@@ -154,37 +159,40 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
  * Processos v2 (D-025): duas visões. "Processos" mostra todos, agrupados por
  * cliente; "Painel" mostra só os abertos de peso Máxima, em cartões.
  */
-export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanMaximum = true, initialClientId, initialView = 'processes', onCreate, onToggleTask, onUpdateTask, onDeleteTask }: Props) {
-  const [view, setView] = useState<ProcessView>(initialView);
+export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanMaximum = true, initialClientId, initialView = 'processes', section = 'all', onCreate, onToggleTask, onUpdateTask, onDeleteTask }: Props) {
+  const [chosenView, setView] = useState<ProcessView>(initialView);
+  const view: ProcessView = section === 'all' ? chosenView : 'processes';
   const [sortMode, setSortMode] = useState<SortMode>('weight');
   const [search, setSearch] = useState('');
   const [clientFilter, setClientFilter] = useState(initialClientId || 'all');
-  const [collaboratorFilter, setCollaboratorFilter] = useState(collaborator);
+  const defaultPerson = isTeamView ? 'all' : collaborator;
+  const [collaboratorFilter, setCollaboratorFilter] = useState(defaultPerson);
   const [showCompleted, setShowCompleted] = useState(false);
   const [showPlanned, setShowPlanned] = useState(false);
   const [quickClientId, setQuickClientId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   useEffect(() => setClientFilter(initialClientId || 'all'), [initialClientId]);
-  useEffect(() => setCollaboratorFilter(collaborator), [collaborator]);
+  useEffect(() => setCollaboratorFilter(defaultPerson), [defaultPerson]);
 
   const clientById = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
   const allProcesses = useMemo(() => buildProcesses(tasks), [tasks]);
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('pt-BR');
-    const byPerson = isTeamView || collaboratorFilter === 'all' || initialClientId
+    const byPerson = collaboratorFilter === 'all' || initialClientId
       ? allProcesses
       : processesForAssignee(allProcesses, collaboratorFilter);
+    const isPlanned = (process: Process) => Boolean(process.scheduledFor && process.scheduledFor > today());
     const visible = byPerson.filter(process =>
       (showCompleted || isProcessOpen(process))
-      && (showPlanned || !process.scheduledFor || process.scheduledFor <= today())
+      && (section === 'planned' ? isPlanned(process) : section === 'recurring' ? process.isRecurring : (showPlanned || !isPlanned(process)))
       && (clientFilter === 'all' || process.clientId === clientFilter)
       && (!query || `${process.title} ${process.description || ''} ${clientById.get(process.clientId)?.name || ''}`.toLocaleLowerCase('pt-BR').includes(query)));
     const base = view === 'panel' ? maximumWeightProcesses(visible) : visible;
     return [...base].sort((a, b) => sortMode === 'oldest'
       ? a.createdAt.localeCompare(b.createdAt) || b.weight - a.weight
       : compareProcesses(a, b));
-  }, [allProcesses, isTeamView, collaboratorFilter, initialClientId, showCompleted, showPlanned, clientFilter, search, clientById, view, sortMode]);
+  }, [allProcesses, collaboratorFilter, initialClientId, showCompleted, showPlanned, section, clientFilter, search, clientById, view, sortMode]);
   const groups = useMemo(() => {
     const byClient = new Map<string, Process[]>();
     filtered.forEach(process => byClient.set(process.clientId || 'sem-cliente', [...(byClient.get(process.clientId || 'sem-cliente') || []), process]));
@@ -195,12 +203,19 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
   const selectedAssignee = collaboratorFilter !== 'all' ? collaboratorFilter : collaborator;
   const quickWeight: ProcessWeight = view === 'panel' ? MAXIMUM_PROCESS_WEIGHT : DEFAULT_PROCESS_WEIGHT;
   const openModal = (task: Task | null) => { setEditing(task); setModalOpen(true); };
-  const summary = view === 'panel'
-    ? `${plural(filtered.length, 'processo', 'processos')} de peso Máxima em ${plural(groups.length, 'cliente', 'clientes')}`
-    : `${plural(filtered.length, 'processo', 'processos')} em ${plural(groups.length, 'cliente', 'clientes')}`;
+  const one = filtered.length === 1;
+  const kind = view === 'panel' ? ' de peso Máxima'
+    : section === 'planned' ? (one ? ' planejado' : ' planejados')
+      : section === 'recurring' ? (one ? ' que se repete' : ' que se repetem')
+        : '';
+  const summary = `${plural(filtered.length, 'processo', 'processos')}${kind} em ${plural(groups.length, 'cliente', 'clientes')}`;
+  const emptyText = view === 'panel' ? 'Nenhum processo de peso Máxima para este filtro.'
+    : section === 'planned' ? 'Nenhum processo planejado para este filtro.'
+      : section === 'recurring' ? 'Nenhum processo que se repete para este filtro.'
+        : 'Nenhum processo para este filtro.';
 
   const renderRows = (items: Process[], client?: Client) => <div className="min-w-0">
-    {items.map((process, rowIndex) => <ProcessRow key={process.id} process={process} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanMaximum={canPlanMaximum} compact={view === 'panel'} onEdit={() => openModal(process.task)} onCreate={onCreate} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />)}
+    {items.map((process, rowIndex) => <ProcessRow key={process.id} process={process} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanMaximum={canPlanMaximum} compact={view === 'panel'} startExpanded={section === 'recurring'} onEdit={() => openModal(process.task)} onCreate={onCreate} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />)}
   </div>;
 
   return <div className="space-y-3">
@@ -215,18 +230,18 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
         <select aria-label="Filtrar cliente" value={clientFilter} onChange={event => setClientFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os clientes</option>{clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}</select>
         {allowCollaboratorFilter && <select aria-label="Filtrar responsável" value={collaboratorFilter} onChange={event => setCollaboratorFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os responsáveis</option>{responsibleList.map(person => <option key={person.name} value={person.name}>{person.name}</option>)}</select>}
         <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showCompleted} onChange={event => setShowCompleted(event.target.checked)} />Concluídos</label>
-        <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showPlanned} onChange={event => setShowPlanned(event.target.checked)} />Planejados</label>
+        {section === 'all' && <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showPlanned} onChange={event => setShowPlanned(event.target.checked)} />Planejados</label>}
         <Button size="sm" className="h-8" onClick={() => openModal(null)}><Plus className="mr-1 h-4 w-4" />Novo processo</Button>
       </div>
     </div>
     <div className="flex items-center justify-between gap-3 border-b pb-2">
       <p className="text-xs text-muted-foreground">{summary}</p>
-      <div className="flex border" role="group" aria-label="Visão">
+      {section === 'all' && <div className="flex border" role="group" aria-label="Visão">
         <button type="button" aria-pressed={view === 'processes'} onClick={() => setView('processes')} className={cn('inline-flex h-8 items-center gap-1 px-2 text-xs', view === 'processes' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600')}><List className="h-3.5 w-3.5" />Processos</button>
         <button type="button" aria-pressed={view === 'panel'} onClick={() => setView('panel')} className={cn('inline-flex h-8 items-center gap-1 border-l px-2 text-xs', view === 'panel' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600')}><LayoutGrid className="h-3.5 w-3.5" />Painel</button>
-      </div>
+      </div>}
     </div>
-    {groups.length === 0 && <div className="border px-4 py-8 text-center text-sm text-muted-foreground">{view === 'panel' ? 'Nenhum processo de peso Máxima para este filtro.' : 'Nenhum processo para este filtro.'}</div>}
+    {groups.length === 0 && <div className="border px-4 py-8 text-center text-sm text-muted-foreground">{emptyText}</div>}
     <div className={view === 'panel' ? 'grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4' : 'space-y-3'}>
       {groups.map(([clientId, items]) => {
         const client = clientById.get(clientId);

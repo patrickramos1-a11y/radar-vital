@@ -38,7 +38,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { normalizeAssignee } from '@/lib/taskAssignee';
-import { priorityTaskTreeIds, taskChildrenByParent, taskRoot } from '@/lib/taskHierarchy';
+import { taskChildrenByParent, taskRoot } from '@/lib/taskHierarchy';
 import { ClientMultiPicker } from '@/components/shared/ClientMultiPicker';
 import { Client } from '@/types/client';
 import { Collaborator } from '@/types/collaborator';
@@ -54,7 +54,6 @@ import {
 
 type StatusFilter = 'pending' | 'scheduled' | 'completed' | 'all';
 type DeadlineFilter = 'all' | 'overdue' | 'today' | 'next7' | 'no_date';
-type ItemScope = 'tasks' | 'priorities' | 'all';
 type SortKey = 'client' | 'title' | 'assignees' | 'modality' | 'priority' | 'createdAt' | 'daysOpen' | 'dueDate';
 type SortDirection = 'asc' | 'desc';
 type BulkTaskUpdate = Partial<Pick<Task, 'assigned_to' | 'priority' | 'modality' | 'scheduled_for'>>;
@@ -70,7 +69,6 @@ interface Props {
   onUpdateTask: (taskId: string, data: Partial<Task>) => Promise<boolean>;
   onDeleteTask: (taskId: string) => Promise<boolean>;
   onBulkUpdateTasks: (taskIds: string[], data: BulkTaskUpdate) => Promise<boolean>;
-  onPromoteTask?: (task: Task) => void;
   onCreateTask?: (clientId: string, data: TaskFormData, clientName?: string) => Promise<boolean>;
 }
 
@@ -102,14 +100,12 @@ export function TaskManagementSheet({
   onUpdateTask,
   onDeleteTask,
   onBulkUpdateTasks,
-  onPromoteTask,
   onCreateTask,
 }: Props) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [clientFilter, setClientFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [itemScope, setItemScope] = useState<ItemScope>('tasks');
   const [modalityFilter, setModalityFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilter>('all');
@@ -132,13 +128,9 @@ export function TaskManagementSheet({
     [collaborators],
   );
 
-  const priorityTreeIds = useMemo(() => priorityTaskTreeIds(tasks), [tasks]);
-  const ordinaryTasks = useMemo(() => tasks.filter(task => !priorityTreeIds.has(task.id)), [priorityTreeIds, tasks]);
-  const scopedTasks = useMemo(() => {
-    if (itemScope === 'priorities') return tasks.filter(task => priorityTreeIds.has(task.id));
-    if (itemScope === 'all') return tasks;
-    return ordinaryTasks;
-  }, [itemScope, ordinaryTasks, priorityTreeIds, tasks]);
+  // Processos v2 (D-025): tudo é processo; não há mais recorte de prioridades.
+  const scopedTasks = tasks;
+  const noPriorityIds = useMemo(() => new Set<string>(), []);
   const taskById = useMemo(() => new Map(scopedTasks.map(task => [task.id, task])), [scopedTasks]);
   const pendingTasks = useMemo(() => scopedTasks.filter(task => !task.completed && !isScheduled(task)), [scopedTasks]);
   const scheduledTasks = useMemo(() => scopedTasks.filter(isScheduled), [scopedTasks]);
@@ -265,7 +257,6 @@ export function TaskManagementSheet({
     setStatusFilter('pending');
     setClientFilter('all');
     setAssigneeFilter('all');
-    setItemScope('tasks');
     setModalityFilter('all');
     setPriorityFilter('all');
     setDeadlineFilter('all');
@@ -333,18 +324,6 @@ export function TaskManagementSheet({
               onChange={setAssigneeFilter}
             />
             <FilterPopover
-              icon={<Star className="h-3.5 w-3.5" />}
-              value={itemScope}
-              defaultValue="tasks"
-              ariaLabel="Selecionar tarefas e prioridades exibidas"
-              options={[
-                { value: 'tasks', label: 'Tarefas' },
-                { value: 'priorities', label: 'Prioridades' },
-                { value: 'all', label: 'Tudo' },
-              ]}
-              onChange={value => setItemScope(value as ItemScope)}
-            />
-            <FilterPopover
               icon={<Shapes className="h-3.5 w-3.5" />}
               value={modalityFilter}
               defaultValue="all"
@@ -390,7 +369,7 @@ export function TaskManagementSheet({
         </div>
 
         <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span>{filteredTasks.length} {itemScope === 'priorities' ? 'prioridade(s)' : itemScope === 'all' ? 'itens' : 'tarefa(s)'} em {groupedTasks.length} cliente(s)</span>
+          <span>{filteredTasks.length} {filteredTasks.length === 1 ? 'item' : 'itens'} em {groupedTasks.length} cliente(s)</span>
           <span>{sortDirection === 'asc' ? 'Ordem crescente' : 'Ordem decrescente'}</span>
         </div>
       </div>
@@ -437,10 +416,9 @@ export function TaskManagementSheet({
           onToggleComplete={onToggleComplete}
           onUpdate={update}
           onDelete={onDeleteTask}
-          onPromote={onPromoteTask}
           allTasks={scopedTasks}
           matchingIds={matchingIds}
-          priorityTaskIds={priorityTreeIds}
+          priorityTaskIds={noPriorityIds}
           onToggleClient={(clientId) => setExpandedClientIds(current => {
             const next = new Set(current);
             if (next.has(clientId)) next.delete(clientId);

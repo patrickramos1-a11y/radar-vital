@@ -1,5 +1,6 @@
 import type { Task, TaskStatus } from '@/types/task';
 import { isMaximumWeight, normalizeProcessWeight, weightForUrgency, type ProcessWeight } from '@/lib/processWeight';
+import { isPeriodStep, isRecurringMother } from '@/lib/processRecurrence';
 
 /**
  * Processos v2 (D-025): processo é a tarefa principal (sem pai); etapas são as
@@ -25,6 +26,9 @@ export interface Process {
   /** Todas as etapas abaixo do processo, em qualquer nível. */
   descendants: Task[];
   openSteps: number;
+  /** Processo-mãe que se repete; as etapas de período ficam em `periodSteps`. */
+  isRecurring: boolean;
+  periodSteps: Task[];
 }
 
 export function isProcessOpen(process: Pick<Process, 'completed' | 'status'>): boolean {
@@ -66,6 +70,13 @@ export function buildProcesses(tasks: Task[]): Process[] {
     .map(task => {
       const steps = [...(childrenByParent.get(task.id) ?? [])].sort(bySortOrder);
       const descendants = collectDescendants(task.id);
+      const isRecurring = isRecurringMother(task);
+      const periodSteps = steps.filter(isPeriodStep);
+      // Na mãe, o vencimento que importa é o do período aberto mais antigo.
+      const nextPeriodDue = periodSteps
+        .filter(step => !step.completed && step.status !== 'cancelada' && step.due_date)
+        .map(step => step.due_date!)
+        .sort()[0];
       return {
         id: task.id,
         task,
@@ -78,11 +89,13 @@ export function buildProcesses(tasks: Task[]): Process[] {
         completed: task.completed,
         createdAt: task.created_at,
         completedAt: task.completed_at,
-        dueDate: task.due_date,
+        dueDate: isRecurring && nextPeriodDue ? nextPeriodDue : task.due_date,
         scheduledFor: task.scheduled_for,
         steps,
         descendants,
         openSteps: descendants.filter(step => !step.completed && step.status !== 'cancelada').length,
+        isRecurring,
+        periodSteps,
       } satisfies Process;
     });
 }

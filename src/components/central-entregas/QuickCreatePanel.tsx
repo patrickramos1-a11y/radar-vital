@@ -1,20 +1,17 @@
 import { useState } from 'react';
-import { Plus, Star, CheckSquare, MessageSquarePlus, Package, X, type LucideIcon } from 'lucide-react';
+import { Plus, Workflow, MessageSquarePlus, Package, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Client } from '@/types/client';
-import { Priority, PriorityFormData } from '@/types/priority';
-import { Task, TaskFormData, TaskPriority, PRIORITY_CONFIG } from '@/types/task';
-import { Deliverable, DeliverableFormData } from '@/types/deliverable';
+import { DeliverableFormData } from '@/types/deliverable';
 import { CollaboratorCommentContext, COLLAB_COMMENT_CONTEXT_LABELS, COLLAB_COMMENT_CONTEXT_COLORS } from '@/types/collaboratorComment';
-import { PriorityModal } from './PriorityModal';
 import { DeliverableModal } from './DeliverableModal';
+import { ProcessModal, type CreateProcess } from '@/components/processos/ProcessModal';
+import type { UpdateTask } from '@/components/processos/processParts';
 import { useCollaboratorComments } from '@/hooks/useCollaboratorComments';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { normalizeAssignee } from '@/lib/taskAssignee';
 
 interface RespOption { name: string; color: string; initials: string; }
 
@@ -24,27 +21,25 @@ interface Props {
   isTeamView: boolean;
   clients: Client[];
   responsibleList: RespOption[];
-  priorities: Priority[];
-  tasks: Task[];
-  onCreatePriority: (data: PriorityFormData, clientName?: string) => Promise<unknown>;
-  onCreateTask: (clientId: string, data: TaskFormData, clientName?: string) => Promise<unknown>;
+  onCreateProcess: CreateProcess;
+  onUpdateTask: UpdateTask;
   onCreateDeliverable: (data: DeliverableFormData) => Promise<unknown>;
   variant?: 'fab' | 'inline';
 }
 
-type Kind = 'task' | 'priority' | 'comment' | 'deliverable' | null;
+type Kind = 'process' | 'comment' | 'deliverable' | null;
 
 export function QuickCreatePanel({
-  collaborator, color, isTeamView, clients, responsibleList, priorities, tasks,
-  onCreatePriority, onCreateTask, onCreateDeliverable, variant = 'fab',
+  collaborator, color, isTeamView, clients, responsibleList,
+  onCreateProcess, onUpdateTask, onCreateDeliverable, variant = 'fab',
 }: Props) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<Kind>(null);
   const { create: createCollabComment } = useCollaboratorComments();
 
+  // Processos v2 (D-025): tarefa e prioridade viraram um único "Processo".
   const actions: { kind: Kind; label: string; icon: LucideIcon; bg: string }[] = [
-    { kind: 'task', label: 'Tarefa', icon: CheckSquare, bg: '#0EA5E9' },
-    { kind: 'priority', label: 'Prioridade', icon: Star, bg: '#DC2626' },
+    { kind: 'process', label: 'Processo', icon: Workflow, bg: '#0EA5E9' },
     { kind: 'comment', label: 'Anotação', icon: MessageSquarePlus, bg: '#F59E0B' },
     { kind: 'deliverable', label: 'Entregável', icon: Package, bg: '#6B9B37' },
   ];
@@ -97,18 +92,16 @@ export function QuickCreatePanel({
         </div>
       )}
 
-      <PriorityModal
-        open={active === 'priority'}
+      <ProcessModal
+        open={active === 'process'}
         onOpenChange={(v) => { if (!v) setActive(null); }}
         editing={null}
-        defaultAssignee={defaultAssignee}
         clients={clients}
         responsibleList={responsibleList}
-        onSubmit={async (data) => {
-          const clientName = data.client_id ? clients.find(c => c.id === data.client_id)?.name : undefined;
-          await onCreatePriority(data, clientName);
-          setActive(null);
-        }}
+        defaultAssignee={defaultAssignee ?? responsibleList[0]?.name ?? ''}
+        presetClientId={null}
+        onCreate={onCreateProcess}
+        onUpdateTask={onUpdateTask}
       />
 
       <DeliverableModal
@@ -121,20 +114,6 @@ export function QuickCreatePanel({
         onSubmit={async (data) => {
           const created = await onCreateDeliverable(data);
           if (created) setActive(null);
-        }}
-      />
-
-      <QuickTaskDialog
-        open={active === 'task'}
-        onOpenChange={(v) => { if (!v) setActive(null); }}
-        color={color}
-        defaultAssignee={defaultAssignee}
-        clients={clients}
-        responsibleList={responsibleList}
-        onSubmit={async (clientId, data) => {
-          const clientName = clients.find(c => c.id === clientId)?.name;
-          await onCreateTask(clientId, data, clientName);
-          setActive(null);
         }}
       />
 
@@ -151,91 +130,6 @@ export function QuickCreatePanel({
         }}
       />
     </>
-  );
-}
-
-function QuickTaskDialog({
-  open, onOpenChange, color, defaultAssignee, clients, responsibleList, onSubmit,
-}: {
-  open: boolean; onOpenChange: (v: boolean) => void;
-  color: string; defaultAssignee?: string;
-  clients: Client[]; responsibleList: RespOption[];
-  onSubmit: (clientId: string, data: TaskFormData) => Promise<void>;
-}) {
-  const [title, setTitle] = useState('');
-  const [clientId, setClientId] = useState('');
-  const [assigned, setAssigned] = useState<string[]>(defaultAssignee ? [defaultAssignee] : []);
-  const [dueDate, setDueDate] = useState('');
-  const [priority, setPriority] = useState<TaskPriority>('normal');
-
-  const reset = () => {
-    setTitle(''); setClientId(''); setDueDate(''); setPriority('normal');
-    setAssigned(defaultAssignee ? [defaultAssignee] : []);
-  };
-
-  const toggle = (name: string) => setAssigned(prev =>
-    prev.some(a => normalizeAssignee(a) === normalizeAssignee(name))
-      ? prev.filter(a => normalizeAssignee(a) !== normalizeAssignee(name))
-      : [...prev, name]);
-
-  const submit = async () => {
-    if (!title.trim() || !clientId) return;
-    await onSubmit(clientId, { title: title.trim(), assigned_to: assigned, due_date: dueDate || undefined, priority });
-    reset();
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Nova tarefa</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Título</Label>
-            <Input value={title} onChange={e => setTitle(e.target.value)} autoFocus placeholder="Ex: Enviar relatório..." />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Cliente *</Label>
-              <select value={clientId} onChange={e => setClientId(e.target.value)} className="w-full px-2 py-2 border rounded-md bg-background text-sm">
-                <option value="">— Selecione —</option>
-                {clients.filter(c => c.isActive).sort((a, b) => a.name.localeCompare(b.name)).map(c =>
-                  <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <Label>Prazo</Label>
-              <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
-            </div>
-          </div>
-          <div>
-            <Label>Prioridade</Label>
-            <select value={priority} onChange={e => setPriority(e.target.value as TaskPriority)} className="w-full px-2 py-2 border rounded-md bg-background text-sm">
-              {(Object.keys(PRIORITY_CONFIG) as TaskPriority[]).map(p =>
-                <option key={p} value={p}>{PRIORITY_CONFIG[p].label}</option>)}
-            </select>
-          </div>
-          <div>
-            <Label>Responsáveis</Label>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {responsibleList.map(r => {
-                const sel = assigned.some(a => normalizeAssignee(a) === normalizeAssignee(r.name));
-                return (
-                  <button key={r.name} type="button" onClick={() => toggle(r.name)}
-                    className={cn('px-2.5 py-1 rounded-full text-xs font-medium border', sel ? 'text-white' : 'bg-background hover:bg-muted')}
-                    style={sel ? { backgroundColor: r.color, borderColor: r.color } : {}}>
-                    {r.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={!title.trim() || !clientId}>Criar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { Client } from '@/types/client';
-import { TASK_RECURRENCE_LABELS, type Task, type TaskFormData, type TaskRecurrence } from '@/types/task';
+import type { Task, TaskFormData } from '@/types/task';
 import { DEFAULT_PROCESS_WEIGHT, normalizeProcessWeight, type ProcessWeight } from '@/lib/processWeight';
+import { RECURRENCE_CHOICE_LABELS, recurrenceChoiceFor, recurrenceSetting, type RecurrenceChoice } from '@/lib/processRecurrence';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,7 +36,8 @@ export function ProcessModal({ open, onOpenChange, editing, clients, responsible
   const [weight, setWeight] = useState<ProcessWeight>(defaultWeight);
   const [dueDate, setDueDate] = useState('');
   const [scheduledFor, setScheduledFor] = useState('');
-  const [recurrence, setRecurrence] = useState<TaskRecurrence>('none');
+  const [repeat, setRepeat] = useState<RecurrenceChoice>('none');
+  const [every, setEvery] = useState(1);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -47,8 +49,11 @@ export function ProcessModal({ open, onOpenChange, editing, clients, responsible
     setWeight(editing ? normalizeProcessWeight(editing.weight) : defaultWeight);
     setDueDate(editing?.due_date ?? '');
     setScheduledFor(editing?.scheduled_for ?? '');
-    setRecurrence(editing?.recurrence ?? 'none');
+    const current = editing ? recurrenceChoiceFor(editing) : { choice: 'none' as const, every: 1 };
+    setRepeat(current.choice);
+    setEvery(current.every);
   }, [open, editing, presetClientId, defaultAssignee, defaultWeight]);
+  const asksInterval = repeat === 'every-days' || repeat === 'every-months';
 
   const selectedClients = clients.filter(client => clientIds.includes(client.id));
   const assigneeOptions = assignee && !responsibleList.some(person => person.name === assignee)
@@ -68,7 +73,7 @@ export function ProcessModal({ open, onOpenChange, editing, clients, responsible
           weight,
           due_date: dueDate || null,
           scheduled_for: scheduledFor || null,
-          recurrence,
+          ...recurrenceSetting(repeat, every),
         });
         if (ok) onOpenChange(false);
         return;
@@ -80,7 +85,7 @@ export function ProcessModal({ open, onOpenChange, editing, clients, responsible
         weight,
         due_date: dueDate || undefined,
         scheduled_for: scheduledFor || undefined,
-        recurrence,
+        ...recurrenceSetting(repeat, every),
       };
       const created = await Promise.all(selectedClients.map(client => onCreate(client.id, data, client.name)));
       if (created.every(Boolean)) onOpenChange(false);
@@ -112,7 +117,14 @@ export function ProcessModal({ open, onOpenChange, editing, clients, responsible
             <div><Label htmlFor="process-assignee">Responsável</Label><select id="process-assignee" value={assignee} onChange={event => setAssignee(event.target.value)} className="mt-1 h-9 w-full border bg-white px-2 text-sm">{assigneeOptions.map(item => <option key={item.name} value={item.name}>{item.name}</option>)}</select></div>
             <div><Label htmlFor="process-due">Vencimento</Label><Input id="process-due" type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} /></div>
             <div><Label htmlFor="process-scheduled">Planejamento</Label><Input id="process-scheduled" type="date" value={scheduledFor} onChange={event => setScheduledFor(event.target.value)} /></div>
-            <div><Label htmlFor="process-recurrence">Repetição</Label><select id="process-recurrence" value={recurrence} onChange={event => setRecurrence(event.target.value as TaskRecurrence)} className="mt-1 h-9 w-full border bg-white px-2 text-sm">{(Object.keys(TASK_RECURRENCE_LABELS) as TaskRecurrence[]).map(item => <option key={item} value={item}>{TASK_RECURRENCE_LABELS[item]}</option>)}</select></div>
+            <div>
+              <Label htmlFor="process-recurrence">Repetição</Label>
+              <div className="mt-1 flex gap-2">
+                <select id="process-recurrence" value={repeat} onChange={event => setRepeat(event.target.value as RecurrenceChoice)} className="h-9 min-w-0 flex-1 border bg-white px-2 text-sm">{(Object.keys(RECURRENCE_CHOICE_LABELS) as RecurrenceChoice[]).map(item => <option key={item} value={item}>{RECURRENCE_CHOICE_LABELS[item]}</option>)}</select>
+                {asksInterval && <Input aria-label={repeat === 'every-days' ? 'Quantos dias' : 'Quantos meses'} type="number" min={1} max={366} value={every} onChange={event => setEvery(Number(event.target.value))} className="h-9 w-20" />}
+              </div>
+              {repeat !== 'none' && <p className="mt-1 text-[11px] text-muted-foreground">O processo fica aberto e ganha uma etapa a cada período, a partir do vencimento. Concluir o processo encerra a repetição.</p>}
+            </div>
           </div>
         </div>
         <DialogFooter>
