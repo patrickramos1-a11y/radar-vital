@@ -85,8 +85,13 @@ export function useChallenges() {
 
   useEffect(() => {
     void refetch();
+    // Realtime channels cannot receive new callbacks after subscription. A unique
+    // channel avoids React remounts reusing a channel that is still leaving.
+    const channelId = typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const channel = supabase
-      .channel("challenges_realtime")
+      .channel(`challenges_realtime_${channelId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "challenges" },

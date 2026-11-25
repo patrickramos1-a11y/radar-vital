@@ -26,6 +26,7 @@ export interface PriorityFormData {
   universe_item_id?: string | null;
   assigned_to: string[];
   due_date?: string | null;
+  scheduled_for?: string | null;
   status?: PriorityStatus;
   weight?: number;
   category?: string | null;

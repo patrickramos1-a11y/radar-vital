@@ -113,6 +113,22 @@ describe('PrioritiesTab', () => {
     expect(screen.getByText('1 prioridades em 1 clientes')).toBeInTheDocument();
   });
 
+  it('shows a priority to the owner of an open nested subtask', () => {
+    const child = { ...rootTask, id: 'task-child', title: 'Conferir anexos', parent_task_id: rootTask.id, priority_id: null, assigned_to: ['Gabi'] } satisfies Task;
+    const grandchild = { ...child, id: 'task-grandchild', title: 'Protocolar resposta', parent_task_id: child.id } satisfies Task;
+    renderTab({ collaborator: 'Gabi', responsibleList: [{ name: 'Gabi', color: '#a855f7', initials: 'GA' }], tasks: [rootTask, child, grandchild] });
+
+    expect(screen.getByText(priority.title)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar 1 subtarefa de Entregar relatório' }));
+    expect(screen.getByText('Conferir anexos')).toBeInTheDocument();
+  });
+
+  it('does not show a priority for only completed subtasks of another collaborator', () => {
+    const child = { ...rootTask, id: 'task-child', parent_task_id: rootTask.id, priority_id: null, assigned_to: ['Gabi'], completed: true } satisfies Task;
+    renderTab({ collaborator: 'Gabi', responsibleList: [{ name: 'Gabi', color: '#a855f7', initials: 'GA' }], tasks: [rootTask, child] });
+    expect(screen.queryByText(priority.title)).not.toBeInTheDocument();
+  });
+
   it('adds a subtask to the task linked to the priority', async () => {
     const onCreateSubtask = vi.fn(async () => true);
     renderTab({ onCreateSubtask });
@@ -138,6 +154,19 @@ describe('PrioritiesTab', () => {
     expect(screen.queryByText('Outro cliente')).not.toBeInTheDocument();
   });
 
+  it('hides planned priorities until the planned filter is selected', () => {
+    renderTab({
+      priorities: [priority, { ...priority, id: 'priority-planned', title: 'Prioridade planejada', source_task_id: 'task-planned' }],
+      tasks: [rootTask, { ...rootTask, id: 'task-planned', title: 'Prioridade planejada', priority_id: 'priority-planned', scheduled_for: '2099-12-31' }],
+    });
+
+    expect(screen.queryByText('Prioridade planejada')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Planejadas' }));
+
+    expect(screen.getByText('Prioridade planejada')).toBeInTheDocument();
+  });
+
   it('shows the client logo and changes weight from the compact action', async () => {
     const onUpdate = vi.fn(async () => true);
     renderTab({
@@ -150,12 +179,12 @@ describe('PrioritiesTab', () => {
     expect(screen.queryByText(/Aberta há/)).not.toBeInTheDocument();
     expect(screen.getByLabelText(/\d+ dias desde a criação/)).not.toHaveTextContent(/^0d$/);
     fireEvent.click(screen.getByRole('button', { name: 'Peso 4: Urgente' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Definir peso 5: Extremamente urgente' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Definir peso 5: Máxima' }));
 
     await waitFor(() => expect(onUpdate).toHaveBeenCalledWith(priority.id, { weight: 5 }));
   });
 
-  it('plans the linked task and hides future scheduled priorities by default', async () => {
+  it('plans the linked task and hides the priority until planned items are enabled', async () => {
     const onUpdateTask = vi.fn(async () => true);
     const { rerender, props } = renderTab({ onUpdateTask });
 

@@ -5,7 +5,7 @@ describe("global navigation routes", () => {
   it("keeps every module and view linked to an existing application route", () => {
     const knownPaths = new Set([
       "/", "/dashboard", "/comentarios", "/relatorios-pdf", "/config",
-      "/jackbox", "/jackbox-unificado", "/central-entregas",
+      "/jackbox", "/jackbox-unificado", "/minhas-prioridades", "/central-entregas",
       "/universo-ramos", "/universo-ramos/plano-mestre", "/auditorias", "/tesouro",
     ]);
     for (const module of navigationModules) {

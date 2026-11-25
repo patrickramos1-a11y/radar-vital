@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { differenceInCalendarDays, format } from 'date-fns';
 import { ArrowDown, ArrowDownWideNarrow, ArrowUp, CalendarClock, Check, Circle, Clock3, ExternalLink, Flame, Layers, LayoutGrid, Link2, List, ListChecks, Minus, MoreHorizontal, Pencil, Plus, Search, Siren, Star, Trash2, X } from 'lucide-react';
 import type { Client } from '@/types/client';
@@ -12,8 +12,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { PriorityModal } from './PriorityModal';
-import { priorityTaskTreeIds } from '@/lib/taskHierarchy';
-import { isScheduledPriority, rootTaskFor } from '@/lib/centralMetrics';
+import { priorityTaskTreeIds, taskRoot } from '@/lib/taskHierarchy';
+import { rootTaskFor } from '@/lib/centralMetrics';
 import { cn } from '@/lib/utils';
 import { manualCatalog } from '@/features/master-plan-preview/manualDigitalModel';
 import { competencyStickerPath } from '@/features/master-plan-preview/competencyVisualAssets';
@@ -46,13 +46,12 @@ interface Props {
 }
 
 type SortMode = 'weight-time' | 'oldest';
-const today = () => format(new Date(), 'yyyy-MM-dd');
 const priorityWeightConfig = {
   1: { label: 'Baixa', icon: ArrowDown, className: 'border-sky-200 bg-sky-50 text-sky-700', borderClass: 'border-l-sky-400' },
   2: { label: 'Normal', icon: Minus, className: 'border-slate-200 bg-white text-slate-600', borderClass: 'border-l-slate-300' },
   3: { label: 'Alta', icon: ArrowUp, className: 'border-orange-300 bg-orange-50 text-orange-700', borderClass: 'border-l-orange-500' },
   4: { label: 'Urgente', icon: Flame, className: 'border-red-300 bg-red-50 text-red-700', borderClass: 'border-l-red-600' },
-  5: { label: 'Extremamente urgente', icon: Siren, className: 'border-rose-400 bg-rose-100 text-rose-800', borderClass: 'border-l-rose-700' },
+  5: { label: 'Máxima', icon: Siren, className: 'border-rose-400 bg-rose-100 text-rose-800', borderClass: 'border-l-rose-700' },
 };
 
 function priorityWeight(weight: number) {
@@ -68,6 +67,10 @@ function categoryLabel(category?: string | null) {
   if (category === 'auto_task_aging') return 'Automática';
   if (category === 'entregavel_migrado') return 'Entregável';
   return category.replace(/_/g, ' ');
+}
+
+function today() {
+  return format(new Date(), 'yyyy-MM-dd');
 }
 
 type UniverseTarget = { id: string; name: string; type: 'Núcleo' | 'Setor' | 'Área' | 'Função' | 'Competência'; image?: string };
@@ -212,6 +215,7 @@ function PriorityAssignee({ priority, root, responsibleList, onUpdate, onUpdateT
 }) {
   const [open, setOpen] = useState(false);
   const current = priority.assigned_to.join(', ') || 'Sem responsável';
+  const assigneeColor = responsibleList.find(person => person.name === priority.assigned_to[0])?.color;
   const transfer = async (person: RespOption) => {
     const updated = await onUpdate(priority.id, { assigned_to: [person.name] });
     if (!updated) return;
@@ -222,7 +226,7 @@ function PriorityAssignee({ priority, root, responsibleList, onUpdate, onUpdateT
 
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild>
-      <button type="button" title="Transferir prioridade" aria-label={`Responsável ${current}`} className="max-w-32 truncate font-medium text-slate-600 underline-offset-2 hover:text-primary hover:underline">{current}</button>
+      <button type="button" title="Transferir prioridade" aria-label={`Responsável ${current}`} className="max-w-32 truncate border-l-2 px-1.5 py-0.5 font-semibold text-slate-800 hover:underline" style={{ borderLeftColor: assigneeColor || '#94a3b8', backgroundColor: assigneeColor ? colorWithAlpha(assigneeColor, '1f') : '#f1f5f9' }}>{current}</button>
     </PopoverTrigger>
     <PopoverContent align="start" className="w-56 p-2">
       <p className="px-2 pb-2 text-xs font-semibold">Transferir prioridade</p>
@@ -257,6 +261,7 @@ function Subtasks({ parentId, tasks, clientName, responsibleList, onToggle, onUp
       <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] text-slate-500" title={`${taskAge(task)} dias desde o cadastro`}><Clock3 className="h-3 w-3" />{taskAge(task)}d</span>
       <span className={`min-w-0 flex-1 ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</span>
       <TaskAssignee compact task={task} responsibleList={responsibleList} onUpdateTask={onUpdateTask} />
+      <TaskLinkAction task={task} onUpdateTask={onUpdateTask} />
     </div>
     <Subtasks parentId={task.id} tasks={tasks} clientName={clientName} responsibleList={responsibleList} onToggle={onToggle} onUpdateTask={onUpdateTask} depth={depth + 1} />
   </div>;
@@ -349,7 +354,7 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
           >
             <Clock3 className="h-3 w-3" />{age}d
           </span>
-          {priority.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${priority.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
+          {priority.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Vencimento '}{new Date(`${priority.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {new Date(`${root?.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {priority.category && <span className="hidden bg-amber-50 px-1.5 py-0.5 capitalize text-amber-800 lg:inline">{categoryLabel(priority.category)}</span>}
           <PriorityAssignee priority={priority} root={root} responsibleList={responsibleList} onUpdate={onUpdate} onUpdateTask={onUpdateTask} onRefreshTasks={onRefreshTasks} />
@@ -618,9 +623,9 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, contextOnly 
       <div className="min-w-0 flex-1">
         <EditableTitle title={task.title} completed={task.completed} expanded={expanded} ariaLabel={`${expanded ? 'Recolher' : 'Expandir'} tarefa ${task.title}`} onToggle={toggleExpanded} onSave={title => onUpdateTask(task.id, { title })} />
         <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="bg-slate-100 px-1.5 py-0.5 text-slate-600">{task.completed ? `${age}d de duração` : `Aberta há ${age}d`}</span>
+          <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 text-slate-600" aria-label={task.completed ? `${age} dias de duração` : `${age} dias desde a criação`} title={task.completed ? `${age} dias de duração` : `${age} dias desde a criação`}><Clock3 className="h-3 w-3" />{age}d</span>
           <span style={{ color: config.color, backgroundColor: colorWithAlpha(config.color, '12') }} className="px-1.5 py-0.5 font-semibold">{config.label}</span>
-          {task.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Prazo '}{new Date(`${task.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
+          {task.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Vencimento '}{new Date(`${task.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {new Date(`${task.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {!!children.length && <span className="inline-flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 text-indigo-700"><ListChecks className="h-3 w-3" />{children.filter(item => item.completed).length}/{children.length} subtarefas</span>}
           {contextOnly && <span className="bg-slate-100 px-1.5 py-0.5 text-slate-600">Tarefa principal</span>}
@@ -679,8 +684,9 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
   const [clientIds, setClientIds] = useState<string[]>(presetClientId ? [presetClientId] : []);
   const [assignee, setAssignee] = useState(defaultAssignee);
   const [dueDate, setDueDate] = useState('');
+  const [scheduledFor, setScheduledFor] = useState('');
   const [saving, setSaving] = useState(false);
-  useEffect(() => { if (open) { setTitle(''); setClientIds(presetClientId ? [presetClientId] : []); setAssignee(defaultAssignee); setDueDate(''); } }, [open, presetClientId, defaultAssignee]);
+  useEffect(() => { if (open) { setTitle(''); setClientIds(presetClientId ? [presetClientId] : []); setAssignee(defaultAssignee); setDueDate(''); setScheduledFor(''); } }, [open, presetClientId, defaultAssignee]);
   const selectedClients = clients.filter(item => clientIds.includes(item.id));
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-md">
@@ -690,7 +696,8 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
         <div><Label>Clientes</Label><div className="mt-1"><ClientMultiPicker clients={clients} selectedClientIds={clientIds} onChange={setClientIds} includeUniverseRamos /></div></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label htmlFor="new-task-assignee">Responsável</Label><select id="new-task-assignee" value={assignee} onChange={event => setAssignee(event.target.value)} className="mt-1 h-9 w-full border bg-white px-2 text-sm">{responsibleList.map(item => <option key={item.name} value={item.name}>{item.name}</option>)}</select></div>
-          <div><Label htmlFor="new-task-due">Prazo</Label><Input id="new-task-due" type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} /></div>
+          <div><Label htmlFor="new-task-due">Vencimento</Label><Input id="new-task-due" type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} /></div>
+          <div><Label htmlFor="new-task-scheduled">Planejamento</Label><Input id="new-task-scheduled" type="date" value={scheduledFor} onChange={event => setScheduledFor(event.target.value)} /></div>
         </div>
       </div>
       <DialogFooter>
@@ -698,7 +705,7 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
         <Button type="button" disabled={!title.trim() || selectedClients.length === 0 || !assignee || saving} onClick={async () => {
           if (selectedClients.length === 0) return;
           setSaving(true);
-          const created = await Promise.all(selectedClients.map(client => onCreate(client.id, { title: title.trim(), assigned_to: [assignee], due_date: dueDate || undefined }, client.name)));
+          const created = await Promise.all(selectedClients.map(client => onCreate(client.id, { title: title.trim(), assigned_to: [assignee], due_date: dueDate || undefined, scheduled_for: scheduledFor || undefined }, client.name)));
           setSaving(false);
           if (created.every(Boolean)) onOpenChange(false);
         }}>Criar tarefa</Button>
@@ -717,7 +724,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   const [promotingTaskIds, setPromotingTaskIds] = useState<Set<string>>(() => new Set());
   const [promotedTaskIdsThisSession, setPromotedTaskIdsThisSession] = useState<Set<string>>(() => new Set());
   const [showAll, setShowAll] = useState(false);
-  const [showScheduled, setShowScheduled] = useState(false);
+  const [showPlanned, setShowPlanned] = useState(false);
   const [search, setSearch] = useState('');
   const [clientFilter, setClientFilter] = useState(initialClientId || 'all');
   const [collaboratorFilter, setCollaboratorFilter] = useState(collaborator);
@@ -726,15 +733,41 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   useEffect(() => setClientFilter(initialClientId || 'all'), [initialClientId]);
   useEffect(() => setCollaboratorFilter(collaborator), [collaborator]);
   const clientById = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
-  const filtered = useMemo(() => priorities.filter(priority =>
-    (isTeamView || collaboratorFilter === 'all' || Boolean(initialClientId) || assigneeMatches(priority.assigned_to, collaboratorFilter))
-    && (showAll || (priority.status !== 'concluida' && priority.status !== 'cancelada'))
-    && (showScheduled || !isScheduledPriority(priority, tasks))
-    && (clientFilter === 'all' || priority.client_id === clientFilter)
-    && (!search.trim() || `${priority.title} ${priority.description || ''} ${clientById.get(priority.client_id || '')?.name || ''}`.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
-  ).sort((a, b) => sortMode === 'oldest'
+  const taskById = useMemo(() => new Map(tasks.map(task => [task.id, task])), [tasks]);
+  const priorityParticipantNames = useMemo(() => {
+    const byPriority = new Map<string, Set<string>>();
+    const priorityByRoot = new Map(priorities.filter(item => item.source_task_id).map(item => [item.source_task_id!, item.id]));
+    tasks.forEach(task => {
+      if (!task.parent_task_id || task.completed) return;
+      const root = taskRoot(task, taskById);
+      const priorityId = root.priority_id || task.priority_id || priorityByRoot.get(root.id);
+      if (!priorityId) return;
+      const participants = byPriority.get(priorityId) || new Set<string>();
+      task.assigned_to.forEach(name => participants.add(name));
+      byPriority.set(priorityId, participants);
+    });
+    return byPriority;
+  }, [priorities, tasks, taskById]);
+  const isPlannedTask = useCallback((task: Task) => {
+    let current: Task | undefined = task;
+    const visited = new Set<string>();
+    while (current && !visited.has(current.id)) {
+      visited.add(current.id);
+      if (current.scheduled_for && current.scheduled_for > today()) return true;
+      current = current.parent_task_id ? taskById.get(current.parent_task_id) : undefined;
+    }
+    return false;
+  }, [taskById]);
+  const filtered = useMemo(() => priorities.filter(priority => {
+    const root = rootTaskFor(priority, tasks);
+    return (isTeamView || collaboratorFilter === 'all' || Boolean(initialClientId) || assigneeMatches(priority.assigned_to, collaboratorFilter) || priorityParticipantNames.get(priority.id)?.has(collaboratorFilter))
+      && (showAll || (priority.status !== 'concluida' && priority.status !== 'cancelada'))
+      && (showPlanned || !root || !isPlannedTask(root))
+      && (clientFilter === 'all' || priority.client_id === clientFilter)
+      && (!search.trim() || `${priority.title} ${priority.description || ''} ${clientById.get(priority.client_id || '')?.name || ''}`.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')));
+  }).sort((a, b) => sortMode === 'oldest'
     ? a.created_at.localeCompare(b.created_at) || b.weight - a.weight
-    : b.weight - a.weight || a.created_at.localeCompare(b.created_at)), [priorities, tasks, isTeamView, initialClientId, collaboratorFilter, showAll, showScheduled, clientFilter, search, clientById, sortMode]);
+    : b.weight - a.weight || a.created_at.localeCompare(b.created_at)), [priorities, tasks, isTeamView, initialClientId, collaboratorFilter, priorityParticipantNames, showAll, showPlanned, clientFilter, search, clientById, sortMode, isPlannedTask]);
   const groups = useMemo(() => {
     const byClient = new Map<string, Priority[]>();
     filtered.forEach(priority => {
@@ -746,11 +779,10 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
       || (clientById.get(a)?.name || universeTargetById.get(a.replace('universe:', ''))?.name || 'Sem cliente').localeCompare(clientById.get(b)?.name || universeTargetById.get(b.replace('universe:', ''))?.name || 'Sem cliente', 'pt-BR'));
   }, [filtered, clientById]);
   const promotedTaskIds = useMemo(() => priorityTaskTreeIds(tasks), [tasks]);
-  const taskById = useMemo(() => new Map(tasks.map(task => [task.id, task])), [tasks]);
   const taskList = useMemo(() => {
     const matchesCommonFilters = (task: Task) => (
       (showAll || !task.completed)
-      && (showScheduled || !(task.scheduled_for && task.scheduled_for > today()))
+      && (showPlanned || !isPlannedTask(task))
       && (clientFilter === 'all' || task.client_id === clientFilter)
       && (!search.trim() || `${task.title} ${task.description || ''} ${clientById.get(task.client_id)?.name || ''}`.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
     );
@@ -782,7 +814,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
     ? a.created_at.localeCompare(b.created_at) || PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order
       : PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order || a.created_at.localeCompare(b.created_at));
     return { visible, selectedIds };
-  }, [tasks, promotedTaskIds, promotedTaskIdsThisSession, taskById, isTeamView, collaboratorFilter, initialClientId, showAll, showScheduled, clientFilter, search, clientById, sortMode]);
+  }, [tasks, promotedTaskIds, promotedTaskIdsThisSession, taskById, isPlannedTask, isTeamView, collaboratorFilter, initialClientId, showAll, showPlanned, clientFilter, search, clientById, sortMode]);
   const filteredTasks = taskList.visible;
   const rootFilteredTasks = useMemo(() => {
     const visibleIds = new Set(filteredTasks.map(task => task.id));
@@ -832,6 +864,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         client_id: task.client_id,
         assigned_to: task.assigned_to.slice(0, 1),
         due_date: task.due_date,
+        scheduled_for: task.scheduled_for,
         status: 'aberta',
         weight: 1,
         category: task.modality,
@@ -854,7 +887,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         <select aria-label="Filtrar cliente" value={clientFilter} onChange={event => setClientFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os clientes</option>{clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}</select>
         {allowCollaboratorFilter && <select aria-label="Filtrar colaborador" value={collaboratorFilter} onChange={event => setCollaboratorFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os colaboradores</option>{responsibleList.map(person => <option key={person.name} value={person.name}>{person.name}</option>)}</select>}
         <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showAll} onChange={event => setShowAll(event.target.checked)} />Concluídas</label>
-        <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showScheduled} onChange={event => setShowScheduled(event.target.checked)} />Planejadas</label>
+        <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showPlanned} onChange={event => setShowPlanned(event.target.checked)} />Planejadas</label>
         <Button size="sm" className="h-8" onClick={() => {
           if (showingTasks) setTaskModalOpen(true);
           else { setEditing(null); setPresetClientId(clientFilter === 'all' ? null : clientFilter); setModalOpen(true); }
@@ -927,7 +960,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         </div>
       </section>;
     })}</div>}
-    <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} linkedTaskTitle={editing ? rootTaskFor(editing, tasks)?.title : undefined} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} allowMultipleClients={!editing} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async (data, clientIds) => {
+    <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} linkedTaskTitle={editing ? rootTaskFor(editing, tasks)?.title : undefined} linkedTaskScheduledFor={editing ? rootTaskFor(editing, tasks)?.scheduled_for : undefined} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} allowMultipleClients={!editing} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async (data, clientIds) => {
       if (editing) { if (await onUpdate(editing.id, data)) { await onRefreshTasks(); setModalOpen(false); } }
       else {
         const created = clientIds && clientIds.length > 1

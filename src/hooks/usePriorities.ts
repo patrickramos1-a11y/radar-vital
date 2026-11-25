@@ -78,13 +78,18 @@ export function usePriorities() {
 
   useEffect(() => {
     fetch();
+    // A channel cannot receive callbacks after it subscribes. Give each hook
+    // mount its own channel so rapid remounts never reuse a subscribed one.
+    const channelId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const ch = supabase
-      .channel('priorities_realtime')
+      .channel(`priorities_realtime_${channelId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'priorities' }, () => {
         setTimeout(fetch, 100);
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { void supabase.removeChannel(ch); };
   }, [fetch]);
 
   const addPriority = useCallback(async (data: PriorityFormData, _clientName?: string) => {
@@ -93,20 +98,44 @@ export function usePriorities() {
         toast.error('Selecione um cliente ou um item do Universo Ramos');
         return null;
       }
+      const { scheduled_for: scheduledFor, ...priorityData } = data;
       const payload: Database['public']['Tables']['priorities']['Insert'] = {
-        title: data.title,
-        description: data.description || null,
-        client_id: data.universe_item_id ? null : data.client_id || null,
-        assigned_to: (data.assigned_to || []).slice(0, 1),
-        due_date: data.due_date || null,
-        status: data.status || 'aberta',
-        weight: data.weight ?? 1,
-        category: data.category || null,
+        title: priorityData.title,
+        description: priorityData.description || null,
+        client_id: priorityData.universe_item_id ? null : priorityData.client_id || null,
+        assigned_to: (priorityData.assigned_to || []).slice(0, 1),
+        due_date: priorityData.due_date || null,
+        status: priorityData.status || 'aberta',
+        weight: priorityData.weight ?? 1,
+        category: priorityData.category || null,
         created_by: currentUserName,
-        ...(data.universe_item_id ? { universe_item_id: data.universe_item_id } : {}),
+        ...(priorityData.universe_item_id ? { universe_item_id: priorityData.universe_item_id } : {}),
       };
       const { data: inserted, error } = await supabase.from('priorities').insert(payload).select().single();
       if (error) throw error;
+      if (scheduledFor && inserted.client_id) {
+        const taskPriority = inserted.weight >= 4 ? 'urgente' : inserted.weight === 3 ? 'alta' : inserted.weight === 2 ? 'normal' : 'baixa';
+        const { data: task, error: taskError } = await supabase.from('tasks').insert({
+          client_id: inserted.client_id,
+          title: inserted.title,
+          description: inserted.description,
+          assigned_to: Array.isArray(inserted.assigned_to) ? inserted.assigned_to.slice(0, 1) : [],
+          due_date: inserted.due_date,
+          scheduled_for: scheduledFor,
+          priority: taskPriority,
+          priority_id: inserted.id,
+          modality: inserted.category || 'levantamento',
+          status: 'pendente',
+          completed: false,
+          created_by: currentUserName,
+        }).select('id').single();
+        if (taskError) {
+          await supabase.from('priorities').delete().eq('id', inserted.id);
+          throw taskError;
+        }
+        const { error: linkError } = await supabase.from('priorities').update({ source_task_id: task.id }).eq('id', inserted.id);
+        if (linkError) throw linkError;
+      }
       await fetch();
       toast.success('Prioridade criada');
       return inserted ? dbRowToPriority(inserted) : null;
@@ -237,17 +266,22 @@ export function usePriorities() {
           finishResult = await finish(true);
         }
         if (finishResult.error) throw finishResult.error;
-        const { status: _status, ...otherChanges } = data;
+        const { status: _status, scheduled_for: scheduledFor, ...otherChanges } = data;
         if (otherChanges.assigned_to) otherChanges.assigned_to = otherChanges.assigned_to.slice(0, 1);
         if (Object.keys(otherChanges).length) {
           const { error: editError } = await supabase.from('priorities').update(otherChanges).eq('id', id);
           if (editError) throw editError;
         }
+        if (Object.prototype.hasOwnProperty.call(data, 'scheduled_for') && current.source_task_id) {
+          const { error: scheduleError } = await supabase.from('tasks').update({ scheduled_for: scheduledFor || null }).eq('id', current.source_task_id);
+          if (scheduleError) throw scheduleError;
+        }
         await fetch();
         toast.success('Prioridade concluída');
         return true;
       }
-      const patchData = { ...data };
+      const { scheduled_for: scheduledFor, ...patchData } = data;
+      const scheduleWasSupplied = Object.prototype.hasOwnProperty.call(data, 'scheduled_for');
       if (patchData.assigned_to) patchData.assigned_to = patchData.assigned_to.slice(0, 1);
       if (patchData.universe_item_id === null && !current?.universe_item_id) delete patchData.universe_item_id;
       const patch: Database['public']['Tables']['priorities']['Update'] = { ...patchData };
@@ -255,6 +289,10 @@ export function usePriorities() {
       if (data.status && data.status !== 'concluida') patch.completed_at = null;
       const { error } = await supabase.from('priorities').update(patch).eq('id', id);
       if (error) throw error;
+      if (scheduleWasSupplied && current?.source_task_id) {
+        const { error: scheduleError } = await supabase.from('tasks').update({ scheduled_for: scheduledFor || null }).eq('id', current.source_task_id);
+        if (scheduleError) throw scheduleError;
+      }
       await fetch();
       toast.success('Prioridade atualizada');
       return true;
