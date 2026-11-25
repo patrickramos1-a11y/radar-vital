@@ -526,7 +526,7 @@ function ChallengeDialog({
                 </label>
               ))}
               {availableItems.length === 0 && (
-                <p className="p-2 text-xs text-muted-foreground">Nenhuma tarefa, prioridade ou entregável disponível.</p>
+                <p className="p-2 text-xs text-muted-foreground">Nenhum processo ou entregável disponível.</p>
               )}
             </div>
           </Field>

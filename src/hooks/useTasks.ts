@@ -7,7 +7,10 @@ import { ActivityLogger } from '@/lib/activityLogger';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { useAuth } from '@/contexts/AuthContext';
 import { actorName } from '@/lib/auth';
-import { canCompleteTask, getNextRecurrenceDate } from '@/lib/taskOperations';
+import { format } from 'date-fns';
+import { canCompleteTask } from '@/lib/taskOperations';
+import { normalizeProcessWeight, urgencyForWeight, weightForUrgency } from '@/lib/processWeight';
+import { pendingPeriodSteps } from '@/lib/processRecurrence';
 
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
@@ -71,7 +74,7 @@ function readLocalWorkspace(): LocalWorkspaceState | null {
     const parsed = JSON.parse(value) as LocalWorkspaceState;
     return {
       ...parsed,
-      tasks: parsed.tasks.map((task) => ({ ...task, modality: task.modality || 'levantamento', scheduled_for: task.scheduled_for || null, external_url: task.external_url || null })),
+      tasks: parsed.tasks.map((task) => ({ ...task, modality: task.modality || 'levantamento', scheduled_for: task.scheduled_for || null, external_url: task.external_url || null, weight: normalizeProcessWeight(task.weight, weightForUrgency(task.priority)) })),
     };
   } catch {
     return null;
@@ -99,15 +102,53 @@ function createLocalTask(clientId: string, data: TaskFormData, createdBy?: strin
     completed_at: data.status === 'concluida' ? now : null,
     due_date: data.due_date || null,
     scheduled_for: data.scheduled_for || null,
-    priority: data.priority || 'normal',
+    priority: data.weight ? urgencyForWeight(data.weight) : data.priority || 'normal',
+    weight: data.weight ? normalizeProcessWeight(data.weight) : weightForUrgency(data.priority),
+    weight_changed_at: now,
     modality: data.modality || 'levantamento',
     parent_task_id: data.parent_task_id || null,
     sort_order: data.sort_order || 0,
     source_comment_id: data.source_comment_id || null,
     recurrence: data.recurrence || 'none',
+    recurrence_interval: data.recurrence === 'custom' ? data.recurrence_interval ?? null : null,
+    recurrence_unit: data.recurrence === 'custom' ? data.recurrence_unit ?? null : null,
     recurrence_origin_id: null,
     updated_at: now,
   };
+}
+
+/** O banco exige intervalo só na repetição 'custom' (tasks_recurrence_custom_check). */
+function recurrenceColumns(data: Pick<TaskFormData, 'recurrence' | 'recurrence_interval' | 'recurrence_unit'>) {
+  if (!data.recurrence) return {};
+  return data.recurrence === 'custom'
+    ? { recurrence: data.recurrence, recurrence_interval: data.recurrence_interval ?? null, recurrence_unit: data.recurrence_unit ?? null }
+    : { recurrence: data.recurrence, recurrence_interval: null, recurrence_unit: null };
+}
+
+// Etapas de período: a cada carga das tarefas, cria só as que faltam. Só na
+// versão publicada: o modo de desenvolvimento usa o mesmo banco de produção.
+const RECURRING_STEPS_ENABLED = import.meta.env.PROD && !LOCAL_WORKSPACE_PREVIEW;
+let recurringStepsRunning = false;
+
+/**
+ * Grava as etapas de período que faltam. Se outra aba criou a mesma etapa no
+ * meio do caminho, o índice único recusa (23505) e a etapa é só ignorada.
+ */
+async function createPeriodSteps(steps: TaskInsert[]): Promise<TaskRow[]> {
+  if (!steps.length) return [];
+  const batch = await supabase.from('tasks').insert(steps).select('*');
+  if (!batch.error) return batch.data ?? [];
+  if (batch.error.code !== '23505') {
+    console.warn('Recurring process steps were not created:', batch.error.message);
+    return [];
+  }
+  const created: TaskRow[] = [];
+  for (const step of steps) {
+    const single = await supabase.from('tasks').insert(step).select('*').single();
+    if (single.data) created.push(single.data);
+    else if (single.error && single.error.code !== '23505') console.warn('Recurring process step was not created:', single.error.message);
+  }
+  return created;
 }
 
 const dbRowToTask = (row: TaskRow): Task => ({
@@ -126,12 +167,16 @@ const dbRowToTask = (row: TaskRow): Task => ({
   scheduled_for: row.scheduled_for || null,
   priority: (row.priority as Task['priority']) || 'normal',
   priority_changed_at: row.priority_changed_at,
+  weight: normalizeProcessWeight(row.weight, weightForUrgency(row.priority as Task['priority'])),
+  weight_changed_at: row.weight_changed_at,
   modality: (row.modality as Task['modality']) || 'levantamento',
   priority_id: row.priority_id ?? null,
   parent_task_id: row.parent_task_id ?? null,
   sort_order: row.sort_order ?? 0,
   source_comment_id: row.source_comment_id ?? null,
   recurrence: (row.recurrence as Task['recurrence']) || 'none',
+  recurrence_interval: row.recurrence_interval ?? null,
+  recurrence_unit: (row.recurrence_unit as Task['recurrence_unit']) ?? null,
   recurrence_origin_id: row.recurrence_origin_id ?? null,
   updated_at: row.updated_at ?? row.created_at,
 });
@@ -164,8 +209,8 @@ export function useTasks() {
         return;
       }
 
-      // Idempotent: when the policy migration is available, this keeps aged
-      // tasks and their automatic priorities in sync before rendering them.
+      // Idempotente: desde Processos v2 so sobe o peso dos processos parados
+      // que vieram do envelhecimento; nao cria mais prioridades.
       const { error: automationError } = await (supabase.rpc as unknown as TaskPriorityAutomationRpc)(
         'reconcile_stale_task_priorities',
         { p_actor_name: currentUserName || 'Sistema' },
@@ -184,7 +229,20 @@ export function useTasks() {
       if (taskResult.error) throw taskResult.error;
       if (dependencyResult.error) throw dependencyResult.error;
       if (templateResult.error) throw templateResult.error;
-      setTasks((taskResult.data || []).map(dbRowToTask));
+      let loadedTasks = (taskResult.data || []).map(dbRowToTask);
+      const missingSteps = RECURRING_STEPS_ENABLED
+        ? pendingPeriodSteps(loadedTasks, format(new Date(), 'yyyy-MM-dd'), currentUserName || null)
+        : [];
+      if (missingSteps.length && !recurringStepsRunning) {
+        recurringStepsRunning = true;
+        try {
+          const created = await createPeriodSteps(missingSteps);
+          if (created.length) loadedTasks = [...created.map(dbRowToTask), ...loadedTasks];
+        } finally {
+          recurringStepsRunning = false;
+        }
+      }
+      setTasks(loadedTasks);
       setDependencies((dependencyResult.data || []) as TaskDependency[]);
       setTemplates((templateResult.data || []).map((template) => ({
         ...template,
@@ -239,12 +297,14 @@ export function useTasks() {
         created_by: currentUserName || null,
         due_date: data.due_date || null,
         scheduled_for: data.scheduled_for || null,
-        priority: data.priority || 'normal',
+        priority: data.weight ? urgencyForWeight(data.weight) : data.priority || 'normal',
+        ...(data.weight ? { weight: normalizeProcessWeight(data.weight) } : {}),
         modality: data.modality || 'levantamento',
         status: data.status || 'pendente',
         parent_task_id: data.parent_task_id || null,
         source_comment_id: data.source_comment_id || null,
         recurrence: data.recurrence || 'none',
+        ...recurrenceColumns(data),
         sort_order: data.sort_order || 0,
         ...(data.external_url?.trim() ? { external_url: data.external_url.trim() } : {}),
       };
@@ -268,7 +328,7 @@ export function useTasks() {
 
   const addTask = useCallback(async (clientId: string, data: TaskFormData, clientName?: string) => {
     const task = await createTask(clientId, data, clientName);
-    if (task) toast.success(data.parent_task_id ? 'Subtarefa criada!' : 'Tarefa criada!');
+    if (task) toast.success(data.parent_task_id ? 'Etapa criada!' : 'Processo criado!');
     return !!task;
   }, [createTask]);
 
@@ -338,11 +398,15 @@ export function useTasks() {
 
   const updateTask = useCallback(async (taskId: string, data: Partial<Task>) => {
     if (data.assigned_to) data = { ...data, assigned_to: data.assigned_to.slice(0, 1) };
+    if (data.recurrence) data = { ...data, ...recurrenceColumns(data) };
     const currentTask = tasks.find((task) => task.id === taskId);
     try {
       const isCompleting = data.completed === true || data.status === 'concluida';
       if (isCompleting && !canCompleteTask(taskId, tasks)) {
-        if (!window.confirm('Esta tarefa tem subtarefas abertas. Deseja concluir todas elas e a tarefa principal?')) return false;
+        const confirmMessage = currentTask && currentTask.recurrence !== 'none' && !currentTask.parent_task_id
+          ? 'Este processo se repete e tem etapas abertas. Concluir encerra a repetição e conclui todas as etapas. Continuar?'
+          : 'Este processo tem etapas abertas. Deseja concluir todas elas e o processo?';
+        if (!window.confirm(confirmMessage)) return false;
         if (LOCAL_WORKSPACE_PREVIEW) {
           const descendants = new Set([taskId]);
           let changed = true;
@@ -370,7 +434,7 @@ export function useTasks() {
         });
         if (finishError) throw finishError;
         await fetchTasks();
-        if (currentTask?.recurrence === 'none' || currentTask?.parent_task_id) return true;
+        return true;
       }
 
       if (LOCAL_WORKSPACE_PREVIEW) {
@@ -402,37 +466,8 @@ export function useTasks() {
           completed_at: completedAt,
           updated_at: now,
         };
-        let nextTasks = tasks.map((item) => item.id === taskId ? updatedTask : item);
-
-        if (isCompleting && !currentTask.completed && currentTask.recurrence !== 'none' && !currentTask.parent_task_id) {
-          const nextTask = createLocalTask(currentTask.client_id, {
-            title: currentTask.title,
-            description: currentTask.description ?? undefined,
-            external_url: currentTask.external_url ?? undefined,
-            assigned_to: currentTask.assigned_to,
-            due_date: getNextRecurrenceDate(currentTask.due_date, currentTask.recurrence) ?? undefined,
-            priority: currentTask.priority,
-            modality: currentTask.modality,
-            recurrence: currentTask.recurrence,
-          });
-          nextTask.recurrence_origin_id = currentTask.recurrence_origin_id || currentTask.id;
-          const nextChildren = tasks
-            .filter((item) => item.parent_task_id === currentTask.id)
-            .map((child) => createLocalTask(child.client_id, {
-              title: child.title,
-              description: child.description ?? undefined,
-              external_url: child.external_url ?? undefined,
-              assigned_to: child.assigned_to,
-              priority: child.priority,
-              modality: child.modality,
-              parent_task_id: nextTask.id,
-              sort_order: child.sort_order,
-            }));
-          nextTasks = [nextTask, ...nextChildren, ...nextTasks];
-          toast.success('Próxima ocorrência criada automaticamente');
-        }
-
-        writeLocalWorkspace({ tasks: nextTasks, dependencies });
+        // Processo-mãe (D-025): concluir encerra a repetição; não abre outro processo.
+        writeLocalWorkspace({ tasks: tasks.map((item) => item.id === taskId ? updatedTask : item), dependencies });
         return true;
       }
 
@@ -473,50 +508,8 @@ export function useTasks() {
         .eq('id', taskId);
 
       if (error) throw error;
-
-      if (currentTask && isCompleting && !currentTask.completed && currentTask.recurrence !== 'none' && !currentTask.parent_task_id) {
-        const nextDueDate = getNextRecurrenceDate(currentTask.due_date, currentTask.recurrence);
-        const recurrenceOriginId = currentTask.recurrence_origin_id || currentTask.id;
-        const { data: nextTask, error: recurrenceError } = await supabase.from('tasks').insert({
-          client_id: currentTask.client_id,
-          title: currentTask.title,
-          description: currentTask.description,
-          external_url: currentTask.external_url,
-          assigned_to: currentTask.assigned_to,
-          due_date: nextDueDate,
-          priority: currentTask.priority,
-          modality: currentTask.modality,
-          status: 'pendente',
-          recurrence: currentTask.recurrence,
-          recurrence_origin_id: recurrenceOriginId,
-        }).select('*').single();
-
-        if (recurrenceError && recurrenceError.code !== '23505') throw recurrenceError;
-        if (nextTask) {
-          const childTasks = tasks.filter((task) => task.parent_task_id === currentTask.id);
-          if (childTasks.length > 0) {
-            const { data: insertedChildren, error: childrenError } = await supabase.from('tasks').insert(childTasks.map((child) => ({
-              client_id: child.client_id,
-              title: child.title,
-              description: child.description,
-              external_url: child.external_url,
-              assigned_to: child.assigned_to,
-              due_date: null,
-              priority: child.priority,
-              modality: child.modality,
-              status: 'pendente',
-              parent_task_id: nextTask.id,
-              sort_order: child.sort_order,
-            }))).select('*');
-            if (childrenError) throw childrenError;
-            if (insertedChildren?.length) {
-              setTasks(current => [...insertedChildren.map(dbRowToTask), ...current]);
-            }
-          }
-          setTasks(current => [dbRowToTask(nextTask), ...current]);
-          toast.success('Próxima ocorrência criada automaticamente');
-        }
-      }
+      // Processo-mãe (D-025): concluir encerra a repetição; os períodos nascem
+      // como etapas ao abrir o sistema, não ao concluir.
       return true;
     } catch (error) {
       if (currentTask) {

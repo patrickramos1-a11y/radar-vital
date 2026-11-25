@@ -90,7 +90,6 @@ export default function JackboxPanel() {
   }, [filteredClients, collaboratorFilters, getActiveTasksForClient]);
 
   const sortOptions: { value: VisualSortOption; label: string }[] = [
-    { value: 'priority', label: 'Prioridade' },
     { value: 'tasks', label: 'Tarefas' },
     { value: 'name', label: 'Nome' },
   ];
@@ -201,7 +200,7 @@ function JackboxCard({
       )}
     >
       <div className="flex items-center gap-3 mb-3 pb-3 border-b border-border">
-        <div className="relative flex-shrink-0">
+        <div className="flex-shrink-0">
           {client.logoUrl ? (
             <img
               src={client.logoUrl}
@@ -211,11 +210,6 @@ function JackboxCard({
           ) : (
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <span className="text-sm font-bold text-primary">{client.initials}</span>
-            </div>
-          )}
-          {client.isPriority && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full flex items-center justify-center">
-              <span className="text-[6px] text-white">★</span>
             </div>
           )}
         </div>

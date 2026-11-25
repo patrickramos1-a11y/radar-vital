@@ -16,13 +16,14 @@ import type { Collaborator } from '@/types/collaborator';
 import type { StarTransaction } from '@/types/treasury';
 import { KpiCard } from './KpiCard';
 import { CollaboratorAvatar } from './CollaboratorAvatar';
-import { CheckSquare, CheckCircle2, Clock, Star, MessageSquare, TrendingUp, Package, ThumbsUp, Sparkles, Trophy, AlertTriangle, Users, Percent, ArrowUpDown, type LucideIcon } from 'lucide-react';
+import { CheckSquare, CheckCircle2, Clock, Star, MessageSquare, TrendingUp, Package, ThumbsUp, Sparkles, Trophy, AlertTriangle, Users, Percent, ArrowUpDown, Siren, type LucideIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { isInPeriod, type PeriodKey } from '@/lib/period';
-import { isPastDue, ordinaryTasks, startOfToday } from '@/lib/centralMetrics';
+import { isPastDue, startOfToday } from '@/lib/centralMetrics';
+import { isMaximumWeight, normalizeProcessWeight, weightForUrgency } from '@/lib/processWeight';
 import { PeriodSelect } from '@/components/common/PeriodSelect';
 import { SegmentedControl } from '@/components/common/SegmentedControl';
 
@@ -74,15 +75,15 @@ const METRICS: { key: MetricKey; label: string; icon: LucideIcon; higherIsBetter
   { key: 'delivDone', label: 'Entregáveis concluídos', icon: Package },
   { key: 'delivPending', label: 'Entregáveis pendentes', icon: Clock },
   { key: 'delivPct', label: '% de conclusão (entregáveis)', icon: Percent },
-  { key: 'tasksDone', label: 'Tarefas concluídas', icon: CheckCircle2 },
-  { key: 'tasksOpen', label: 'Tarefas em aberto', icon: CheckSquare },
-  { key: 'tasksOverdue', label: 'Tarefas atrasadas', icon: AlertTriangle },
+  { key: 'tasksDone', label: 'Processos concluídos', icon: CheckCircle2 },
+  { key: 'tasksOpen', label: 'Processos em aberto', icon: CheckSquare },
+  { key: 'tasksOverdue', label: 'Processos atrasados', icon: AlertTriangle },
   { key: 'avgDays', label: 'Menor tempo médio (dias)', icon: Clock, higherIsBetter: false },
   { key: 'comments', label: 'Comentários realizados', icon: MessageSquare },
   { key: 'commentsRead', label: 'Comentários lidos', icon: MessageSquare },
   { key: 'clients', label: 'Clientes vinculados', icon: Users },
-  { key: 'priorities', label: 'Prioridades sob responsabilidade', icon: Star },
-  { key: 'prioritiesDone', label: 'Prioridades concluídas', icon: CheckCircle2 },
+  { key: 'priorities', label: 'Processos Máxima sob responsabilidade', icon: Siren },
+  { key: 'prioritiesDone', label: 'Processos Máxima concluídos', icon: CheckCircle2 },
   { key: 'auditsAssigned', label: 'Auditorias atribuídas', icon: CheckSquare },
   { key: 'auditsDone', label: 'Auditorias concluídas', icon: CheckCircle2 },
   { key: 'challengesActive', label: 'Desafios em andamento', icon: Sparkles },
@@ -91,11 +92,10 @@ const METRICS: { key: MetricKey; label: string; icon: LucideIcon; higherIsBetter
 
 function computeStats(name: string, tasks: Task[], priorities: Priority[], comments: ClientCommentRow[], deliverables: Deliverable[], ratings: ReturnType<typeof useDeliverableRatings>['ratings'], sources: PerformanceSources) {
   const isCurrent = (value: string | null | undefined) => isInPeriod(value, sources.period);
-  const myTasks = tasks.filter(t => assigneeMatches(t.assigned_to, name) && isCurrent(t.created_at));
+  // D-025: os números contam processos (tarefas principais); as etapas ficam dentro deles.
+  const myTasks = tasks.filter(t => !t.parent_task_id && assigneeMatches(t.assigned_to, name) && isCurrent(t.created_at));
   const doneTasks = myTasks.filter(t => t.completed);
-  // Open and overdue follow the Central's rule: tasks inside a priority tree
-  // are counted under the priority, and a task due today is not late.
-  const openTasks = ordinaryTasks(tasks).filter(t => !t.completed && assigneeMatches(t.assigned_to, name) && isCurrent(t.created_at));
+  const openTasks = myTasks.filter(t => !t.completed && t.status !== 'cancelada');
   const today = startOfToday();
   const overdue = openTasks.filter(t => isPastDue(t.due_date, today)).length;
   const now = Date.now();
@@ -108,8 +108,9 @@ function computeStats(name: string, tasks: Task[], priorities: Priority[], comme
       }, 0) / doneTasks.length)
     : 0;
 
-  const myPriorities = priorities.filter(p => assigneeMatches(p.assigned_to, name) && isCurrent(p.created_at));
-  const donePriorities = myPriorities.filter(p => p.status === 'concluida').length;
+  const weightOf = (t: Task) => normalizeProcessWeight(t.weight, weightForUrgency(t.priority));
+  const myPriorities = myTasks.filter(t => isMaximumWeight(weightOf(t)));
+  const donePriorities = myPriorities.filter(t => t.completed).length;
 
   const myDeliv = deliverables.filter(d => assigneeMatches(d.assigned_to, name) && isCurrent(d.created_at));
   const delivDone = myDeliv.filter(d => d.status === 'concluido').length;
@@ -134,7 +135,6 @@ function computeStats(name: string, tasks: Task[], priorities: Priority[], comme
 
   const clientIds = new Set<string>();
   myTasks.forEach(t => t.client_id && clientIds.add(t.client_id));
-  myPriorities.forEach(p => p.client_id && clientIds.add(p.client_id));
   myDeliv.forEach(deliverable => {
     deliverable.items.forEach(item => {
       const task = tasks.find(candidate => candidate.id === item.item_id);
@@ -329,23 +329,23 @@ export function PerformanceTab({ collaborator, color, tasks, priorities, deliver
 
           <section>
             <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-              <CheckSquare className="w-4 h-4" style={{ color }} /> Tarefas
+              <CheckSquare className="w-4 h-4" style={{ color }} /> Processos
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <KpiCard label="Concluídas" value={stats.doneTasks} icon={CheckCircle2} variant="success" />
               <KpiCard label="Em aberto" value={stats.openTasks} icon={CheckSquare} color={color} />
-              <KpiCard label="Atrasadas" value={stats.overdue} icon={AlertTriangle} variant="danger" />
+              <KpiCard label="Atrasados" value={stats.overdue} icon={AlertTriangle} variant="danger" />
               <KpiCard label="Tempo médio" value={`${stats.avgDays}d`} icon={Clock} />
             </div>
           </section>
 
           <section>
             <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-              <Star className="w-4 h-4 text-red-500" /> Prioridades & Clientes
+              <Siren className="w-4 h-4 text-red-500" /> Peso Máxima & Clientes
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <KpiCard label="Prioridades" value={stats.myPriorities} icon={Star} />
-              <KpiCard label="Prioridades concluídas" value={stats.donePriorities} icon={CheckCircle2} variant="success" />
+              <KpiCard label="Processos Máxima" value={stats.myPriorities} icon={Siren} />
+              <KpiCard label="Máxima concluídos" value={stats.donePriorities} icon={CheckCircle2} variant="success" />
               <KpiCard label="Clientes vinculados" value={stats.clients} icon={Users} color={color} />
               <KpiCard label="Comentários lidos" value={stats.commentsRead} icon={MessageSquare} />
             </div>
@@ -426,9 +426,9 @@ export function PerformanceTab({ collaborator, color, tasks, priorities, deliver
                       <span>{row.stats.stars}⭐</span>
                       <span>{row.stats.supers}🌟</span>
                       <span>{row.stats.thumbs}👍</span>
-                      <span>{row.stats.doneTasks} tarefas ✓</span>
+                      <span>{row.stats.doneTasks} processos ✓</span>
                       <span>{row.stats.delivDone} entregáveis ✓</span>
-                      <span>{row.stats.overdue} atrasadas</span>
+                      <span>{row.stats.overdue} atrasados</span>
                     </div>
                   </div>
                 </div>

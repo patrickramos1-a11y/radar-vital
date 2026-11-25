@@ -1,9 +1,25 @@
 import { CollaboratorName } from './client';
 
-export type TVRecorte = 'prioridade' | 'destaque' | 'responsaveis' | 'comentarios' | 'checklist' | null;
+export type TVRecorte = 'destaque' | 'responsaveis' | 'comentarios' | 'checklist' | null;
 export type TVDensidade = 'compacta' | 'normal' | 'gigante';
 export type TVTipoCliente = 'TODOS' | 'AC' | 'AV';
-export type TVOrdenacao = 'ordem' | 'prioridade' | 'nome' | null;
+export type TVOrdenacao = 'ordem' | 'nome' | null;
+
+const TV_RECORTES: ReadonlySet<string> = new Set(['destaque', 'responsaveis', 'comentarios', 'checklist']);
+const TV_ORDENACOES: ReadonlySet<string> = new Set(['ordem', 'nome']);
+
+/**
+ * Cenas salvas antes da remoção da marca de cliente prioritário podem trazer
+ * `'prioridade'` (ou outro valor desconhecido): nesses casos a cena fica sem recorte.
+ */
+export function normalizeTVRecorte(value: unknown): TVRecorte {
+  return typeof value === 'string' && TV_RECORTES.has(value) ? (value as TVRecorte) : null;
+}
+
+/** Valores desconhecidos (ex.: o antigo `'prioridade'`) voltam para a ordem padrão. */
+export function normalizeTVOrdenacao(value: unknown): TVOrdenacao {
+  return typeof value === 'string' && TV_ORDENACOES.has(value) ? (value as TVOrdenacao) : 'ordem';
+}
 
 export interface TVSceneFilters {
   tipoCliente: TVTipoCliente;
@@ -22,14 +38,14 @@ export interface TVScene {
 
 export const DEFAULT_TV_SCENES: TVScene[] = [
   {
-    id: 'prioridade-geral',
-    titulo: 'Prioridade (Geral)',
+    id: 'geral',
+    titulo: 'Geral',
     duracaoSegundos: 120,
     filtros: {
       tipoCliente: 'TODOS',
       responsavel: null,
-      recorte: 'prioridade',
-      ordenarPor: 'prioridade',
+      recorte: null,
+      ordenarPor: 'ordem',
       densidade: 'normal',
     },
   },
@@ -77,7 +93,7 @@ export const DEFAULT_TV_SCENES: TVScene[] = [
       tipoCliente: 'TODOS',
       responsavel: 'celine',
       recorte: null,
-      ordenarPor: 'prioridade',
+      ordenarPor: 'ordem',
       densidade: 'normal',
     },
   },
@@ -89,7 +105,7 @@ export const DEFAULT_TV_SCENES: TVScene[] = [
       tipoCliente: 'TODOS',
       responsavel: 'gabi',
       recorte: null,
-      ordenarPor: 'prioridade',
+      ordenarPor: 'ordem',
       densidade: 'normal',
     },
   },
@@ -101,7 +117,7 @@ export const DEFAULT_TV_SCENES: TVScene[] = [
       tipoCliente: 'TODOS',
       responsavel: 'darley',
       recorte: null,
-      ordenarPor: 'prioridade',
+      ordenarPor: 'ordem',
       densidade: 'normal',
     },
   },
@@ -113,7 +129,7 @@ export const DEFAULT_TV_SCENES: TVScene[] = [
       tipoCliente: 'TODOS',
       responsavel: 'vanessa',
       recorte: null,
-      ordenarPor: 'prioridade',
+      ordenarPor: 'ordem',
       densidade: 'normal',
     },
   },

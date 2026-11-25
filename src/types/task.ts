@@ -14,7 +14,9 @@ export type TaskStatus =
   | 'em_validacao'
   | 'concluida'
   | 'cancelada';
-export type TaskRecurrence = 'none' | 'weekly' | 'monthly';
+/** 'custom' usa `recurrence_interval` + `recurrence_unit` (a cada N dias ou meses). */
+export type TaskRecurrence = 'none' | 'weekly' | 'monthly' | 'custom';
+export type TaskRecurrenceUnit = 'days' | 'months';
 
 export interface Task {
   id: string;
@@ -32,12 +34,17 @@ export interface Task {
   scheduled_for: string | null;
   priority: TaskPriority;
   priority_changed_at?: string;
+  /** Peso do processo, 1 a 5 (5 = Máxima). Fonte da verdade desde Processos v2. */
+  weight: number;
+  weight_changed_at?: string;
   modality: TaskModality;
   priority_id?: string | null;
   parent_task_id: string | null;
   sort_order: number;
   source_comment_id: string | null;
   recurrence: TaskRecurrence;
+  recurrence_interval?: number | null;
+  recurrence_unit?: TaskRecurrenceUnit | null;
   recurrence_origin_id: string | null;
   updated_at: string;
 }
@@ -50,11 +57,14 @@ export type TaskFormData = {
   due_date?: string;
   scheduled_for?: string;
   priority?: TaskPriority;
+  weight?: number;
   modality?: TaskModality;
   status?: TaskStatus;
   parent_task_id?: string | null;
   source_comment_id?: string | null;
   recurrence?: TaskRecurrence;
+  recurrence_interval?: number | null;
+  recurrence_unit?: TaskRecurrenceUnit | null;
   sort_order?: number;
 };
 
@@ -95,6 +105,7 @@ export const TASK_RECURRENCE_LABELS: Record<TaskRecurrence, string> = {
   none: 'Não repetir',
   weekly: 'Semanal',
   monthly: 'Mensal',
+  custom: 'Personalizada',
 };
 
 export const TASK_MODALITY_CONFIG: Record<TaskModality, { label: string; shortLabel: string }> = {

@@ -1,4 +1,4 @@
-import { Star, MessageCircle, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
+import { MessageCircle, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES } from "@/types/client";
 import type { AuditClientStatus } from "@/types/audit";
 
@@ -140,7 +140,6 @@ function CompactCard({
             {client.name}
           </button>
           {auditStatus && <ShieldCheck className="h-3 w-3 shrink-0 text-emerald-600" />}
-          {client.isPriority && <Star className="h-3 w-3 shrink-0 fill-amber-500 text-amber-500" />}
         </div>
 
         <div className="flex items-center justify-end gap-0.5 px-1 py-0.5">
@@ -229,9 +228,6 @@ function CompactCard({
                     : 'text-slate-400'
             }`}
           />
-        )}
-        {client.isPriority && (
-          <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
         )}
       </div>
 

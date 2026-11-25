@@ -1,5 +1,4 @@
 import type { Deliverable } from "@/types/deliverable";
-import type { Priority } from "@/types/priority";
 import type { Task } from "@/types/task";
 import type { ClientComment } from "@/types/comment";
 import type {
@@ -8,13 +7,6 @@ import type {
   WorkItemStatus,
 } from "@/types/workItem";
 
-const priorityStatus: Record<Priority["status"], WorkItemStatus> = {
-  aberta: "open",
-  em_andamento: "in_progress",
-  concluida: "completed",
-  cancelada: "cancelled",
-};
-
 const deliverableStatus: Record<Deliverable["status"], WorkItemStatus> = {
   aberto: "open",
   em_andamento: "in_progress",
@@ -22,6 +14,7 @@ const deliverableStatus: Record<Deliverable["status"], WorkItemStatus> = {
   cancelado: "cancelled",
 };
 
+/** Processo = tarefa raiz (D-025). As etapas aparecem dentro do processo. */
 export function taskToWorkItem(task: Task): WorkItem {
   return {
     id: `task:${task.id}`,
@@ -63,57 +56,33 @@ export function commentToWorkItem(comment: ClientComment): WorkItem {
   };
 }
 
-export function priorityToWorkItem(priority: Priority): WorkItem | null {
-  if (!priority.client_id) return null;
-
-  return {
-    id: `priority:${priority.id}`,
-    sourceId: priority.id,
-    kind: "priority",
-    clientId: priority.client_id,
-    title: priority.title,
-    description: priority.description,
-    status: priorityStatus[priority.status],
-    createdAt: priority.created_at,
-    dueDate: priority.due_date,
-    completedAt: priority.completed_at,
-    assignees: priority.assigned_to,
-    sourcePath: "/central-entregas?tab=processos",
-  };
-}
-
+/**
+ * Clientes de um entregável: o cliente gravado nele e os clientes dos
+ * processos vinculados. Itens antigos ligados a prioridades são só histórico.
+ */
 export function getDeliverableClientIds(
   deliverable: Deliverable,
   tasks: Task[],
-  priorities: Priority[],
 ): Set<string> {
   const taskClientById = new Map(
     tasks.map((task) => [task.id, task.client_id]),
   );
-  const priorityClientById = new Map(
-    priorities
-      .filter((priority) => priority.client_id)
-      .map((priority) => [priority.id, priority.client_id as string]),
-  );
-
-  return new Set(
-    deliverable.items.flatMap((item) => {
-      const clientId =
-        item.item_type === "task"
-          ? taskClientById.get(item.item_id)
-          : priorityClientById.get(item.item_id);
-      return clientId ? [clientId] : [];
-    }),
-  );
+  const clientIds = new Set<string>();
+  if (deliverable.client_id) clientIds.add(deliverable.client_id);
+  deliverable.items.forEach((item) => {
+    if (item.item_type !== "task") return;
+    const clientId = taskClientById.get(item.item_id);
+    if (clientId) clientIds.add(clientId);
+  });
+  return clientIds;
 }
 
 export function deliverableToWorkItem(
   deliverable: Deliverable,
   clientId: string,
   tasks: Task[],
-  priorities: Priority[],
 ): WorkItem | null {
-  if (!getDeliverableClientIds(deliverable, tasks, priorities).has(clientId)) {
+  if (!getDeliverableClientIds(deliverable, tasks).has(clientId)) {
     return null;
   }
 
@@ -167,24 +136,15 @@ export function futureSourceToWorkItem(source: FutureWorkItemSource): WorkItem {
 export function buildClientWorkItems(
   clientId: string,
   tasks: Task[],
-  priorities: Priority[],
   deliverables: Deliverable[],
   futureSources: FutureWorkItemSource[] = [],
   comments: ClientComment[] = [],
 ): WorkItem[] {
-  const priorityTaskIds = new Set(priorities.flatMap(priority => priority.source_task_id ? [priority.source_task_id] : []));
-  const taskItems = tasks
-    .filter((task) => task.client_id === clientId && !priorityTaskIds.has(task.id))
+  const processItems = tasks
+    .filter((task) => task.client_id === clientId && !task.parent_task_id)
     .map(taskToWorkItem);
-  const priorityItems = priorities
-    .map(priorityToWorkItem)
-    .filter(
-      (item): item is WorkItem => Boolean(item?.clientId === clientId),
-    );
   const deliverableItems = deliverables
-    .map((deliverable) =>
-      deliverableToWorkItem(deliverable, clientId, tasks, priorities),
-    )
+    .map((deliverable) => deliverableToWorkItem(deliverable, clientId, tasks))
     .filter((item): item is WorkItem => Boolean(item));
   const futureItems = futureSources
     .filter((source) => source.clientId === clientId)
@@ -193,7 +153,7 @@ export function buildClientWorkItems(
     .filter((comment) => comment.clientId === clientId)
     .map(commentToWorkItem);
 
-  return [...taskItems, ...priorityItems, ...deliverableItems, ...futureItems, ...commentItems]
+  return [...processItems, ...deliverableItems, ...futureItems, ...commentItems]
     .sort((left, right) => {
       const leftDone =
         left.status === "completed" || left.status === "cancelled";

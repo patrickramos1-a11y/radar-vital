@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Deliverable } from "@/types/deliverable";
 import type { ClientComment } from "@/types/comment";
-import type { Priority } from "@/types/priority";
 import type { Task } from "@/types/task";
 import {
   buildClientWorkItems,
   futureSourceToWorkItem,
 } from "@/lib/workItemAdapters";
+import { WORK_ITEM_LABELS, normalizeWorkItemFilter } from "@/types/workItem";
 
 const task: Task = {
   id: "task-1",
@@ -21,6 +21,7 @@ const task: Task = {
   due_date: "2026-07-10",
   scheduled_for: null,
   priority: "alta",
+  weight: 3,
 
   modality: "levantamento",
   parent_task_id: null,
@@ -29,6 +30,14 @@ const task: Task = {
   recurrence: "none",
   recurrence_origin_id: null,
   updated_at: "2026-07-01T10:00:00.000Z",
+};
+
+const step: Task = {
+  ...task,
+  id: "task-1-step",
+  title: "Pedir documentos",
+  parent_task_id: task.id,
+  due_date: "2026-07-05",
 };
 
 const comment: ClientComment = {
@@ -47,27 +56,11 @@ const comment: ClientComment = {
   isArchived: false,
 };
 
-const priority: Priority = {
-  id: "priority-1",
-  title: "Regularização",
-  description: null,
-  client_id: "client-1",
-  assigned_to: ["Celine"],
-  due_date: "2026-07-08",
-  status: "em_andamento",
-  weight: 3,
-  category: null,
-  created_by: "Patrick",
-  created_at: "2026-07-01T09:00:00.000Z",
-  updated_at: "2026-07-01T09:00:00.000Z",
-  completed_at: null,
-};
-
 const deliverable: Deliverable = {
   id: "deliverable-1",
   name: "Entrega mensal",
   description: null,
-  client_id: "client-1",
+  client_id: null,
   source_priority_id: null,
   assigned_to: ["Celine"],
   requester: "Patrick",
@@ -90,36 +83,39 @@ const deliverable: Deliverable = {
 
 describe("work item adapters", () => {
   it("combines source records without changing their identities", () => {
-    const items = buildClientWorkItems(
-      "client-1",
-      [task],
-      [priority],
-      [deliverable],
-    );
+    const items = buildClientWorkItems("client-1", [task], [deliverable]);
 
     expect(items.map((item) => item.id)).toEqual([
-      "priority:priority-1",
       "task:task-1",
       "deliverable:deliverable-1",
     ]);
-    expect(new Set(items.map((item) => item.sourceId)).size).toBe(3);
+    expect(new Set(items.map((item) => item.sourceId)).size).toBe(2);
+  });
+
+  it("lists only root tasks as processes, without their steps", () => {
+    const items = buildClientWorkItems("client-1", [task, step], []);
+
+    expect(items.map((item) => item.id)).toEqual(["task:task-1"]);
+    expect(WORK_ITEM_LABELS[items[0].kind]).toBe("Processo");
   });
 
   it("does not expose a linked deliverable to another client", () => {
-    expect(
-      buildClientWorkItems("client-2", [task], [priority], [deliverable]),
-    ).toEqual([]);
+    expect(buildClientWorkItems("client-2", [task], [deliverable])).toEqual([]);
   });
 
-  it("shows a linked priority once in the consolidated client history", () => {
+  it("shows a deliverable by its own client even without linked processes", () => {
     const items = buildClientWorkItems(
-      "client-1",
-      [{ ...task, priority_id: priority.id }],
-      [{ ...priority, source_task_id: task.id }],
+      "client-2",
       [],
+      [{ ...deliverable, client_id: "client-2", items: [] }],
     );
 
-    expect(items.map(item => item.id)).toEqual(["priority:priority-1"]);
+    expect(items.map((item) => item.id)).toEqual(["deliverable:deliverable-1"]);
+  });
+
+  it("opens the old priorities view as the processes view", () => {
+    expect(normalizeWorkItemFilter("priority")).toBe("task");
+    expect(normalizeWorkItemFilter("deliverable")).toBe("deliverable");
   });
 
   it("already supports audit and challenge adapters", () => {
@@ -137,7 +133,7 @@ describe("work item adapters", () => {
   });
 
   it("includes comments in the client history and preserves archived state", () => {
-    const activeItems = buildClientWorkItems("client-1", [task], [], [], [], [comment]);
+    const activeItems = buildClientWorkItems("client-1", [task], [], [], [comment]);
     const activeComment = activeItems.find((item) => item.id === "comment:comment-1");
 
     expect(activeComment?.kind).toBe("comment");
@@ -146,7 +142,6 @@ describe("work item adapters", () => {
 
     const archivedItems = buildClientWorkItems(
       "client-1",
-      [],
       [],
       [],
       [],

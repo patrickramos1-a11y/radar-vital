@@ -15,6 +15,7 @@ const task = (id: string, parent: string | null = null, priorityId: string | nul
   due_date: null,
   scheduled_for: null,
   priority: 'normal',
+  weight: 2,
   modality: 'levantamento',
   priority_id: priorityId,
   parent_task_id: parent,

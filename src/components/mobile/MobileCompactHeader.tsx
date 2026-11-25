@@ -1,4 +1,4 @@
-import { Users, Star, Bomb, UserCheck, MessageCircle, ListChecks, CheckSquare, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Users, Bomb, UserCheck, MessageCircle, ListChecks, CheckSquare, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileCompactHeaderProps {
@@ -6,7 +6,6 @@ interface MobileCompactHeaderProps {
   acCount: number;
   avCount: number;
   collaboratorSelectedStats: Record<string, number>;
-  priorityCount: number;
   highlightedCount: number;
   responsaveisCount: number;
   commentsCount: number;
@@ -15,7 +14,6 @@ interface MobileCompactHeaderProps {
   deBoaCount: number;
   comAlertaCount: number;
   filterFlags: {
-    priority: boolean;
     highlighted: boolean;
     hasCollaborators: boolean;
     withComments: boolean;
@@ -24,7 +22,7 @@ interface MobileCompactHeaderProps {
   };
   collaboratorFilters: string[];
   alertFilter: 'all' | 'deBoa' | 'comAlerta';
-  onFilterFlagToggle: (flag: 'priority' | 'highlighted' | 'hasCollaborators' | 'withComments' | 'withJackbox' | 'selected') => void;
+  onFilterFlagToggle: (flag: 'highlighted' | 'hasCollaborators' | 'withComments' | 'withJackbox' | 'selected') => void;
   onCollaboratorFilterToggle: (collaborator: string) => void;
   onAlertFilterChange: (filter: 'all' | 'deBoa' | 'comAlerta') => void;
 }
@@ -34,7 +32,6 @@ export function MobileCompactHeader({
   acCount,
   avCount,
   collaboratorSelectedStats,
-  priorityCount,
   highlightedCount,
   responsaveisCount,
   commentsCount,
@@ -106,14 +103,6 @@ export function MobileCompactHeader({
 
       {/* Row 3: Filter pills */}
       <div className="flex items-center gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-hide">
-        <FilterBadge
-          icon={<Star className="w-3 h-3" />}
-          value={priorityCount}
-          label="PRIO"
-          active={filterFlags.priority}
-          onClick={() => onFilterFlagToggle('priority')}
-          activeColor="rgb(245, 158, 11)"
-        />
         <FilterBadge
           icon={<Bomb className="w-3 h-3" />}
           value={highlightedCount}

@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { 
-  ArrowLeft, Plus, Pencil, Trash2, Star, Eye, EyeOff, Upload, X, 
+  ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Upload, X, 
   AlertTriangle, CheckSquare, ChevronUp, ChevronDown, RefreshCw,
   Download, FileJson, FolderUp, LoaderCircle, RotateCcw, MapPin, Search, Check
 } from "lucide-react";
@@ -391,7 +391,6 @@ const Config = () => {
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Tipo</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Equipe</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Equipe</th>
-                  <th className="pb-3 text-sm font-medium text-muted-foreground text-center">★</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-center">Ativo</th>
                   <th className="pb-3 text-sm font-medium text-muted-foreground text-right">Ações</th>
                 </tr>
@@ -510,9 +509,6 @@ const Config = () => {
                           </span>
                         ))}
                       </div>
-                    </td>
-                    <td className="py-3 text-center">
-                      {client.isPriority && <Star className="w-4 h-4 text-yellow-500 fill-current mx-auto" />}
                     </td>
                     <td className="py-3 text-center">
                       <button
@@ -879,17 +875,6 @@ function ClientForm({ client, onSave, onCancel, nextOrder }: ClientFormProps) {
 
         {/* Toggles */}
         <div className="lg:col-span-3 flex items-center gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.isPriority}
-              onChange={e => setFormData(prev => ({ ...prev, isPriority: e.target.checked }))}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-            />
-            <Star className={`w-4 h-4 ${formData.isPriority ? 'text-yellow-500 fill-current' : 'text-muted-foreground'}`} />
-            <span className="text-sm text-foreground">Cliente Prioritário</span>
-          </label>
-
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"

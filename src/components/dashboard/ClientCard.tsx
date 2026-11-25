@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Star, Bomb, Building2, MessageCircle, ListChecks, Sparkles } from "lucide-react";
+import { Bomb, Building2, MessageCircle, ListChecks, Sparkles } from "lucide-react";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";
@@ -25,7 +24,6 @@ interface ClientCardProps {
   assignedCollaboratorIds: string[];
   onSelect: (id: string) => void;
   onHighlight: (id: string, reason?: string) => void;
-  onTogglePriority: (id: string, reason?: string) => void;
   onOpenChecklist: (id: string) => void;
   onEdit?: (client: Client) => void;
   showHighlight?: boolean;
@@ -39,7 +37,7 @@ interface ClientCardProps {
   unitProfileActionLabel?: string;
   onCreateChallenge?: (clientId: string) => void;
   /** Universo Ramos: header counters open the unit Central on a given tab. */
-  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks' | 'priorities') => void;
+  onOpenTab?: (clientId: string, tab: 'comments' | 'challenges' | 'tasks') => void;
   challengeCount?: number;
 }
 
@@ -116,7 +114,6 @@ export function ClientCard({
   assignedCollaboratorIds,
   onSelect,
   onHighlight,
-  onTogglePriority,
   onOpenChecklist,
   onEdit,
   showHighlight = true,
@@ -131,8 +128,7 @@ export function ClientCard({
   onOpenTab,
 }: ClientCardProps) {
 
-  const navigate = useNavigate();
-  const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
+  const [boReasonOpen, setBoReasonOpen] = useState(false);
   const assignedCollaborators = allCollaborators.filter(c => assignedCollaboratorIds.includes(c.id));
   const hasCollaborators = assignedCollaborators.length > 0;
   const collaboratorBg = getCollaboratorGradient(assignedCollaborators);
@@ -146,19 +142,10 @@ export function ClientCard({
   const handleHighlightClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isHighlighted) {
-      setReasonDialog("bo");
+      setBoReasonOpen(true);
       return;
     }
     onHighlight(client.id);
-  };
-
-  const handleStarClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onOpenTab) {
-      onOpenTab(client.id, 'priorities');
-      return;
-    }
-    navigate(`/central-entregas?tab=processos&clientId=${encodeURIComponent(client.id)}`);
   };
 
   const handleChecklistClick = (e: React.MouseEvent) => {
@@ -192,9 +179,6 @@ export function ClientCard({
               <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
             </button>
             )}
-            <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Ver prioridades do cliente">
-              <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
-            </button>
           </div>
         )}
 
@@ -230,9 +214,6 @@ export function ClientCard({
                 <Bomb className={`w-3.5 h-3.5 transition-colors ${isHighlighted ? 'text-red-500' : 'text-muted-foreground/40 hover:text-red-500'}`} />
               </button>
             )}
-            <button onClick={handleStarClick} className="p-0.5 rounded transition-colors hover:bg-muted/50" title="Ver prioridades do cliente">
-              <Star className={`w-3.5 h-3.5 transition-colors ${client.isPriority ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400'}`} />
-            </button>
             <TabCounter label="Tarefas" count={activeTaskCount} onClick={() => onOpenTab(client.id, 'tasks')} icon={<ListChecks className="w-3.5 h-3.5 text-amber-600" />} />
           </div>
         )}
@@ -278,16 +259,12 @@ export function ClientCard({
       </div>
       </div>
 
-      {reasonDialog && (
+      {boReasonOpen && (
         <MarkerReasonDialog
-          open={!!reasonDialog}
-          kind={reasonDialog}
-          defaultValue={reasonDialog === "priority" ? client.priorityReason : client.boReason}
-          onOpenChange={(open) => !open && setReasonDialog(null)}
-          onConfirm={(reason) => {
-            if (reasonDialog === "priority") onTogglePriority(client.id, reason);
-            else onHighlight(client.id, reason);
-          }}
+          open={boReasonOpen}
+          defaultValue={client.boReason}
+          onOpenChange={setBoReasonOpen}
+          onConfirm={(reason) => onHighlight(client.id, reason)}
         />
       )}
     </>

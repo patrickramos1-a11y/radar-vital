@@ -1,11 +1,11 @@
 import { useState, useMemo, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Task } from '@/types/task';
-import { Priority } from '@/types/priority';
 import { Deliverable } from '@/types/deliverable';
 import { Client } from '@/types/client';
 import { assigneeMatches } from '@/lib/taskAssignee';
-import { CheckCircle2, Star, Package, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
+import { Workflow, Package, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
+import { PROCESS_WEIGHT_CONFIG, normalizeProcessWeight, weightForUrgency } from '@/lib/processWeight';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -17,7 +17,6 @@ interface Props {
   collaborator: string;
   isTeamView: boolean;
   tasks: Task[];
-  priorities: Priority[];
   deliverables: Deliverable[];
   comments: HistoryComment[];
   clients: Client[];
@@ -43,26 +42,21 @@ interface SectionProps {
   children: ReactNode;
 }
 
-export function HistoryTab({ collaborator, isTeamView, tasks, priorities, deliverables, comments, clients }: Props) {
+export function HistoryTab({ collaborator, isTeamView, tasks, deliverables, comments, clients }: Props) {
   const [period, setPeriod] = useState<PeriodKey>('30d');
-  const [open, setOpen] = useState<Record<string, boolean>>({ tasks: false, priorities: false, deliverables: false, comments: false });
+  const [open, setOpen] = useState<Record<string, boolean>>({ processes: false, deliverables: false, comments: false });
 
   const clientById = useMemo(() => new Map(clients.map(c => [c.id, c])), [clients]);
   const readField = `read_${collaborator.toLowerCase()}`;
 
   const since = useMemo(() => periodStart(period) ?? 0, [period]);
 
+  // D-025: o histórico mostra processos (tarefas principais); as etapas ficam dentro deles.
   const doneTasks = useMemo(() => tasks
-    .filter(t => t.completed && (isTeamView || assigneeMatches(t.assigned_to, collaborator)))
+    .filter(t => !t.parent_task_id && t.completed && (isTeamView || assigneeMatches(t.assigned_to, collaborator)))
     .filter(t => !t.completed_at || new Date(t.completed_at).getTime() >= since)
     .sort((a, b) => new Date(b.completed_at || 0).getTime() - new Date(a.completed_at || 0).getTime()),
     [tasks, collaborator, isTeamView, since]);
-
-  const donePriorities = useMemo(() => priorities
-    .filter(p => (p.status === 'concluida' || p.status === 'cancelada') && (isTeamView || assigneeMatches(p.assigned_to, collaborator)))
-    .filter(p => !p.completed_at || new Date(p.completed_at).getTime() >= since)
-    .sort((a, b) => new Date(b.completed_at || b.updated_at).getTime() - new Date(a.completed_at || a.updated_at).getTime()),
-    [priorities, collaborator, isTeamView, since]);
 
   const doneDeliverables = useMemo(() => deliverables
     .filter(d => d.status === 'concluido' && (isTeamView || assigneeMatches(d.assigned_to, collaborator)))
@@ -99,12 +93,13 @@ export function HistoryTab({ collaborator, isTeamView, tasks, priorities, delive
         <span className="ml-auto text-xs text-muted-foreground">Clique em uma seção para expandir</span>
       </div>
 
-      <Section id="tasks" title="Tarefas concluídas" icon={CheckCircle2} count={doneTasks.length} tint="#10B981">
+      <Section id="processes" title="Processos concluídos" icon={Workflow} count={doneTasks.length} tint="#10B981">
         <table className="w-full text-sm">
           <tbody className="divide-y">
             {doneTasks.map(t => (
               <tr key={t.id} className="hover:bg-muted/20">
                 <td className="px-3 py-2 max-w-[400px]"><span className="line-clamp-1">{t.title}</span></td>
+                <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{PROCESS_WEIGHT_CONFIG[normalizeProcessWeight(t.weight, weightForUrgency(t.priority))].label}</td>
                 <td className="px-3 py-2"><ClientCell client={clientById.get(t.client_id)} size={20} /></td>
                 <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                   {t.completed_at ? format(new Date(t.completed_at), 'dd/MM/yy', { locale: ptBR }) : '—'}
@@ -112,28 +107,6 @@ export function HistoryTab({ collaborator, isTeamView, tasks, priorities, delive
               </tr>
             ))}
             {doneTasks.length === 0 && <tr><td className="px-3 py-3 text-center text-xs text-muted-foreground">Nada por aqui.</td></tr>}
-          </tbody>
-        </table>
-      </Section>
-
-      <Section id="priorities" title="Prioridades finalizadas" icon={Star} count={donePriorities.length} tint="#DC2626">
-        <table className="w-full text-sm">
-          <tbody className="divide-y">
-            {donePriorities.map(p => (
-              <tr key={p.id} className="hover:bg-muted/20">
-                <td className="px-3 py-2 max-w-[400px]"><span className="line-clamp-1">{p.title}</span></td>
-                <td className="px-3 py-2"><ClientCell client={p.client_id ? clientById.get(p.client_id) : null} size={20} /></td>
-                <td className="px-3 py-2 text-xs">
-                  <span className={p.status === 'concluida' ? 'text-emerald-700' : 'text-slate-500'}>
-                    {p.status === 'concluida' ? 'Concluída' : 'Cancelada'}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                  {p.completed_at ? format(new Date(p.completed_at), 'dd/MM/yy', { locale: ptBR }) : '—'}
-                </td>
-              </tr>
-            ))}
-            {donePriorities.length === 0 && <tr><td className="px-3 py-3 text-center text-xs text-muted-foreground">Nada por aqui.</td></tr>}
           </tbody>
         </table>
       </Section>

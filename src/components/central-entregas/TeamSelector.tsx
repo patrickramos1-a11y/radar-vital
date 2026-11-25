@@ -5,8 +5,8 @@ import { CollaboratorAvatar } from './CollaboratorAvatar';
 interface RespOption { name: string; color: string; initials: string; }
 
 interface CollabStats {
-  openTasks: number;
-  openPriorities: number;
+  openProcesses: number;
+  maximumProcesses: number;
 }
 
 interface Props {
@@ -45,15 +45,15 @@ export function TeamSelector({ options, selected, onSelect, statsByName, classNa
       </button>
 
       {options.map(opt => {
-        const s = statsByName.get(opt.name) ?? { openTasks: 0, openPriorities: 0 };
+        const s = statsByName.get(opt.name) ?? { openProcesses: 0, maximumProcesses: 0 };
         const isSelected = selected.toLowerCase() === opt.name.toLowerCase();
-        const open = s.openTasks + s.openPriorities;
+        const open = s.openProcesses;
         return (
           <button
             key={opt.name}
             type="button"
             aria-pressed={isSelected}
-            title={`${opt.name}: ${s.openPriorities} prioridade(s) e ${s.openTasks} tarefa(s) em aberto`}
+            title={`${opt.name}: ${s.openProcesses} processo(s) em aberto, ${s.maximumProcesses} de peso Máxima`}
             onClick={() => onSelect(opt.name)}
             className={pillClass(isSelected)}
           >

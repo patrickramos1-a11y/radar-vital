@@ -2,7 +2,7 @@ import { useMemo, useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Play, Pause, SkipForward, SkipBack, Settings, Clock, 
-  Monitor, Star, Bomb, Users, MessageSquare, Building2, X, CheckSquare
+  Monitor, Bomb, Users, MessageSquare, Building2, X, CheckSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -17,6 +17,7 @@ import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments
 import { useTVMode } from "@/hooks/useTVMode";
 import { TVClientCard } from "@/components/tv/TVClientCard";
 import { Client, COLLABORATOR_NAMES, COLLABORATOR_COLORS } from "@/types/client";
+import { normalizeTVOrdenacao, normalizeTVRecorte } from "@/types/tvMode";
 import { cn } from "@/lib/utils";
 
 export default function TVMode() {
@@ -69,11 +70,8 @@ export default function TVMode() {
       result = result.filter(c => c.collaborators[filtros.responsavel!]);
     }
 
-    // Filter by recorte
-    switch (filtros.recorte) {
-      case 'prioridade':
-        result = result.filter(c => c.isPriority);
-        break;
+    // Filter by recorte (valores antigos/desconhecidos, como 'prioridade', viram "sem recorte")
+    switch (normalizeTVRecorte(filtros.recorte)) {
       case 'destaque':
         result = result.filter(c => highlightedClients.has(c.id));
         break;
@@ -90,14 +88,8 @@ export default function TVMode() {
         break;
     }
 
-    // Sort
-    switch (filtros.ordenarPor) {
-      case 'prioridade':
-        result.sort((a, b) => {
-          if (a.isPriority !== b.isPriority) return a.isPriority ? -1 : 1;
-          return a.order - b.order;
-        });
-        break;
+    // Sort (valores antigos/desconhecidos, como 'prioridade', usam a ordem padrão)
+    switch (normalizeTVOrdenacao(filtros.ordenarPor)) {
       case 'nome':
         result.sort((a, b) => a.name.localeCompare(b.name));
         break;
@@ -156,8 +148,8 @@ export default function TVMode() {
 
   // Get scene icon
   const getSceneIcon = () => {
-    const { recorte, responsavel } = currentScene.filtros;
-    if (recorte === 'prioridade') return <Star className="w-5 h-5 text-amber-500" />;
+    const { responsavel } = currentScene.filtros;
+    const recorte = normalizeTVRecorte(currentScene.filtros.recorte);
     if (recorte === 'destaque') return <Bomb className="w-5 h-5 text-red-500" />;
     if (recorte === 'responsaveis') return <Users className="w-5 h-5 text-violet-500" />;
     if (recorte === 'comentarios') return <MessageSquare className="w-5 h-5 text-emerald-500" />;

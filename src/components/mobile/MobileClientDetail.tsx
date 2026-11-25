@@ -1,9 +1,7 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { 
-  Star, 
+import {
   Bomb,
-  MessageCircle, 
+  MessageCircle,
   ListChecks,
   ClipboardList,
   ClipboardCheck,
@@ -11,7 +9,8 @@ import {
   History,
   LayoutDashboard,
   Pencil,
-  ShieldCheck
+  ShieldCheck,
+  Workflow
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Client } from "@/types/client";
@@ -34,7 +33,6 @@ interface MobileClientDetailProps {
   tasks: Task[];
   dependencies: TaskDependency[];
   templates: TaskTemplate[];
-  onTogglePriority: (id: string, reason?: string) => void;
   onToggleHighlight: (id: string, reason?: string) => void;
   collaborators: Collaborator[];
   assignedCollaboratorIds: string[];
@@ -57,7 +55,6 @@ export function MobileClientDetail({
   tasks,
   dependencies,
   templates,
-  onTogglePriority,
   onToggleHighlight,
   collaborators,
   assignedCollaboratorIds,
@@ -69,10 +66,9 @@ export function MobileClientDetail({
   onDeleteTask,
   onSetTaskDependencies,
 }: MobileClientDetailProps) {
-  const navigate = useNavigate();
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
-  const [reasonDialog, setReasonDialog] = useState<"priority" | "bo" | null>(null);
+  const [boReasonOpen, setBoReasonOpen] = useState(false);
   const [workView, setWorkView] = useState<WorkItemFilter>('all');
   const { comments } = useClientComments(client?.id ?? '');
   const { items: clientWorkItems } = useClientWorkItems(client?.id ?? '', tasks);
@@ -80,14 +76,16 @@ export function MobileClientDetail({
   const workMetrics = useMemo(() => {
     const metrics = {
       deliverables: 0,
-      priorities: 0,
+      openProcesses: 0,
       completedAudits: 0,
       pendingAudits: 0,
     };
 
     clientWorkItems.forEach((item) => {
       if (item.kind === 'deliverable') metrics.deliverables += 1;
-      if (item.kind === 'priority') metrics.priorities += 1;
+      if ((item.kind === 'task' || item.kind === 'priority') && item.status !== 'completed' && item.status !== 'cancelled') {
+        metrics.openProcesses += 1;
+      }
       if (item.kind !== 'audit') return;
 
       if (item.status === 'completed' || item.status === 'pending_validation') {
@@ -163,17 +161,7 @@ export function MobileClientDetail({
 
           <div className="h-[calc(100dvh-80px)] space-y-4 overflow-y-auto p-4 sm:h-[calc(85vh-80px)]">
             {/* Ações rápidas */}
-            <div className="grid grid-cols-4 gap-2">
-              <ActionButton
-                icon={<Star className={`w-5 h-5 ${client.isPriority ? 'fill-current' : ''}`} />}
-                label="Prioridade"
-                active={client.isPriority}
-                color="rgb(245, 158, 11)"
-                onClick={() => {
-                  onClose();
-                  navigate(`/processos?clientId=${encodeURIComponent(client.id)}`);
-                }}
-              />
+            <div className="grid grid-cols-3 gap-2">
               <ActionButton
                 icon={<Bomb className="w-5 h-5" />}
                 label="Pode dar BO"
@@ -181,7 +169,7 @@ export function MobileClientDetail({
                 color="rgb(239, 68, 68)"
                 onClick={() => {
                   if (!isHighlighted) {
-                    setReasonDialog("bo");
+                    setBoReasonOpen(true);
                     return;
                   }
                   onToggleHighlight(client.id);
@@ -208,7 +196,7 @@ export function MobileClientDetail({
               <div className="grid grid-cols-4 gap-1.5">
                 <ManagementButton color="emerald" icon={<FileCheck2 className="h-4 w-4" />} label="Entregáveis" onClick={() => openWorkView('deliverable')} />
                 <ManagementButton color="violet" icon={<ShieldCheck className="h-4 w-4" />} label="Auditorias" onClick={() => openWorkView('audit')} />
-                <ManagementButton color="amber" icon={<ClipboardCheck className="h-4 w-4" />} label="Prioridades" onClick={() => openWorkView('priority')} />
+                <ManagementButton color="amber" icon={<Workflow className="h-4 w-4" />} label="Processos" onClick={() => openWorkView('task')} />
                 <ManagementButton color="sky" icon={<LayoutDashboard className="h-4 w-4" />} label="Visão do cliente" onClick={() => openWorkView('all')} />
               </div>
               <div className="border-y py-2">
@@ -218,7 +206,7 @@ export function MobileClientDetail({
                 </div>
                 <div className="mt-2 grid grid-cols-4 divide-x border-t pt-2">
                   <CompactMetric value={workMetrics.deliverables} label="Entregáveis" tone="text-emerald-700" />
-                  <CompactMetric value={workMetrics.priorities} label="Prioridades" tone="text-amber-700" />
+                  <CompactMetric value={workMetrics.openProcesses} label="Proc. abertos" tone="text-amber-700" />
                   <CompactMetric value={workMetrics.completedAudits} label="Aud. concluídas" tone="text-violet-700" />
                   <CompactMetric value={workMetrics.pendingAudits} label="Aud. pendentes" tone="text-rose-700" />
                 </div>
@@ -226,14 +214,14 @@ export function MobileClientDetail({
             </div>
 
 
-            {/* Automatic involvement from open tasks and priorities */}
+            {/* Automatic involvement from open processes */}
             <div className="space-y-2">
               <h4 className="text-sm font-semibold text-foreground">Envolvidos em itens abertos</h4>
               <div className="flex flex-wrap gap-2">
                 {collaborators.filter(person => assignedCollaboratorIds.includes(person.id)).map(person => <span key={person.id} className="inline-flex items-center gap-1.5 border px-2 py-1 text-xs font-semibold" style={{ borderColor: person.color, color: person.color, backgroundColor: `${person.color}12` }}>
                   <span className="grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: person.color }}>{person.initials}</span>{person.name}
                 </span>)}
-                {assignedCollaboratorIds.length === 0 && <span className="text-xs text-muted-foreground">Nenhum colaborador com tarefa ou prioridade aberta.</span>}
+                {assignedCollaboratorIds.length === 0 && <span className="text-xs text-muted-foreground">Nenhum colaborador com processo aberto.</span>}
               </div>
             </div>
 
@@ -295,16 +283,12 @@ export function MobileClientDetail({
         />
       )}
 
-      {reasonDialog && (
+      {boReasonOpen && (
         <MarkerReasonDialog
-          open={!!reasonDialog}
-          kind={reasonDialog}
-          defaultValue={reasonDialog === "priority" ? client.priorityReason : client.boReason}
-          onOpenChange={(open) => !open && setReasonDialog(null)}
-          onConfirm={(reason) => {
-            if (reasonDialog === "priority") onTogglePriority(client.id, reason);
-            else onToggleHighlight(client.id, reason);
-          }}
+          open={boReasonOpen}
+          defaultValue={client.boReason}
+          onOpenChange={setBoReasonOpen}
+          onConfirm={(reason) => onToggleHighlight(client.id, reason)}
         />
       )}
     </>

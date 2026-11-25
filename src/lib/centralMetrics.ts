@@ -2,6 +2,9 @@ import type { Priority } from '@/types/priority';
 import type { Task } from '@/types/task';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { priorityTaskTreeIds } from '@/lib/taskHierarchy';
+import { buildProcesses, isProcessOpen, processesForAssignee } from '@/lib/processModel';
+import { isMaximumWeight, normalizeProcessWeight, weightForUrgency, type ProcessWeight } from '@/lib/processWeight';
+import type { Deliverable } from '@/types/deliverable';
 
 /**
  * Single source for the workload numbers shown in the Central (KPI strip,
@@ -106,4 +109,54 @@ export function workloadFor(
     overduePriorities,
     overdue: overdueTasks + overduePriorities,
   };
+}
+
+export interface ProcessWorkload {
+  /** Processos abertos ativos agora (os planejados para depois ficam à parte). */
+  openProcesses: number;
+  /** Processos abertos de peso Máxima, ativos agora. */
+  maximumProcesses: number;
+  /** Processos abertos planejados para uma data futura. */
+  plannedProcesses: number;
+  /** Processos abertos ativos com vencimento antes de hoje. */
+  overdue: number;
+}
+
+/**
+ * Processos v2 (D-025): os números da Central contam processos (tarefas
+ * principais), do mesmo jeito que a aba Processos lista. Para um colaborador,
+ * contam os processos dele e aqueles em que ele tem etapa aberta.
+ */
+export function processWorkloadFor(
+  name: string | null,
+  tasks: Task[],
+  today: Date = startOfToday(),
+): ProcessWorkload {
+  const all = buildProcesses(tasks).filter(isProcessOpen);
+  const mine = name === null ? all : processesForAssignee(all, name);
+  const todayKey = dateKey(today);
+  const planned = mine.filter(process => Boolean(process.scheduledFor && process.scheduledFor > todayKey));
+  const active = mine.filter(process => !(process.scheduledFor && process.scheduledFor > todayKey));
+  return {
+    openProcesses: active.length,
+    maximumProcesses: active.filter(process => isMaximumWeight(process.weight)).length,
+    plannedProcesses: planned.length,
+    overdue: active.filter(process => isPastDue(process.dueDate, today)).length,
+  };
+}
+
+/**
+ * Peso de um entregável para o ranking: o peso do processo que o gerou (ou da
+ * prioridade antiga). Entregável manual, sem processo, vale 1.
+ */
+export function deliverableWeight(
+  deliverable: Pick<Deliverable, 'source_task_id' | 'source_priority_id'>,
+  taskById: Map<string, Pick<Task, 'weight' | 'priority'>>,
+  priorityById: Map<string, Pick<Priority, 'weight'>>,
+): ProcessWeight {
+  const task = deliverable.source_task_id ? taskById.get(deliverable.source_task_id) : undefined;
+  if (task) return normalizeProcessWeight(task.weight, weightForUrgency(task.priority));
+  const priority = deliverable.source_priority_id ? priorityById.get(deliverable.source_priority_id) : undefined;
+  if (priority) return normalizeProcessWeight(priority.weight, 1);
+  return 1;
 }

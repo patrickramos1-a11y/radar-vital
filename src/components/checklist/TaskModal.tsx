@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BadgeCheck, CalendarDays, CalendarPlus, CalendarX2, Check, ClipboardCheck, Clock3, ExternalLink, Eye, FileCheck2, Flame, History, Link2, ListChecks, MessageSquareText, Minus, PenLine, Plus, Search, Settings2, ShieldCheck, Star, Trash2, User, UserRoundX, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BadgeCheck, CalendarDays, CalendarPlus, CalendarX2, Check, ClipboardCheck, Clock3, ExternalLink, Eye, FileCheck2, History, Link2, ListChecks, MessageSquareText, PenLine, Plus, Search, Settings2, ShieldCheck, Trash2, User, UserRoundX, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ClientWorkList } from '@/components/client-work/ClientWorkList';
+import { WeightOptions } from '@/components/processos/processParts';
 import { assigneeMatches, findCollaboratorColor } from '@/lib/taskAssignee';
-import { Task, TaskFormData, TaskModality, TaskPriority, PRIORITY_CONFIG, TASK_MODALITY_CONFIG, TASK_STATUS_CONFIG } from '@/types/task';
+import { Task, TaskFormData, TaskModality, TASK_MODALITY_CONFIG, TASK_STATUS_CONFIG } from '@/types/task';
 import { Client } from '@/types/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientWorkItems } from '@/hooks/useClientWorkItems';
-import type { WorkItem, WorkItemFilter } from '@/types/workItem';
+import { WORK_ITEM_LABELS, normalizeWorkItemFilter, type WorkItem, type WorkItemFilter } from '@/types/workItem';
 import type { TaskDependency, TaskTemplate } from '@/types/task';
 import { getTaskProgress } from '@/lib/taskOperations';
+import { DEFAULT_PROCESS_WEIGHT, normalizeProcessWeight, urgencyForWeight, type ProcessWeight } from '@/lib/processWeight';
+import { weightVisual } from '@/lib/processDisplay';
 import { cn } from '@/lib/utils';
 
 const MODALITY_ICONS: Record<TaskModality, typeof Search> = {
@@ -47,12 +50,10 @@ const MODALITY_VISUALS: Record<TaskModality, { className: string; selectedClassN
   },
 };
 
-const PRIORITY_VISUALS: Record<TaskPriority, { icon: typeof Flame; shortLabel: string; className: string }> = {
-  urgente: { icon: Flame, shortLabel: 'Urg.', className: 'border-red-300 bg-red-50 text-red-700' },
-  alta: { icon: ArrowUp, shortLabel: 'Alta', className: 'border-orange-300 bg-orange-50 text-orange-700' },
-  normal: { icon: Minus, shortLabel: 'Normal', className: 'border-slate-200 bg-background text-slate-600' },
-  baixa: { icon: ArrowDown, shortLabel: 'Baixa', className: 'border-sky-200 bg-sky-50 text-sky-700' },
-};
+/** Grava o peso e espelha a urgência antiga (D-025). */
+function weightUpdate(weight: ProcessWeight): Pick<Task, 'weight' | 'priority'> {
+  return { weight, priority: urgencyForWeight(weight) };
+}
 
 export interface TaskModalProps {
   isOpen: boolean;
@@ -70,7 +71,7 @@ export interface TaskModalProps {
   initialView?: WorkItemFilter;
 }
 
-type SubtaskDraft = Pick<TaskFormData, 'title' | 'assigned_to' | 'due_date' | 'priority' | 'modality'>;
+type SubtaskDraft = Pick<TaskFormData, 'title' | 'assigned_to' | 'due_date' | 'weight' | 'priority' | 'modality'>;
 
 export function TaskModal({
   isOpen,
@@ -91,11 +92,11 @@ export function TaskModal({
     error: workItemsError,
     refetch: refetchWorkItems,
   } = useClientWorkItems(client.id, tasks);
-  const [activeView, setActiveView] = useState<WorkItemFilter>(initialView);
+  const [activeView, setActiveView] = useState<WorkItemFilter>(() => normalizeWorkItemFilter(initialView));
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
-  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('normal');
+  const [newTaskWeight, setNewTaskWeight] = useState<ProcessWeight>(DEFAULT_PROCESS_WEIGHT);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [newTaskModality, setNewTaskModality] = useState<TaskModality>('levantamento');
@@ -111,7 +112,7 @@ export function TaskModal({
       const parent = taskById.get(t.parent_task_id);
       return !parent || parent.completed || parent.status === 'cancelada';
     })
-    .sort((a, b) => (PRIORITY_CONFIG[a.priority]?.order ?? 9) - (PRIORITY_CONFIG[b.priority]?.order ?? 9));
+    .sort((a, b) => normalizeProcessWeight(b.weight) - normalizeProcessWeight(a.weight));
   const completedTasks = tasks.filter(t => !t.parent_task_id && (t.completed || t.status === 'cancelada'));
   const openTasks = activeTasks.length;
   const overdueTasks = activeTasks.filter((task) => task.due_date && new Date(`${task.due_date}T23:59:59`) < new Date()).length;
@@ -127,15 +128,14 @@ export function TaskModal({
       ? workItems
       : workItems.filter(item => item.kind === activeView);
   const overviewItems = [
-    { kind: 'task' as const, label: 'Tarefas', count: tasks.filter((task) => !task.parent_task_id).length, icon: ClipboardCheck, className: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' },
-    { kind: 'priority' as const, label: 'Prioridades', count: workItems.filter(item => item.kind === 'priority').length, icon: Star, className: 'border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100' },
+    { kind: 'task' as const, label: 'Processos', count: tasks.filter((task) => !task.parent_task_id).length, icon: ClipboardCheck, className: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' },
     { kind: 'deliverable' as const, label: 'Entregáveis', count: workItems.filter(item => item.kind === 'deliverable').length, icon: FileCheck2, className: 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100' },
     { kind: 'audit' as const, label: 'Auditorias', count: workItems.filter(item => item.kind === 'audit').length, icon: ShieldCheck, className: 'border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100' },
     { kind: 'comment' as const, label: 'Comentários', count: workItems.filter(item => item.kind === 'comment' && item.status !== 'completed').length, icon: MessageSquareText, className: 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100' },
   ];
 
   useEffect(() => {
-    if (isOpen) setActiveView(initialView);
+    if (isOpen) setActiveView(normalizeWorkItemFilter(initialView));
   }, [initialView, isOpen]);
 
   const handleOpenSource = (item: WorkItem) => {
@@ -152,7 +152,7 @@ export function TaskModal({
       title: newTaskTitle.trim(),
       assigned_to: newTaskAssignees.slice(0, 1),
       due_date: newTaskDueDate || undefined,
-      priority: newTaskPriority,
+      ...weightUpdate(newTaskWeight),
       modality: newTaskModality,
     });
 
@@ -160,7 +160,7 @@ export function TaskModal({
       setNewTaskTitle('');
       setNewTaskAssignees([]);
       setNewTaskDueDate('');
-      setNewTaskPriority('normal');
+      setNewTaskWeight(DEFAULT_PROCESS_WEIGHT);
       setNewTaskModality('levantamento');
     }
   };
@@ -195,8 +195,8 @@ export function TaskModal({
     await onUpdateTask(taskId, { assigned_to: newAssignees });
   };
 
-  const handlePriorityChange = async (taskId: string, priority: TaskPriority) => {
-    await onUpdateTask(taskId, { priority });
+  const handleWeightChange = async (taskId: string, weight: ProcessWeight) => {
+    await onUpdateTask(taskId, weightUpdate(weight));
   };
 
   const handleModalityChange = async (taskId: string, modality: TaskModality) => {
@@ -250,7 +250,7 @@ export function TaskModal({
                 <h3 className="mt-1 text-base font-semibold">O que precisa de atenção neste cliente</h3>
               </section>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <SummaryMetric label="Tarefas abertas" value={openTasks} icon={ClipboardCheck} tone="text-sky-700" />
+                <SummaryMetric label="Processos abertos" value={openTasks} icon={ClipboardCheck} tone="text-sky-700" />
                 <SummaryMetric label="Atrasadas" value={overdueTasks} icon={AlertTriangle} tone={overdueTasks ? 'text-red-700' : 'text-muted-foreground'} />
                 <SummaryMetric label="Aguardando" value={waitingTasks} icon={Clock3} tone={waitingTasks ? 'text-amber-700' : 'text-muted-foreground'} />
                 <SummaryMetric label="Sem responsável" value={unassignedTasks} icon={UserRoundX} tone={unassignedTasks ? 'text-violet-700' : 'text-muted-foreground'} />
@@ -265,7 +265,7 @@ export function TaskModal({
                         {nextAction.title}
                       </button>
                     ) : (
-                      <p className="mt-1 text-sm text-muted-foreground">Nenhuma tarefa aberta.</p>
+                      <p className="mt-1 text-sm text-muted-foreground">Nenhum processo aberto.</p>
                     )}
                   </div>
                   {nextAction?.due_date && (
@@ -308,7 +308,7 @@ export function TaskModal({
                         onClick={() => item.kind === 'task' ? setActiveView('task') : handleOpenSource(item)}
                         className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left hover:bg-muted/40"
                       >
-                        <span className="text-[10px] font-semibold uppercase text-muted-foreground">{item.kind === 'comment' ? 'Comentário' : item.kind === 'task' ? 'Tarefa' : item.kind}</span>
+                        <span className="text-[10px] font-semibold uppercase text-muted-foreground">{WORK_ITEM_LABELS[item.kind]}</span>
                         <span className="truncate text-xs font-medium">{item.title}</span>
                         <span className="text-[10px] text-muted-foreground">{new Date(item.completedAt ?? item.createdAt).toLocaleDateString('pt-BR')}</span>
                       </button>
@@ -339,7 +339,7 @@ export function TaskModal({
               />
               ) : (
               <>
-                {/* Add new task */}
+                {/* Novo processo */}
                 <div className="sticky top-0 z-10 border bg-background/95 p-2 backdrop-blur">
                   <div className="grid gap-2">
                     <ModalitySelector value={newTaskModality} onChange={setNewTaskModality} />
@@ -348,7 +348,7 @@ export function TaskModal({
                         type="text"
                         value={newTaskTitle}
                         onChange={(e) => setNewTaskTitle(e.target.value)}
-                        placeholder="Nova tarefa..."
+                        placeholder="Novo processo..."
                         className="h-10 min-w-0 border bg-background px-3 text-sm"
                         onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                         maxLength={100}
@@ -357,8 +357,8 @@ export function TaskModal({
                         onClick={handleAddTask}
                         disabled={!newTaskTitle.trim()}
                         className="grid h-10 place-items-center bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-                        title="Adicionar tarefa"
-                        aria-label="Adicionar tarefa"
+                        title="Adicionar processo"
+                        aria-label="Adicionar processo"
                       >
                         <Plus className="h-5 w-5" />
                       </button>
@@ -369,7 +369,7 @@ export function TaskModal({
                         selected={newTaskAssignees}
                         onChange={setNewTaskAssignees}
                       />
-                      <PrioritySelector value={newTaskPriority} onChange={setNewTaskPriority} />
+                      <WeightSelector value={newTaskWeight} onChange={setNewTaskWeight} />
                       <label className="flex h-9 min-w-0 items-center gap-1 border bg-background px-2">
                         <Clock3 className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                         <input
@@ -377,20 +377,20 @@ export function TaskModal({
                           value={newTaskDueDate}
                           onChange={(e) => setNewTaskDueDate(e.target.value)}
                           className="h-8 min-w-0 flex-1 bg-transparent text-xs outline-none"
-                          aria-label="Prazo da nova tarefa"
+                          aria-label="Prazo do novo processo"
                         />
                       </label>
                     </div>
                   </div>
                 </div>
 
-                {/* Active tasks */}
+                {/* Processos ativos */}
                 <div className="space-y-1.5">
                   <h4 className="text-sm font-medium text-muted-foreground">
-                    Tarefas Ativas ({activeTasks.length})
+                    Processos ativos ({activeTasks.length})
                   </h4>
                   {activeTasks.length === 0 ? (
-                    <p className="py-2 text-sm text-muted-foreground/50">Nenhuma tarefa ativa</p>
+                    <p className="py-2 text-sm text-muted-foreground/50">Nenhum processo ativo</p>
                   ) : (
                     <div className="space-y-1.5">
                       {activeTasks.map((task) => (
@@ -405,7 +405,7 @@ export function TaskModal({
                           onSaveEdit={() => handleSaveEdit(task.id)}
                           onCancelEdit={() => setEditingTaskId(null)}
                           onAssigneeChange={(a) => handleAssigneeChange(task.id, a)}
-                          onPriorityChange={(p) => handlePriorityChange(task.id, p)}
+                          onWeightChange={(weight) => handleWeightChange(task.id, weight)}
                           onModalityChange={(modality) => handleModalityChange(task.id, modality)}
                           onDueDateChange={(dueDate) => handleDueDateChange(task.id, dueDate)}
                           onLinkChange={(externalUrl) => onUpdateTask(task.id, { external_url: externalUrl || null })}
@@ -425,11 +425,11 @@ export function TaskModal({
                   )}
                 </div>
 
-                {/* Completed tasks */}
+                {/* Processos concluídos */}
                 {completedTasks.length > 0 && (
                   <div className="space-y-1.5">
                     <h4 className="text-sm font-medium text-muted-foreground">
-                      Concluídas ({completedTasks.length})
+                      Concluídos ({completedTasks.length})
                     </h4>
                     <div className="space-y-1 opacity-70">
                       {completedTasks.map((task) => (
@@ -444,7 +444,7 @@ export function TaskModal({
                           onSaveEdit={() => {}}
                           onCancelEdit={() => {}}
                           onAssigneeChange={() => {}}
-                          onPriorityChange={() => {}}
+                          onWeightChange={() => {}}
                           onModalityChange={(modality) => handleModalityChange(task.id, modality)}
                           onDueDateChange={() => {}}
                           onLinkChange={(externalUrl) => onUpdateTask(task.id, { external_url: externalUrl || null })}
@@ -483,7 +483,7 @@ interface TaskItemProps {
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onAssigneeChange: (collaboratorName: string) => void;
-  onPriorityChange: (priority: TaskPriority) => void;
+  onWeightChange: (weight: ProcessWeight) => void;
   onModalityChange: (modality: TaskModality) => void;
   onDueDateChange: (dueDate: string) => void;
   onLinkChange: (externalUrl: string) => Promise<boolean>;
@@ -509,7 +509,7 @@ function TaskItem({
   onSaveEdit,
   onCancelEdit,
   onAssigneeChange,
-  onPriorityChange,
+  onWeightChange,
   onModalityChange,
   onDueDateChange,
   onLinkChange,
@@ -528,18 +528,17 @@ function TaskItem({
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState('');
   const [subtaskModality, setSubtaskModality] = useState<TaskModality>(task.modality || 'levantamento');
-  const [subtaskPriority, setSubtaskPriority] = useState<TaskPriority>(task.priority || 'normal');
+  const weight = normalizeProcessWeight(task.weight);
+  const [subtaskWeight, setSubtaskWeight] = useState<ProcessWeight>(weight);
   const [subtaskAssignees, setSubtaskAssignees] = useState<string[]>(task.assigned_to.slice(0, 1));
   const [subtaskDueDate, setSubtaskDueDate] = useState('');
   const [isSavingSubtask, setIsSavingSubtask] = useState(false);
-  const priority = (task.priority || 'normal') as TaskPriority;
   const modality = (task.modality || 'levantamento') as TaskModality;
-  const pConf = PRIORITY_CONFIG[priority];
   const status = TASK_STATUS_CONFIG[task.status];
   const daysOpen = Math.max(0, Math.floor((Date.now() - new Date(task.created_at).getTime()) / 86_400_000));
   const containerClass = task.completed
     ? 'bg-card border'
-    : `${pConf.bgClass} ${pConf.borderClass} border-y border-r`;
+    : `bg-card border-y border-r border-l-4 ${weightVisual(weight).borderClass}`;
 
   const submitSubtask = async () => {
     const title = subtaskTitle.trim();
@@ -549,7 +548,7 @@ function TaskItem({
       const created = await onAddSubtask({
         title,
         modality: subtaskModality,
-        priority: subtaskPriority,
+        ...weightUpdate(subtaskWeight),
         assigned_to: subtaskAssignees.slice(0, 1),
         due_date: subtaskDueDate || undefined,
       });
@@ -570,7 +569,7 @@ function TaskItem({
       <button
         type="button"
         onClick={onToggle}
-        aria-label={task.completed ? `Reabrir tarefa ${task.title}` : `Concluir tarefa ${task.title}`}
+        aria-label={task.completed ? `Reabrir processo ${task.title}` : `Concluir processo ${task.title}`}
         className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border transition-colors ${
           task.completed
             ? 'bg-green-500 border-green-500 text-white'
@@ -597,12 +596,6 @@ function TaskItem({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <ModalityMenu value={modality} onChange={onModalityChange} />
-            {task.priority_id && (
-              <span className="inline-flex flex-shrink-0 text-amber-500" title="Tarefa vinculada a uma prioridade">
-                <Star className="h-4 w-4 fill-amber-400" aria-hidden="true" />
-                <span className="sr-only">Tarefa vinculada a uma prioridade</span>
-              </span>
-            )}
             {!task.completed && task.status !== 'pendente' && (
               <span className={cn('flex-shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold', status.className)}>
                 {status.label}
@@ -618,8 +611,8 @@ function TaskItem({
           </div>
           {!task.completed && (
             <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-              <PriorityMenu value={priority} onChange={onPriorityChange} />
-              <span className="inline-flex h-6 items-center gap-1 bg-slate-100 px-1.5 font-medium text-slate-600" title={`Criada há ${daysOpen} ${daysOpen === 1 ? 'dia' : 'dias'}`}>
+              <WeightMenu value={weight} onChange={onWeightChange} />
+              <span className="inline-flex h-6 items-center gap-1 bg-slate-100 px-1.5 font-medium text-slate-600" title={`Criado há ${daysOpen} ${daysOpen === 1 ? 'dia' : 'dias'}`}>
                 <Clock3 className="h-3 w-3" />{daysOpen}d
               </span>
               <TaskDueDateMenu value={task.due_date} title={task.title} onChange={onDueDateChange} />
@@ -627,7 +620,7 @@ function TaskItem({
                 type="button"
                 onClick={() => {
                   setSubtaskModality(task.modality || 'levantamento');
-                  setSubtaskPriority(task.priority || 'normal');
+                  setSubtaskWeight(weight);
                   setSubtaskAssignees(task.assigned_to.slice(0, 1));
                   setIsAddingSubtask((current) => !current);
                 }}
@@ -635,8 +628,8 @@ function TaskItem({
                   'grid h-7 w-7 flex-shrink-0 place-items-center border text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary',
                   isAddingSubtask && 'border-primary bg-primary/10 text-primary',
                 )}
-                title="Adicionar subtarefa"
-                aria-label={`Adicionar subtarefa em ${task.title}`}
+                title="Adicionar etapa"
+                aria-label={`Adicionar etapa em ${task.title}`}
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -653,12 +646,12 @@ function TaskItem({
         </div>
       )}
 
-      {subtasks.length > 0 && <button type="button" onClick={() => setSubtasksExpanded(current => !current)} className="inline-flex h-7 shrink-0 items-center gap-1 border border-blue-200 bg-blue-50 px-1.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100" aria-label={`${subtasksExpanded ? 'Recolher' : 'Mostrar'} ${subtasks.length} ${subtasks.length === 1 ? 'subtarefa' : 'subtarefas'} de ${task.title}`} aria-expanded={subtasksExpanded} title={`${progress.completed}/${progress.total} subtarefas concluídas`}><ListChecks className="h-3.5 w-3.5" />{subtasks.length}</button>}
+      {subtasks.length > 0 && <button type="button" onClick={() => setSubtasksExpanded(current => !current)} className="inline-flex h-7 shrink-0 items-center gap-1 border border-blue-200 bg-blue-50 px-1.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100" aria-label={`${subtasksExpanded ? 'Recolher' : 'Mostrar'} ${subtasks.length} ${subtasks.length === 1 ? 'etapa' : 'etapas'} de ${task.title}`} aria-expanded={subtasksExpanded} title={`${progress.completed}/${progress.total} etapas concluídas`}><ListChecks className="h-3.5 w-3.5" />{subtasks.length}</button>}
 
       <button
         type="button"
         onClick={onDelete}
-        aria-label={`Excluir tarefa ${task.title}`}
+        aria-label={`Excluir processo ${task.title}`}
         className="p-1 text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover:opacity-100"
       >
         <Trash2 className="w-3.5 h-3.5" />
@@ -680,13 +673,13 @@ function TaskItem({
                   setIsAddingSubtask(false);
                 }
               }}
-              placeholder="Escreva a subtarefa e pressione Enter"
+              placeholder="Escreva a etapa e pressione Enter"
               className="h-8 min-w-0 flex-1 border-0 bg-transparent px-1 text-base outline-none sm:text-xs"
               maxLength={100}
               autoFocus
             />
             <ModalityMenu value={subtaskModality} onChange={setSubtaskModality} />
-            <PriorityMenu value={subtaskPriority} onChange={setSubtaskPriority} />
+            <WeightMenu value={subtaskWeight} onChange={setSubtaskWeight} />
             <SubtaskAssigneeMenu
               selected={subtaskAssignees}
               collaborators={collaborators}
@@ -697,8 +690,8 @@ function TaskItem({
               onClick={() => void submitSubtask()}
               disabled={!subtaskTitle.trim() || isSavingSubtask}
               className="grid h-7 w-7 flex-shrink-0 place-items-center bg-primary text-primary-foreground disabled:opacity-40"
-              title="Salvar subtarefa"
-              aria-label="Salvar subtarefa"
+              title="Salvar etapa"
+              aria-label="Salvar etapa"
             >
               {isSavingSubtask ? <Clock3 className="h-3.5 w-3.5 animate-pulse" /> : <Check className="h-3.5 w-3.5" />}
             </button>
@@ -711,7 +704,7 @@ function TaskItem({
               value={subtaskDueDate}
               onChange={(event) => setSubtaskDueDate(event.target.value)}
               className="h-7 border bg-background px-1 text-base sm:h-6 sm:text-[9px]"
-              aria-label="Prazo da nova subtarefa"
+              aria-label="Prazo da nova etapa"
             />
           </label>
         </div>
@@ -768,13 +761,13 @@ function TaskLinkMenu({ value, title, onChange }: {
             value ? 'border-sky-300 bg-sky-50 text-sky-700' : 'text-muted-foreground hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700',
           )}
           title={value ? `Link vinculado a ${title}` : `Adicionar link a ${title}`}
-          aria-label={value ? `Editar link da tarefa ${title}` : `Adicionar link à tarefa ${title}`}
+          aria-label={value ? `Editar link de ${title}` : `Adicionar link a ${title}`}
         >
           <Link2 className="h-4 w-4" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-3">
-        <p className="text-sm font-semibold">Link da tarefa</p>
+        <p className="text-sm font-semibold">Link</p>
         <p className="mt-1 text-xs text-muted-foreground">Cole o endereço do documento, sistema ou referência.</p>
         <Input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="https://..." className="mt-3 h-9 text-xs" autoFocus />
         <div className="mt-3 flex items-center gap-2">
@@ -823,13 +816,13 @@ function TaskDueDateMenu({ value, title, onChange }: {
                 : 'border-teal-200 bg-teal-50/60 text-teal-700 hover:bg-teal-100',
           )}
           title={value ? `Prazo ${new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR')}` : `Definir prazo de ${title}`}
-          aria-label={`Prazo da tarefa ${title}`}
+          aria-label={`Prazo de ${title}`}
         >
           <CalendarDays className="h-4 w-4" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-3">
-        <p className="text-sm font-semibold">Prazo da tarefa</p>
+        <p className="text-sm font-semibold">Prazo</p>
         <input
           type="date"
           value={draft}
@@ -879,16 +872,16 @@ function TaskReplanMenu({ task, onScheduleChange }: {
               ? 'border-violet-300 bg-violet-100 text-violet-700'
               : 'text-muted-foreground hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700',
           )}
-          title="Replanejar tarefa"
-          aria-label={`Replanejar tarefa ${task.title}`}
+          title="Replanejar processo"
+          aria-label={`Replanejar processo ${task.title}`}
         >
           <CalendarPlus className="h-4 w-4" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-3">
-        <p className="text-sm font-semibold">Replanejar tarefa</p>
+        <p className="text-sm font-semibold">Replanejar processo</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Ela ficará em Agendadas e voltará às tarefas ativas na data escolhida.
+          Ele sai dos processos ativos e volta na data escolhida.
         </p>
         <input
           type="date"
@@ -934,7 +927,7 @@ function InlineSubtask({ task, collaborators, onToggle, onUpdate, onDelete }: {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(task.title);
   const modality = (task.modality || 'levantamento') as TaskModality;
-  const priority = (task.priority || 'normal') as TaskPriority;
+  const weight = normalizeProcessWeight(task.weight);
   const daysOpen = Math.max(0, Math.floor((Date.now() - new Date(task.created_at).getTime()) / 86_400_000));
 
   const saveTitle = async () => {
@@ -958,8 +951,8 @@ function InlineSubtask({ task, collaborators, onToggle, onUpdate, onDelete }: {
             'grid h-4 w-4 flex-shrink-0 place-items-center rounded border',
             task.completed ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-muted-foreground/30 hover:border-primary',
           )}
-          title={task.completed ? 'Reabrir subtarefa' : 'Concluir subtarefa'}
-          aria-label={task.completed ? `Reabrir subtarefa ${task.title}` : `Concluir subtarefa ${task.title}`}
+          title={task.completed ? 'Reabrir etapa' : 'Concluir etapa'}
+          aria-label={task.completed ? `Reabrir etapa ${task.title}` : `Concluir etapa ${task.title}`}
         >
           {task.completed && <Check className="h-3 w-3" />}
         </button>
@@ -979,7 +972,7 @@ function InlineSubtask({ task, collaborators, onToggle, onUpdate, onDelete }: {
             className="h-7 min-w-0 flex-1 border bg-background px-2 text-xs outline-none"
             maxLength={100}
             autoFocus
-            aria-label={`Editar subtarefa ${task.title}`}
+            aria-label={`Editar etapa ${task.title}`}
           />
         ) : (
           <span
@@ -994,8 +987,8 @@ function InlineSubtask({ task, collaborators, onToggle, onUpdate, onDelete }: {
           type="button"
           onClick={onDelete}
           className="p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/subtask:opacity-100"
-          title="Excluir subtarefa"
-          aria-label={`Excluir subtarefa ${task.title}`}
+          title="Excluir etapa"
+          aria-label={`Excluir etapa ${task.title}`}
         >
           <Trash2 className="h-3 w-3" />
         </button>
@@ -1005,7 +998,7 @@ function InlineSubtask({ task, collaborators, onToggle, onUpdate, onDelete }: {
           <Clock3 className="h-3 w-3" />{daysOpen}d
         </span>
         <TaskDueDateMenu value={task.due_date} title={task.title} onChange={(value) => void onUpdate({ due_date: value || null })} />
-        <PriorityMenu value={priority} onChange={(value) => void onUpdate({ priority: value })} />
+        <WeightMenu value={weight} onChange={(value) => void onUpdate(weightUpdate(value))} />
         <SubtaskAssigneeMenu
           selected={task.assigned_to}
           collaborators={collaborators}
@@ -1037,7 +1030,7 @@ function SubtaskAssigneeMenu({ selected, collaborators, onChange }: {
           type="button"
           className="grid h-6 w-6 flex-shrink-0 place-items-center border bg-background text-muted-foreground hover:bg-muted"
           title={selected.length ? selected.join(', ') : 'Vincular responsável'}
-          aria-label={selected.length ? `Responsáveis: ${selected.join(', ')}` : 'Vincular responsável à subtarefa'}
+          aria-label={selected.length ? `Responsáveis: ${selected.join(', ')}` : 'Vincular responsável à etapa'}
         >
           {first ? (
             <span
@@ -1157,7 +1150,7 @@ function AssigneeDropdown({
   );
 }
 
-// Dropdown for assigning collaborators when creating a new task
+// Responsável ao criar um novo processo
 function NewTaskAssigneeDropdown({
   collaborators,
   selected,
@@ -1246,7 +1239,7 @@ function NewTaskAssigneeDropdown({
 
 function ModalitySelector({ value, onChange }: { value: TaskModality; onChange: (modality: TaskModality) => void }) {
   return (
-    <div className="grid grid-cols-5 gap-1 border bg-muted/20 p-1" aria-label="Modalidade da tarefa">
+    <div className="grid grid-cols-5 gap-1 border bg-muted/20 p-1" aria-label="Modalidade do processo">
       {(Object.keys(TASK_MODALITY_CONFIG) as TaskModality[]).map((modality) => {
         const Icon = MODALITY_ICONS[modality];
         const config = TASK_MODALITY_CONFIG[modality];
@@ -1285,7 +1278,7 @@ function ModalityMenu({ value, onChange }: { value: TaskModality; onChange: (mod
           type="button"
           className={cn('grid h-6 w-6 flex-shrink-0 place-items-center border transition-colors', currentVisual.className)}
           title={`Alterar modalidade: ${currentConfig.label}`}
-          aria-label={`Alterar modalidade da tarefa. Atual: ${currentConfig.label}`}
+          aria-label={`Alterar modalidade. Atual: ${currentConfig.label}`}
         >
           <CurrentIcon className="h-3.5 w-3.5" />
         </button>
@@ -1317,77 +1310,52 @@ function ModalityMenu({ value, onChange }: { value: TaskModality; onChange: (mod
   );
 }
 
-// Priority selector for new-task form
-function PrioritySelector({ value, onChange }: { value: TaskPriority; onChange: (p: TaskPriority) => void }) {
-  const conf = PRIORITY_CONFIG[value];
-  const visual = PRIORITY_VISUALS[value];
+// Peso (1 a 5) no formulário de novo processo
+function WeightSelector({ value, onChange }: { value: ProcessWeight; onChange: (weight: ProcessWeight) => void }) {
+  const [open, setOpen] = useState(false);
+  const visual = weightVisual(value);
   const Icon = visual.icon;
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
           className={cn('flex h-9 items-center gap-1 border px-2 text-[10px] font-semibold transition-opacity hover:opacity-80', visual.className)}
-          title={`Prioridade: ${conf.label}`}
+          title={`Peso ${visual.weight}: ${visual.label}`}
+          aria-label={`Peso do novo processo: ${visual.label}`}
         >
           <Icon className="h-3.5 w-3.5" />
-          <span>{visual.shortLabel}</span>
+          <span>{visual.label}</span>
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-44 p-1" align="start">
-        {(Object.keys(PRIORITY_CONFIG) as TaskPriority[]).map((p) => {
-          const c = PRIORITY_CONFIG[p];
-          return (
-            <button
-              key={p}
-              type="button"
-              onClick={() => onChange(p)}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted text-left ${value === p ? 'bg-muted' : ''}`}
-            >
-              <span className={`w-2.5 h-2.5 rounded-full ${c.dotClass}`} />
-              <span className="flex-1">{c.label}</span>
-              {value === p && <Check className="w-3.5 h-3.5 text-primary" />}
-            </button>
-          );
-        })}
+      <PopoverContent className="w-56 p-2" align="start">
+        <p className="px-1 pb-2 text-xs font-semibold">Peso do processo</p>
+        <WeightOptions value={value} onSelect={(weight) => { onChange(weight); setOpen(false); }} />
       </PopoverContent>
     </Popover>
   );
 }
 
-// Priority change menu for existing tasks (compact icon)
-function PriorityMenu({ value, onChange }: { value: TaskPriority; onChange: (p: TaskPriority) => void }) {
-  const conf = PRIORITY_CONFIG[value];
-  const visual = PRIORITY_VISUALS[value];
+// Troca de peso em processos e etapas existentes (ícone compacto)
+function WeightMenu({ value, onChange }: { value: ProcessWeight; onChange: (weight: ProcessWeight) => void }) {
+  const [open, setOpen] = useState(false);
+  const visual = weightVisual(value);
   const Icon = visual.icon;
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          title={`Prioridade: ${conf.label}`}
-          aria-label={`Alterar prioridade: ${conf.label}`}
+          title={`Peso ${visual.weight}: ${visual.label}`}
+          aria-label={`Alterar peso: ${visual.label}`}
           className={cn('grid h-5 w-5 flex-shrink-0 place-items-center rounded-full border transition-transform hover:scale-105', visual.className)}
         >
           <Icon className="h-2.5 w-2.5" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-44 p-1" align="end">
-        {(Object.keys(PRIORITY_CONFIG) as TaskPriority[]).map((p) => {
-          const c = PRIORITY_CONFIG[p];
-          return (
-            <button
-              key={p}
-              type="button"
-              onClick={() => onChange(p)}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted text-left ${value === p ? 'bg-muted' : ''}`}
-            >
-              <span className={`w-2.5 h-2.5 rounded-full ${c.dotClass}`} />
-              <span className="flex-1">{c.label}</span>
-              {value === p && <Check className="w-3.5 h-3.5 text-primary" />}
-            </button>
-          );
-        })}
+      <PopoverContent className="w-56 p-2" align="end">
+        <p className="px-1 pb-2 text-xs font-semibold">Peso</p>
+        <WeightOptions value={value} onSelect={(weight) => { onChange(weight); setOpen(false); }} />
       </PopoverContent>
     </Popover>
   );

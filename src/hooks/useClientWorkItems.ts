@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useDeliverables } from "@/hooks/useDeliverables";
-import { usePriorities } from "@/hooks/usePriorities";
 import { useTasks } from "@/hooks/useTasks";
 import { useAudits } from "@/hooks/useAudits";
 import { useChallenges } from "@/hooks/useChallenges";
@@ -15,7 +14,6 @@ import type { Task } from "@/types/task";
 
 export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
   const tasksSource = useTasks();
-  const prioritiesSource = usePriorities();
   const deliverablesSource = useDeliverables();
   const auditsSource = useAudits();
   const challengesSource = useChallenges();
@@ -105,7 +103,6 @@ export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
       buildClientWorkItems(
         clientId,
         tasks,
-        prioritiesSource.priorities,
         deliverablesSource.deliverables,
         [...auditItems, ...challengeItems],
         commentsSource.comments,
@@ -115,7 +112,6 @@ export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
       deliverablesSource.deliverables,
       auditItems,
       challengeItems,
-      prioritiesSource.priorities,
       tasks,
       commentsSource.comments,
     ],
@@ -125,7 +121,6 @@ export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
     items,
     isLoading:
       (!taskOverride && tasksSource.isLoading) ||
-      prioritiesSource.isLoading ||
       deliverablesSource.isLoading ||
       auditsSource.isLoading ||
       challengesSource.isLoading ||
@@ -133,14 +128,12 @@ export function useClientWorkItems(clientId: string, taskOverride?: Task[]) {
       commentsSource.isLoading,
     error:
       (!taskOverride ? tasksSource.error : null) ||
-      prioritiesSource.error ||
       deliverablesSource.error ||
       auditsSource.error ||
       challengesSource.error,
     refetch: async () => {
       await Promise.all([
         tasksSource.refetch(),
-        prioritiesSource.refetch(),
         deliverablesSource.refetch(),
         auditsSource.refetch(),
         challengesSource.refetch(),

@@ -1,122 +1,129 @@
-import type { Priority } from '@/types/priority';
-import type { Task } from '@/types/task';
+import type { Task, TaskStatus } from '@/types/task';
+import { isMaximumWeight, normalizeProcessWeight, weightForUrgency, type ProcessWeight } from '@/lib/processWeight';
+import { isPeriodStep, isRecurringMother } from '@/lib/processRecurrence';
 
-export interface UnifiedProcess {
-  key: string;
-  taskId: string | null;
-  priorityId: string | null;
-  parentKey: string | null;
-  clientId: string | null;
-  universeItemId: string | null;
+/**
+ * Processos v2 (D-025): processo é a tarefa principal (sem pai); etapas são as
+ * subtarefas dela. O peso fica na própria tarefa. A tabela de prioridades é só
+ * histórico e não entra no modelo.
+ */
+export interface Process {
+  id: string;
+  task: Task;
+  clientId: string;
   title: string;
   description: string | null;
   assignees: string[];
-  modality: string | null;
-  weight: number;
-  status: string;
+  weight: ProcessWeight;
+  status: TaskStatus;
+  completed: boolean;
   createdAt: string;
   completedAt: string | null;
   dueDate: string | null;
   scheduledFor: string | null;
-  externalUrl: string | null;
+  /** Etapas diretas, na ordem definida pelo usuário. */
+  steps: Task[];
+  /** Todas as etapas abaixo do processo, em qualquer nível. */
+  descendants: Task[];
+  openSteps: number;
+  /** Processo-mãe que se repete; as etapas de período ficam em `periodSteps`. */
+  isRecurring: boolean;
+  periodSteps: Task[];
 }
 
-export interface ProcessReconciliation {
-  processes: UnifiedProcess[];
-  conflicts: string[];
+export function isProcessOpen(process: Pick<Process, 'completed' | 'status'>): boolean {
+  return !process.completed && process.status !== 'cancelada';
 }
 
-const taskWeight = { baixa: 1, normal: 2, alta: 3, urgente: 4 } as const;
+function bySortOrder(a: Task, b: Task): number {
+  return (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.created_at.localeCompare(b.created_at);
+}
 
-export function reconcileProcesses(tasks: Task[], priorities: Priority[]): ProcessReconciliation {
-  const conflicts: string[] = [];
-  const taskById = new Map(tasks.map(task => [task.id, task]));
-  const priorityById = new Map(priorities.map(priority => [priority.id, priority]));
-  const priorityBySourceTask = new Map(priorities
-    .filter(priority => priority.source_task_id)
-    .map(priority => [priority.source_task_id!, priority]));
-  const pairedPriorityIds = new Set<string>();
+export function buildProcesses(tasks: Task[]): Process[] {
+  const taskIds = new Set(tasks.map(task => task.id));
+  const childrenByParent = new Map<string, Task[]>();
+  for (const task of tasks) {
+    if (!task.parent_task_id || !taskIds.has(task.parent_task_id)) continue;
+    const siblings = childrenByParent.get(task.parent_task_id) ?? [];
+    siblings.push(task);
+    childrenByParent.set(task.parent_task_id, siblings);
+  }
 
-  const processes: UnifiedProcess[] = tasks.map(task => {
-    const linked = task.priority_id ? priorityById.get(task.priority_id) : undefined;
-    const bySource = priorityBySourceTask.get(task.id);
-    if (linked && bySource && linked.id !== bySource.id) {
-      conflicts.push(`Tarefa ${task.id} aponta para prioridades diferentes.`);
+  const collectDescendants = (rootId: string): Task[] => {
+    const result: Task[] = [];
+    const visited = new Set<string>([rootId]);
+    const queue = [...(childrenByParent.get(rootId) ?? [])];
+    while (queue.length) {
+      const task = queue.shift()!;
+      if (visited.has(task.id)) continue;
+      visited.add(task.id);
+      result.push(task);
+      queue.push(...(childrenByParent.get(task.id) ?? []));
     }
-    const priority = bySource || (linked && (!linked.source_task_id || linked.source_task_id === task.id) ? linked : undefined);
-    if (priority) {
-      pairedPriorityIds.add(priority.id);
-      if (priority.client_id && priority.client_id !== task.client_id) {
-        conflicts.push(`Cliente divergente entre tarefa ${task.id} e prioridade ${priority.id}.`);
-      }
-      if ((priority.status === 'concluida') !== task.completed) {
-        conflicts.push(`Conclusao divergente entre tarefa ${task.id} e prioridade ${priority.id}.`);
-      }
-    }
+    return result;
+  };
 
-    return {
-      key: `task:${task.id}`,
-      taskId: task.id,
-      priorityId: priority?.id || null,
-      parentKey: task.parent_task_id && taskById.has(task.parent_task_id) ? `task:${task.parent_task_id}` : null,
-      clientId: task.client_id,
-      universeItemId: priority?.universe_item_id || null,
-      title: priority?.title || task.title,
-      description: priority?.description || task.description,
-      assignees: task.assigned_to.length ? task.assigned_to : priority?.assigned_to || [],
-      modality: task.modality || priority?.category || null,
-      weight: priority?.weight ?? taskWeight[task.priority],
-      status: priority?.status === 'concluida' ? 'concluida' : task.status,
-      createdAt: priority && priority.created_at < task.created_at ? priority.created_at : task.created_at,
-      completedAt: priority?.completed_at || task.completed_at,
-      dueDate: priority?.due_date || task.due_date,
-      scheduledFor: task.scheduled_for,
-      externalUrl: task.external_url || null,
-    } satisfies UnifiedProcess;
-  });
-
-  for (const priority of priorities) {
-    if (pairedPriorityIds.has(priority.id)) continue;
-    if (priority.source_task_id && !taskById.has(priority.source_task_id)) {
-      conflicts.push(`Prioridade ${priority.id} aponta para tarefa ausente ${priority.source_task_id}.`);
-    }
-    processes.push({
-      key: `priority:${priority.id}`,
-      taskId: null,
-      priorityId: priority.id,
-      parentKey: null,
-      clientId: priority.client_id,
-      universeItemId: priority.universe_item_id || null,
-      title: priority.title,
-      description: priority.description,
-      assignees: priority.assigned_to,
-      modality: priority.category,
-      weight: priority.weight,
-      status: priority.status,
-      createdAt: priority.created_at,
-      completedAt: priority.completed_at,
-      dueDate: priority.due_date,
-      scheduledFor: null,
-      externalUrl: null,
+  return tasks
+    // Uma etapa cujo processo não veio na consulta vira processo próprio,
+    // para nunca sumir da tela.
+    .filter(task => !task.parent_task_id || !taskIds.has(task.parent_task_id))
+    .map(task => {
+      const steps = [...(childrenByParent.get(task.id) ?? [])].sort(bySortOrder);
+      const descendants = collectDescendants(task.id);
+      const isRecurring = isRecurringMother(task);
+      const periodSteps = steps.filter(isPeriodStep);
+      // Na mãe, o vencimento que importa é o do período aberto mais antigo.
+      const nextPeriodDue = periodSteps
+        .filter(step => !step.completed && step.status !== 'cancelada' && step.due_date)
+        .map(step => step.due_date!)
+        .sort()[0];
+      return {
+        id: task.id,
+        task,
+        clientId: task.client_id,
+        title: task.title,
+        description: task.description,
+        assignees: task.assigned_to,
+        weight: normalizeProcessWeight(task.weight, weightForUrgency(task.priority)),
+        status: task.status,
+        completed: task.completed,
+        createdAt: task.created_at,
+        completedAt: task.completed_at,
+        dueDate: isRecurring && nextPeriodDue ? nextPeriodDue : task.due_date,
+        scheduledFor: task.scheduled_for,
+        steps,
+        descendants,
+        openSteps: descendants.filter(step => !step.completed && step.status !== 'cancelada').length,
+        isRecurring,
+        periodSteps,
+      } satisfies Process;
     });
-  }
-
-  return { processes, conflicts };
 }
 
-export function processesForAssignee(processes: UnifiedProcess[], assignee: string): UnifiedProcess[] {
-  const ownKeys = new Set(processes
-    .filter(process => process.assignees.some(name => name.localeCompare(assignee, 'pt-BR', { sensitivity: 'base' }) === 0))
-    .map(process => process.key));
-  const byKey = new Map(processes.map(process => [process.key, process]));
-  for (const key of [...ownKeys]) {
-    let parent = byKey.get(key)?.parentKey;
-    const visited = new Set<string>();
-    while (parent && !visited.has(parent)) {
-      visited.add(parent);
-      ownKeys.add(parent);
-      parent = byKey.get(parent)?.parentKey;
-    }
+/** Maior peso primeiro; depois o vencimento mais próximo; depois o mais antigo. */
+export function compareProcesses(a: Process, b: Process): number {
+  if (a.weight !== b.weight) return b.weight - a.weight;
+  if (a.dueDate !== b.dueDate) {
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return a.dueDate.localeCompare(b.dueDate);
   }
-  return processes.filter(process => ownKeys.has(process.key));
+  return a.createdAt.localeCompare(b.createdAt);
+}
+
+/** Painel: processos abertos de peso Máxima. */
+export function maximumWeightProcesses(processes: Process[]): Process[] {
+  return processes.filter(process => isProcessOpen(process) && isMaximumWeight(process.weight)).sort(compareProcesses);
+}
+
+function sameName(a: string, b: string): boolean {
+  return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }) === 0;
+}
+
+/** Processos do responsável: os dele e aqueles em que ele tem alguma etapa aberta. */
+export function processesForAssignee(processes: Process[], assignee: string): Process[] {
+  return processes.filter(process =>
+    process.assignees.some(name => sameName(name, assignee))
+    || process.descendants.some(step => !step.completed && step.status !== 'cancelada'
+      && step.assigned_to.some(name => sameName(name, assignee))));
 }

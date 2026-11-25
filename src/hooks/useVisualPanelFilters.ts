@@ -27,7 +27,6 @@ export function useVisualPanelFilters({
   const [collaboratorFilters, setCollaboratorFilters] = useState<string[]>([]);
   
   const [filterFlags, setFilterFlags] = useState<FilterFlags>({
-    priority: false,
     highlighted: false,
     selected: false,
     hasCollaborators: false,
@@ -57,7 +56,6 @@ export function useVisualPanelFilters({
     }
 
     // Apply flags
-    if (filterFlags.priority) result = result.filter(c => c.isPriority);
     if (filterFlags.highlighted) result = result.filter(c => highlightedClients.has(c.id));
     if (filterFlags.selected) result = result.filter(c => c.isChecked);
     
@@ -71,9 +69,6 @@ export function useVisualPanelFilters({
       
       switch (sortBy) {
         case 'name': return a.name.localeCompare(b.name) * multiplier;
-        case 'priority':
-          if (a.isPriority !== b.isPriority) return (a.isPriority ? -1 : 1) * multiplier;
-          return (a.order - b.order) * multiplier;
         default: return (a.order - b.order) * multiplier;
       }
     });
@@ -94,7 +89,6 @@ export function useVisualPanelFilters({
     setClientTypeFilter('all');
     setCollaboratorFilters([]);
     setFilterFlags({
-      priority: false,
       highlighted: false,
       selected: false,
       hasCollaborators: false,

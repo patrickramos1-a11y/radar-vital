@@ -5,7 +5,9 @@ import { Deliverable } from '@/types/deliverable';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { useDeliverableRatings, summarizeRatings } from '@/hooks/useDeliverableRatings';
 import { CollaboratorAvatar } from './CollaboratorAvatar';
-import { Trophy, Star, Sparkles, ThumbsUp, Package, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Trophy, Star, Sparkles, ThumbsUp, Package, CheckCircle2, AlertTriangle, Siren, type LucideIcon } from 'lucide-react';
+import { buildProcesses, isProcessOpen, processesForAssignee, type Process } from '@/lib/processModel';
+import { deliverableWeight, isPastDue } from '@/lib/centralMetrics';
 import { cn } from '@/lib/utils';
 
 interface RespOption { name: string; color: string; initials: string; }
@@ -15,20 +17,23 @@ interface Props {
   tasks: Task[];
   priorities: Priority[];
   deliverables: Deliverable[];
-  canPlanPriorities?: boolean;
+
 }
 
-function computeRow(name: string, tasks: Task[], priorities: Priority[], deliverables: Deliverable[], ratings: any[]) {
-  const myTasks = tasks.filter(t => assigneeMatches(t.assigned_to, name));
-  const openTasks = myTasks.filter(t => !t.completed);
-  const now = Date.now();
-  const overdue = openTasks.filter(t => t.due_date && new Date(t.due_date).getTime() < now).length;
+type Ratings = ReturnType<typeof useDeliverableRatings>['ratings'];
 
-  const myPri = priorities.filter(p => assigneeMatches(p.assigned_to, name));
-  const donePri = myPri.filter(p => p.status === 'concluida').length;
+/**
+ * Ranking (D-025): pontos + soma dos pesos dos entregáveis concluídos − processos
+ * atrasados. Cada entregável vale o peso do processo que o gerou (1 a 5).
+ */
+function computeRow(name: string, processes: Process[], deliverables: Deliverable[], weightOf: (d: Deliverable) => number, ratings: Ratings) {
+  const mine = processesForAssignee(processes, name).filter(isProcessOpen);
+  const overdue = mine.filter(process => isPastDue(process.dueDate)).length;
 
-  const myDeliv = deliverables.filter(d => assigneeMatches(d.assigned_to, name));
-  const doneDeliv = myDeliv.filter(d => d.status === 'concluido').length;
+  const myDeliv = deliverables.filter(d => assigneeMatches(d.assigned_to, name) && d.status === 'concluido');
+  const doneDeliv = myDeliv.length;
+  const deliveredWeight = myDeliv.reduce((sum, d) => sum + weightOf(d), 0);
+  const doneMaximum = myDeliv.filter(d => weightOf(d) >= 5).length;
 
   let score = 0, stars = 0, supers = 0, thumbs = 0;
   myDeliv.forEach(d => {
@@ -46,16 +51,17 @@ function computeRow(name: string, tasks: Task[], priorities: Priority[], deliver
     thumbs: Math.round(thumbs),
     score: Math.round(score * 10) / 10,
     doneDeliv,
-    donePri,
+    deliveredWeight,
+    doneMaximum,
     overdue,
-    openTasks: openTasks.length,
-    general: Math.round((score + doneDeliv * 2 + donePri * 3 - overdue) * 10) / 10,
+    openProcesses: mine.length,
+    general: Math.round((score + deliveredWeight - overdue) * 10) / 10,
   };
 }
 
 interface RankingProps {
   title: string;
-  icon: any;
+  icon: LucideIcon;
   color: string;
   rows: { name: string; value: number }[];
   reverse?: boolean;
@@ -101,10 +107,13 @@ function Ranking({ title, icon: Icon, color, rows, reverse }: RankingProps) {
 export function TeamOverview({ responsibleList, tasks, priorities, deliverables }: Props) {
   const { ratings } = useDeliverableRatings();
 
-  const rows = useMemo(
-    () => responsibleList.map(r => computeRow(r.name, tasks, priorities, deliverables, ratings)),
-    [responsibleList, tasks, priorities, deliverables, ratings]
-  );
+  const rows = useMemo(() => {
+    const processes = buildProcesses(tasks);
+    const taskById = new Map(tasks.map(task => [task.id, task]));
+    const priorityById = new Map(priorities.map(priority => [priority.id, priority]));
+    const weightOf = (d: Deliverable) => deliverableWeight(d, taskById, priorityById);
+    return responsibleList.map(r => computeRow(r.name, processes, deliverables, weightOf, ratings));
+  }, [responsibleList, tasks, priorities, deliverables, ratings]);
 
   return (
     <div className="space-y-3">
@@ -113,7 +122,7 @@ export function TeamOverview({ responsibleList, tasks, priorities, deliverables 
           <Trophy className="w-4 h-4 text-amber-500" />
           <h3 className="text-sm font-semibold">Ranking Geral</h3>
           <span className="text-[10px] text-muted-foreground">
-            fórmula: pontos + entregáveis✓×2 + prioridades✓×3 − atrasadas
+            fórmula: pontos + peso dos entregáveis − processos atrasados
           </span>
         </div>
         <div className="grid gap-1">
@@ -135,8 +144,9 @@ export function TeamOverview({ responsibleList, tasks, priorities, deliverables 
         <Ranking title="Super Estrelas ✨" icon={Sparkles} color="#EA580C" rows={rows.map(r => ({ name: r.name, value: r.supers }))} />
         <Ranking title="Joinhas 👍" icon={ThumbsUp} color="#10B981" rows={rows.map(r => ({ name: r.name, value: r.thumbs }))} />
         <Ranking title="Entregáveis concluídos" icon={Package} color="#10B981" rows={rows.map(r => ({ name: r.name, value: r.doneDeliv }))} />
-        <Ranking title="Prioridades concluídas" icon={CheckCircle2} color="#10B981" rows={rows.map(r => ({ name: r.name, value: r.donePri }))} />
-        <Ranking title="Menos atrasadas" icon={AlertTriangle} color="#DC2626" reverse rows={rows.map(r => ({ name: r.name, value: r.overdue }))} />
+        <Ranking title="Peso entregue" icon={CheckCircle2} color="#10B981" rows={rows.map(r => ({ name: r.name, value: r.deliveredWeight }))} />
+        <Ranking title="Processos Máxima entregues" icon={Siren} color="#DC2626" rows={rows.map(r => ({ name: r.name, value: r.doneMaximum }))} />
+        <Ranking title="Menos atrasados" icon={AlertTriangle} color="#DC2626" reverse rows={rows.map(r => ({ name: r.name, value: r.overdue }))} />
       </div>
     </div>
   );
