@@ -460,6 +460,11 @@ Resumo: nenhuma tela fala mais em prioridade, estrela de prioridade, promover ou
 Migrations: nenhuma. Conferido em producao por leitura: 0 prioridades abertas sem processo e nenhuma prioridade criada depois da migration; `convert_open_priorities_to_processes` nao precisou ser rodada de novo (pode ser rodada a qualquer momento, sem duplicar).
 Testes: TypeScript sem erros, ESLint dos arquivos alterados sem erros novos (restam 2 `any` antigos em `ClientContext.tsx`), 258 testes Vitest aprovados, build aprovado. Navegador com dados reais, sem gravar: Painel AC sem a estrela, Central com os novos indicadores e Ranking Geral por peso, modal do cliente com Processos e Peso.
 Observacao: o atalho "Prioridades" na barra de Painéis do Painel AC e um link cadastrado pelos usuarios (tabela `panel_links`), nao codigo; renomear ou apagar pela tela "Gerenciar Painéis Vinculados".
+
+2026-11-25 - Processos v2, passo 8 de 8 (publicacao)
+Resumo: publicacao feita por pedido expresso do usuario em 25/11/2026 ("Pode publicar"): PR #5 mesclado em `main` (commit `defc339`), deploy da Vercel com sucesso e site conferido em radar-vital.vercel.app (Processos com 103 processos do Patrick em 48 clientes, sem erros no console). Mesmo espirito de D-021 e da publicacao de Processos v1.
+Testes antes de publicar: TypeScript sem erros, 258 testes Vitest aprovados, build aprovado; ESLint sem erros novos (2 erros antigos em `ClientContext.tsx`). Navegador local com dados reais, sem gravar: Processos, Painel, Gestao de processos e Em acompanhamento.
+Pendencias: o usuario roda no Lovable `SELECT public.convert_open_priorities_to_processes('Publicacao Processos v2');`; conferir o primeiro processo recorrente real (a geracao de etapas so roda na versao publicada).
 ```
 
 ## Modelo para proximos registros

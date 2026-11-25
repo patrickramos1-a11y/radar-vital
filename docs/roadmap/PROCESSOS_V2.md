@@ -93,4 +93,4 @@ envelhecimento automático continuam subindo um ponto de peso a cada 15 dias.
 5. Entregáveis: Em acompanhamento, comentários por processo, faixas de dias. **Feito em 25/11.**
 6. Nomenclatura em todo o sistema e remoção da marca de cliente. **Feito em 25/11.**
 7. Ranking por peso. **Feito em 25/11** (`deliverableWeight` em `src/lib/centralMetrics.ts`).
-8. Testes, build, conferência no navegador, publicação.
+8. Testes, build, conferência no navegador, publicação. **Publicado em 25/11** (PR #5).
