@@ -5,6 +5,7 @@ import { ProcessesTab } from '@/components/processos/ProcessesTab';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClients } from '@/contexts/ClientContext';
 import { useTasks } from '@/hooks/useTasks';
+import { useProcessComments } from '@/hooks/useProcessComments';
 
 /**
  * Processos v2 (D-025): o processo é a tarefa principal e as etapas são as
@@ -15,6 +16,7 @@ export default function Processos() {
   const { currentUser, collaborators, isAdmin } = useAuth();
   const { clients } = useClients();
   const taskData = useTasks();
+  const processComments = useProcessComments();
 
   return <AppLayout><main className="h-full overflow-y-auto bg-slate-50 px-3 pb-20 pt-4 sm:px-6">
     <div className="mx-auto max-w-[1480px]">
@@ -37,6 +39,8 @@ export default function Processos() {
           allowCollaboratorFilter={isAdmin}
           canPlanMaximum={isAdmin && currentUser.name.toLocaleLowerCase('pt-BR').includes('patrick')}
           initialClientId={searchParams.get('clientId')}
+          comments={processComments.comments}
+          onComment={processComments.addComment}
           onCreate={taskData.addTask}
           onToggleTask={taskData.toggleComplete}
           onUpdateTask={taskData.updateTask}

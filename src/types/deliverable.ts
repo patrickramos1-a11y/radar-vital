@@ -15,6 +15,8 @@ export interface Deliverable {
   description: string | null;
   client_id: string | null;
   source_priority_id: string | null;
+  /** Processo principal cuja conclusão gerou o entregável (D-025). */
+  source_task_id?: string | null;
   assigned_to: string[];
   requester: string | null;
   due_date: string | null;

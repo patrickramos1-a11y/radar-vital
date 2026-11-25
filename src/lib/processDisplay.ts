@@ -12,6 +12,10 @@ export function formatDay(date: string) {
   return new Date(`${date}T12:00:00`).toLocaleDateString('pt-BR');
 }
 
+export function formatCommentDate(iso: string) {
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+
 export function colorWithAlpha(color: string, alpha: string) {
   return /^#[0-9a-f]{6}$/i.test(color) ? `${color}${alpha}` : 'rgba(15, 118, 110, 0.08)';
 }

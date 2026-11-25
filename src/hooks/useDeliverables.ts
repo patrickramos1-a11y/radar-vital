@@ -34,6 +34,7 @@ export function useDeliverables() {
         description: d.description,
         client_id: d.client_id ?? null,
         source_priority_id: d.source_priority_id ?? null,
+        source_task_id: d.source_task_id ?? null,
         assigned_to: Array.isArray(d.assigned_to) ? d.assigned_to : [],
         requester: d.requester ?? null,
         due_date: d.due_date,

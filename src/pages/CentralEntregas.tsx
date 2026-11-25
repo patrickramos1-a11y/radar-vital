@@ -13,6 +13,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { TeamSelector, TEAM_VIEW } from '@/components/central-entregas/TeamSelector';
 import { TeamOverview } from '@/components/central-entregas/TeamOverview';
 import { ProcessesTab } from '@/components/processos/ProcessesTab';
+import { useProcessComments } from '@/hooks/useProcessComments';
 import { CommentsTab } from '@/components/central-entregas/CommentsTab';
 import { DeliverablesTab } from '@/components/central-entregas/DeliverablesTab';
 import { HistoryTab } from '@/components/central-entregas/HistoryTab';
@@ -46,6 +47,7 @@ export default function CentralEntregas() {
   const tasksHook = useTasks();
   const prioritiesHook = usePriorities();
   const deliverablesHook = useDeliverables();
+  const processComments = useProcessComments();
   const challengesHook = useChallenges();
   const treasury = useTreasury();
   const [clientScope, setClientScope] = useState<ClientScope>('all');
@@ -344,6 +346,8 @@ export default function CentralEntregas() {
                 clients={scopedClients}
                 responsibleList={responsibleList}
                 initialClientId={searchParams.get('clientId')}
+                comments={processComments.comments}
+                onComment={processComments.addComment}
                 onCreate={tasksHook.addTask}
                 onToggleTask={tasksHook.toggleComplete}
                 onUpdateTask={tasksHook.updateTask}
@@ -375,6 +379,8 @@ export default function CentralEntregas() {
                 onUpdate={deliverablesHook.updateDeliverable}
                 onDelete={deliverablesHook.deleteDeliverable}
                 onUpdateTask={tasksHook.updateTask}
+                processComments={processComments.comments}
+                onCommentProcess={processComments.addComment}
               />
             </TabsContent>
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownWideNarrow, Check, Clock3, LayoutGrid, List, ListChecks, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { ArrowDownWideNarrow, Check, Clock3, LayoutGrid, List, ListChecks, MessageSquarePlus, MessageSquareText, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import type { Client } from '@/types/client';
 import type { Task } from '@/types/task';
 import { buildProcesses, compareProcesses, isProcessOpen, maximumWeightProcesses, processesForAssignee, type Process } from '@/lib/processModel';
@@ -9,7 +9,10 @@ import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { ProcessModal, type CreateProcess } from './ProcessModal';
-import { colorWithAlpha, daysOpen, formatDay, today, weightVisual } from '@/lib/processDisplay';
+import { colorWithAlpha, daysOpen, formatCommentDate, formatDay, today, weightVisual } from '@/lib/processDisplay';
+import { commentsByProcess, type ProcessComment } from '@/lib/processFollowUp';
+import type { AddProcessComment } from '@/hooks/useProcessComments';
+import { ProcessCommentDialog, ProcessCommentList } from './ProcessCommentDialog';
 import {
   AssigneePicker, ClientSideRail, EditableTitle, ProcessWeightPicker, RecurrenceBadge, StepList, TaskLinkAction, WorkSchedule,
   type RespOption, type ToggleTask, type UpdateTask,
@@ -33,14 +36,19 @@ interface Props {
   initialClientId?: string | null;
   initialView?: ProcessView;
   section?: ProcessSection;
+  /** Acompanhamento: comentários ligados aos processos. Sem `onComment`, a aba não mostra comentários. */
+  comments?: ProcessComment[];
+  onComment?: AddProcessComment;
   onCreate: CreateProcess;
   onToggleTask: ToggleTask;
   onUpdateTask: UpdateTask;
   onDeleteTask: (taskId: string, clientName?: string) => Promise<boolean>;
 }
 
-function ProcessRow({ process, client, tasks, rowIndex, responsibleList, canPlanMaximum, compact = false, startExpanded = false, onEdit, onCreate, onToggleTask, onUpdateTask, onDeleteTask }: {
+function ProcessRow({ process, client, tasks, rowIndex, responsibleList, canPlanMaximum, compact = false, startExpanded = false, comments, onComment, onEdit, onCreate, onToggleTask, onUpdateTask, onDeleteTask }: {
   process: Process; client?: Client; tasks: Task[]; rowIndex: number; responsibleList: RespOption[]; canPlanMaximum: boolean; compact?: boolean; startExpanded?: boolean;
+  /** Comentários do processo, do mais novo ao mais antigo; `undefined` quando a tela não mostra acompanhamento. */
+  comments?: ProcessComment[]; onComment?: () => void;
   onEdit: () => void; onCreate: CreateProcess; onToggleTask: ToggleTask; onUpdateTask: UpdateTask; onDeleteTask: Props['onDeleteTask'];
 }) {
   const { task } = process;
@@ -99,6 +107,7 @@ function ProcessRow({ process, client, tasks, rowIndex, responsibleList, canPlan
           {participants.length > 0 && <span className="flex -space-x-1" aria-label={`Também nas etapas: ${participants.map(person => person.name).join(', ')}`} title={`Também nas etapas: ${participants.map(person => person.name).join(', ')}`}>
             {participants.slice(0, 4).map(person => <span key={person.name} className="flex h-4 w-4 items-center justify-center rounded-full text-[7px] font-bold text-white ring-1 ring-white" style={{ backgroundColor: person.color }}>{person.initials}</span>)}
           </span>}
+          {comments && comments.length > 0 && <span className="inline-flex items-center gap-1 bg-sky-50 px-1.5 py-0.5 text-sky-700" title={`Último comentário em ${formatCommentDate(comments[0].createdAt)} por ${comments[0].authorName}`} aria-label={`${comments.length} ${comments.length === 1 ? 'comentário' : 'comentários'} de acompanhamento`}><MessageSquareText className="h-3 w-3" />{comments.length}</span>}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
@@ -117,6 +126,7 @@ function ProcessRow({ process, client, tasks, rowIndex, responsibleList, canPlan
         <DropdownMenu>
           <DropdownMenuTrigger asChild><button type="button" title="Mais ações" aria-label={`Mais ações do processo ${task.title}`} className="p-1.5 text-muted-foreground hover:bg-muted"><MoreHorizontal className="h-4 w-4" /></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {onComment && <DropdownMenuItem onSelect={onComment}><MessageSquarePlus className="mr-2 h-4 w-4" />Comentar</DropdownMenuItem>}
             <DropdownMenuItem onSelect={onEdit}><Pencil className="mr-2 h-4 w-4" />Editar processo</DropdownMenuItem>
             <DropdownMenuItem className="text-red-700 focus:text-red-700" onSelect={() => void remove()}><Trash2 className="mr-2 h-4 w-4" />Excluir processo</DropdownMenuItem>
           </DropdownMenuContent>
@@ -130,6 +140,13 @@ function ProcessRow({ process, client, tasks, rowIndex, responsibleList, canPlan
         <Input value={draft} onChange={event => setDraft(event.target.value)} placeholder="Nova etapa" aria-label={`Nova etapa para ${task.title}`} className="h-8 text-xs" />
         <Button type="submit" size="sm" variant="outline" disabled={!draft.trim() || saving} title="Adicionar etapa" aria-label="Adicionar etapa"><Plus className="h-4 w-4" /></Button>
       </form>}
+      {comments && onComment && <div className="mt-3 border-t pt-2">
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold text-slate-700">Acompanhamento</p>
+          <Button type="button" size="sm" variant="ghost" className="h-7 text-xs text-sky-700" onClick={onComment} aria-label={`Comentar ${task.title}`}><MessageSquarePlus className="mr-1 h-3.5 w-3.5" />Comentar</Button>
+        </div>
+        <ProcessCommentList comments={comments} />
+      </div>}
     </div>}
   </article>;
 }
@@ -159,7 +176,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
  * Processos v2 (D-025): duas visões. "Processos" mostra todos, agrupados por
  * cliente; "Painel" mostra só os abertos de peso Máxima, em cartões.
  */
-export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanMaximum = true, initialClientId, initialView = 'processes', section = 'all', onCreate, onToggleTask, onUpdateTask, onDeleteTask }: Props) {
+export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanMaximum = true, initialClientId, initialView = 'processes', section = 'all', comments, onComment, onCreate, onToggleTask, onUpdateTask, onDeleteTask }: Props) {
   const [chosenView, setView] = useState<ProcessView>(initialView);
   const view: ProcessView = section === 'all' ? chosenView : 'processes';
   const [sortMode, setSortMode] = useState<SortMode>('weight');
@@ -177,6 +194,11 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
 
   const clientById = useMemo(() => new Map(clients.map(client => [client.id, client])), [clients]);
   const allProcesses = useMemo(() => buildProcesses(tasks), [tasks]);
+  const [commenting, setCommenting] = useState<Process | null>(null);
+  const byProcess = useMemo(
+    () => onComment ? commentsByProcess(allProcesses, comments ?? []) : null,
+    [allProcesses, comments, onComment],
+  );
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('pt-BR');
     const byPerson = collaboratorFilter === 'all' || initialClientId
@@ -215,7 +237,7 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
         : 'Nenhum processo para este filtro.';
 
   const renderRows = (items: Process[], client?: Client) => <div className="min-w-0">
-    {items.map((process, rowIndex) => <ProcessRow key={process.id} process={process} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanMaximum={canPlanMaximum} compact={view === 'panel'} startExpanded={section === 'recurring'} onEdit={() => openModal(process.task)} onCreate={onCreate} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />)}
+    {items.map((process, rowIndex) => <ProcessRow key={process.id} process={process} client={client} tasks={tasks} rowIndex={rowIndex} responsibleList={responsibleList} canPlanMaximum={canPlanMaximum} compact={view === 'panel'} startExpanded={section === 'recurring'} comments={byProcess ? byProcess.get(process.id) ?? [] : undefined} onComment={onComment ? () => setCommenting(process) : undefined} onEdit={() => openModal(process.task)} onCreate={onCreate} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />)}
   </div>;
 
   return <div className="space-y-3">
@@ -287,5 +309,15 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
       onCreate={onCreate}
       onUpdateTask={onUpdateTask}
     />
+    {onComment && <ProcessCommentDialog
+      open={Boolean(commenting)}
+      onOpenChange={open => { if (!open) setCommenting(null); }}
+      processTitle={commenting?.title ?? ''}
+      clientName={commenting ? clientById.get(commenting.clientId)?.name : undefined}
+      comments={commenting ? byProcess?.get(commenting.id) ?? [] : []}
+      onSubmit={text => commenting
+        ? onComment({ taskId: commenting.id, clientId: commenting.clientId, clientName: clientById.get(commenting.clientId)?.name }, text)
+        : Promise.resolve(false)}
+    />}
   </div>;
 }

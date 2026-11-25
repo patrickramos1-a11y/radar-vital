@@ -222,6 +222,22 @@ describe('ProcessesTab', () => {
     expect(screen.getByText(/Período atrasado|Próximo período/)).toBeInTheDocument();
   });
 
+  it('shows the follow-up comments inside the process and comments on it', async () => {
+    const onComment = vi.fn(async () => true);
+    renderTab({
+      comments: [{ id: 'c1', taskId: 'Entregar relatório', clientId: client.id, authorName: 'Patrick', text: 'Cliente enviou os documentos', createdAt: '2026-11-24T10:00:00' }],
+      onComment,
+    });
+    expect(screen.getByLabelText('1 comentário de acompanhamento')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir processo Entregar relatório' }));
+    expect(await screen.findByText('Cliente enviou os documentos')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Comentar Entregar relatório' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Acompanhamento'), { target: { value: 'Relatório revisado' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Registrar comentário' }));
+    await waitFor(() => expect(onComment).toHaveBeenCalledWith({ taskId: 'Entregar relatório', clientId: client.id, clientName: client.name }, 'Relatório revisado'));
+  });
+
   it('lets the team view filter by person', () => {
     renderTab({ isTeamView: true, allowCollaboratorFilter: true, tasks: [task('Da Celine'), task('Da Gabi', { assigned_to: ['Gabi'] })] });
     expect(screen.getByText('Da Gabi')).toBeInTheDocument();

@@ -25,8 +25,16 @@ import { Client } from '@/types/client';
 import { Deliverable, DeliverableFormData } from '@/types/deliverable';
 import { Priority } from '@/types/priority';
 import { Task } from '@/types/task';
+import type { ProcessComment } from '@/lib/processFollowUp';
+import type { AddProcessComment } from '@/hooks/useProcessComments';
+import { FollowUpView } from './FollowUpView';
 
 interface RespOption { name: string; color: string; initials: string; }
+
+/** Gerado pela conclusão de um processo (ou de uma prioridade antiga): não se edita à mão. */
+function isAutomatic(deliverable: Deliverable) {
+  return Boolean(deliverable.source_task_id || deliverable.source_priority_id);
+}
 
 interface Props {
   collaborator: string;
@@ -41,9 +49,12 @@ interface Props {
   onUpdate: (id: string, data: Partial<DeliverableFormData>) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
   onUpdateTask: (id: string, data: Partial<Task>) => Promise<boolean>;
+  /** Comentários de acompanhamento dos processos (aba Em acompanhamento). */
+  processComments?: ProcessComment[];
+  onCommentProcess?: AddProcessComment;
 }
 
-type ReviewView = 'pending' | 'reviewed' | 'all';
+type ReviewView = 'pending' | 'reviewed' | 'all' | 'followup';
 
 export function DeliverablesTab({
   collaborator,
@@ -58,6 +69,8 @@ export function DeliverablesTab({
   onUpdate,
   onDelete,
   onUpdateTask,
+  processComments = [],
+  onCommentProcess,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Deliverable | null>(null);
@@ -101,6 +114,8 @@ export function DeliverablesTab({
         || tasks.find(task => task.priority_id === priorityId);
     };
 
+    const processTask = deliverable.source_task_id ? taskById.get(deliverable.source_task_id) : undefined;
+    if (processTask) return processTask;
     const sourceTask = fromPriority(deliverable.source_priority_id);
     if (sourceTask) return sourceTask;
 
@@ -216,6 +231,7 @@ export function DeliverablesTab({
             { value: 'pending', label: 'A avaliar', count: pending.length },
             { value: 'reviewed', label: 'Avaliados', count: reviewed.length },
             { value: 'all', label: 'Todos', count: scopedDeliverables.length },
+            ...(onCommentProcess ? [{ value: 'followup', label: 'Em acompanhamento', count: null }] as const : []),
           ] as const).map(tab => (
             <button
               key={tab.value}
@@ -230,7 +246,7 @@ export function DeliverablesTab({
                 reviewView === tab.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              {tab.label} <span className="ml-1 tabular-nums text-[11px]">{ratingsLoading || ratingsError ? '...' : tab.count}</span>
+              {tab.label}{tab.count !== null && <span className="ml-1 tabular-nums text-[11px]">{ratingsLoading || ratingsError ? '...' : tab.count}</span>}
             </button>
           ))}
         </div>
@@ -239,6 +255,19 @@ export function DeliverablesTab({
         </Button>
       </div>
 
+      {reviewView === 'followup' && onCommentProcess ? (
+        <div id="deliverables-review-panel" role="tabpanel" aria-labelledby="deliverables-tab-followup">
+          <FollowUpView
+            collaborator={collaborator}
+            isTeamView={isTeamView}
+            tasks={tasks}
+            clients={clients}
+            responsibleList={responsibleList}
+            comments={processComments}
+            onComment={onCommentProcess}
+          />
+        </div>
+      ) : <>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <span>{ratingsLoading ? 'Carregando avaliações...' : ratingsError ? 'Avaliações indisponíveis' : `${visibleDeliverables.length} entrega(s) em ${weekGroups.length} semana(s)`}</span>
@@ -335,9 +364,9 @@ export function DeliverablesTab({
                               <span className="truncate text-sm font-medium">{deliverable.name}</span>
                               <span className={cn(
                                 'shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase',
-                                deliverable.source_priority_id ? 'bg-violet-50 text-violet-700' : 'bg-sky-50 text-sky-700',
+                                isAutomatic(deliverable) ? 'bg-violet-50 text-violet-700' : 'bg-sky-50 text-sky-700',
                               )}>
-                                {deliverable.source_priority_id ? 'Prioridade' : 'Manual'}
+                                {isAutomatic(deliverable) ? 'Processo' : 'Manual'}
                               </span>
                             </div>
                             {deliverable.description && <p className="truncate text-[11px] text-muted-foreground">{deliverable.description}</p>}
@@ -367,7 +396,7 @@ export function DeliverablesTab({
                             {sourceTask && <button className="grid h-8 w-8 place-items-center rounded text-sky-700 hover:bg-sky-50" onClick={() => void openOrEditLink(sourceTask)} title={sourceTask.external_url ? 'Abrir link da entrega' : 'Adicionar link à entrega'}>
                               <Link2 className="h-3.5 w-3.5" />
                             </button>}
-                            {!deliverable.source_priority_id && (
+                            {!isAutomatic(deliverable) && (
                               <>
                                 <button className="grid h-8 w-8 place-items-center rounded hover:bg-muted" onClick={() => edit(deliverable)} title="Editar entrega">
                                   <Pencil className="h-3.5 w-3.5" />
@@ -386,7 +415,7 @@ export function DeliverablesTab({
                               <ClientCell client={client} fallbackName={client ? undefined : 'Sem cliente'} size={24} />
                               <div className="mt-1 flex items-center gap-1.5">
                                 <span className="text-sm font-medium">{deliverable.name}</span>
-                                {deliverable.source_priority_id && <Link2 className="h-3 w-3 shrink-0 text-violet-600" />}
+                                {isAutomatic(deliverable) && <Link2 className="h-3 w-3 shrink-0 text-violet-600" />}
                               </div>
                             </div>
                             <span className="shrink-0 text-xs font-medium">{format(deliveredAt, 'dd/MM/yyyy')}</span>
@@ -399,7 +428,7 @@ export function DeliverablesTab({
                               {sourceTask && <button className="grid h-8 w-8 place-items-center rounded text-sky-700 hover:bg-sky-50" onClick={() => void openOrEditLink(sourceTask)} title={sourceTask.external_url ? 'Abrir link da entrega' : 'Adicionar link à entrega'}>
                                 <Link2 className="h-3.5 w-3.5" />
                               </button>}
-                              {!deliverable.source_priority_id && (
+                              {!isAutomatic(deliverable) && (
                                 <>
                                   <button className="grid h-8 w-8 place-items-center rounded hover:bg-muted" onClick={() => edit(deliverable)} title="Editar entrega">
                                     <Pencil className="h-3.5 w-3.5" />
@@ -431,6 +460,7 @@ export function DeliverablesTab({
         </div>
       )}
       </div>
+      </>}
 
       <DeliverableModal
         open={modalOpen}

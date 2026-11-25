@@ -8,6 +8,7 @@ import { ProcessesTab } from '@/components/processos/ProcessesTab';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClients } from '@/contexts/ClientContext';
 import { useTasks } from '@/hooks/useTasks';
+import { useProcessComments } from '@/hooks/useProcessComments';
 import { isRecurringMother } from '@/lib/processRecurrence';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +41,7 @@ export default function JackboxUnified() {
     isLoading,
     error,
   } = useTasks();
+  const processComments = useProcessComments();
 
   const externalClientIds = useMemo(() => new Set(activeClients.map(client => client.id)), [activeClients]);
   const externalTasks = useMemo(
@@ -129,6 +131,8 @@ export default function JackboxUnified() {
               allowCollaboratorFilter
               canPlanMaximum={isAdmin && Boolean(currentUser?.name.toLocaleLowerCase('pt-BR').includes('patrick'))}
               section={section === 'planejados' ? 'planned' : 'recurring'}
+              comments={processComments.comments}
+              onComment={processComments.addComment}
               onCreate={addTask}
               onToggleTask={toggleComplete}
               onUpdateTask={updateTask}
