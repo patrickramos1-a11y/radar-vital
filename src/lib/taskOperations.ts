@@ -9,7 +9,14 @@ export function getNextRecurrenceDate(
 
   const base = dueDate ? new Date(`${dueDate}T12:00:00`) : new Date(now);
   if (recurrence === 'weekly') base.setDate(base.getDate() + 7);
-  if (recurrence === 'monthly') base.setMonth(base.getMonth() + 1);
+  if (recurrence === 'monthly') {
+    // Jan 31 repeats on the last day of February, not on March 3.
+    const dayOfMonth = base.getDate();
+    base.setDate(1);
+    base.setMonth(base.getMonth() + 1);
+    const lastDay = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+    base.setDate(Math.min(dayOfMonth, lastDay));
+  }
 
   const year = base.getFullYear();
   const month = String(base.getMonth() + 1).padStart(2, '0');

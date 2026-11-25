@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { differenceInCalendarDays, format } from 'date-fns';
-import { ArrowDown, ArrowDownWideNarrow, ArrowUp, CalendarClock, Check, Circle, Clock3, ExternalLink, Flame, Layers, LayoutGrid, Link2, List, ListChecks, Minus, MoreHorizontal, Pencil, Plus, Search, Siren, Star, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowDownWideNarrow, ArrowUp, CalendarClock, Repeat, Check, Circle, Clock3, ExternalLink, Flame, Layers, LayoutGrid, Link2, List, ListChecks, Minus, MoreHorizontal, Pencil, Plus, Search, Siren, Star, Trash2, X } from 'lucide-react';
 import type { Client } from '@/types/client';
 import type { Priority, PriorityFormData } from '@/types/priority';
-import { PRIORITY_CONFIG, type Task, type TaskFormData } from '@/types/task';
+import { PRIORITY_CONFIG, TASK_RECURRENCE_LABELS, type Task, type TaskFormData, type TaskRecurrence } from '@/types/task';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,14 @@ import { functionStickerPath, nucleusStickerPath, sectorStickerPath } from '@/fe
 import { ClientMultiPicker } from '@/components/shared/ClientMultiPicker';
 
 interface RespOption { name: string; color: string; initials: string }
+function RecurrenceBadge({ recurrence }: { recurrence?: TaskRecurrence }) {
+  if (!recurrence || recurrence === 'none') return null;
+  const label = TASK_RECURRENCE_LABELS[recurrence];
+  return <span className="inline-flex items-center gap-1 bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700" title={`Repete: ${label.toLocaleLowerCase('pt-BR')}`} aria-label={`Repete: ${label.toLocaleLowerCase('pt-BR')}`}><Repeat className="h-3 w-3" />{label}</span>;
+}
+
+type ViewMode = 'list' | 'panel' | 'tasks' | 'all';
+
 interface Props {
   collaborator: string;
   color: string;
@@ -32,6 +40,8 @@ interface Props {
   allowCollaboratorFilter?: boolean;
   canPlanPriorities?: boolean;
   initialClientId?: string | null;
+  /** Which grouping opens first; Processos opens on everything together. */
+  initialViewMode?: ViewMode;
   onCreate: (data: PriorityFormData, clientName?: string) => Promise<Priority | null>;
   onCreateMany: (data: PriorityFormData, clientIds: string[]) => Promise<Priority[]>;
   onUpdate: (id: string, data: Partial<PriorityFormData>) => Promise<boolean>;
@@ -354,6 +364,7 @@ function PriorityItem({ priority, client, tasks, rowIndex, responsibleList, canP
           >
             <Clock3 className="h-3 w-3" />{age}d
           </span>
+          <RecurrenceBadge recurrence={root?.recurrence} />
           {priority.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Vencimento '}{new Date(`${priority.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {new Date(`${root?.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {priority.category && <span className="hidden bg-amber-50 px-1.5 py-0.5 capitalize text-amber-800 lg:inline">{categoryLabel(priority.category)}</span>}
@@ -625,6 +636,7 @@ function TaskItem({ task, client, tasks, rowIndex, responsibleList, contextOnly 
         <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
           <span className="inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 text-slate-600" aria-label={task.completed ? `${age} dias de duração` : `${age} dias desde a criação`} title={task.completed ? `${age} dias de duração` : `${age} dias desde a criação`}><Clock3 className="h-3 w-3" />{age}d</span>
           <span style={{ color: config.color, backgroundColor: colorWithAlpha(config.color, '12') }} className="px-1.5 py-0.5 font-semibold">{config.label}</span>
+          <RecurrenceBadge recurrence={task.recurrence} />
           {task.due_date && <span className={`px-1.5 py-0.5 ${overdue ? 'bg-red-50 font-semibold text-red-700' : 'bg-sky-50 text-sky-700'}`}>{overdue ? 'Atrasada · ' : 'Vencimento '}{new Date(`${task.due_date}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {scheduled && <span className="bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">Volta em {new Date(`${task.scheduled_for}T12:00:00`).toLocaleDateString('pt-BR')}</span>}
           {!!children.length && <span className="inline-flex items-center gap-1 bg-indigo-50 px-1.5 py-0.5 text-indigo-700"><ListChecks className="h-3 w-3" />{children.filter(item => item.completed).length}/{children.length} subtarefas</span>}
@@ -685,8 +697,9 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
   const [assignee, setAssignee] = useState(defaultAssignee);
   const [dueDate, setDueDate] = useState('');
   const [scheduledFor, setScheduledFor] = useState('');
+  const [recurrence, setRecurrence] = useState<TaskRecurrence>('none');
   const [saving, setSaving] = useState(false);
-  useEffect(() => { if (open) { setTitle(''); setClientIds(presetClientId ? [presetClientId] : []); setAssignee(defaultAssignee); setDueDate(''); setScheduledFor(''); } }, [open, presetClientId, defaultAssignee]);
+  useEffect(() => { if (open) { setTitle(''); setClientIds(presetClientId ? [presetClientId] : []); setAssignee(defaultAssignee); setDueDate(''); setScheduledFor(''); setRecurrence('none'); } }, [open, presetClientId, defaultAssignee]);
   const selectedClients = clients.filter(item => clientIds.includes(item.id));
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-md">
@@ -698,6 +711,7 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
           <div><Label htmlFor="new-task-assignee">Responsável</Label><select id="new-task-assignee" value={assignee} onChange={event => setAssignee(event.target.value)} className="mt-1 h-9 w-full border bg-white px-2 text-sm">{responsibleList.map(item => <option key={item.name} value={item.name}>{item.name}</option>)}</select></div>
           <div><Label htmlFor="new-task-due">Vencimento</Label><Input id="new-task-due" type="date" value={dueDate} onChange={event => setDueDate(event.target.value)} /></div>
           <div><Label htmlFor="new-task-scheduled">Planejamento</Label><Input id="new-task-scheduled" type="date" value={scheduledFor} onChange={event => setScheduledFor(event.target.value)} /></div>
+          <div><Label htmlFor="new-task-recurrence">Repetição</Label><select id="new-task-recurrence" value={recurrence} onChange={event => setRecurrence(event.target.value as TaskRecurrence)} className="mt-1 h-9 w-full border bg-white px-2 text-sm">{(Object.keys(TASK_RECURRENCE_LABELS) as TaskRecurrence[]).map(item => <option key={item} value={item}>{TASK_RECURRENCE_LABELS[item]}</option>)}</select></div>
         </div>
       </div>
       <DialogFooter>
@@ -705,7 +719,7 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
         <Button type="button" disabled={!title.trim() || selectedClients.length === 0 || !assignee || saving} onClick={async () => {
           if (selectedClients.length === 0) return;
           setSaving(true);
-          const created = await Promise.all(selectedClients.map(client => onCreate(client.id, { title: title.trim(), assigned_to: [assignee], due_date: dueDate || undefined, scheduled_for: scheduledFor || undefined }, client.name)));
+          const created = await Promise.all(selectedClients.map(client => onCreate(client.id, { title: title.trim(), assigned_to: [assignee], due_date: dueDate || undefined, scheduled_for: scheduledFor || undefined, recurrence }, client.name)));
           setSaving(false);
           if (created.every(Boolean)) onOpenChange(false);
         }}>Criar tarefa</Button>
@@ -714,7 +728,7 @@ function NewTaskModal({ open, onOpenChange, clients, responsibleList, defaultAss
   </Dialog>;
 }
 
-export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanPriorities = true, initialClientId, onCreate, onCreateMany, onUpdate, onDelete, onDemote, onPromote, onCreateSubtask, onToggleTask, onUpdateTask, onDeleteTask, onRefreshTasks }: Props) {
+export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanPriorities = true, initialClientId, initialViewMode = 'list', onCreate, onCreateMany, onUpdate, onDelete, onDemote, onPromote, onCreateSubtask, onToggleTask, onUpdateTask, onDeleteTask, onRefreshTasks }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Priority | null>(null);
   const [presetClientId, setPresetClientId] = useState<string | null>(null);
@@ -728,7 +742,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
   const [search, setSearch] = useState('');
   const [clientFilter, setClientFilter] = useState(initialClientId || 'all');
   const [collaboratorFilter, setCollaboratorFilter] = useState(collaborator);
-  const [viewMode, setViewMode] = useState<'list' | 'panel' | 'tasks' | 'all'>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
   const [sortMode, setSortMode] = useState<SortMode>('weight-time');
   useEffect(() => setClientFilter(initialClientId || 'all'), [initialClientId]);
   useEffect(() => setCollaboratorFilter(collaborator), [collaborator]);
@@ -960,7 +974,7 @@ export function PrioritiesTab({ collaborator, color, isTeamView, priorities, tas
         </div>
       </section>;
     })}</div>}
-    <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} linkedTaskTitle={editing ? rootTaskFor(editing, tasks)?.title : undefined} linkedTaskScheduledFor={editing ? rootTaskFor(editing, tasks)?.scheduled_for : undefined} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} allowMultipleClients={!editing} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async (data, clientIds) => {
+    <PriorityModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} linkedTaskTitle={editing ? rootTaskFor(editing, tasks)?.title : undefined} linkedTaskScheduledFor={editing ? rootTaskFor(editing, tasks)?.scheduled_for : undefined} linkedTaskRecurrence={editing ? rootTaskFor(editing, tasks)?.recurrence : undefined} defaultAssignee={isTeamView ? undefined : collaborator} presetClientId={presetClientId} allowMultipleClients={!editing} lockClientId={Boolean(editing?.client_id)} clients={clients} responsibleList={responsibleList} onSubmit={async (data, clientIds) => {
       if (editing) { if (await onUpdate(editing.id, data)) { await onRefreshTasks(); setModalOpen(false); } }
       else {
         const created = clientIds && clientIds.length > 1

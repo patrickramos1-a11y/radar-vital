@@ -37,7 +37,7 @@ export function reconcileProcesses(tasks: Task[], priorities: Priority[]): Proce
     .map(priority => [priority.source_task_id!, priority]));
   const pairedPriorityIds = new Set<string>();
 
-  const processes = tasks.map(task => {
+  const processes: UnifiedProcess[] = tasks.map(task => {
     const linked = task.priority_id ? priorityById.get(task.priority_id) : undefined;
     const bySource = priorityBySourceTask.get(task.id);
     if (linked && bySource && linked.id !== bySource.id) {

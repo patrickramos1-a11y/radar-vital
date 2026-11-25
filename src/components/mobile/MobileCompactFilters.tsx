@@ -101,9 +101,9 @@ export function MobileCompactFilters({
           <UserPlus className="w-4 h-4" />
         </button>
         <Link
-          to="/minhas-prioridades"
-          title="Minhas prioridades"
-          aria-label="Minhas prioridades"
+          to="/processos"
+          title="Meus processos"
+          aria-label="Meus processos"
           className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg border border-amber-400/40 bg-amber-50 text-amber-700"
         >
           <Star className="w-4 h-4" />

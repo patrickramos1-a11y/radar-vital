@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, Check, ChevronDown, Flame, Minus, Search, Siren } f
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Priority, PriorityFormData, PriorityStatus } from '@/types/priority';
 import { Client } from '@/types/client';
-import { TASK_MODALITY_CONFIG, TaskModality } from '@/types/task';
+import { TASK_MODALITY_CONFIG, TASK_RECURRENCE_LABELS, TaskModality, TaskRecurrence } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +21,7 @@ interface Props {
   editing: Priority | null;
   linkedTaskTitle?: string;
   linkedTaskScheduledFor?: string | null;
+  linkedTaskRecurrence?: TaskRecurrence;
   defaultAssignee?: string;
   presetTitle?: string;
   presetClientId?: string | null;
@@ -56,6 +57,7 @@ export function PriorityModal({
   editing,
   linkedTaskTitle,
   linkedTaskScheduledFor,
+  linkedTaskRecurrence,
   defaultAssignee,
   presetTitle,
   presetClientId,
@@ -79,6 +81,7 @@ export function PriorityModal({
   const [assignedTo, setAssignedTo] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [scheduledFor, setScheduledFor] = useState('');
+  const [recurrence, setRecurrence] = useState<TaskRecurrence>('none');
   const [weight, setWeight] = useState(1);
   const [category, setCategory] = useState<TaskModality>('levantamento');
   const [status, setStatus] = useState<PriorityStatus>('aberta');
@@ -96,6 +99,7 @@ export function PriorityModal({
       setAssignedTo(editing.assigned_to.slice(0, 1));
       setDueDate(editing.due_date || '');
       setScheduledFor(linkedTaskScheduledFor || '');
+      setRecurrence(linkedTaskRecurrence || 'none');
       setWeight(editing.weight || 1);
       setCategory((editing.category as TaskModality) || 'levantamento');
       setStatus(editing.status);
@@ -109,6 +113,7 @@ export function PriorityModal({
       setAssignedTo(defaultAssignee ? [defaultAssignee] : []);
       setDueDate('');
       setScheduledFor('');
+      setRecurrence('none');
       setWeight(1);
       setCategory('levantamento');
       setStatus('aberta');
@@ -116,7 +121,7 @@ export function PriorityModal({
     setTargetQuery('');
     setTargetPickerOpen(false);
     setSubmitting(false);
-  }, [open, editing, defaultAssignee, presetTitle, presetClientId, presetDescription, linkedTaskScheduledFor]);
+  }, [open, editing, defaultAssignee, presetTitle, presetClientId, presetDescription, linkedTaskScheduledFor, linkedTaskRecurrence]);
 
   const selectedUniverseTarget = universeOptions.find(item => item.id === universeItemId);
 
@@ -152,6 +157,7 @@ export function PriorityModal({
         assigned_to: assignedTo.slice(0, 1),
         due_date: dueDate || null,
         scheduled_for: scheduledFor || null,
+        ...(universeItemId ? {} : { recurrence }),
         weight: Math.min(5, Math.max(1, Number(weight) || 1)),
         category,
         status,
@@ -245,6 +251,13 @@ export function PriorityModal({
                   <Input type="date" value={scheduledFor} onChange={event => setScheduledFor(event.target.value)} />
                 </div>
               </div>
+              {!useUniverseRamos && <div>
+                <Label htmlFor="priority-recurrence">Repetição</Label>
+                <select id="priority-recurrence" value={recurrence} onChange={event => setRecurrence(event.target.value as TaskRecurrence)} className="h-10 w-full border bg-background px-2 text-sm">
+                  {(Object.keys(TASK_RECURRENCE_LABELS) as TaskRecurrence[]).map(item => <option key={item} value={item}>{TASK_RECURRENCE_LABELS[item]}</option>)}
+                </select>
+                {recurrence !== 'none' && <p className="mt-1 text-[11px] text-muted-foreground">Ao concluir, o próximo período abre sozinho, com o mesmo cliente e responsável.</p>}
+              </div>}
             </div>
           )}
 

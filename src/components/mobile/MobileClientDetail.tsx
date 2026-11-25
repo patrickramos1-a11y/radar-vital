@@ -171,7 +171,7 @@ export function MobileClientDetail({
                 color="rgb(245, 158, 11)"
                 onClick={() => {
                   onClose();
-                  navigate(`/minhas-prioridades?clientId=${encodeURIComponent(client.id)}`);
+                  navigate(`/processos?clientId=${encodeURIComponent(client.id)}`);
                 }}
               />
               <ActionButton

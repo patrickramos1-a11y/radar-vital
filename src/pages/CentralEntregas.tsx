@@ -13,7 +13,6 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { TeamSelector, TEAM_VIEW } from '@/components/central-entregas/TeamSelector';
 import { TeamOverview } from '@/components/central-entregas/TeamOverview';
 import { PrioritiesTab } from '@/components/central-entregas/PrioritiesTab';
-import { TasksTab } from '@/components/central-entregas/TasksTab';
 import { CommentsTab } from '@/components/central-entregas/CommentsTab';
 import { DeliverablesTab } from '@/components/central-entregas/DeliverablesTab';
 import { HistoryTab } from '@/components/central-entregas/HistoryTab';
@@ -28,6 +27,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { QuickCreatePanel } from '@/components/central-entregas/QuickCreatePanel';
 import { filterClientsByScope, type ClientScope } from '@/lib/clientScope';
 import { useSearchParams } from 'react-router-dom';
+import { normalizeCentralTab } from '@/components/layout/navigationModel';
 
 
 const DEFAULT_NAMES = ['Patrick', 'Celine', 'Gabi', 'Darley', 'Vanessa'];
@@ -49,18 +49,17 @@ export default function CentralEntregas() {
   const challengesHook = useChallenges();
   const treasury = useTreasury();
   const [clientScope, setClientScope] = useState<ClientScope>('all');
-  const requestedTab = searchParams.get('tab');
+  const requestedTab = normalizeCentralTab(searchParams.get('tab'));
   const activeTab = [
-    'priorities',
-    'tasks',
+    'processos',
     'comments',
     'deliverables',
     'challenges',
     'history',
     'performance',
-  ].includes(requestedTab ?? '')
-    ? requestedTab!
-    : 'priorities';
+  ].includes(requestedTab)
+    ? requestedTab
+    : 'processos';
 
   const requestedClientScope = useMemo<ClientScope | null>(() => {
     const clientId = searchParams.get('clientId');
@@ -251,11 +250,11 @@ export default function CentralEntregas() {
       {
         key: 'priorities', label: 'Prioridades', value: workload.openPriorities, icon: Star,
         detail: workload.scheduledPriorities > 0 ? `+${workload.scheduledPriorities} planejadas` : undefined,
-        hint: 'Prioridades ativas (as planejadas para depois aparecem à parte)', active: activeTab === 'priorities', onClick: goTo('priorities'),
+        hint: 'Prioridades ativas (as planejadas para depois aparecem à parte)', active: activeTab === 'processos', onClick: goTo('processos'),
       },
       {
         key: 'tasks', label: 'Tarefas', value: workload.openTasks, icon: CheckSquare,
-        hint: 'Tarefas em aberto fora das prioridades', active: activeTab === 'tasks', onClick: goTo('tasks'),
+        hint: 'Tarefas em aberto fora das prioridades', active: activeTab === 'processos', onClick: goTo('processos'),
       },
       {
         key: 'overdue', label: 'Atrasos', value: workload.overdue, icon: AlertTriangle,
@@ -336,11 +335,12 @@ export default function CentralEntregas() {
             }}
             className="w-full"
           >
-            <TabsContent value="priorities" className="mt-0">
+            <TabsContent value="processos" className="mt-0">
               <PrioritiesTab
                 collaborator={selectedInfo.name}
                 color={selectedInfo.color}
                 isTeamView={isTeamView}
+                initialViewMode="all"
                 priorities={scopedPriorities}
                 tasks={scopedTasks}
                 clients={scopedClients}
@@ -357,24 +357,6 @@ export default function CentralEntregas() {
                 onUpdateTask={tasksHook.updateTask}
                 onDeleteTask={tasksHook.deleteTask}
                 onRefreshTasks={tasksHook.refetch}
-              />
-            </TabsContent>
-
-            <TabsContent value="tasks" className="mt-0">
-              <TasksTab
-                collaborator={selectedInfo.name}
-                color={selectedInfo.color}
-                isTeamView={isTeamView}
-                tasks={scopedTasks}
-                priorities={scopedPriorities}
-                clients={scopedClients}
-                responsibleList={responsibleList}
-                onPromote={prioritiesHook.promoteTaskToPriority}
-                onRefreshTasks={tasksHook.refetch}
-                onToggleComplete={tasksHook.toggleComplete}
-                onCreateTask={tasksHook.addTask}
-                onUpdateTask={tasksHook.updateTask}
-                getDaysOpen={tasksHook.getDaysOpen}
               />
             </TabsContent>
 

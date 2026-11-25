@@ -65,4 +65,10 @@ describe('task operational rules', () => {
     expect(getNextRecurrenceDate('2026-10-18', 'monthly')).toBe('2026-11-18');
     expect(getNextRecurrenceDate('2026-10-18', 'none')).toBeNull();
   });
+
+  it('keeps monthly repetitions inside shorter months', () => {
+    expect(getNextRecurrenceDate('2027-01-31', 'monthly')).toBe('2027-02-28');
+    expect(getNextRecurrenceDate('2028-01-31', 'monthly')).toBe('2028-02-29');
+    expect(getNextRecurrenceDate('2026-12-15', 'monthly')).toBe('2027-01-15');
+  });
 });
