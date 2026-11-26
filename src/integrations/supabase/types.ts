@@ -2951,8 +2951,15 @@ export type Database = {
           priority_changed_at: string
           priority_id: string | null
           recurrence: string
+          recurrence_anchor_date: string | null
+          recurrence_anchor_label: string | null
+          recurrence_end_date: string | null
+          recurrence_first: string | null
           recurrence_interval: number | null
+          recurrence_lead_days: number
+          recurrence_max_count: number | null
           recurrence_origin_id: string | null
+          recurrence_paused_at: string | null
           recurrence_unit: string | null
           scheduled_for: string | null
           sort_order: number
@@ -2980,8 +2987,15 @@ export type Database = {
           priority_changed_at?: string
           priority_id?: string | null
           recurrence?: string
+          recurrence_anchor_date?: string | null
+          recurrence_anchor_label?: string | null
+          recurrence_end_date?: string | null
+          recurrence_first?: string | null
           recurrence_interval?: number | null
+          recurrence_lead_days?: number
+          recurrence_max_count?: number | null
           recurrence_origin_id?: string | null
+          recurrence_paused_at?: string | null
           recurrence_unit?: string | null
           scheduled_for?: string | null
           sort_order?: number
@@ -3009,8 +3023,15 @@ export type Database = {
           priority_changed_at?: string
           priority_id?: string | null
           recurrence?: string
+          recurrence_anchor_date?: string | null
+          recurrence_anchor_label?: string | null
+          recurrence_end_date?: string | null
+          recurrence_first?: string | null
           recurrence_interval?: number | null
+          recurrence_lead_days?: number
+          recurrence_max_count?: number | null
           recurrence_origin_id?: string | null
+          recurrence_paused_at?: string | null
           recurrence_unit?: string | null
           scheduled_for?: string | null
           sort_order?: number
