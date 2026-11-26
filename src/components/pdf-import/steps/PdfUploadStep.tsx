@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, Loader2, X } from 'lucide-react';
+import { Upload, FileText, Loader2, X } from '@/components/icones';
 import { useDropzone } from 'react-dropzone';
 
 interface PdfUploadStepProps {

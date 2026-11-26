@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bomb, Building2, MessageCircle, ListChecks, Sparkles } from "lucide-react";
+import { Bomb, Building2, MessageCircle, ListChecks, Sparkles } from "@/components/icones";
 import { Client } from "@/types/client";
 import { Collaborator } from "@/types/collaborator";
 import { Task } from "@/types/task";

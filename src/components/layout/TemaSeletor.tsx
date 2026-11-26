@@ -18,15 +18,21 @@ function IconeModo({ modo }: { modo: TemaModo }) {
 }
 
 /** Seletor Auto/Dia/Noite da Ramos. No modo Auto, troca sozinho às 6h e às 18h. */
-export function TemaSeletor({ compacto = false, className }: { compacto?: boolean; className?: string }) {
+export function TemaSeletor({ compacto = false, travadoNoClaro = false, className }: { compacto?: boolean; travadoNoClaro?: boolean; className?: string }) {
   const [modo, setModo] = useState<TemaModo>(() => lerModo());
 
   useEffect(() => {
+    // O Plano Mestre fica no visual anterior, sempre claro.
+    if (travadoNoClaro) {
+      aplicarTema('claro');
+      document.documentElement.dataset.temaModo = modo;
+      return;
+    }
     aplicarTema(modo);
     if (modo !== 'auto') return;
     const relogio = window.setInterval(() => aplicarTema('auto'), 60_000);
     return () => window.clearInterval(relogio);
-  }, [modo]);
+  }, [modo, travadoNoClaro]);
 
   const escolher = (proximo: TemaModo) => {
     guardarModo(proximo);
@@ -38,7 +44,8 @@ export function TemaSeletor({ compacto = false, className }: { compacto?: boolea
       key={opcao.modo}
       type="button"
       aria-pressed={modo === opcao.modo}
-      title={opcao.dica}
+      disabled={travadoNoClaro}
+      title={travadoNoClaro ? 'O Plano Mestre fica sempre no claro' : opcao.dica}
       aria-label={compacto ? `Tema: ${opcao.nome}` : undefined}
       onClick={() => escolher(opcao.modo)}
     >

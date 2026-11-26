@@ -1,4 +1,4 @@
-import { MessageSquare, CheckSquare, Building2 } from "lucide-react";
+import { MessageSquare, CheckSquare, Building2 } from "@/components/icones";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES } from "@/types/client";
 import { TVDensidade } from "@/types/tvMode";
 import { cn } from "@/lib/utils";

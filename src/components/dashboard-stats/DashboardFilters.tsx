@@ -1,6 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "@/components/icones";
 import { DashboardFilters as Filters } from "@/hooks/useDashboardStats";
 
 interface DashboardFiltersProps {

@@ -1,4 +1,4 @@
-import { Users } from 'lucide-react';
+import { Users } from '@/components/icones';
 import { cn } from '@/lib/utils';
 import { CollaboratorAvatar } from './CollaboratorAvatar';
 

@@ -1,10 +1,10 @@
 import { useState, useMemo, type ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from '@/components/icones';
 import { Task } from '@/types/task';
 import { Deliverable } from '@/types/deliverable';
 import { Client } from '@/types/client';
 import { assigneeMatches } from '@/lib/taskAssignee';
-import { Workflow, Package, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
+import { Workflow, Package, MessageSquare, ChevronDown, ChevronRight } from '@/components/icones';
 import { PROCESS_WEIGHT_CONFIG, normalizeProcessWeight, weightForUrgency } from '@/lib/processWeight';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

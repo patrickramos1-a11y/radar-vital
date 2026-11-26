@@ -1,9 +1,10 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, RefreshCw } from "lucide-react";
+import { Menu, RefreshCw } from "@/components/icones";
 import { useSidebar } from "@/components/ui/sidebar";
 import { UserSelector } from "./UserSelector";
 import { TemaSeletor } from "./TemaSeletor";
+import { isLegacyDesignRoute } from "./AppLayout";
 import { activeModule, activeView, navigationModules } from "./navigationModel";
 import "./app-navigation.css";
 
@@ -41,12 +42,12 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
         {navigationModules.map((entry) => {
           const Icon = entry.icon;
           const selected = module.key === entry.key;
-          return <Link key={entry.key} to={entry.href} aria-current={selected ? "page" : undefined} className={`app-navigation-module ${selected ? "is-active" : ""}`}><Icon className="h-[17px] w-[17px] shrink-0" /><span>{entry.label}</span></Link>;
+          return <Link key={entry.key} to={entry.href} viewTransition aria-current={selected ? "page" : undefined} className={`app-navigation-module ${selected ? "is-active" : ""}`}><Icon className="h-[17px] w-[17px] shrink-0" /><span>{entry.label}</span></Link>;
         })}
       </nav>
 
       <div className="app-navigation-right">
-        <TemaSeletor compacto />
+        <TemaSeletor compacto travadoNoClaro={isLegacyDesignRoute(location.pathname)} />
         <button type="button" className="app-navigation-icon app-navigation-refresh" aria-label="Atualizar aplicativo e limpar arquivos temporários" title="Atualizar aplicativo" onClick={onRefresh}><RefreshCw className="h-[18px] w-[18px]" /></button>
         <UserSelector />
       </div>
@@ -57,7 +58,7 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
         {module.views.map((entry) => {
           const Icon = entry.icon;
           const selected = view === entry.key;
-          return <Link key={entry.key} to={entry.href} aria-current={selected ? "page" : undefined} className={`app-navigation-view ${selected ? "is-active" : ""}`}><Icon className="h-[15px] w-[15px] shrink-0" /><span>{entry.label}</span></Link>;
+          return <Link key={entry.key} to={entry.href} viewTransition aria-current={selected ? "page" : undefined} className={`app-navigation-view ${selected ? "is-active" : ""}`}><Icon className="h-[15px] w-[15px] shrink-0" /><span>{entry.label}</span></Link>;
         })}
       </nav>
       {tools && <div className="app-navigation-tools">{tools}</div>}

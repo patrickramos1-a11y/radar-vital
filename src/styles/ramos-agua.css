@@ -1,0 +1,137 @@
+/* ==========================================================================
+   Radar Vital no tom ÁGUA da Ramos (pedido do Patrick, 26/11/2026).
+   A marca continua verde (logo, sucesso, "concluído"); o destaque do sistema
+   (botão principal, item atual, foco, acento dos ícones, contorno de luz) é
+   o azul-rio da biblioteca: .tom-agua, .botao-neon--agua, --luz-cor #2a86c8.
+   Ativado por <html class="tom-agua"> no index.html.
+   ========================================================================== */
+
+html.tom-agua {
+  --agua-viva: #3a9ad9;      /* botão principal, luz, item atual sobre escuro */
+  --agua-escura: #1a6090;    /* texto e link sobre claro (AA 6,6:1) */
+  --agua-clara: #d6e7f3;     /* fundo de etiqueta e de item atual */
+  --agua-sobre: #10203a;     /* texto sobre o azul vivo (marinho, 5,3:1) */
+  --acento: #2a86c8;         /* detalhe dos ícones Ramos */
+  --luz-cor: #2a86c8;        /* contorno de luz (efeitos.css) */
+  --ramos-escura: var(--agua-escura);
+
+  --primary: 204 68% 54%;
+  --primary-foreground: 218 57% 15%;
+  --accent: 205 55% 90%;
+  --accent-foreground: 204 69% 33%;
+  --ring: 204 69% 33%;
+  --card-highlight: 204 68% 54%;
+  --sidebar-primary: 204 68% 54%;
+  --sidebar-primary-foreground: 218 57% 15%;
+  --sidebar-accent: 205 55% 94%;
+  --sidebar-accent-foreground: 204 69% 33%;
+  --sidebar-ring: 204 69% 33%;
+  --glass-hover: 204 68% 54% / 0.06;
+}
+
+html.tom-agua[data-tema="escuro"] {
+  --agua-escura: #8ccaf2;
+  --acento: #6fb6e6;
+  --luz-cor: #3a9ad9;
+  --ramos-escura: #8ccaf2;
+
+  --accent: 207 40% 18%;
+  --accent-foreground: 204 76% 75%;
+  --ring: 204 76% 75%;
+  --sidebar-accent: 207 40% 18%;
+  --sidebar-accent-foreground: 204 76% 75%;
+  --sidebar-ring: 204 76% 75%;
+}
+
+/* Texto "primary" sobre claro usa o azul escuro (o vivo não passa AA no branco). */
+html.tom-agua:not([data-tema="escuro"]) :is(.text-primary, .hover\:text-primary:hover) { color: var(--agua-escura); }
+html.tom-agua[data-tema="escuro"] .text-primary { color: #8ccaf2; }
+
+/* Topo: item atual em azul. */
+html.tom-agua .app-navigation {
+  --nav-atual: #1a6090;
+  --nav-atual-fundo: rgb(58 154 217 / 12%);
+  --nav-atual-fio: rgb(58 154 217 / 45%);
+  --nav-acento: #3a9ad9;
+}
+html.tom-agua[data-tema="escuro"] .app-navigation {
+  --nav-atual: #8ccaf2;
+  --nav-atual-fundo: rgb(58 154 217 / 16%);
+  --nav-atual-fio: rgb(140 202 242 / 40%);
+}
+
+/* ---- Ícones Ramos (um padrão só) ------------------------------------------
+   :where() deixa as classes de tamanho das telas (h-4 w-4…) valerem. */
+:where(.icone-ramos) {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+  --r-espessura: 1.6;
+}
+:where(.h-3.icone-ramos, .h-3\.5.icone-ramos, .h-\[12px\].icone-ramos) { --r-espessura: 1.4; }
+:where(.h-6.icone-ramos, .h-7.icone-ramos, .h-8.icone-ramos) { --r-espessura: 1.8; }
+:root { --acento: #0dd375; }
+
+/* ---- Selo de vidro no tom água: o arco da logo vira azul e brilha azul ---- */
+html.tom-agua .selo-ramos {
+  --acento: #2a86c8;
+  --r-traco: #10203a;
+  --selo-tinta: rgba(58, 154, 217, .12);
+  --selo-brilho: drop-shadow(0 0 1.5px rgba(58, 154, 217, .55)) drop-shadow(0 0 5px rgba(58, 154, 217, .35));
+  --selo-arco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M18.3 19.1A10.2 10.2 0 1 1 21.6 13.8' fill='none' stroke='%232a86c8' stroke-width='.55' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+html.tom-agua[data-tema="escuro"] .selo-ramos {
+  --acento: #8ccaf2;
+  --r-traco: #e6f1f9;
+  --selo-tinta: rgba(58, 154, 217, .2);
+  --selo-brilho: drop-shadow(0 0 2px rgba(140, 202, 242, .8)) drop-shadow(0 0 8px rgba(58, 154, 217, .55));
+}
+html.tom-agua :is(.selo-ramos--aceso, [aria-current="page"] .selo-ramos, [aria-pressed="true"] .selo-ramos, .selo-ramos--atual) {
+  --selo-arco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10.2' fill='none' stroke='%233a9ad9' stroke-width='.55'/%3E%3C/svg%3E");
+  --selo-tinta: rgba(58, 154, 217, .3);
+}
+.selo-ramos { --selo: 36px; }
+.selo-ramos > svg { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- Transição entre páginas (View Transitions) ---- */
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: .22s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* ==========================================================================
+   Fora do design novo (pedido do Patrick, 26/11/2026): o Plano Mestre inteiro
+   fica no visual anterior, sempre claro. O AppLayout marca a área com
+   data-design="legado" e o tema fica fixo no claro nessas páginas.
+   ========================================================================== */
+[data-design="legado"] {
+  --background: 0 0% 100%;
+  --foreground: 150 10% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 150 10% 15%;
+  --card-elevated: 100 10% 97%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 150 10% 15%;
+  --primary: 95 55% 41%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 100 12% 92%;
+  --secondary-foreground: 105 20% 25%;
+  --muted: 100 8% 93%;
+  --muted-foreground: 100 5% 46%;
+  --accent: 105 45% 20%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 100 10% 88%;
+  --input: 100 10% 92%;
+  --ring: 95 55% 41%;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+[data-design="legado"] :is(h1, h2, h3, h4, h5, h6) { font-family: 'Space Grotesk', system-ui, sans-serif; letter-spacing: normal; }
+[data-design="legado"] .text-primary { color: hsl(95 55% 41%); }

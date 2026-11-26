@@ -1,4 +1,4 @@
-import { MessageCircle, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
+import { MessageCircle, ListChecks, ShieldCheck, Sparkles } from "@/components/icones";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES } from "@/types/client";
 import type { AuditClientStatus } from "@/types/audit";
 

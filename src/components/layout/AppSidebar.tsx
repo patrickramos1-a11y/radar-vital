@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, Target, Globe2, ShieldCheck, Landmark } from "lucide-react";
+import { Settings, LayoutDashboard, Box, MessageSquare, FileUp, LucideIcon, BarChart3, Target, Globe2, ShieldCheck, Landmark } from "@/components/icones";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 
 interface NavItem {
@@ -26,7 +26,7 @@ const configItems: NavItem[] = [
   { title: "Configurar", icon: Settings, href: "/config" },
 ];
 
-const painelAcIcon = "/icons/ramos-ac-app-icon-192-v3.png";
+const painelAcIcon = "/ramos/marca/ramos-circulo.svg";
 
 export function AppSidebar() {
   const location = useLocation();

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, X, Download, Loader2, Users, FileText, TrendingUp } from 'lucide-react';
+import { Check, X, Download, Loader2, Users, FileText, TrendingUp } from '@/components/icones';
 import type { ClientMatchResult, ParsedPdfData } from '@/types/pdfImport';
 
 interface PdfPreviewStepProps {

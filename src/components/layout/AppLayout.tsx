@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { AppNavigation } from "./AppNavigation";
 import {
@@ -31,7 +32,14 @@ async function clearTemporaryAppData() {
   }
 }
 
+/** Plano Mestre: fica no visual anterior (pedido do Patrick, 26/11/2026). */
+export function isLegacyDesignRoute(pathname: string) {
+  return pathname.startsWith("/universo-ramos/plano-mestre");
+}
+
 export function AppLayout({ children, navigationTools }: AppLayoutProps) {
+  const { pathname } = useLocation();
+  const legado = isLegacyDesignRoute(pathname);
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="flex min-h-screen w-full">
@@ -40,7 +48,7 @@ export function AppLayout({ children, navigationTools }: AppLayoutProps) {
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
           <AppNavigation onRefresh={() => void clearTemporaryAppData()} tools={navigationTools} />
 
-          <main className="flex-1 overflow-hidden">
+          <main className="flex-1 overflow-hidden" data-design={legado ? "legado" : undefined}>
             {children}
           </main>
         </SidebarInset>

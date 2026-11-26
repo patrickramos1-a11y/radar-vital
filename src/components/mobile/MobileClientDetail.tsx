@@ -11,7 +11,7 @@ import {
   Pencil,
   ShieldCheck,
   Workflow
-} from "lucide-react";
+} from "@/components/icones";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Client } from "@/types/client";
 import type { Collaborator } from "@/types/collaborator";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Settings2, Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, X } from "lucide-react";
+import { ExternalLink, Settings2, Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, X } from "@/components/icones";
 import { usePanelLinks } from "@/hooks/usePanelLinks";
 import { PanelLink, PanelLinkFormData, PANEL_TYPES } from "@/types/panelLink";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

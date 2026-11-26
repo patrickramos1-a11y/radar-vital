@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, ListChecks, Workflow, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check, UserX } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, ListChecks, Workflow, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check, UserX } from "@/components/icones";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import type { ReactNode } from "react";

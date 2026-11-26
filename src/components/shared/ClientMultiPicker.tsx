@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, Search, X } from 'lucide-react';
+import { Check, Search, X } from '@/components/icones';
 import { Client } from '@/types/client';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';

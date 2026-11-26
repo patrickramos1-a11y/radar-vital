@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useClients } from "@/contexts/ClientContext";
 import { useMunicipalities } from "@/hooks/useMunicipalities";
 import { ClientType, UniversoRamosCategory, generateInitials, DEFAULT_COLLABORATORS, DEFAULT_COLLABORATOR_DEMAND_COUNTS, DEFAULT_LICENSE_BREAKDOWN, DEFAULT_PROCESS_BREAKDOWN } from "@/types/client";
-import { Landmark, Briefcase, Globe2, Upload, X, Search, Check, Loader2 } from "lucide-react";
+import { Landmark, Briefcase, Globe2, Upload, X, Search, Check, Loader2 } from "@/components/icones";
 import { toast } from "sonner";
 
 interface NewClientDialogProps {

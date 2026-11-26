@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ListPlus, Plus, Trash2 } from "lucide-react";
+import { Check, ListPlus, Plus, Trash2 } from "@/components/icones";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";

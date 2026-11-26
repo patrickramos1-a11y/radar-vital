@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/components/icones";
 import { Button } from "@/components/ui/button";
 
 interface KPICardProps {
@@ -51,7 +51,7 @@ export function VisualPanelHeader({ title, subtitle, icon, detailRoute, children
     <div className="px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm shrink-0">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2.5">
-          {icon && <div className="text-primary">{icon}</div>}
+          {icon && <span className="selo-ramos" style={{ "--selo": "40px" } as React.CSSProperties} aria-hidden="true">{icon}</span>}
           <div>
             <h1 className="text-lg font-bold text-foreground leading-tight">{title}</h1>
             {subtitle && <p className="text-xs text-muted-foreground/70">{subtitle}</p>}

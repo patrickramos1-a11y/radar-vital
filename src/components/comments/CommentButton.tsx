@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle } from '@/components/icones';
 import { CommentsModal } from './CommentsModal';
 import { Button } from '@/components/ui/button';
 

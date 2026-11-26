@@ -13,7 +13,7 @@ import {
   RotateCcw,
   Sparkles,
   WalletCards,
-} from "lucide-react";
+} from "@/components/icones";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { CollaboratorAvatar } from "@/components/central-entregas/CollaboratorAvatar";
 import { Button } from "@/components/ui/button";

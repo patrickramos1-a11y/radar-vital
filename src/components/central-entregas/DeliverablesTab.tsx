@@ -10,7 +10,7 @@ import {
   Plus,
   Trash2,
   UserPlus,
-} from 'lucide-react';
+} from '@/components/icones';
 import { Button } from '@/components/ui/button';
 import { ClientCell } from './ClientCell';
 import { CollaboratorAvatar } from './CollaboratorAvatar';

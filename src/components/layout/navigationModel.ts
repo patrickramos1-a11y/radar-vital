@@ -1,11 +1,11 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/components/icones";
 import {
   Archive, BarChart3, BookOpen, BriefcaseBusiness, CalendarDays,
   ClipboardList, FileUp, GitBranch, Globe2, GraduationCap, Landmark,
   Layers3, LayoutDashboard, ListChecks, MessageSquare, Settings,
   ShieldCheck, ShieldAlert, Sparkles, Target, TrendingUp, Users,
   Package, Workflow,
-} from "lucide-react";
+} from "@/components/icones";
 
 export type NavigationItem = { label: string; href: string; icon: LucideIcon; key: string };
 export type NavigationModule = NavigationItem & { views: NavigationItem[]; context: "ac" | "ramos" };

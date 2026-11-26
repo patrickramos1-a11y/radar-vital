@@ -11,7 +11,7 @@ import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments
 import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippets";
 import { useAuth } from "@/contexts/AuthContext";
 import { Client } from "@/types/client";
-import { Users, Bomb, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "lucide-react";
+import { Users, Bomb, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "@/components/icones";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";

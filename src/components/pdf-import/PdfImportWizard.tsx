@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Upload, FileText, Users, CheckCircle2, ArrowLeft, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, Users, CheckCircle2, ArrowLeft, ArrowRight, Loader2, AlertTriangle } from '@/components/icones';
 import { useToast } from '@/hooks/use-toast';
 import { useCreatePdfImport, useProcessPdfImport, useCompleteImport } from '@/hooks/usePdfImports';
 import { parsePdf } from '@/lib/pdfParser';

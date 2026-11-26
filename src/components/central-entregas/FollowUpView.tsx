@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format, isSameWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarDays, ChevronDown, ChevronRight, Hourglass, MessageSquarePlus } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronRight, Hourglass, MessageSquarePlus } from '@/components/icones';
 import type { Client } from '@/types/client';
 import type { Task } from '@/types/task';
 import { buildProcesses, processesForAssignee, type Process } from '@/lib/processModel';

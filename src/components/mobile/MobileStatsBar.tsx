@@ -1,4 +1,4 @@
-import { Users } from "lucide-react";
+import { Users } from "@/components/icones";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileStatsBarProps {

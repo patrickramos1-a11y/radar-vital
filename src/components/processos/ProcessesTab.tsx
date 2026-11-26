@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownWideNarrow, Check, Clock3, LayoutGrid, List, ListChecks, MessageSquarePlus, MessageSquareText, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { ArrowDownWideNarrow, Check, Clock3, LayoutGrid, List, ListChecks, MessageSquarePlus, MessageSquareText, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from '@/components/icones';
 import type { Client } from '@/types/client';
 import type { Task } from '@/types/task';
 import { buildProcesses, compareProcesses, isProcessOpen, maximumWeightProcesses, processesForAssignee, type Process } from '@/lib/processModel';
@@ -251,7 +251,7 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
           <button type="button" aria-pressed={sortMode === 'weight'} onClick={() => setSortMode('weight')} title="Maior peso, depois vencimento mais próximo" aria-label="Ordenar por peso" className={cn('flex h-8 w-8 items-center justify-center', sortMode === 'weight' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-white')}><ArrowDownWideNarrow className="h-4 w-4" /></button>
           <button type="button" aria-pressed={sortMode === 'oldest'} onClick={() => setSortMode('oldest')} title="Mais antigos primeiro" aria-label="Ordenar pelos mais antigos" className={cn('flex h-8 w-8 items-center justify-center', sortMode === 'oldest' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-white')}><Clock3 className="h-4 w-4" /></button>
         </div>
-        <div className="relative min-w-[190px] flex-1"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><Input className="h-8 pl-8 text-xs" placeholder="Buscar processo ou cliente" aria-label="Buscar processo ou cliente" value={search} onChange={event => setSearch(event.target.value)} /></div>
+        <div className="luz luz--foco relative min-w-[190px] flex-1 rounded-md"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><Input className="h-8 pl-8 text-xs" placeholder="Buscar processo ou cliente" aria-label="Buscar processo ou cliente" value={search} onChange={event => setSearch(event.target.value)} /></div>
         <select aria-label="Filtrar cliente" value={clientFilter} onChange={event => setClientFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os clientes</option>{clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}</select>
         {allowCollaboratorFilter && <select aria-label="Filtrar responsável" value={collaboratorFilter} onChange={event => setCollaboratorFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os responsáveis</option>{responsibleList.map(person => <option key={person.name} value={person.name}>{person.name}</option>)}</select>}
         <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showCompleted} onChange={event => setShowCompleted(event.target.checked)} />Concluídos</label>
@@ -278,7 +278,7 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
           const headerBackground = colors.length > 1
             ? `linear-gradient(90deg, ${colors.map((item, index) => `${colorWithAlpha(item, '22')} ${Math.round(index * 100 / Math.max(1, colors.length - 1))}%`).join(', ')})`
             : colorWithAlpha(colors[0] || color, '18');
-          return <section key={clientId} className="client-card-compact min-w-0 overflow-hidden border-t-2 bg-white" style={{ borderTopColor: colors[0] || color }}>
+          return <section key={clientId} className="client-card-compact holofote min-w-0 overflow-hidden border-t-2 bg-white" style={{ borderTopColor: colors[0] || color }}>
             <header className="flex h-11 min-w-0 items-center border-b px-2" style={{ background: headerBackground }}>
               {quickOpen ? quickInput : <button type="button" onClick={() => client && setQuickClientId(client.id)} disabled={!client} title={client ? `Novo processo de peso Máxima para ${client.name}` : 'Sem cliente'} aria-label={client ? `Novo processo para ${client.name}` : 'Sem cliente'} className="flex h-full min-w-0 flex-1 items-center gap-2 text-left">
                 {client?.logoUrl && <img src={client.logoUrl} alt={`Logo ${client.name}`} className="h-8 w-12 shrink-0 object-contain" />}
@@ -291,7 +291,7 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
           </section>;
         }
 
-        return <section key={clientId} className="client-card-compact grid min-w-0 grid-cols-[72px_minmax(0,1fr)] overflow-hidden border-t-2 bg-white sm:grid-cols-[96px_minmax(0,1fr)]" style={{ borderTopColor: colors[0] || color }}>
+        return <section key={clientId} className="client-card-compact holofote grid min-w-0 grid-cols-[72px_minmax(0,1fr)] overflow-hidden border-t-2 bg-white sm:grid-cols-[96px_minmax(0,1fr)]" style={{ borderTopColor: colors[0] || color }}>
           <ClientSideRail client={client} count={items.length} onClick={client ? () => setQuickClientId(client.id) : undefined} />
           <div className="min-w-0">
             {quickOpen && <div className="flex h-10 items-center border-b bg-slate-50 px-1">{quickInput}</div>}

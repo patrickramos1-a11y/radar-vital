@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bomb } from "lucide-react";
+import { Bomb } from "@/components/icones";
 import {
   Dialog,
   DialogContent,

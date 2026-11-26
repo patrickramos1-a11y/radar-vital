@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut, User } from "lucide-react";
+import { ChevronDown, LogOut, User } from "@/components/icones";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,

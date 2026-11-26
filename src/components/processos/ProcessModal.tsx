@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Repeat } from 'lucide-react';
+import { Repeat } from '@/components/icones';
 import type { Client } from '@/types/client';
 import type { Task, TaskFormData } from '@/types/task';
 import { DEFAULT_PROCESS_WEIGHT, normalizeProcessWeight, type ProcessWeight } from '@/lib/processWeight';

@@ -1,4 +1,4 @@
-import { Users, Bomb, UserCheck, MessageCircle, ListChecks, CheckSquare, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Users, Bomb, UserCheck, MessageCircle, ListChecks, CheckSquare, ShieldCheck, AlertTriangle } from "@/components/icones";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileCompactHeaderProps {

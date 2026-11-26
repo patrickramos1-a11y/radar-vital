@@ -4,7 +4,7 @@ import { PdfImportWizard } from '@/components/pdf-import/PdfImportWizard';
 import { PdfImportsList } from '@/components/pdf-import/PdfImportsList';
 import { PdfImportDetails } from '@/components/pdf-import/PdfImportDetails';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText } from '@/components/icones';
 
 export default function RelatoriosPdf() {
   const [showWizard, setShowWizard] = useState(false);

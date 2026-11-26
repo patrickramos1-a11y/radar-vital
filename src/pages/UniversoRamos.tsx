@@ -9,7 +9,7 @@ import {
   Sparkles,
   UserPlus,
   Users,
-} from "lucide-react";
+} from "@/components/icones";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientCard } from "@/components/dashboard/ClientCard";
 import {

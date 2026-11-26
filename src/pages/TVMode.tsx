@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Play, Pause, SkipForward, SkipBack, Settings, Clock, 
   Monitor, Bomb, Users, MessageSquare, Building2, X, CheckSquare
-} from "lucide-react";
+} from "@/components/icones";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {

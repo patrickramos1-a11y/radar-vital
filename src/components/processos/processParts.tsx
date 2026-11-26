@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarClock, Check, Circle, Clock3, ExternalLink, Link2, Plus, Repeat, X } from 'lucide-react';
+import { CalendarClock, Check, Circle, Clock3, ExternalLink, Link2, Plus, Repeat, X } from '@/components/icones';
 import type { Client } from '@/types/client';
 import type { Task } from '@/types/task';
 import { recurrenceLabel } from '@/lib/processRecurrence';

@@ -8,7 +8,7 @@ import {
 } from "@/components/dashboard-stats";
 import { useDashboardStats, DashboardFilters } from "@/hooks/useDashboardStats";
 import { useClients } from "@/contexts/ClientContext";
-import { Users, Building2, MapPin } from "lucide-react";
+import { Users, Building2, MapPin } from "@/components/icones";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 

@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle2, Circle, Archive, AlertOctagon, Plus, Trash2, MessageSquarePlus, User, Users } from 'lucide-react';
+import { CheckCircle2, Circle, Archive, AlertOctagon, Plus, Trash2, MessageSquarePlus, User, Users } from '@/components/icones';
 import { toast } from 'sonner';
 import { ClientCell } from './ClientCell';
 import { CollaboratorAvatar } from './CollaboratorAvatar';

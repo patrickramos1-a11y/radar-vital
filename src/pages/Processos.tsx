@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Workflow } from 'lucide-react';
+import { ArrowLeft, Workflow } from '@/components/icones';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProcessesTab } from '@/components/processos/ProcessesTab';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +22,7 @@ export default function Processos() {
     <div className="mx-auto max-w-[1480px]">
       <Link to="/" className="inline-flex items-center gap-1 text-xs text-primary"><ArrowLeft className="h-4 w-4" />Voltar aos clientes</Link>
       <header className="mt-3 flex items-center gap-2">
-        <Workflow className="h-5 w-5 text-primary" aria-hidden />
+        <span className="selo-ramos" style={{ "--selo": "40px" } as React.CSSProperties} aria-hidden="true"><Workflow /></span>
         <div>
           <h1 className="text-lg font-semibold text-slate-900">Processos</h1>
           <p className="text-xs text-muted-foreground">Cada processo tem peso de 1 a 5, etapas, vencimento, planejamento e repetição. Peso 5 é Máxima.</p>

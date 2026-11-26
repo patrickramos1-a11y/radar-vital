@@ -4,7 +4,7 @@ import {
   ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Upload, X, 
   AlertTriangle, CheckSquare, ChevronUp, ChevronDown, RefreshCw,
   Download, FileJson, FolderUp, LoaderCircle, RotateCcw, MapPin, Search, Check
-} from "lucide-react";
+} from "@/components/icones";
 import { useClients } from "@/contexts/ClientContext";
 import { 
   Client, ClientFormData, generateInitials,

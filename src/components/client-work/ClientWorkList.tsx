@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Sparkles,
   MessageSquareText,
-} from "lucide-react";
+} from "@/components/icones";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {

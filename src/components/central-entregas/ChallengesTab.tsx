@@ -8,7 +8,7 @@ import {
   Trophy,
   Users,
   XCircle,
-} from "lucide-react";
+} from "@/components/icones";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

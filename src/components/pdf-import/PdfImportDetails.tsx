@@ -14,7 +14,7 @@ import {
   TrendingUp,
   Download,
   ExternalLink
-} from 'lucide-react';
+} from '@/components/icones';
 import { usePdfImportDetails } from '@/hooks/usePdfImports';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

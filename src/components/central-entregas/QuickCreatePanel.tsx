@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Workflow, MessageSquarePlus, Package, X, type LucideIcon } from 'lucide-react';
+import { Plus, Workflow, MessageSquarePlus, Package, X, type LucideIcon } from '@/components/icones';
 import { cn } from '@/lib/utils';
 import { Client } from '@/types/client';
 import { DeliverableFormData } from '@/types/deliverable';

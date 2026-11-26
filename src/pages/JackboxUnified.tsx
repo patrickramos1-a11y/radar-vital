@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CalendarClock, CheckCircle2, CheckSquare, ListChecks, Repeat, UserRoundX } from 'lucide-react';
+import { CalendarClock, CheckCircle2, CheckSquare, ListChecks, Repeat, UserRoundX } from '@/components/icones';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TaskManagementSheet } from '@/components/tasks/TaskManagementSheet';
 import { KPICard, VisualPanelHeader } from '@/components/visual-panels/VisualPanelHeader';

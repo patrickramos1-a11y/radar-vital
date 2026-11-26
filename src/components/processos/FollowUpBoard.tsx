@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, CircleSlash, Flag, Pause, Pencil, Play, Plus, Repeat, Search, Square, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, CircleSlash, Flag, Pause, Pencil, Play, Plus, Repeat, Search, Square, X } from '@/components/icones';
 import type { Client } from '@/types/client';
 import type { Task } from '@/types/task';
 import { today as todayIso, weightVisual } from '@/lib/processDisplay';
@@ -167,7 +167,7 @@ export function FollowUpBoard({ tasks, clients, responsibleList, currentUser, on
   return <div className="mx-auto max-w-5xl space-y-3">
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <Button type="button" className="h-10 shrink-0" onClick={() => { setEditing(null); setModalOpen(true); }}><Plus className="mr-1.5 h-4 w-4" />Novo acompanhamento</Button>
-      <div className="relative min-w-0 flex-1">
+      <div className="luz luz--foco relative min-w-0 flex-1 rounded-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar acompanhamento, cliente ou marco" className="pl-9" aria-label="Buscar acompanhamento" />
       </div>

@@ -5,7 +5,7 @@ import { Deliverable } from '@/types/deliverable';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { useDeliverableRatings, summarizeRatings } from '@/hooks/useDeliverableRatings';
 import { CollaboratorAvatar } from './CollaboratorAvatar';
-import { Trophy, Star, Sparkles, ThumbsUp, Package, CheckCircle2, AlertTriangle, Siren, type LucideIcon } from 'lucide-react';
+import { Trophy, Star, Sparkles, ThumbsUp, Package, CheckCircle2, AlertTriangle, Siren, type LucideIcon } from '@/components/icones';
 import { buildProcesses, isProcessOpen, processesForAssignee, type Process } from '@/lib/processModel';
 import { deliverableWeight, isPastDue } from '@/lib/centralMetrics';
 import { cn } from '@/lib/utils';

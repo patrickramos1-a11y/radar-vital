@@ -20,6 +20,17 @@ vai para o site com o ok dele.
 - Contraste AA, foco visível, alvos de toque de 44px, "reduzir movimento"
   respeitado, sem rolagem para o lado em 375px.
 
+## Decisões do Patrick (26/11/2026)
+
+- **Fora deste processo:** o Plano Mestre inteiro (fica no visual anterior, sempre
+  claro). Do Universo Ramos entra só o painel (Visão geral, `/universo-ramos`);
+  as outras visões dele já são páginas do Plano Mestre.
+- **Tom água:** o destaque do Radar Vital é o azul-rio da biblioteca (`.tom-agua`,
+  `#3A9AD9` vivo, `#1A6090` texto), também no contorno de luz, no selo de vidro e
+  no detalhe dos ícones. A logo continua verde.
+- **Usar mais o repositório:** vidro, efeitos (reflexo, contorno de luz no foco,
+  holofote), transições entre páginas e selos, e não só as cores.
+
 ## O que existe hoje
 
 | Item | Hoje |
@@ -72,8 +83,8 @@ Configurações e Modo TV, com as mesmas peças.
 
 | Fase | Situação |
 |---|---|
-| 1. Base visual | Prévia pronta (branch `feature/design-ramos`, 26/11), esperando o Patrick ver |
-| 2. Ícones | A fazer |
+| 1. Base visual | Feita (prévia aprovada na direção em 26/11) |
+| 2. Ícones | Feita: 60 desenhos novos na biblioteca, 96 arquivos trocados para os ícones Ramos (Plano Mestre mantém os antigos); tom água; vidro, efeitos e transições ligados |
 | 3. Telas de trabalho | A fazer |
 | 4. Demais telas | A fazer |
 | 5. Conferência e publicação | A fazer |

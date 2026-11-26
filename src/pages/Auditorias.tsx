@@ -9,7 +9,7 @@ import {
   Save,
   ShieldCheck,
   Trash2,
-} from "lucide-react";
+} from "@/components/icones";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import {
