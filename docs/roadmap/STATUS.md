@@ -480,6 +480,11 @@ Migrations: `20261126120000_acompanhamentos_recorrentes.sql` (colunas opcionais 
 Testes: TypeScript sem erros, testes novos de datas, projecao, linha do tempo e formularios; navegador local sem gravar (formulario no computador e no celular).
 Resultado: migration aplicada pelo usuario no Lovable em 26/11 (7 colunas e 4 regras conferidas; commit do Lovable `4578a6d`, `drizzle/migrations/0018_acompanhamentos_recorrentes.sql`). Publicado por pedido do usuario em 26/11/2026 (PR #7, commit `5d90325`), com 274 testes aprovados, build aprovado, deploy da Vercel com sucesso e Gestao de processos conferida em radar-vital.vercel.app.
 Pendencias: conferir o primeiro acompanhamento real (a proxima data nasce sozinha so na versao publicada).
+
+2026-11-26 - Design da Ramos no Radar Vital (comando /aplicar-design)
+Resumo: 5 fases (docs/design/PLANO_DESIGN_RAMOS.md, DESIGN.md na raiz). Letras do manual, base branca, logo em vetor, tela branca por padrao com Noite/Auto no menu do perfil, tom agua (azul-rio) como destaque, icones Ramos em todo o sistema (60 desenhos novos na biblioteca aplicar-design), vidro em tamanho de sistema (botoes, busca, filtros, abas, janelas, numeros), efeitos (reflexo, contorno de luz no foco, holofote) e transicao entre paginas. Plano Mestre inteiro fora (visual anterior, sempre claro); do Universo Ramos so o painel. So o visual mudou.
+Testes: TypeScript sem erros, 274 testes Vitest aprovados, build aprovado, nenhum erro de lint novo; navegador em dia, noite e celular.
+Resultado: publicado por pedido do usuario em 26/11/2026 (PR #8, commit `dfff719`), deploy da Vercel com sucesso e conferido em radar-vital.vercel.app.
 ```
 
 ## Modelo para proximos registros
