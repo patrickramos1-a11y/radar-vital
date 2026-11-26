@@ -55,12 +55,12 @@ html[data-design="ramos"][data-tema="escuro"] {
 /* ---- Botões ---------------------------------------------------------------
    Um botão aceso por tela (a ação principal). Os demais ficam em vidro e
    acendem o contorno ao passar o mouse ou focar. */
-html[data-design="ramos"] .botao-r {
+html[data-design="ramos"] :is(.botao-r, .admin-button-primary, .admin-button-secondary, .admin-button-danger) {
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: .01em;
 }
-html[data-design="ramos"] .botao-r:not(.botao-r--aceso):not(.botao-r--perigo) {
+html[data-design="ramos"] :is(.botao-r:not(.botao-r--aceso):not(.botao-r--perigo), .admin-button-secondary) {
   background: var(--vr-fundo);
   border: 1px solid var(--vr-fio);
   color: hsl(var(--foreground));
@@ -68,24 +68,28 @@ html[data-design="ramos"] .botao-r:not(.botao-r--aceso):not(.botao-r--perigo) {
   backdrop-filter: var(--vr-desfoque);
   box-shadow: var(--vr-luz), 0 1px 2px rgb(6 20 14 / 5%);
 }
-html[data-design="ramos"] .botao-r:not(.botao-r--aceso):not(.botao-r--perigo):is(:hover, :focus-visible) {
+html[data-design="ramos"] :is(.botao-r:not(.botao-r--aceso):not(.botao-r--perigo), .admin-button-secondary):is(:hover, :focus-visible) {
   background: var(--vr-agua-tinta);
   border-color: var(--vr-agua-fio);
   color: var(--vr-texto-atual);
   box-shadow: var(--vr-luz), var(--vr-halo);
 }
+html[data-design="ramos"] .admin-button-primary { position: relative; }
+/* Ação de cuidado que não é a principal (ex.: "Limpar Todos"): vidro com texto âmbar. */
+html[data-design="ramos"] .botao-r--alerta { color: #a15c07; }
+html[data-design="ramos"][data-tema="escuro"] .botao-r--alerta { color: #ffc94d; }
 /* Filtro ligado (botão de filtro com valor escolhido, chave ligada). */
 html[data-design="ramos"] .botao-r:not(.botao-r--aceso):not(.botao-r--perigo)[aria-pressed="true"] {
   background: var(--vr-agua-tinta);
   border-color: var(--vr-agua-fio);
   color: var(--vr-texto-atual);
 }
-html[data-design="ramos"] .botao-r--aceso {
+html[data-design="ramos"] :is(.botao-r--aceso, .admin-button-primary) {
   isolation: isolate;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%), 0 0 0 1px rgb(58 154 217 / 35%), 0 6px 18px -4px rgb(58 154 217 / 55%);
 }
 /* Fio de luz no alto do botão aceso (o "neon" do botao-neon, em miniatura). */
-html[data-design="ramos"] .botao-r--aceso::before {
+html[data-design="ramos"] :is(.botao-r--aceso, .admin-button-primary)::before {
   content: "";
   position: absolute;
   top: 0;
@@ -100,8 +104,8 @@ html[data-design="ramos"] .botao-r--aceso::before {
   pointer-events: none;
   transition: width .35s var(--vr-curva);
 }
-html[data-design="ramos"] .botao-r--aceso:is(:hover, :focus-visible)::before { width: 78%; }
-html[data-design="ramos"] .botao-r--aceso:is(:hover, :focus-visible) {
+html[data-design="ramos"] :is(.botao-r--aceso, .admin-button-primary):is(:hover, :focus-visible)::before { width: 78%; }
+html[data-design="ramos"] :is(.botao-r--aceso, .admin-button-primary):is(:hover, :focus-visible) {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 40%), 0 0 0 1px rgb(58 154 217 / 55%), 0 0 22px rgb(58 154 217 / 45%);
 }
 html[data-design="ramos"] .botao-r--aceso:disabled { box-shadow: none; }

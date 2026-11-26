@@ -48,7 +48,7 @@ export function KPICard({
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {title}
             </p>
-            <p className="text-2xl font-bold text-foreground">
+            <p className="numero-r text-3xl text-foreground">
               {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
             </p>
             {subtitle && (

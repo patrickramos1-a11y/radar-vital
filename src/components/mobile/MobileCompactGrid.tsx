@@ -180,7 +180,7 @@ function CompactCard({
             />
           ) : (
             <span
-              className="text-2xl font-bold"
+              className="numero-r text-3xl"
               style={{ color: accentColor ?? "hsl(var(--primary))" }}
             >
               {client.initials}

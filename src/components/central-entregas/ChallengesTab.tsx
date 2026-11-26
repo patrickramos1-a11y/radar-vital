@@ -626,7 +626,7 @@ function Metric({
         <Icon className={cn("h-3.5 w-3.5", toneClass)} />
         {label}
       </div>
-      <p className="mt-1 text-xl font-bold">{value}</p>
+      <p className="mt-1 numero-r text-2xl">{value}</p>
     </div>
   );
 }

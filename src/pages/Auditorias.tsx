@@ -1047,7 +1047,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="border bg-background px-3 py-2">
       <p className="text-[10px] uppercase text-muted-foreground">{label}</p>
-      <p className="text-xl font-bold">{value}</p>
+      <p className="numero-r text-2xl">{value}</p>
     </div>
   );
 }

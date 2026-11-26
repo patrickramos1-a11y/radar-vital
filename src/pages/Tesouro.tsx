@@ -314,7 +314,7 @@ function SummaryCard({
         </span>
         {label}
       </div>
-      <p className="mt-3 text-xl font-bold">{value}</p>
+      <p className="numero-r mt-3 text-2xl">{value}</p>
     </article>
   );
 }

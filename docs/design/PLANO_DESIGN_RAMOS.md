@@ -108,5 +108,5 @@ Configurações e Modo TV, com as mesmas peças.
 | 1. Base visual | Feita (prévia aprovada na direção em 26/11) |
 | 2. Ícones | Feita: 60 desenhos novos na biblioteca, 96 arquivos trocados para os ícones Ramos (Plano Mestre mantém os antigos); tom água; vidro, efeitos e transições ligados |
 | 3. Telas de trabalho | Feita em 26/11 (prévia para o Patrick ver): Processos, Gestão de processos, Painel AC e Central; dia, noite e celular conferidos. Como as peças base mudaram, as telas da fase 4 já pegam botões, campos, abas e janelas novos. Pendente para a fase 5: levar as peças compactas (`.botao-r`, `.grupo-r`…) para a biblioteca `aplicar-design` |
-| 4. Demais telas | A fazer |
+| 4. Demais telas | Feita em 26/11 (prévia para o Patrick ver): Indicadores, Comentários, Relatórios PDF, Configurações, Tesouro, Auditorias, Quadro de clientes, painel do Universo Ramos e Modo TV com números em Barlow (`.numero-r`), escolhas em pílula (`.grupo-r`), busca (`.busca-r`) e botões de administração no padrão; dia, noite e celular conferidos. Plano Mestre fora, como pedido |
 | 5. Conferência e publicação | A fazer |

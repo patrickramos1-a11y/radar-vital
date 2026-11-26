@@ -74,25 +74,25 @@ export function PdfCorrelationStep({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
           <CardContent className="py-3 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.autoMatched + stats.linked}</div>
+            <div className="numero-r text-3xl text-green-600">{stats.autoMatched + stats.linked}</div>
             <div className="text-xs text-muted-foreground">Correlacionados</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 text-center">
-            <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
+            <div className="numero-r text-3xl text-amber-600">{stats.pending}</div>
             <div className="text-xs text-muted-foreground">Pendentes</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.unmatched}</div>
+            <div className="numero-r text-3xl text-red-600">{stats.unmatched}</div>
             <div className="text-xs text-muted-foreground">Não encontrados</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 text-center">
-            <div className="text-2xl font-bold text-primary">{results.length}</div>
+            <div className="numero-r text-3xl text-primary">{results.length}</div>
             <div className="text-xs text-muted-foreground">Total no PDF</div>
           </CardContent>
         </Card>

@@ -476,26 +476,30 @@ export default function CommentsPanel() {
         {/* View filter tabs + Filters */}
         <div className="flex flex-wrap items-center gap-3 px-6 py-3 bg-muted/30 border-b">
           {/* View filter tabs */}
-          <div className="flex gap-1 mr-2">
+          <div className="grupo-r flex gap-1 mr-2" role="group" aria-label="Situação dos comentários">
             <button
+              aria-pressed={viewFilter === 'todos'}
               onClick={() => setViewFilter('todos')}
               className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', viewFilter === 'todos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
             >
               Todos ({activeComments.length})
             </button>
             <button
+              aria-pressed={viewFilter === 'pendentes'}
               onClick={() => setViewFilter('pendentes')}
               className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', viewFilter === 'pendentes' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
             >
               Pendentes ({pendingComments.length})
             </button>
             <button
+              aria-pressed={viewFilter === 'lidos'}
               onClick={() => setViewFilter('lidos')}
               className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', viewFilter === 'lidos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
             >
               Lidos ({readComments.length})
             </button>
             <button
+              aria-pressed={viewFilter === 'arquivados'}
               onClick={() => setViewFilter('arquivados')}
               className={cn('px-3 py-1.5 rounded-md text-xs font-medium transition-all', viewFilter === 'arquivados' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80')}
             >
