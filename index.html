@@ -11,7 +11,7 @@
     <meta name="author" content="Ramos Engenharia" />
     <meta name="theme-color" content="#ffffff" />
     <!-- Dia e noite da Ramos: aplica o tema antes de desenhar a tela (src/lib/tema.ts). -->
-    <script>(function(){try{var q=new URLSearchParams(location.search).get("tema"),m=q||localStorage.getItem("ramos-tema")||"auto",h=new Date().getHours();document.documentElement.dataset.tema=m==="auto"?(h>=6&&h<18?"claro":"escuro"):m;document.documentElement.dataset.temaModo=m}catch(e){document.documentElement.dataset.tema="claro"}})()</script>
+    <script>(function(){try{var q=new URLSearchParams(location.search).get("tema"),m=q||localStorage.getItem("ramos-tema")||"claro",h=new Date().getHours();document.documentElement.dataset.tema=m==="auto"?(h>=6&&h<18?"claro":"escuro"):m;document.documentElement.dataset.temaModo=m}catch(e){document.documentElement.dataset.tema="claro"}})()</script>
 
     <link rel="icon" href="/favicon-radar-vital-v4.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-radar-vital-v4-32.png" />

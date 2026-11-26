@@ -7,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TemaMenu } from "./TemaSeletor";
 
 export function UserSelector() {
   const { currentUser, collaborators, selectUser, clearUser } = useAuth();
@@ -46,6 +47,8 @@ export function UserSelector() {
             <span>{collaborator.name}</span>
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <TemaMenu />
         {currentUser && (
           <>
             <DropdownMenuSeparator />

@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, RefreshCw } from "@/components/icones";
 import { useSidebar } from "@/components/ui/sidebar";
 import { UserSelector } from "./UserSelector";
-import { TemaSeletor } from "./TemaSeletor";
+import { useTemaRamos } from "./TemaSeletor";
 import { isLegacyDesignRoute } from "./AppLayout";
 import { activeModule, activeView, navigationModules } from "./navigationModel";
 import "./app-navigation.css";
@@ -15,6 +15,7 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
   const module = activeModule(location.pathname);
   const view = activeView(module, location.pathname, location.search);
   const isUniverse = module.context === "ramos";
+  useTemaRamos(isLegacyDesignRoute(location.pathname));
 
   useEffect(() => {
     const list = modulesRef.current;
@@ -47,7 +48,6 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
       </nav>
 
       <div className="app-navigation-right">
-        <TemaSeletor compacto travadoNoClaro={isLegacyDesignRoute(location.pathname)} />
         <button type="button" className="app-navigation-icon app-navigation-refresh" aria-label="Atualizar aplicativo e limpar arquivos temporários" title="Atualizar aplicativo" onClick={onRefresh}><RefreshCw className="h-[18px] w-[18px]" /></button>
         <UserSelector />
       </div>
