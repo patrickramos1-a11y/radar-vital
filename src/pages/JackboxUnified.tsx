@@ -94,7 +94,7 @@ export default function JackboxUnified() {
           <KPICard icon={<Repeat className="h-4 w-4" />} value={metrics.recurring} label="Recorrentes" variant="default" />
         </VisualPanelHeader>
 
-        <nav className="flex shrink-0 gap-1 border-b bg-white px-3 py-2 sm:px-6" aria-label="Seções da gestão de processos">
+        <nav className="flex shrink-0 border-b bg-white px-3 py-2 sm:px-6" aria-label="Seções da gestão de processos"><div className="grupo-r flex gap-1">
           {SECTIONS.map(item => {
             const Icon = item.icon;
             return <button
@@ -107,7 +107,7 @@ export default function JackboxUnified() {
               <Icon className="h-3.5 w-3.5" />{item.label}
             </button>;
           })}
-        </nav>
+        </div></nav>
 
         {section === 'recorrentes'
           ? <main className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-3 pb-20 pt-3 sm:px-6">

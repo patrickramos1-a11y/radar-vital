@@ -1,0 +1,309 @@
+/* ==========================================================================
+   Fase 3 do design (docs/design/PLANO_DESIGN_RAMOS.md): peças das telas de
+   trabalho — Processos, Gestão de processos, Painel AC e Central.
+
+   São as peças do vidro da biblioteca aplicar-design (botao-neon, abas-vidro,
+   chip-vidro, busca-neon, modal-vidro, aviso-vidro, widget-vidro) em tamanho de
+   sistema: compactas, sem maiúsculas, com o tom água no lugar do verde.
+   Só valem com <html data-design="ramos">; o Plano Mestre (data-design="legado")
+   fica no visual anterior. Marcas usadas pelos componentes:
+
+   .botao-r            botão em vidro com contorno (outline, secondary)
+   .botao-r--aceso     ação principal da tela: azul aceso com fio de luz
+   .campo-r            campo de texto, área de texto e seleção
+   .busca-r            caixa da busca: fio de luz embaixo quando em foco
+   .filtro-r           filtros soltos (select e caixas de marcar)
+   .grupo-r            abas e escolhas em pílula (item atual aceso)
+   .janela-r / .veu-r  janelas (Novo processo, Comentar…) e o véu atrás
+   .gaveta-r           painel lateral
+   .vidro-menu-r       menus suspensos, listas de seleção e balões
+   .aviso-r            avisos rápidos (toasts)
+   .numero-r           números dos indicadores em Barlow Condensed
+   ========================================================================== */
+
+html[data-design="ramos"] {
+  --vr-fundo: rgb(255 255 255 / 72%);
+  --vr-forte: rgb(255 255 255 / 90%);
+  --vr-fio: rgb(29 29 31 / 10%);
+  --vr-fio-forte: rgb(255 255 255 / 92%);
+  --vr-luz: inset 0 1px 0 rgb(255 255 255 / 85%);
+  --vr-sombra: 0 1px 2px rgb(6 20 14 / 6%), 0 8px 24px rgb(6 20 14 / 6%);
+  --vr-sombra-alta: 0 2px 6px rgb(6 20 14 / 8%), 0 28px 64px rgb(6 20 14 / 20%);
+  --vr-desfoque: blur(14px) saturate(150%);
+  --vr-agua: #3a9ad9;
+  --vr-agua-clara: #8cc6ee;
+  --vr-agua-tinta: rgb(58 154 217 / 13%);
+  --vr-agua-fio: rgb(58 154 217 / 50%);
+  --vr-halo: 0 0 0 1px rgb(58 154 217 / 40%), 0 0 16px rgb(58 154 217 / 28%);
+  --vr-texto-atual: #1a6090;
+  --vr-curva: cubic-bezier(.2, .8, .2, 1);
+}
+
+html[data-design="ramos"][data-tema="escuro"] {
+  --vr-fundo: rgb(16 38 28 / 62%);
+  --vr-forte: rgb(10 26 19 / 92%);
+  --vr-fio: rgb(242 247 244 / 12%);
+  --vr-fio-forte: rgb(242 247 244 / 16%);
+  --vr-luz: inset 0 1px 0 rgb(255 255 255 / 6%);
+  --vr-sombra: 0 1px 2px rgb(0 0 0 / 30%), 0 10px 28px rgb(0 0 0 / 28%);
+  --vr-sombra-alta: 0 30px 70px rgb(0 0 0 / 55%);
+  --vr-agua-tinta: rgb(58 154 217 / 20%);
+  --vr-halo: 0 0 0 1px rgb(140 202 242 / 45%), 0 0 18px rgb(58 154 217 / 40%);
+  --vr-texto-atual: #8ccaf2;
+}
+
+/* ---- Botões ---------------------------------------------------------------
+   Um botão aceso por tela (a ação principal). Os demais ficam em vidro e
+   acendem o contorno ao passar o mouse ou focar. */
+html[data-design="ramos"] .botao-r {
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+html[data-design="ramos"] .botao-r:not(.botao-r--aceso):not(.botao-r--perigo) {
+  background: var(--vr-fundo);
+  border: 1px solid var(--vr-fio);
+  color: hsl(var(--foreground));
+  -webkit-backdrop-filter: var(--vr-desfoque);
+  backdrop-filter: var(--vr-desfoque);
+  box-shadow: var(--vr-luz), 0 1px 2px rgb(6 20 14 / 5%);
+}
+html[data-design="ramos"] .botao-r:not(.botao-r--aceso):not(.botao-r--perigo):is(:hover, :focus-visible) {
+  background: var(--vr-agua-tinta);
+  border-color: var(--vr-agua-fio);
+  color: var(--vr-texto-atual);
+  box-shadow: var(--vr-luz), var(--vr-halo);
+}
+/* Filtro ligado (botão de filtro com valor escolhido, chave ligada). */
+html[data-design="ramos"] .botao-r:not(.botao-r--aceso):not(.botao-r--perigo)[aria-pressed="true"] {
+  background: var(--vr-agua-tinta);
+  border-color: var(--vr-agua-fio);
+  color: var(--vr-texto-atual);
+}
+html[data-design="ramos"] .botao-r--aceso {
+  isolation: isolate;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%), 0 0 0 1px rgb(58 154 217 / 35%), 0 6px 18px -4px rgb(58 154 217 / 55%);
+}
+/* Fio de luz no alto do botão aceso (o "neon" do botao-neon, em miniatura). */
+html[data-design="ramos"] .botao-r--aceso::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  width: 42%;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  transform: translateX(-50%);
+  background: #d6ecfb;
+  box-shadow: 0 0 6px var(--vr-agua-clara), 0 0 14px var(--vr-agua);
+  pointer-events: none;
+  transition: width .35s var(--vr-curva);
+}
+html[data-design="ramos"] .botao-r--aceso:is(:hover, :focus-visible)::before { width: 78%; }
+html[data-design="ramos"] .botao-r--aceso:is(:hover, :focus-visible) {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 40%), 0 0 0 1px rgb(58 154 217 / 55%), 0 0 22px rgb(58 154 217 / 45%);
+}
+html[data-design="ramos"] .botao-r--aceso:disabled { box-shadow: none; }
+html[data-design="ramos"] .botao-r--aceso:disabled::before { display: none; }
+
+/* ---- Campos ---------------------------------------------------------------- */
+html[data-design="ramos"] .campo-r {
+  border-radius: 12px;
+  background-color: var(--vr-fundo);
+  border-color: var(--vr-fio);
+  box-shadow: var(--vr-luz);
+}
+html[data-design="ramos"] .campo-r:is(:focus, :focus-visible, [data-state="open"]) {
+  border-color: var(--vr-agua-fio);
+  box-shadow: var(--vr-luz), 0 0 0 3px rgb(58 154 217 / 18%);
+}
+
+/* Busca: pílula com fio de luz embaixo enquanto está em foco (busca-neon). */
+html[data-design="ramos"] .busca-r { position: relative; isolation: isolate; }
+html[data-design="ramos"] .busca-r input { border-radius: 999px; }
+html[data-design="ramos"] .busca-r::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 0;
+  height: 2px;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  background: var(--vr-agua);
+  box-shadow: 0 0 6px var(--vr-agua-clara), 0 0 14px var(--vr-agua);
+  opacity: 0;
+  pointer-events: none;
+  transition: width .45s var(--vr-curva), opacity .25s ease;
+}
+html[data-design="ramos"] .busca-r:focus-within::after { width: 60%; opacity: 1; }
+html[data-design="ramos"] .busca-r:focus-within svg { color: var(--vr-texto-atual); }
+/* Com o contorno de luz da fase 2 (.luz--foco), a caixa vira pílula e o fio de baixo sai:
+   uma luz só por campo. */
+html[data-design="ramos"] .busca-r.luz { border-radius: 999px; }
+html[data-design="ramos"] .busca-r.luz::after { display: none; }
+
+/* Barra de filtros da tela: uma faixa de vidro (barra-vidro) com as escolhas dentro. */
+html[data-design="ramos"] .barra-filtros-r {
+  border: 1px solid var(--vr-fio);
+  border-radius: 18px;
+  background: var(--vr-fundo);
+  -webkit-backdrop-filter: var(--vr-desfoque);
+  backdrop-filter: var(--vr-desfoque);
+  box-shadow: var(--vr-luz), var(--vr-sombra);
+}
+
+/* Filtros soltos: selects e caixas de marcar viram pílulas de vidro (chip-vidro). */
+html[data-design="ramos"] .filtro-r {
+  border-radius: 999px;
+  border: 1px solid var(--vr-fio);
+  background-color: var(--vr-fundo);
+  -webkit-backdrop-filter: var(--vr-desfoque);
+  backdrop-filter: var(--vr-desfoque);
+  box-shadow: var(--vr-luz);
+  padding-inline: .75rem;
+}
+html[data-design="ramos"] .filtro-r:hover { border-color: var(--vr-agua-fio); }
+html[data-design="ramos"] select.filtro-r:focus { outline: none; border-color: var(--vr-agua-fio); box-shadow: var(--vr-luz), 0 0 0 3px rgb(58 154 217 / 18%); }
+html[data-design="ramos"] .filtro-r:has(input:checked) {
+  background-color: var(--vr-agua-tinta);
+  border-color: var(--vr-agua-fio);
+  color: var(--vr-texto-atual);
+}
+html[data-design="ramos"] :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--vr-agua); }
+
+/* Pílulas de escolha soltas (pessoa da equipe…): chip-vidro. */
+html[data-design="ramos"] .chip-r {
+  border-color: var(--vr-fio);
+  background-color: var(--vr-fundo);
+  -webkit-backdrop-filter: var(--vr-desfoque);
+  backdrop-filter: var(--vr-desfoque);
+  box-shadow: var(--vr-luz);
+}
+html[data-design="ramos"] .chip-r:hover { border-color: var(--vr-agua-fio); }
+html[data-design="ramos"] .chip-r[aria-pressed="true"] {
+  background-color: var(--vr-agua-tinta);
+  border-color: var(--vr-agua-fio);
+  color: var(--vr-texto-atual);
+  box-shadow: var(--vr-luz), 0 0 12px rgb(58 154 217 / 22%);
+}
+
+/* ---- Abas e escolhas em pílula (abas-vidro) ------------------------------- */
+html[data-design="ramos"] .grupo-r {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: auto;
+  padding: 3px;
+  border: 1px solid var(--vr-fio);
+  border-radius: 999px;
+  background: var(--vr-fundo);
+  -webkit-backdrop-filter: var(--vr-desfoque);
+  backdrop-filter: var(--vr-desfoque);
+  box-shadow: var(--vr-luz), 0 1px 2px rgb(6 20 14 / 5%);
+}
+html[data-design="ramos"] .grupo-r > :is(button, a, [role="tab"]) {
+  border-width: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  box-shadow: none;
+  transition: background-color .25s ease, color .25s ease, box-shadow .25s ease;
+}
+html[data-design="ramos"] .grupo-r > :is(button, a, [role="tab"]):hover { color: hsl(var(--foreground)); }
+html[data-design="ramos"] .grupo-r > :is([aria-pressed="true"], [aria-selected="true"], [data-state="active"], [aria-current="page"]) {
+  background: var(--vr-agua-tinta);
+  color: var(--vr-texto-atual);
+  box-shadow: inset 0 0 0 1px var(--vr-agua-fio), 0 0 12px rgb(58 154 217 / 22%);
+}
+html[data-design="ramos"] .grupo-r > span { padding-inline: .5rem; }
+
+/* ---- Janelas, gaveta, menus e avisos (modal-vidro, aviso-vidro) ----------- */
+html[data-design="ramos"] .veu-r {
+  background: rgb(3 10 7 / 34%);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+html[data-design="ramos"] .janela-r {
+  border: 1px solid var(--vr-fio-forte);
+  border-radius: 24px;
+  background: var(--vr-forte);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: var(--vr-luz), var(--vr-sombra-alta);
+}
+html[data-design="ramos"][data-tema="escuro"] .janela-r { border-color: var(--vr-fio); }
+/* Fio de luz no alto da janela (o mesmo do cartao-vidro). */
+html[data-design="ramos"] .janela-r::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  width: 56px;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  transform: translateX(-50%);
+  background: var(--vr-agua);
+  box-shadow: 0 0 6px var(--vr-agua-clara), 0 0 14px rgb(58 154 217 / 60%);
+  pointer-events: none;
+}
+html[data-design="ramos"] .gaveta-r {
+  background: var(--vr-forte);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  border-color: var(--vr-fio);
+  box-shadow: var(--vr-luz), var(--vr-sombra-alta);
+}
+html[data-design="ramos"] .vidro-menu-r {
+  border-color: var(--vr-fio);
+  border-radius: 14px;
+  background: var(--vr-forte);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: var(--vr-luz), 0 18px 40px rgb(6 20 14 / 16%);
+}
+html[data-design="ramos"][data-tema="escuro"] .vidro-menu-r { box-shadow: var(--vr-luz), 0 18px 40px rgb(0 0 0 / 50%); }
+html[data-design="ramos"] .toaster .toast.aviso-r {
+  border: 1px solid var(--vr-fio-forte);
+  border-radius: 18px;
+  background: var(--vr-forte);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: var(--vr-luz), 0 14px 34px rgb(6 20 14 / 20%);
+}
+html[data-design="ramos"][data-tema="escuro"] .toaster .toast.aviso-r { border-color: var(--vr-fio); }
+
+/* ---- Cartões de cliente e de processo: base branca, sombra leve ----------- */
+html[data-design="ramos"] .client-card-compact {
+  border-radius: 16px;
+  border-color: var(--vr-fio);
+  box-shadow: var(--vr-sombra);
+}
+html[data-design="ramos"] .client-card-compact:hover {
+  border-color: var(--vr-agua-fio);
+  box-shadow: 0 1px 2px rgb(6 20 14 / 6%), 0 14px 32px rgb(6 20 14 / 10%), 0 0 0 1px rgb(58 154 217 / 12%);
+}
+html[data-design="ramos"] .client-card-compact.selected {
+  border-color: var(--vr-agua);
+  box-shadow: var(--vr-halo);
+}
+/* Faixas de números (KpiStrip): base branca com sombra leve. */
+html[data-design="ramos"] .faixa-numeros-r {
+  border-radius: 16px;
+  border-color: var(--vr-fio);
+  box-shadow: var(--vr-sombra);
+}
+html[data-design="ramos"] .faixa-numeros-r > [aria-pressed="true"] {
+  background: var(--vr-agua-tinta);
+  box-shadow: inset 0 -2px 0 var(--vr-agua);
+}
+
+/* ---- Números dos indicadores (widget-vidro__valor, em tamanho de sistema) - */
+html[data-design="ramos"] .numero-r {
+  font-family: var(--fonte-titulo);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+  line-height: 1;
+}

@@ -287,13 +287,13 @@ export function TaskManagementSheet({
         </div>
 
         <div className="mt-3">
-          <label className="relative block">
+          <label className="busca-r relative block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar processo, cliente ou responsável" className="h-9 pl-9" />
           </label>
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <div className="inline-flex h-9 items-center border bg-background p-0.5">
+            <div className="grupo-r inline-flex h-9 items-center border bg-background p-0.5" role="group" aria-label="Situação dos processos">
               {([
                 { value: 'pending', label: 'Pendentes' },
                 { value: 'scheduled', label: 'Agendados' },
@@ -303,7 +303,8 @@ export function TaskManagementSheet({
                 <Button
                   key={option.value}
                   type="button"
-                  variant={statusFilter === option.value ? 'default' : 'ghost'}
+                  variant="ghost"
+                  aria-pressed={statusFilter === option.value}
                   size="sm"
                   className="h-8 rounded-sm px-3 text-xs"
                   onClick={() => setStatusFilter(option.value)}
@@ -367,7 +368,8 @@ export function TaskManagementSheet({
             {onCreateTask && <Button type="button" size="sm" className="h-9 gap-2 px-3 text-xs" onClick={() => setCreateTaskOpen(true)}><CheckSquare className="h-4 w-4" /> Novo processo</Button>}
             <Button variant="outline" size="icon" className="h-9 w-9" onClick={resetFilters} title="Limpar filtros" aria-label="Limpar filtros"><FilterX className="h-4 w-4" /></Button>
             <Button
-              variant={groupByClient ? 'outline' : 'default'}
+              variant="outline"
+              aria-pressed={!groupByClient}
               size="sm"
               className="h-9 gap-2 px-3 text-xs"
               onClick={() => setGroupByClient(current => !current)}
@@ -670,10 +672,10 @@ function ClientGroupHeader({ client, tasks }: { client?: Client; tasks: Task[] }
 
 function SummaryItem({ icon: Icon, value, label, tone }: { icon: typeof Clock3; value: string | number; label: string; tone: string }) {
   return (
-    <div className="flex min-h-[54px] min-w-0 items-center gap-2 border bg-card px-2.5 py-2">
+    <div className="faixa-numeros-r flex min-h-[54px] min-w-0 items-center gap-2 border bg-card px-2.5 py-2">
       <Icon className={cn('h-4 w-4 shrink-0', tone)} />
       <div className="min-w-0">
-        <div className={cn('text-base font-bold leading-none', tone)}>{value}</div>
+        <div className={cn('numero-r text-xl leading-none', tone)}>{value}</div>
         <div className="mt-1 text-[9px] uppercase leading-tight text-muted-foreground sm:text-[10px]">{label}</div>
       </div>
     </div>
@@ -709,6 +711,7 @@ function FilterPopover({ icon, value, defaultValue, ariaLabel, options, onChange
           variant="outline"
           size="sm"
           aria-label={ariaLabel}
+          aria-pressed={active}
           className={cn(
             'h-9 max-w-[220px] gap-2 px-3 text-xs',
             active && 'border-primary bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',

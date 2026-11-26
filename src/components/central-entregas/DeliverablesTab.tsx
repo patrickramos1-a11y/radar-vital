@@ -226,7 +226,7 @@ export function DeliverablesTab({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
-        <div role="tablist" aria-label="Avaliação dos entregáveis" className="inline-flex max-w-full flex-wrap gap-1 rounded-md bg-muted p-1">
+        <div role="tablist" aria-label="Avaliação dos entregáveis" className="grupo-r inline-flex max-w-full flex-wrap gap-1 rounded-md bg-muted p-1">
           {([
             { value: 'pending', label: 'A avaliar', count: pending.length },
             { value: 'reviewed', label: 'Avaliados', count: reviewed.length },
@@ -250,7 +250,7 @@ export function DeliverablesTab({
             </button>
           ))}
         </div>
-        <Button onClick={() => { setEditing(null); setModalOpen(true); }} size="sm" style={{ backgroundColor: color }}>
+        <Button onClick={() => { setEditing(null); setModalOpen(true); }} size="sm">
           <Plus className="mr-1 h-4 w-4" /> Registrar entrega
         </Button>
       </div>
@@ -278,7 +278,7 @@ export function DeliverablesTab({
             aria-label="Filtrar por solicitante"
             value={requesterFilter}
             onChange={event => setRequesterFilter(event.target.value)}
-            className="h-8 max-w-full rounded border bg-background px-2 text-xs text-foreground"
+            className="filtro-r h-8 max-w-full rounded border bg-background px-2 text-xs text-foreground"
           >
             <option value="">Todos os solicitantes</option>
             {availableRequesters.map(name => <option key={name} value={name}>{name}</option>)}

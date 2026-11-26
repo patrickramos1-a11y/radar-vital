@@ -244,24 +244,24 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
   </div>;
 
   return <div className="space-y-3">
-    <div className="border bg-white p-2 shadow-sm">
+    <div className="barra-filtros-r border bg-white p-2 shadow-sm">
       <div className="flex flex-wrap items-center gap-1.5">
-        <div className="flex h-8 items-center border bg-slate-50" role="group" aria-label="Ordenar processos">
+        <div className="grupo-r flex h-8 items-center border bg-slate-50" role="group" aria-label="Ordenar processos">
           <span className="hidden px-2 text-[10px] text-muted-foreground lg:inline">Ordenar</span>
           <button type="button" aria-pressed={sortMode === 'weight'} onClick={() => setSortMode('weight')} title="Maior peso, depois vencimento mais próximo" aria-label="Ordenar por peso" className={cn('flex h-8 w-8 items-center justify-center', sortMode === 'weight' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-white')}><ArrowDownWideNarrow className="h-4 w-4" /></button>
           <button type="button" aria-pressed={sortMode === 'oldest'} onClick={() => setSortMode('oldest')} title="Mais antigos primeiro" aria-label="Ordenar pelos mais antigos" className={cn('flex h-8 w-8 items-center justify-center', sortMode === 'oldest' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-white')}><Clock3 className="h-4 w-4" /></button>
         </div>
-        <div className="luz luz--foco relative min-w-[190px] flex-1 rounded-md"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><Input className="h-8 pl-8 text-xs" placeholder="Buscar processo ou cliente" aria-label="Buscar processo ou cliente" value={search} onChange={event => setSearch(event.target.value)} /></div>
-        <select aria-label="Filtrar cliente" value={clientFilter} onChange={event => setClientFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os clientes</option>{clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}</select>
-        {allowCollaboratorFilter && <select aria-label="Filtrar responsável" value={collaboratorFilter} onChange={event => setCollaboratorFilter(event.target.value)} className="h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os responsáveis</option>{responsibleList.map(person => <option key={person.name} value={person.name}>{person.name}</option>)}</select>}
-        <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showCompleted} onChange={event => setShowCompleted(event.target.checked)} />Concluídos</label>
-        {section === 'all' && <label className="flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showPlanned} onChange={event => setShowPlanned(event.target.checked)} />Planejados</label>}
+        <div className="busca-r luz luz--foco relative min-w-[190px] flex-1 rounded-md"><Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" /><Input className="h-8 pl-8 text-xs" placeholder="Buscar processo ou cliente" aria-label="Buscar processo ou cliente" value={search} onChange={event => setSearch(event.target.value)} /></div>
+        <select aria-label="Filtrar cliente" value={clientFilter} onChange={event => setClientFilter(event.target.value)} className="filtro-r h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os clientes</option>{clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}</select>
+        {allowCollaboratorFilter && <select aria-label="Filtrar responsável" value={collaboratorFilter} onChange={event => setCollaboratorFilter(event.target.value)} className="filtro-r h-8 max-w-[190px] border bg-white px-2 text-xs"><option value="all">Todos os responsáveis</option>{responsibleList.map(person => <option key={person.name} value={person.name}>{person.name}</option>)}</select>}
+        <label className="filtro-r flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showCompleted} onChange={event => setShowCompleted(event.target.checked)} />Concluídos</label>
+        {section === 'all' && <label className="filtro-r flex h-8 items-center gap-1 border px-2 text-[11px] text-muted-foreground"><input type="checkbox" checked={showPlanned} onChange={event => setShowPlanned(event.target.checked)} />Planejados</label>}
         <Button size="sm" className="h-8" onClick={() => openModal(null)}><Plus className="mr-1 h-4 w-4" />Novo processo</Button>
       </div>
     </div>
     <div className="flex items-center justify-between gap-3 border-b pb-2">
       <p className="text-xs text-muted-foreground">{summary}</p>
-      {section === 'all' && <div className="flex border" role="group" aria-label="Visão">
+      {section === 'all' && <div className="grupo-r flex border" role="group" aria-label="Visão">
         <button type="button" aria-pressed={view === 'processes'} onClick={() => setView('processes')} className={cn('inline-flex h-8 items-center gap-1 px-2 text-xs', view === 'processes' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600')}><List className="h-3.5 w-3.5" />Processos</button>
         <button type="button" aria-pressed={view === 'panel'} onClick={() => setView('panel')} className={cn('inline-flex h-8 items-center gap-1 border-l px-2 text-xs', view === 'panel' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600')}><LayoutGrid className="h-3.5 w-3.5" />Painel</button>
       </div>}

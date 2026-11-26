@@ -31,7 +31,7 @@ export function KPICard({ label, value, icon, variant = 'default' }: KPICardProp
     <div className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border backdrop-blur-sm ${colors[variant]}`}>
       {icon && <span className={`shrink-0 ${textColors[variant]}`}>{icon}</span>}
       <div className="flex flex-col">
-        <span className={`text-lg font-bold leading-none ${textColors[variant]}`}>{value}</span>
+        <span className={`numero-r text-xl leading-none ${textColors[variant]}`}>{value}</span>
         <span className="text-[9px] text-muted-foreground uppercase tracking-wider">{label}</span>
       </div>
     </div>

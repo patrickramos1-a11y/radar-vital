@@ -21,7 +21,7 @@ export function SegmentedControl<T extends string>({ value, onChange, options, a
     <div
       role="group"
       aria-label={ariaLabel}
-      className={cn('inline-flex max-w-full shrink-0 items-center gap-0.5 overflow-x-auto rounded-lg border bg-muted/40 p-0.5', className)}
+      className={cn('grupo-r inline-flex max-w-full shrink-0 items-center gap-0.5 overflow-x-auto rounded-lg border bg-muted/40 p-0.5', className)}
     >
       {options.map(option => {
         const selected = option.value === value;

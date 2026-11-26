@@ -70,6 +70,28 @@ Processos, Gestão de processos, Painel AC e Central:
 - cartões de cliente e de processo na base branca, com sombras leves;
 - números e indicadores em Barlow Condensed.
 
+**Como ficou (26/11):** as peças do vidro da biblioteca entraram em tamanho de
+sistema (compactas, sem maiúsculas, tom água) no arquivo
+`src/styles/ramos-telas.css` (12 KB). Elas só valem com
+`<html data-design="ramos">`; o `AppLayout` troca para `legado` no Plano Mestre.
+
+| Peça da biblioteca | No Radar Vital | Onde entra |
+|---|---|---|
+| `.botao-neon--aceso` | `.botao-r--aceso`: azul aceso com fio de luz no alto | botão principal (variante padrão do `Button`); um por tela: Novo processo, Registrar entrega, Novo cliente, Nova anotação, Novo acompanhamento |
+| `.botao-neon` apagado | `.botao-r`: vidro com contorno que acende no foco | botões `outline` e `secondary`; filtro com valor fica azul |
+| `.busca-neon` | `.busca-r` (pílula) + contorno de luz da fase 2 | busca de Processos, Gestão e Painel AC |
+| `.abas-vidro` | `.grupo-r`: pílula com o item atual aceso | abas (`TabsList`), `SegmentedControl`, ordenar, visões, seções da Gestão, abas dos Entregáveis, Comentários, acompanhamento |
+| `.chip-vidro` | `.chip-r` e `.filtro-r` | pessoas da Central; selects e caixas de marcar dos filtros |
+| `.modal-vidro` | `.janela-r` + `.veu-r` | todas as janelas (`Dialog`, `AlertDialog`), com fio de luz no alto |
+| `.aviso-vidro` | `.aviso-r`, `.vidro-menu-r`, `.gaveta-r` | avisos rápidos, menus, listas de seleção, balões e painel lateral |
+| `.barra-vidro` | `.barra-filtros-r` | barra de filtros da tela de Processos |
+| `.widget-vidro__valor` | `.numero-r` (Barlow Condensed) | números da Central, da Gestão e do Painel AC |
+| cartão base branca | `.client-card-compact`, `.faixa-numeros-r` | cartões de cliente e de processo; faixa de números |
+
+Também: a camada de noite ganhou as faixas tingidas com transparência (semana
+dos Entregáveis, acompanhamento). Os botões principais deixaram de usar a cor do
+colaborador e o filtro AC/AV deixou a cor do tipo: a escolha acende em azul.
+
 ### Fase 4 — Demais telas
 Universo Ramos, Plano Mestre, Auditorias, Tesouro, Relatórios PDF,
 Configurações e Modo TV, com as mesmas peças.
@@ -85,6 +107,6 @@ Configurações e Modo TV, com as mesmas peças.
 |---|---|
 | 1. Base visual | Feita (prévia aprovada na direção em 26/11) |
 | 2. Ícones | Feita: 60 desenhos novos na biblioteca, 96 arquivos trocados para os ícones Ramos (Plano Mestre mantém os antigos); tom água; vidro, efeitos e transições ligados |
-| 3. Telas de trabalho | A fazer |
+| 3. Telas de trabalho | Feita em 26/11 (prévia para o Patrick ver): Processos, Gestão de processos, Painel AC e Central; dia, noite e celular conferidos. Como as peças base mudaram, as telas da fase 4 já pegam botões, campos, abas e janelas novos. Pendente para a fase 5: levar as peças compactas (`.botao-r`, `.grupo-r`…) para a biblioteca `aplicar-design` |
 | 4. Demais telas | A fazer |
 | 5. Conferência e publicação | A fazer |

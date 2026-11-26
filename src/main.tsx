@@ -7,6 +7,7 @@ import "./styles/ramos/efeitos.css";
 import "./styles/ramos/tipografia.css";
 import "./styles/ramos-noite.css";
 import "./styles/ramos-agua.css";
+import "./styles/ramos-telas.css";
 
 createRoot(document.getElementById("root")!).render(
   <AppErrorBoundary>

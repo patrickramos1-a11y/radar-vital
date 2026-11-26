@@ -31,7 +31,7 @@ const VALUE_TONE: Record<KpiTone, string> = {
  */
 export function KpiStrip({ items, className }: { items: KpiItem[]; className?: string }) {
   return (
-    <div className={cn('flex snap-x overflow-x-auto rounded-xl border bg-card', className)}>
+    <div className={cn('faixa-numeros-r flex snap-x overflow-x-auto rounded-xl border bg-card', className)}>
       {items.map((item, index) => {
         const Icon = item.icon;
         const tone = item.tone ?? 'default';
@@ -41,7 +41,7 @@ export function KpiStrip({ items, className }: { items: KpiItem[]; className?: s
               {Icon && <Icon className={cn('h-3.5 w-3.5', tone === 'danger' && 'text-red-500')} aria-hidden />}
               <span className="whitespace-nowrap">{item.label}</span>
             </span>
-            <span className={cn('text-xl font-bold leading-tight tabular-nums', VALUE_TONE[tone])}>{item.value}</span>
+            <span className={cn('numero-r text-2xl leading-tight', VALUE_TONE[tone])}>{item.value}</span>
             {item.detail && <span className="truncate text-[11px] text-muted-foreground">{item.detail}</span>}
           </>
         );
