@@ -1,7 +1,8 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  darkMode: ["class"],
+  // Dia e noite da Ramos: o tema vem de <html data-tema="claro|escuro"> (ver src/lib/tema.ts).
+  darkMode: ["selector", '[data-tema="escuro"]'],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
@@ -13,6 +14,11 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Manrope", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        titulo: ["\"Barlow Condensed\"", "\"Arial Narrow\"", "system-ui", "sans-serif"],
+        mono: ["\"IBM Plex Mono\"", "ui-monospace", "Consolas", "monospace"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

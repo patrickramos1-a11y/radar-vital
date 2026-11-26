@@ -1,0 +1,55 @@
+/* ==========================================================================
+   Noite da Ramos para as cores fixas que as telas usam hoje.
+   As telas foram feitas só para o claro (bg-white, cinzas slate/gray). Esta
+   camada troca essas cores no escuro sem mexer em cada tela. As fases 3 e 4
+   do plano (docs/design/PLANO_DESIGN_RAMOS.md) trocam as classes nas telas e
+   esta camada vai encolhendo.
+   ========================================================================== */
+
+[data-tema="escuro"] body { background: hsl(var(--background)); }
+
+/* Superfícies */
+[data-tema="escuro"] :is(.bg-white, .bg-card) { background-color: #0a1a13; }
+[data-tema="escuro"] :is(.bg-white\/95, .bg-white\/90, .bg-white\/80) { background-color: rgb(10 26 19 / 92%); }
+[data-tema="escuro"] :is(.bg-slate-50, .bg-gray-50, .bg-zinc-50, .bg-neutral-50) { background-color: #071510; }
+[data-tema="escuro"] :is(.bg-slate-100, .bg-gray-100, .bg-zinc-100) { background-color: #10261c; }
+[data-tema="escuro"] :is(.bg-slate-200, .bg-gray-200) { background-color: #163326; }
+[data-tema="escuro"] :is(.bg-slate-300, .bg-gray-300) { background-color: #1f3d2f; }
+[data-tema="escuro"] :is(.hover\:bg-slate-50:hover, .hover\:bg-gray-50:hover, .hover\:bg-white:hover) { background-color: #10261c; }
+[data-tema="escuro"] :is(.hover\:bg-slate-100:hover, .hover\:bg-gray-100:hover) { background-color: #163326; }
+
+/* Texto */
+[data-tema="escuro"] :is(.text-slate-900, .text-slate-800, .text-gray-900, .text-gray-800, .text-black) { color: #f2f7f4; }
+[data-tema="escuro"] :is(.text-slate-700, .text-gray-700) { color: #d4e0d9; }
+[data-tema="escuro"] :is(.text-slate-600, .text-gray-600, .text-slate-500, .text-gray-500) { color: #a7b8af; }
+[data-tema="escuro"] :is(.text-slate-400, .text-gray-400) { color: #7d9388; }
+[data-tema="escuro"] :is(.hover\:text-slate-900:hover, .hover\:text-slate-800:hover) { color: #ffffff; }
+
+/* Fios */
+[data-tema="escuro"] :is(.border-slate-100, .border-slate-200, .border-gray-100, .border-gray-200, .border-slate-300, .border-gray-300) { border-color: #1f3d2f; }
+[data-tema="escuro"] :is(.border-slate-400, .border-gray-400) { border-color: #2c5242; }
+[data-tema="escuro"] :is(.divide-slate-100, .divide-slate-200, .divide-gray-100, .divide-gray-200) > * + * { border-color: #1f3d2f; }
+
+/* Faixas escuras que já existiam (bg-slate-900) continuam escuras, um pouco mais verdes. */
+[data-tema="escuro"] :is(.bg-slate-900, .bg-gray-900) { background-color: #163326; }
+
+/* Etiquetas coloridas claras (bg-*-50): ficam como fundo tingido escuro. */
+[data-tema="escuro"] :is(.bg-red-50, .bg-rose-50) { background-color: rgb(196 32 44 / 18%); }
+[data-tema="escuro"] :is(.bg-amber-50, .bg-yellow-50, .bg-orange-50) { background-color: rgb(244 176 0 / 15%); }
+[data-tema="escuro"] :is(.bg-sky-50, .bg-blue-50, .bg-cyan-50) { background-color: rgb(26 96 144 / 25%); }
+[data-tema="escuro"] :is(.bg-emerald-50, .bg-green-50, .bg-lime-50, .bg-teal-50) { background-color: rgb(13 211 117 / 14%); }
+[data-tema="escuro"] :is(.bg-violet-50, .bg-purple-50, .bg-indigo-50, .bg-fuchsia-50) { background-color: rgb(139 92 246 / 18%); }
+[data-tema="escuro"] :is(.text-red-700, .text-red-800, .text-rose-700) { color: #ff8a93; }
+[data-tema="escuro"] :is(.text-amber-700, .text-amber-800, .text-orange-700, .text-orange-800, .text-yellow-700) { color: #ffc94d; }
+[data-tema="escuro"] :is(.text-sky-700, .text-sky-800, .text-blue-700, .text-blue-800, .text-cyan-800) { color: #8ccaf2; }
+[data-tema="escuro"] :is(.text-emerald-700, .text-emerald-800, .text-green-700, .text-green-800, .text-teal-700) { color: #5fe39c; }
+[data-tema="escuro"] :is(.text-violet-700, .text-violet-800, .text-purple-700, .text-indigo-700) { color: #c4b1ff; }
+[data-tema="escuro"] :is(.border-red-200, .border-red-300, .border-amber-200, .border-amber-300, .border-sky-200, .border-sky-300, .border-emerald-200, .border-emerald-300, .border-violet-200, .border-orange-300, .border-slate-300) { border-color: rgb(242 247 244 / 14%); }
+
+/* Campos nativos */
+[data-tema="escuro"] :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+  background-color: #071510;
+  color: #f2f7f4;
+  border-color: #1f3d2f;
+}
+[data-tema="escuro"] ::placeholder { color: #7d9388; }

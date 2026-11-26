@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, RefreshCw } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { UserSelector } from "./UserSelector";
+import { TemaSeletor } from "./TemaSeletor";
 import { activeModule, activeView, navigationModules } from "./navigationModel";
 import "./app-navigation.css";
 
@@ -29,6 +30,11 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
         <button type="button" className="app-navigation-icon" onClick={toggleSidebar}
           aria-label={isMobile ? openMobile ? "Fechar menu" : "Abrir menu" : state === "expanded" ? "Fechar menu" : "Abrir menu"}
           title="Menu de todas as páginas"><Menu className="h-[19px] w-[19px]" /></button>
+        <Link to="/" className="app-navigation-marca" aria-label="Ramos Engenharia: início">
+          <img className="app-navigation-logo app-navigation-logo--dia" src="/ramos/marca/ramos-logo-horizontal.svg" alt="" width={91} height={28} />
+          <img className="app-navigation-logo app-navigation-logo--noite" src="/ramos/marca/ramos-logo-horizontal-negativo.svg" alt="" width={91} height={28} />
+          <img className="app-navigation-simbolo" src="/ramos/marca/ramos-circulo.svg" alt="" width={28} height={28} />
+        </Link>
       </div>
 
       <nav ref={modulesRef} className="app-navigation-modules" aria-label="Módulos">
@@ -40,6 +46,7 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
       </nav>
 
       <div className="app-navigation-right">
+        <TemaSeletor compacto />
         <button type="button" className="app-navigation-icon app-navigation-refresh" aria-label="Atualizar aplicativo e limpar arquivos temporários" title="Atualizar aplicativo" onClick={onRefresh}><RefreshCw className="h-[18px] w-[18px]" /></button>
         <UserSelector />
       </div>
