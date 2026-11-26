@@ -360,6 +360,38 @@ export function useTasks() {
     return true;
   }, [createTask, currentUserName, fetchTasks]);
 
+  /** Lança datas do acompanhamento como etapas (ex.: uma data passada que passou a contar). */
+  const addFollowUpSteps = useCallback(async (mother: Task, dates: string[]) => {
+    try {
+      const created = await createPeriodSteps([...new Set(dates)].sort().map(date => buildFollowUpStep(mother, date, currentUserName || null)));
+      await fetchTasks();
+      return created.length > 0;
+    } catch (error) {
+      console.error('Error adding follow-up steps:', error);
+      toast.error('Erro ao lançar a data');
+      return false;
+    }
+  }, [currentUserName, fetchTasks]);
+
+  /** Encerra o acompanhamento: as datas em aberto ficam dispensadas e o processo-mãe é concluído. */
+  const closeFollowUp = useCallback(async (motherId: string) => {
+    try {
+      const dismiss = await supabase.from('tasks').update({ status: 'cancelada', completed: false })
+        .eq('parent_task_id', motherId).eq('recurrence_origin_id', motherId).eq('completed', false).neq('status', 'cancelada');
+      if (dismiss.error) throw dismiss.error;
+      const finish = await supabase.from('tasks').update({ status: 'concluida', completed: true }).eq('id', motherId);
+      if (finish.error) throw finish.error;
+      await fetchTasks();
+      toast.success('Acompanhamento encerrado');
+      return true;
+    } catch (error) {
+      console.error('Error closing follow-up:', error);
+      toast.error('Não foi possível encerrar. Confira se há etapas fixas em aberto.');
+      await fetchTasks();
+      return false;
+    }
+  }, [fetchTasks]);
+
   const addTask = useCallback(async (clientId: string, data: TaskFormData, clientName?: string) => {
     const task = await createTask(clientId, data, clientName);
     if (task) toast.success(data.parent_task_id ? 'Etapa criada!' : 'Processo criado!');
@@ -724,6 +756,8 @@ export function useTasks() {
     error,
     addTask,
     createFollowUp,
+    addFollowUpSteps,
+    closeFollowUp,
     addTaskFromTemplate,
     updateTask,
     bulkUpdateTasks,

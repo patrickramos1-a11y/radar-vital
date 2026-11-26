@@ -28,7 +28,7 @@ export const navigationModules: NavigationModule[] = [
     key: "processos", label: "Processos", href: "/processos", icon: Workflow, context: "ac",
     views: [
       { key: "processos", label: "Processos", href: "/processos", icon: Workflow },
-      { key: "gestao", label: "Gestão por cliente", href: "/jackbox-unificado", icon: ListChecks },
+      { key: "gestao", label: "Gestão de processos", href: "/jackbox-unificado", icon: ListChecks },
       { key: "quadro", label: "Quadro de clientes", href: "/jackbox", icon: LayoutDashboard },
     ],
   },

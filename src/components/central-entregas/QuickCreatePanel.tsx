@@ -6,6 +6,7 @@ import { DeliverableFormData } from '@/types/deliverable';
 import { CollaboratorCommentContext, COLLAB_COMMENT_CONTEXT_LABELS, COLLAB_COMMENT_CONTEXT_COLORS } from '@/types/collaboratorComment';
 import { DeliverableModal } from './DeliverableModal';
 import { ProcessModal, type CreateProcess } from '@/components/processos/ProcessModal';
+import type { CreateFollowUp } from '@/components/processos/FollowUpModal';
 import type { UpdateTask } from '@/components/processos/processParts';
 import { useCollaboratorComments } from '@/hooks/useCollaboratorComments';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -22,6 +23,7 @@ interface Props {
   clients: Client[];
   responsibleList: RespOption[];
   onCreateProcess: CreateProcess;
+  onCreateFollowUp?: CreateFollowUp;
   onUpdateTask: UpdateTask;
   onCreateDeliverable: (data: DeliverableFormData) => Promise<unknown>;
   variant?: 'fab' | 'inline';
@@ -31,7 +33,7 @@ type Kind = 'process' | 'comment' | 'deliverable' | null;
 
 export function QuickCreatePanel({
   collaborator, color, isTeamView, clients, responsibleList,
-  onCreateProcess, onUpdateTask, onCreateDeliverable, variant = 'fab',
+  onCreateProcess, onCreateFollowUp, onUpdateTask, onCreateDeliverable, variant = 'fab',
 }: Props) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<Kind>(null);
@@ -101,6 +103,7 @@ export function QuickCreatePanel({
         defaultAssignee={defaultAssignee ?? responsibleList[0]?.name ?? ''}
         presetClientId={null}
         onCreate={onCreateProcess}
+        onCreateFollowUp={onCreateFollowUp}
         onUpdateTask={onUpdateTask}
       />
 
