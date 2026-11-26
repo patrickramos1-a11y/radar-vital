@@ -127,6 +127,13 @@
       "when": 1795635120339,
       "tag": "0017_processos_v2",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795715439828,
+      "tag": "0018_acompanhamentos_recorrentes",
+      "breakpoints": true
     }
   ]
 }
