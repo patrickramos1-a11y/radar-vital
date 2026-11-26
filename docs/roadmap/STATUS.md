@@ -472,6 +472,13 @@ Resumo: a pedido do usuario, o formulario Novo processo/Editar processo escolhe 
 Arquivos: `src/components/processos/ProcessModal.tsx`, `src/components/processos/processParts.tsx` (`WeightIconOptions`), `ProcessesTab.test.tsx`.
 Testes: TypeScript sem erros, 258 testes Vitest aprovados, build aprovado; conferido no navegador em computador e celular (375 px), sem gravar.
 Resultado: publicado por pedido expresso do usuario em 26/11/2026 (PR #6, commit `9710f6d`), deploy da Vercel com sucesso e formulario conferido em radar-vital.vercel.app.
+
+2026-11-26 - Acompanhamentos recorrentes (implementacao)
+Resumo: desenho em `docs/roadmap/PROCESSOS_RECORRENTES.md`, com as decisoes do usuario. Gestao de processos (antes "Gestao por cliente") passa a ter Recorrentes, Planejados e Todos, abrindo em Recorrentes. Novo acompanhamento: comeca de uma data ou de um marco (ex.: emissao da LO), frequencia por atalhos ou a cada N dias/semanas/meses/anos, primeira vez no marco ou um periodo depois, ate quando (sem fim, data ou numero de vezes), avisar antes (padrao 0) e a projecao das datas para marcar (passadas marcadas entram atrasadas; das futuras, a proxima sempre entra). Cartao com proxima data, atrasos e linha do tempo (feita, atrasada, dispensada, nao conta, prevista) para concluir, dispensar, lancar, editar, pausar e encerrar. O campo Repeticao do Novo processo abre o mesmo cadastro. A geracao automatica cria so a proxima data, nunca datas passadas.
+Arquivos: `src/lib/recurringFollowUp.ts` (+ teste), `src/components/processos/FollowUpModal.tsx` (+ teste), `FollowUpBoard.tsx`, `formStyles.ts`, `ProcessModal.tsx`, `ProcessesTab.tsx`, `src/pages/JackboxUnified.tsx`, `src/hooks/useTasks.ts`, `src/types/task.ts`, `src/integrations/supabase/types.ts`, `navigationModel.ts`.
+Migrations: `20261126120000_acompanhamentos_recorrentes.sql` (colunas opcionais em `tasks`), pendente de aplicacao pelo usuario no Lovable (`docs/lovable/acompanhamentos-recorrentes/`).
+Testes: TypeScript sem erros, testes novos de datas, projecao, linha do tempo e formularios; navegador local sem gravar (formulario no computador e no celular).
+Pendencias: aplicar a migration; publicar; conferir o primeiro acompanhamento real.
 ```
 
 ## Modelo para proximos registros

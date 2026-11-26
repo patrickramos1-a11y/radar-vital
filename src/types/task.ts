@@ -18,7 +18,7 @@ export type TaskStatus =
 export type TaskRecurrence = 'none' | 'weekly' | 'monthly' | 'custom';
 export type TaskRecurrenceUnit = 'days' | 'months';
 
-export interface Task {
+export interface Task extends FollowUpColumns {
   id: string;
   client_id: string;
   title: string;
@@ -49,7 +49,22 @@ export interface Task {
   updated_at: string;
 }
 
-export type TaskFormData = {
+/** Acompanhamento recorrente: colunas só do processo-mãe (docs/roadmap/PROCESSOS_RECORRENTES.md). */
+export interface FollowUpColumns {
+  /** Marco: as datas seguem ele (ex.: emissão da licença). */
+  recurrence_anchor_date?: string | null;
+  recurrence_anchor_label?: string | null;
+  /** anchor = 1ª vez no marco; after_interval = um período depois. */
+  recurrence_first?: TaskRecurrenceFirst | null;
+  recurrence_end_date?: string | null;
+  recurrence_max_count?: number | null;
+  recurrence_lead_days?: number;
+  recurrence_paused_at?: string | null;
+}
+
+export type TaskRecurrenceFirst = 'anchor' | 'after_interval';
+
+export type TaskFormData = FollowUpColumns & {
   title: string;
   description?: string;
   external_url?: string;

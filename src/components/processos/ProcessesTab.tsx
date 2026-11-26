@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { ProcessModal, type CreateProcess } from './ProcessModal';
+import type { CreateFollowUp } from './FollowUpModal';
 import { colorWithAlpha, daysOpen, formatCommentDate, formatDay, today, weightVisual } from '@/lib/processDisplay';
 import { commentsByProcess, type ProcessComment } from '@/lib/processFollowUp';
 import type { AddProcessComment } from '@/hooks/useProcessComments';
@@ -40,6 +41,8 @@ interface Props {
   comments?: ProcessComment[];
   onComment?: AddProcessComment;
   onCreate: CreateProcess;
+  /** Repetição: cadastra o processo como acompanhamento recorrente. */
+  onCreateFollowUp?: CreateFollowUp;
   onToggleTask: ToggleTask;
   onUpdateTask: UpdateTask;
   onDeleteTask: (taskId: string, clientName?: string) => Promise<boolean>;
@@ -176,7 +179,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
  * Processos v2 (D-025): duas visões. "Processos" mostra todos, agrupados por
  * cliente; "Painel" mostra só os abertos de peso Máxima, em cartões.
  */
-export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanMaximum = true, initialClientId, initialView = 'processes', section = 'all', comments, onComment, onCreate, onToggleTask, onUpdateTask, onDeleteTask }: Props) {
+export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, responsibleList, allowCollaboratorFilter = false, canPlanMaximum = true, initialClientId, initialView = 'processes', section = 'all', comments, onComment, onCreate, onCreateFollowUp, onToggleTask, onUpdateTask, onDeleteTask }: Props) {
   const [chosenView, setView] = useState<ProcessView>(initialView);
   const view: ProcessView = section === 'all' ? chosenView : 'processes';
   const [sortMode, setSortMode] = useState<SortMode>('weight');
@@ -308,6 +311,7 @@ export function ProcessesTab({ collaborator, color, isTeamView, tasks, clients, 
       defaultWeight={quickWeight}
       onCreate={onCreate}
       onUpdateTask={onUpdateTask}
+      onCreateFollowUp={onCreateFollowUp}
     />
     {onComment && <ProcessCommentDialog
       open={Boolean(commenting)}

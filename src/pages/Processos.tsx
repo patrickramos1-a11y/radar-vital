@@ -42,6 +42,7 @@ export default function Processos() {
           comments={processComments.comments}
           onComment={processComments.addComment}
           onCreate={taskData.addTask}
+          onCreateFollowUp={taskData.createFollowUp}
           onToggleTask={taskData.toggleComplete}
           onUpdateTask={taskData.updateTask}
           onDeleteTask={taskData.deleteTask}

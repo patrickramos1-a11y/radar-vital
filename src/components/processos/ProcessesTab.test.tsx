@@ -155,7 +155,7 @@ describe('ProcessesTab', () => {
     await waitFor(() => expect(props.onCreate).toHaveBeenCalledWith(client.id, expect.objectContaining({ title: 'Protocolar', parent_task_id: 'Entregar relatório' }), client.name));
   });
 
-  it('creates a process with weight, dates and repetition', async () => {
+  it('creates a process with weight and dates', async () => {
     const { props } = renderTab({ tasks: [] });
     fireEvent.change(screen.getByLabelText('Filtrar cliente'), { target: { value: client.id } });
     fireEvent.click(screen.getByRole('button', { name: 'Novo processo' }));
@@ -166,7 +166,6 @@ describe('ProcessesTab', () => {
     expect(within(dialog).getByRole('radio', { name: 'Peso 4: Urgente' })).toHaveAttribute('aria-checked', 'true');
     fireEvent.change(within(dialog).getByLabelText('Vencimento'), { target: { value: '2026-12-15' } });
     fireEvent.change(within(dialog).getByLabelText('Planejamento'), { target: { value: '2026-12-01' } });
-    fireEvent.change(within(dialog).getByLabelText('Repetição'), { target: { value: 'monthly' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Criar processo' }));
 
     await waitFor(() => expect(props.onCreate).toHaveBeenCalledWith(client.id, {
@@ -176,26 +175,31 @@ describe('ProcessesTab', () => {
       weight: 4,
       due_date: '2026-12-15',
       scheduled_for: '2026-12-01',
-      recurrence: 'monthly',
-      recurrence_interval: null,
-      recurrence_unit: null,
     }, client.name));
   });
 
-  it('creates a process that repeats every N days', async () => {
-    const { props } = renderTab({ tasks: [] });
+  it('turns a new process into a monthly follow-up from Repetição', async () => {
+    const onCreateFollowUp = vi.fn(async () => true);
+    const { props } = renderTab({ tasks: [], onCreateFollowUp });
     fireEvent.change(screen.getByLabelText('Filtrar cliente'), { target: { value: client.id } });
     fireEvent.click(screen.getByRole('button', { name: 'Novo processo' }));
 
     const dialog = await screen.findByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText('Processo'), { target: { value: 'Vistoria' } });
-    fireEvent.change(within(dialog).getByLabelText('Repetição'), { target: { value: 'every-days' } });
-    fireEvent.change(within(dialog).getByLabelText('Quantos dias'), { target: { value: '10' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Criar processo' }));
+    fireEvent.change(within(dialog).getByLabelText('Processo'), { target: { value: 'Visita de acompanhamento' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: /Repetir/ }));
 
-    await waitFor(() => expect(props.onCreate).toHaveBeenCalledWith(client.id, expect.objectContaining({
-      title: 'Vistoria', recurrence: 'custom', recurrence_interval: 10, recurrence_unit: 'days',
-    }), client.name));
+    const followUp = await screen.findByRole('dialog', { name: 'Novo acompanhamento' });
+    expect(within(followUp).getByLabelText('O que se repete')).toHaveValue('Visita de acompanhamento');
+    fireEvent.click(within(followUp).getByRole('button', { name: 'Mensal' }));
+    const today = new Date().toLocaleDateString('sv-SE');
+    fireEvent.change(within(followUp).getByLabelText('Começa em'), { target: { value: today } });
+    fireEvent.click(within(followUp).getByRole('button', { name: 'Criar acompanhamento' }));
+
+    await waitFor(() => expect(onCreateFollowUp).toHaveBeenCalledWith(client.id, expect.objectContaining({
+      title: 'Visita de acompanhamento', modality: 'acompanhamento', recurrence: 'custom', recurrence_interval: 1, recurrence_unit: 'months',
+      recurrence_anchor_date: today, recurrence_first: 'anchor', recurrence_lead_days: 0,
+    }), [today], client.name));
+    expect(props.onCreate).not.toHaveBeenCalled();
   });
 
   it('lists only planned processes in the planned section', () => {

@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { TaskManagementSheet } from '@/components/tasks/TaskManagementSheet';
 import { KPICard, VisualPanelHeader } from '@/components/visual-panels/VisualPanelHeader';
 import { ProcessesTab } from '@/components/processos/ProcessesTab';
+import { FollowUpBoard } from '@/components/processos/FollowUpBoard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClients } from '@/contexts/ClientContext';
 import { useTasks } from '@/hooks/useTasks';
@@ -15,16 +16,16 @@ import { cn } from '@/lib/utils';
 type Section = 'todos' | 'planejados' | 'recorrentes';
 
 const SECTIONS: { value: Section; label: string; icon: typeof ListChecks }[] = [
-  { value: 'todos', label: 'Todos', icon: ListChecks },
-  { value: 'planejados', label: 'Planejados', icon: CalendarClock },
   { value: 'recorrentes', label: 'Recorrentes', icon: Repeat },
+  { value: 'planejados', label: 'Planejados', icon: CalendarClock },
+  { value: 'todos', label: 'Todos', icon: ListChecks },
 ];
 
 function sectionFrom(value: string | null): Section {
-  return value === 'planejados' || value === 'recorrentes' ? value : 'todos';
+  return value === 'planejados' || value === 'todos' ? value : 'recorrentes';
 }
 
-/** Gestão de processos (D-025): Todos, Planejados e Recorrentes. */
+/** Gestão de processos: Recorrentes (acompanhamentos), Planejados e Todos. */
 export default function JackboxUnified() {
   const { collaborators, currentUser, isAdmin } = useAuth();
   const { activeClients } = useClients();
@@ -33,6 +34,9 @@ export default function JackboxUnified() {
   const {
     tasks,
     addTask,
+    createFollowUp,
+    addFollowUpSteps,
+    closeFollowUp,
     toggleComplete,
     updateTask,
     deleteTask,
@@ -70,7 +74,7 @@ export default function JackboxUnified() {
 
   const chooseSection = (next: Section) => {
     const params = new URLSearchParams(searchParams);
-    if (next === 'todos') params.delete('secao'); else params.set('secao', next);
+    if (next === 'recorrentes') params.delete('secao'); else params.set('secao', next);
     setSearchParams(params, { replace: true });
   };
 
@@ -79,7 +83,7 @@ export default function JackboxUnified() {
       <div className="flex h-full min-w-0 flex-col overflow-hidden">
         <VisualPanelHeader
           title="Gestão de processos"
-          subtitle="Processos por cliente, os planejados e os que se repetem"
+          subtitle="Acompanhamentos que se repetem, processos planejados e a planilha de todos"
           icon={<ListChecks className="h-5 w-5" />}
         >
           <KPICard icon={<CheckSquare className="h-4 w-4" />} value={metrics.pending} label="Abertos" variant="warning" />
@@ -105,7 +109,21 @@ export default function JackboxUnified() {
           })}
         </nav>
 
-        {section === 'todos'
+        {section === 'recorrentes'
+          ? <main className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-3 pb-20 pt-3 sm:px-6">
+            <FollowUpBoard
+              tasks={externalTasks}
+              clients={activeClients}
+              responsibleList={responsibleList}
+              currentUser={currentUser?.name ?? ''}
+              onCreateFollowUp={createFollowUp}
+              onAddSteps={addFollowUpSteps}
+              onClose={closeFollowUp}
+              onToggleTask={toggleComplete}
+              onUpdateTask={updateTask}
+            />
+          </main>
+          : section === 'todos'
           ? <TaskManagementSheet
             tasks={externalTasks}
             clients={activeClients}
@@ -130,10 +148,11 @@ export default function JackboxUnified() {
               responsibleList={responsibleList}
               allowCollaboratorFilter
               canPlanMaximum={isAdmin && Boolean(currentUser?.name.toLocaleLowerCase('pt-BR').includes('patrick'))}
-              section={section === 'planejados' ? 'planned' : 'recurring'}
+              section="planned"
               comments={processComments.comments}
               onComment={processComments.addComment}
               onCreate={addTask}
+              onCreateFollowUp={createFollowUp}
               onToggleTask={toggleComplete}
               onUpdateTask={updateTask}
               onDeleteTask={deleteTask}

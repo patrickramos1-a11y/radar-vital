@@ -348,6 +348,7 @@ export default function CentralEntregas() {
                 comments={processComments.comments}
                 onComment={processComments.addComment}
                 onCreate={tasksHook.addTask}
+                onCreateFollowUp={tasksHook.createFollowUp}
                 onToggleTask={tasksHook.toggleComplete}
                 onUpdateTask={tasksHook.updateTask}
                 onDeleteTask={tasksHook.deleteTask}
@@ -446,6 +447,7 @@ export default function CentralEntregas() {
           clients={scopedClients}
           responsibleList={responsibleList}
           onCreateProcess={tasksHook.addTask}
+          onCreateFollowUp={tasksHook.createFollowUp}
           onUpdateTask={tasksHook.updateTask}
           onCreateDeliverable={deliverablesHook.addDeliverable}
           variant="fab"
