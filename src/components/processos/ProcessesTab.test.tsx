@@ -162,7 +162,8 @@ describe('ProcessesTab', () => {
 
     const dialog = await screen.findByRole('dialog');
     fireEvent.change(within(dialog).getByLabelText('Processo'), { target: { value: 'Licença de operação' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Peso 4: Urgente' }));
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Peso 4: Urgente' }));
+    expect(within(dialog).getByRole('radio', { name: 'Peso 4: Urgente' })).toHaveAttribute('aria-checked', 'true');
     fireEvent.change(within(dialog).getByLabelText('Vencimento'), { target: { value: '2026-12-15' } });
     fireEvent.change(within(dialog).getByLabelText('Planejamento'), { target: { value: '2026-12-01' } });
     fireEvent.change(within(dialog).getByLabelText('Repetição'), { target: { value: 'monthly' } });

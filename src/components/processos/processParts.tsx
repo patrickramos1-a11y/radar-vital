@@ -35,6 +35,34 @@ export function WeightOptions({ value, onSelect }: { value: number; onSelect: (w
   </div>;
 }
 
+/** Peso em uma fileira só de ícones, da Máxima à Baixa. O nome do peso fica no título e no leitor de tela. */
+export function WeightIconOptions({ value, onSelect }: { value: number; onSelect: (weight: ProcessWeight) => void }) {
+  return <div role="radiogroup" aria-label="Peso do processo" className="grid grid-cols-5 gap-1.5">
+    {PROCESS_WEIGHTS.map(weight => {
+      const config = weightVisual(weight);
+      const Icon = config.icon;
+      const selected = value === weight;
+      return <button
+        key={weight}
+        type="button"
+        role="radio"
+        aria-checked={selected}
+        aria-label={`Peso ${weight}: ${config.label}`}
+        title={`${config.label} (peso ${weight})`}
+        onClick={() => onSelect(weight)}
+        className={cn(
+          'flex h-11 items-center justify-center rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+          selected
+            ? cn(config.className, 'scale-[1.04] shadow-sm ring-2 ring-current ring-offset-1')
+            : cn('border-slate-200 bg-white opacity-70 hover:bg-slate-50 hover:opacity-100', config.className.split(' ').find(name => name.startsWith('text-'))),
+        )}
+      >
+        <Icon className="h-5 w-5" aria-hidden />
+      </button>;
+    })}
+  </div>;
+}
+
 export function ProcessWeightPicker({ task, onUpdateTask }: { task: Task; onUpdateTask: UpdateTask }) {
   const [open, setOpen] = useState(false);
   const current = weightVisual(task.weight);
