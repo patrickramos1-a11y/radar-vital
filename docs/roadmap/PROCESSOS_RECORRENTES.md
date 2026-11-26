@@ -1,8 +1,7 @@
 # Acompanhamentos recorrentes — proposta (26/11/2026)
 
 Refinamento do processo-mãe recorrente do Processos v2 (D-025), a pedido do
-Patrick. Implementado em 26/11/2026 na branch `feature/acompanhamentos-recorrentes`;
-falta aplicar a migration e publicar.
+Patrick. Implementado e publicado em 26/11/2026 (PR #7).
 
 ## 1. O problema hoje
 

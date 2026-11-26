@@ -478,7 +478,8 @@ Resumo: desenho em `docs/roadmap/PROCESSOS_RECORRENTES.md`, com as decisoes do u
 Arquivos: `src/lib/recurringFollowUp.ts` (+ teste), `src/components/processos/FollowUpModal.tsx` (+ teste), `FollowUpBoard.tsx`, `formStyles.ts`, `ProcessModal.tsx`, `ProcessesTab.tsx`, `src/pages/JackboxUnified.tsx`, `src/hooks/useTasks.ts`, `src/types/task.ts`, `src/integrations/supabase/types.ts`, `navigationModel.ts`.
 Migrations: `20261126120000_acompanhamentos_recorrentes.sql` (colunas opcionais em `tasks`), pendente de aplicacao pelo usuario no Lovable (`docs/lovable/acompanhamentos-recorrentes/`).
 Testes: TypeScript sem erros, testes novos de datas, projecao, linha do tempo e formularios; navegador local sem gravar (formulario no computador e no celular).
-Pendencias: aplicar a migration; publicar; conferir o primeiro acompanhamento real.
+Resultado: migration aplicada pelo usuario no Lovable em 26/11 (7 colunas e 4 regras conferidas; commit do Lovable `4578a6d`, `drizzle/migrations/0018_acompanhamentos_recorrentes.sql`). Publicado por pedido do usuario em 26/11/2026 (PR #7, commit `5d90325`), com 274 testes aprovados, build aprovado, deploy da Vercel com sucesso e Gestao de processos conferida em radar-vital.vercel.app.
+Pendencias: conferir o primeiro acompanhamento real (a proxima data nasce sozinha so na versao publicada).
 ```
 
 ## Modelo para proximos registros
