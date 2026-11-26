@@ -1,6 +1,6 @@
 # Estado de Execucao
 
-Atualizado em: 2026-11-25
+Atualizado em: 2026-11-26
 
 ## Entrega recente
 
@@ -466,6 +466,12 @@ Resumo: publicacao feita por pedido expresso do usuario em 25/11/2026 ("Pode pub
 Testes antes de publicar: TypeScript sem erros, 258 testes Vitest aprovados, build aprovado; ESLint sem erros novos (2 erros antigos em `ClientContext.tsx`). Navegador local com dados reais, sem gravar: Processos, Painel, Gestao de processos e Em acompanhamento.
 Conversao final: o usuario rodou `convert_open_priorities_to_processes('Publicacao Processos v2')` no Lovable em 25/11; 191 prioridades abertas verificadas, 0 processos criados, 0 atualizados, 0 movidas (todas ja tinham processo).
 Pendencias: conferir o primeiro processo recorrente real (a geracao de etapas so roda na versao publicada).
+
+2026-11-26 - Novo processo: peso so com icones e versao de celular
+Resumo: a pedido do usuario, o formulario Novo processo/Editar processo escolhe o peso por uma fileira de 5 icones coloridos (nome do peso no titulo, no title e no leitor de tela); campos no mesmo padrao, botao Criar sempre visivel e, no celular, formulario como folha que sobe do rodape com botoes grandes.
+Arquivos: `src/components/processos/ProcessModal.tsx`, `src/components/processos/processParts.tsx` (`WeightIconOptions`), `ProcessesTab.test.tsx`.
+Testes: TypeScript sem erros, 258 testes Vitest aprovados, build aprovado; conferido no navegador em computador e celular (375 px), sem gravar.
+Resultado: publicado por pedido expresso do usuario em 26/11/2026 (PR #6, commit `9710f6d`), deploy da Vercel com sucesso e formulario conferido em radar-vital.vercel.app.
 ```
 
 ## Modelo para proximos registros
