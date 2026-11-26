@@ -1,4 +1,4 @@
-import { CalendarClock, Sparkles, UserPlus } from "lucide-react";
+import { CalendarClock, Sparkles, UserPlus } from "@/components/icones";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { Challenge } from "@/types/challenge";

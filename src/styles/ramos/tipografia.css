@@ -1,0 +1,78 @@
+/* =========================================================================
+   RAMOS — TIPOGRAFIA  (segue o "Manual de Uso Tipográfico", ver manual-marca.md)
+   Rota A (padrão): Barlow Condensed (impacto) + Manrope (interface e texto) + IBM Plex Mono (dados).
+   Carregar depois do ramos.css. Funciona de dia e de noite.
+
+   Como carregar as fontes (Google Fonts, com troca suave):
+   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+   Em produção o manual pede hospedar as fontes no próprio projeto (licença OFL).
+
+   Regras do manual que esta folha impõe:
+   - No máximo 2 famílias e 3 pesos por peça (a mono só em dados técnicos).
+   - Título de setor: Barlow Condensed ExtraBold, CAIXA ALTA, entrelinha 0,85 a 0,92.
+   - Texto de leitura em grafite (#5B5B5B), nunca verde nem cor de setor em parágrafo.
+   - No máximo 2 cores de texto por tela.
+   - NUNCA: escala torta, contorno, sombra pesada ou gradiente na letra. Por isso nenhuma
+     classe daqui usa text-shadow, -webkit-text-stroke nem background-clip:text.
+   ========================================================================= */
+
+:root {
+  --cor-texto: var(--tinta-suave, #5b5b5b);          /* leitura longa: grafite */
+  --cor-titulo: var(--tinta, #1d1d1f);
+  /* Escala (valores do manual: título de página 32–40 no computador e 26–32 no celular, etc.) */
+  --tx-setor:   clamp(44px, 9vw, 120px);
+  --tx-capa:    clamp(40px, 7vw, 96px);
+  --tx-pagina:  clamp(26px, 2.2vw + 18px, 40px);
+  --tx-secao:   clamp(22px, 1.4vw + 16px, 30px);
+  --tx-card:    clamp(18px, .6vw + 15px, 22px);
+  --tx-nav:     clamp(14px, .3vw + 13px, 16px);
+  --tx-corpo:   clamp(14px, .3vw + 13px, 16px);
+  --tx-legenda: clamp(12px, .2vw + 11px, 13px);
+  --tx-tecnico: clamp(12px, .3vw + 11px, 14px);
+}
+
+/* Cores de setor: valem para o TÍTULO daquele setor (ver manual, seção 5) */
+[data-setor="marketing"]     { --setor: #e85d5d; }
+[data-setor="administracao"] { --setor: #2979c9; }
+[data-setor="manutencao"]    { --setor: #d99a18; }
+[data-setor="projetos"]      { --setor: #2979c9; }
+[data-setor="licenciamento"] { --setor: #187c86; }
+[data-setor="gestao"]        { --setor: #7656b8; }
+[data-setor="suprimentos"]   { --setor: #df7a25; }
+[data-setor="pessoas"]       { --setor: #c85676; }
+[data-setor="treinamentos"]  { --setor: #168f9b; }
+[data-setor="ia"]            { --setor: #5265c9; }
+
+/* ---- Títulos de impacto (Barlow Condensed) ---- */
+.t-setor, .t-capa {
+  font-family: var(--fonte-titulo, "Barlow Condensed", sans-serif); font-weight: 800; text-transform: uppercase;
+  letter-spacing: -.01em; text-wrap: balance; margin: 0;
+}
+.t-setor { font-size: var(--tx-setor); line-height: .88; color: var(--setor, var(--cor-titulo)); }
+.t-capa  { font-size: var(--tx-capa); line-height: .92; font-weight: 700; color: var(--cor-titulo); }
+
+/* ---- Interface e texto (Manrope) ---- */
+.t-pagina, .t-secao, .t-card, .t-nav, .t-corpo, .t-destaque, .t-legenda, .t-rotulo {
+  font-family: var(--fonte-texto, "Manrope", system-ui, sans-serif); margin: 0;
+}
+.t-pagina { font-size: var(--tx-pagina); line-height: 1.12; font-weight: 700; letter-spacing: -.015em; color: var(--cor-titulo); text-wrap: balance; }
+.t-secao  { font-size: var(--tx-secao);  line-height: 1.2;  font-weight: 700; letter-spacing: -.01em;  color: var(--cor-titulo); text-wrap: balance; }
+.t-card   { font-size: var(--tx-card);   line-height: 1.25; font-weight: 700; color: var(--cor-titulo); }
+.t-nav    { font-size: var(--tx-nav);    line-height: 1.2;  font-weight: 600; }
+.t-corpo  { font-size: var(--tx-corpo);  line-height: 1.55; font-weight: 400; color: var(--cor-texto); text-wrap: pretty; max-width: 68ch; }
+.t-corpo--medio { font-weight: 500; }
+.t-destaque { font-weight: 600; }
+.t-legenda { font-size: var(--tx-legenda); line-height: 1.4; font-weight: 500; color: var(--cor-texto); }
+.t-rotulo  { font-size: var(--tx-legenda); line-height: 1.2; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--cor-texto); } /* só rótulos curtos */
+
+/* ---- Dados técnicos (IBM Plex Mono): códigos, protocolos, números ---- */
+.t-tecnico {
+  font-family: var(--fonte-mono, "IBM Plex Mono", ui-monospace, monospace); font-size: var(--tx-tecnico); line-height: 1.5; font-weight: 400;
+  font-variant-numeric: tabular-nums slashed-zero; letter-spacing: 0; color: var(--cor-texto);
+}
+.t-tecnico--medio { font-weight: 500; }
+.t-numero { font-variant-numeric: tabular-nums; }        /* números alinhados em tabelas de Manrope */
+
+/* ---- Ajustes finos de leitura ---- */
+.t-corpo, .t-card, .t-pagina, .t-secao { font-kerning: normal; hyphens: manual; -webkit-font-smoothing: antialiased; }
+.t-corpo b, .t-corpo strong { font-weight: 600; color: var(--cor-titulo); }

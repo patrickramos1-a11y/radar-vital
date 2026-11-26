@@ -21,7 +21,7 @@ import { PerformanceTab } from '@/components/central-entregas/PerformanceTab';
 import { ChallengesTab } from '@/components/central-entregas/ChallengesTab';
 import { assigneeMatches } from '@/lib/taskAssignee';
 import { processWorkloadFor } from '@/lib/centralMetrics';
-import { Workflow, Siren, MessageSquare, Package, Trophy, AlertTriangle } from 'lucide-react';
+import { Workflow, Siren, MessageSquare, Package, Trophy, AlertTriangle } from '@/components/icones';
 import { KpiStrip, type KpiItem } from '@/components/common/KpiStrip';
 import { SegmentedControl } from '@/components/common/SegmentedControl';
 import { useIsMobile } from '@/hooks/use-mobile';

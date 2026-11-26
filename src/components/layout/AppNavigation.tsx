@@ -1,8 +1,10 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, RefreshCw } from "lucide-react";
+import { Menu, RefreshCw } from "@/components/icones";
 import { useSidebar } from "@/components/ui/sidebar";
 import { UserSelector } from "./UserSelector";
+import { useTemaRamos } from "./TemaSeletor";
+import { isLegacyDesignRoute } from "./AppLayout";
 import { activeModule, activeView, navigationModules } from "./navigationModel";
 import "./app-navigation.css";
 
@@ -13,6 +15,7 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
   const module = activeModule(location.pathname);
   const view = activeView(module, location.pathname, location.search);
   const isUniverse = module.context === "ramos";
+  useTemaRamos(isLegacyDesignRoute(location.pathname));
 
   useEffect(() => {
     const list = modulesRef.current;
@@ -29,13 +32,18 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
         <button type="button" className="app-navigation-icon" onClick={toggleSidebar}
           aria-label={isMobile ? openMobile ? "Fechar menu" : "Abrir menu" : state === "expanded" ? "Fechar menu" : "Abrir menu"}
           title="Menu de todas as páginas"><Menu className="h-[19px] w-[19px]" /></button>
+        <Link to="/" className="app-navigation-marca" aria-label="Ramos Engenharia: início">
+          <img className="app-navigation-logo app-navigation-logo--dia" src="/ramos/marca/ramos-logo-horizontal.svg" alt="" width={91} height={28} />
+          <img className="app-navigation-logo app-navigation-logo--noite" src="/ramos/marca/ramos-logo-horizontal-negativo.svg" alt="" width={91} height={28} />
+          <img className="app-navigation-simbolo" src="/ramos/marca/ramos-circulo.svg" alt="" width={28} height={28} />
+        </Link>
       </div>
 
       <nav ref={modulesRef} className="app-navigation-modules" aria-label="Módulos">
         {navigationModules.map((entry) => {
           const Icon = entry.icon;
           const selected = module.key === entry.key;
-          return <Link key={entry.key} to={entry.href} aria-current={selected ? "page" : undefined} className={`app-navigation-module ${selected ? "is-active" : ""}`}><Icon className="h-[17px] w-[17px] shrink-0" /><span>{entry.label}</span></Link>;
+          return <Link key={entry.key} to={entry.href} viewTransition aria-current={selected ? "page" : undefined} className={`app-navigation-module ${selected ? "is-active" : ""}`}><Icon className="h-[17px] w-[17px] shrink-0" /><span>{entry.label}</span></Link>;
         })}
       </nav>
 
@@ -50,7 +58,7 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
         {module.views.map((entry) => {
           const Icon = entry.icon;
           const selected = view === entry.key;
-          return <Link key={entry.key} to={entry.href} aria-current={selected ? "page" : undefined} className={`app-navigation-view ${selected ? "is-active" : ""}`}><Icon className="h-[15px] w-[15px] shrink-0" /><span>{entry.label}</span></Link>;
+          return <Link key={entry.key} to={entry.href} viewTransition aria-current={selected ? "page" : undefined} className={`app-navigation-view ${selected ? "is-active" : ""}`}><Icon className="h-[15px] w-[15px] shrink-0" /><span>{entry.label}</span></Link>;
         })}
       </nav>
       {tools && <div className="app-navigation-tools">{tools}</div>}

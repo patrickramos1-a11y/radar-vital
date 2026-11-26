@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Grid3X3, X } from "lucide-react";
+import { Grid3X3, X } from "@/components/icones";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";

@@ -9,10 +9,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        // reflexo (efeitos.css da Ramos): brilho que atravessa o botão principal ao passar o mouse
+        default: "botao-r botao-r--aceso reflexo bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive: "botao-r botao-r--perigo bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "botao-r border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary: "botao-r botao-r--suave bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },

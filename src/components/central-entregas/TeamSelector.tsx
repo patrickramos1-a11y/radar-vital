@@ -1,4 +1,4 @@
-import { Users } from 'lucide-react';
+import { Users } from '@/components/icones';
 import { cn } from '@/lib/utils';
 import { CollaboratorAvatar } from './CollaboratorAvatar';
 
@@ -20,7 +20,7 @@ interface Props {
 export const TEAM_VIEW = '__EQUIPE__';
 
 const pillClass = (selected: boolean) => cn(
-  'inline-flex h-9 shrink-0 snap-start items-center gap-1.5 rounded-full border bg-card pl-1 pr-2.5 text-sm transition-colors',
+  'chip-r inline-flex h-9 shrink-0 snap-start items-center gap-1.5 rounded-full border bg-card pl-1 pr-2.5 text-sm transition-colors',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
   selected
     ? 'border-primary bg-primary/10 font-semibold text-primary'

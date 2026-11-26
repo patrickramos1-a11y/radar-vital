@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarClock, CheckCircle2, CircleAlert, ClipboardList, MessageCircle, Pencil, Sparkles, Trash2, Users, SquarePen } from "lucide-react";
+import { CalendarClock, CheckCircle2, CircleAlert, ClipboardList, MessageCircle, Pencil, Sparkles, Trash2, Users, SquarePen } from "@/components/icones";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";

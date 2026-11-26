@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ThumbsUp, Star, Sparkles, Lock } from 'lucide-react';
+import { ThumbsUp, Star, Sparkles, Lock } from '@/components/icones';
 import { cn } from '@/lib/utils';
 import { DeliverableRating, RatingType, summarizeRatings } from '@/hooks/useDeliverableRatings';
 import { useAuth } from '@/contexts/AuthContext';

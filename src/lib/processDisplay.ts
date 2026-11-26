@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, format } from 'date-fns';
-import { ArrowDown, ArrowUp, Flame, Minus, Siren } from 'lucide-react';
+import { ArrowDown, ArrowUp, Flame, Minus, Siren } from '@/components/icones';
 import type { Task } from '@/types/task';
 import { PROCESS_WEIGHT_CONFIG, normalizeProcessWeight, type ProcessWeight } from '@/lib/processWeight';
 

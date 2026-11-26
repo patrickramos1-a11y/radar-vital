@@ -11,7 +11,7 @@ import {
   Pencil,
   ShieldCheck,
   Workflow
-} from "lucide-react";
+} from "@/components/icones";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Client } from "@/types/client";
 import type { Collaborator } from "@/types/collaborator";
@@ -366,7 +366,7 @@ function StatCard({ icon, value, label }: StatCardProps) {
   return (
     <div className="flex flex-col items-center gap-1 p-4 rounded-xl border border-border bg-card">
       {icon}
-      <span className="text-2xl font-bold text-foreground">{value}</span>
+      <span className="numero-r text-3xl text-foreground">{value}</span>
       <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );

@@ -13,7 +13,7 @@ import {
   RotateCcw,
   Sparkles,
   WalletCards,
-} from "lucide-react";
+} from "@/components/icones";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { CollaboratorAvatar } from "@/components/central-entregas/CollaboratorAvatar";
 import { Button } from "@/components/ui/button";
@@ -314,7 +314,7 @@ function SummaryCard({
         </span>
         {label}
       </div>
-      <p className="mt-3 text-xl font-bold">{value}</p>
+      <p className="numero-r mt-3 text-2xl">{value}</p>
     </article>
   );
 }

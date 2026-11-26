@@ -1,69 +1,147 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+/* Letras do manual da Ramos: Manrope (interface e texto), Barlow Condensed (títulos e números)
+   e IBM Plex Mono (datas, códigos). docs/design/PLANO_DESIGN_RAMOS.md */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* Cores da Ramos (biblioteca aplicar-design/ramos). Dia: base branca estilo Apple. */
   :root {
-    /* Light Professional Theme — SisRamos Green */
+    --ramos-viva: #0dd375;      /* ação principal */
+    --ramos-escura: #00684a;    /* texto e link sobre claro (AA) */
+    --ramos-profunda: #0b2e21;
+    --ramos-clara: #d5f7e4;
+    --ramos-sobre-viva: #06140e;
+    --ramos-cinza: #5b5b5b;
+    --ramos-tinta: #1d1d1f;
+    --ramos-papel: #f5f5f7;
+    --ramos-perola: #fafafc;
+    --ramos-fio: #e6e6e6;
+    --ramos-vidro: rgb(255 255 255 / 72%);
+    --ramos-vidro-fio: rgb(29 29 31 / 8%);
+    --fonte-titulo: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+    --fonte-texto: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --fonte-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+
     --background: 0 0% 100%;
-    --foreground: 150 10% 15%;
+    --foreground: 240 3% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 150 10% 15%;
-    --card-elevated: 100 10% 97%;
+    --card-foreground: 240 3% 12%;
+    --card-elevated: 240 33% 99%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 150 10% 15%;
+    --popover-foreground: 240 3% 12%;
 
-    --primary: 95 55% 41%;
-    --primary-foreground: 0 0% 100%;
+    /* Verde vivo oficial, com texto escuro por cima (manual). */
+    --primary: 151 88% 44%;
+    --primary-foreground: 154 54% 5%;
 
-    --secondary: 100 12% 92%;
-    --secondary-foreground: 105 20% 25%;
+    --secondary: 240 11% 96%;
+    --secondary-foreground: 240 3% 12%;
 
-    --muted: 100 8% 93%;
-    --muted-foreground: 100 5% 46%;
+    --muted: 240 11% 96%;
+    --muted-foreground: 0 0% 36%;
 
-    --accent: 105 45% 20%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 147 68% 90%;
+    --accent-foreground: 163 100% 20%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 356 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
     /* Status Colors */
-    --status-completed: 152 70% 38%;
-    --status-in-progress: 45 93% 50%;
+    --status-completed: 151 84% 29%;
+    --status-in-progress: 45 93% 47%;
     --status-not-started: 215 14% 55%;
-    --status-cancelled: 0 72% 51%;
+    --status-cancelled: 356 72% 45%;
 
     /* Dashboard specific */
-    --header-bg: 100 15% 98%;
-    --header-border: 100 10% 90%;
-    --card-highlight: 95 55% 41%;
-    --card-shadow: 100 10% 70%;
+    --header-bg: 240 33% 99%;
+    --header-border: 0 0% 90%;
+    --card-highlight: 151 88% 44%;
+    --card-shadow: 240 5% 64%;
 
-    --border: 100 10% 88%;
-    --input: 100 10% 92%;
-    --ring: 95 55% 41%;
+    --border: 0 0% 90%;
+    --input: 0 0% 86%;
+    --ring: 163 100% 20%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 100 15% 98%;
-    --sidebar-foreground: 150 10% 15%;
-    --sidebar-primary: 95 55% 41%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 100 12% 94%;
-    --sidebar-accent-foreground: 105 20% 25%;
-    --sidebar-border: 100 10% 90%;
-    --sidebar-ring: 95 55% 41%;
+    --sidebar-background: 240 33% 99%;
+    --sidebar-foreground: 240 3% 12%;
+    --sidebar-primary: 151 88% 44%;
+    --sidebar-primary-foreground: 154 54% 5%;
+    --sidebar-accent: 147 68% 94%;
+    --sidebar-accent-foreground: 163 100% 20%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 163 100% 20%;
 
     /* Glass variables */
-    --glass-bg: 0 0% 100% / 0.75;
-    --glass-border: 100 15% 80% / 0.4;
-    --glass-hover: 95 20% 50% / 0.04;
+    --glass-bg: 0 0% 100% / 0.72;
+    --glass-border: 240 3% 12% / 0.08;
+    --glass-hover: 151 88% 44% / 0.06;
+  }
+
+  /* Noite: verde-noite da Ramos, texto claro. */
+  [data-tema="escuro"] {
+    color-scheme: dark;
+    --ramos-tinta: #f2f7f4;
+    --ramos-cinza: #a7b8af;
+    --ramos-papel: #10261c;
+    --ramos-perola: #0a1a13;
+    --ramos-fio: #1f3d2f;
+    --ramos-escura: #5fe39c;
+    --ramos-vidro: rgb(10 26 19 / 72%);
+    --ramos-vidro-fio: rgb(242 247 244 / 10%);
+
+    --background: 154 54% 3%;
+    --foreground: 144 24% 96%;
+
+    --card: 154 44% 7%;
+    --card-foreground: 144 24% 96%;
+    --card-elevated: 153 41% 11%;
+
+    --popover: 153 41% 11%;
+    --popover-foreground: 144 24% 96%;
+
+    --primary: 151 88% 44%;
+    --primary-foreground: 154 54% 5%;
+
+    --secondary: 153 41% 11%;
+    --secondary-foreground: 144 24% 96%;
+
+    --muted: 153 41% 11%;
+    --muted-foreground: 148 11% 69%;
+
+    --accent: 153 40% 14%;
+    --accent-foreground: 148 70% 63%;
+
+    --destructive: 356 72% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --status-completed: 148 70% 45%;
+
+    --header-bg: 154 44% 7%;
+    --header-border: 152 33% 18%;
+    --card-shadow: 0 0% 0%;
+
+    --border: 152 33% 18%;
+    --input: 152 33% 22%;
+    --ring: 148 70% 63%;
+
+    --sidebar-background: 154 44% 7%;
+    --sidebar-foreground: 144 24% 96%;
+    --sidebar-accent: 153 40% 14%;
+    --sidebar-accent-foreground: 148 70% 63%;
+    --sidebar-border: 152 33% 18%;
+    --sidebar-ring: 148 70% 63%;
+
+    --glass-bg: 154 44% 7% / 0.72;
+    --glass-border: 144 24% 96% / 0.1;
+    --glass-hover: 151 88% 44% / 0.08;
   }
 }
 
@@ -74,16 +152,30 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--fonte-texto);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-family: var(--fonte-titulo);
+    letter-spacing: 0.005em;
   }
 
   /* Smooth global transitions */
   button, a, input, select, textarea {
     @apply transition-all duration-200 ease-out;
+  }
+
+  :focus-visible {
+    outline-color: var(--ramos-escura);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -112,7 +204,7 @@
 
   .stat-value {
     @apply text-3xl font-bold text-foreground;
-    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-family: var(--fonte-titulo);
   }
 
   .stat-label {

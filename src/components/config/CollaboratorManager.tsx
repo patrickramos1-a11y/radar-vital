@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { Users, Plus, Pencil, Trash2, Search, ChevronDown, X, Check, Camera, Loader2 } from 'lucide-react';
+import { Users, Plus, Pencil, Trash2, Search, ChevronDown, X, Check, Camera, Loader2 } from '@/components/icones';
 import { useCollaborators } from '@/hooks/useCollaborators';
 import { generateCollaboratorInitials, generateCollaboratorColor } from '@/types/collaborator';
 import { supabase } from '@/integrations/supabase/client';

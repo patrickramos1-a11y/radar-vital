@@ -1,4 +1,4 @@
-import { CheckSquare } from 'lucide-react';
+import { CheckSquare } from '@/components/icones';
 
 interface ChecklistButtonProps {
   activeCount: number;

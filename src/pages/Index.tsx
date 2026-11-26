@@ -11,7 +11,7 @@ import { useAllClientsCommentCountsWithRefresh } from "@/hooks/useClientComments
 import { useAllClientsCommentSnippets } from "@/hooks/useAllClientsCommentSnippets";
 import { useAuth } from "@/contexts/AuthContext";
 import { Client } from "@/types/client";
-import { Users, Bomb, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "lucide-react";
+import { Users, Bomb, UserCheck, MessageCircle, ShieldCheck, AlertTriangle, ListChecks, UserPlus, Target } from "@/components/icones";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -560,7 +560,7 @@ const Index = () => {
                   <span className="text-[9px] font-semibold text-white uppercase">{collab.name}</span>
                 </div>
                 <div className="flex items-center justify-center px-2 py-1">
-                  <span className="text-sm font-bold leading-none">{collaboratorStats[collab.id] || 0}</span>
+                  <span className="numero-r text-base">{collaboratorStats[collab.id] || 0}</span>
                 </div>
               </div>
             ))}
@@ -574,7 +574,7 @@ const Index = () => {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setNewClientOpen(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                  className="botao-r botao-r--aceso reflexo flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground transition-all"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span className="text-[10px] font-semibold uppercase tracking-wider">Novo Cliente</span>
@@ -831,7 +831,7 @@ function StatCardMini({ icon, value, label, variant = 'default' }: { icon?: Reac
         <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: accentColor }} />
       )}
       <div className="flex flex-col">
-        <span className="text-sm font-bold text-foreground leading-none">{value}</span>
+        <span className="numero-r text-base text-foreground">{value}</span>
         <span className="text-[8px] text-muted-foreground uppercase tracking-wider">{label}</span>
       </div>
     </div>
@@ -865,7 +865,7 @@ function StatBadge({ icon, value, label, color, active, onClick }: StatBadgeProp
         >
           {icon}
           <div className="flex flex-col items-start">
-            <span className="text-sm font-bold leading-none">{value}</span>
+            <span className="numero-r text-base">{value}</span>
             <span className="text-[7px] uppercase opacity-80 tracking-wider">{label}</span>
           </div>
         </button>
@@ -895,7 +895,7 @@ function AlertFilterButton({ icon, value, label, color, active, onClick, tooltip
         >
           {icon}
           <div className="flex flex-col items-start">
-            <span className="text-sm font-bold leading-none">{value}</span>
+            <span className="numero-r text-base">{value}</span>
             <span className="text-[7px] uppercase opacity-80 tracking-wider">{label}</span>
           </div>
         </button>

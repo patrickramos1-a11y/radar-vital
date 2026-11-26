@@ -16,7 +16,7 @@ import type { Collaborator } from '@/types/collaborator';
 import type { StarTransaction } from '@/types/treasury';
 import { KpiCard } from './KpiCard';
 import { CollaboratorAvatar } from './CollaboratorAvatar';
-import { CheckSquare, CheckCircle2, Clock, Star, MessageSquare, TrendingUp, Package, ThumbsUp, Sparkles, Trophy, AlertTriangle, Users, Percent, ArrowUpDown, Siren, type LucideIcon } from 'lucide-react';
+import { CheckSquare, CheckCircle2, Clock, Star, MessageSquare, TrendingUp, Package, ThumbsUp, Sparkles, Trophy, AlertTriangle, Users, Percent, ArrowUpDown, Siren, type LucideIcon } from '@/components/icones';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

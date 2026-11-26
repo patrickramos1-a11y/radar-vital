@@ -3,7 +3,7 @@ import { ptBR } from 'date-fns/locale';
 import { ClientComment, COMMENT_TYPE_LABELS, CommentType } from '@/types/comment';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Pin, Info, AlertTriangle, ShieldAlert, Clock } from 'lucide-react';
+import { Pin, Info, AlertTriangle, ShieldAlert, Clock } from '@/components/icones';
 import { cn } from '@/lib/utils';
 
 interface CommentPreviewProps {

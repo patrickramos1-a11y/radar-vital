@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Flag } from 'lucide-react';
+import { CalendarDays, Flag } from '@/components/icones';
 import type { Client } from '@/types/client';
 import type { Task, TaskFormData, TaskRecurrenceFirst } from '@/types/task';
 import { DEFAULT_PROCESS_WEIGHT, normalizeProcessWeight, type ProcessWeight } from '@/lib/processWeight';

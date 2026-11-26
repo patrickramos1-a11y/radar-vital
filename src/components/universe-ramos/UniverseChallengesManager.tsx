@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BadgeCheck, Check, CircleDollarSign, Pencil, Search, Settings2, Star, Trash2, Upload, UserPlus } from "lucide-react";
+import { BadgeCheck, Check, CircleDollarSign, Pencil, Search, Settings2, Star, Trash2, Upload, UserPlus } from "@/components/icones";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";

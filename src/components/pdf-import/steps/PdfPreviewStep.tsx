@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, X, Download, Loader2, Users, FileText, TrendingUp } from 'lucide-react';
+import { Check, X, Download, Loader2, Users, FileText, TrendingUp } from '@/components/icones';
 import type { ClientMatchResult, ParsedPdfData } from '@/types/pdfImport';
 
 interface PdfPreviewStepProps {
@@ -54,19 +54,19 @@ export function PdfPreviewStep({
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-3 rounded-lg bg-muted text-center">
-              <div className="text-2xl font-bold">{matchResults.length}</div>
+              <div className="numero-r text-3xl">{matchResults.length}</div>
               <div className="text-xs text-muted-foreground">Clientes no PDF</div>
             </div>
             <div className="p-3 rounded-lg bg-green-500/10 text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.autoMatched}</div>
+              <div className="numero-r text-3xl text-green-600">{stats.autoMatched}</div>
               <div className="text-xs text-muted-foreground">Automáticos</div>
             </div>
             <div className="p-3 rounded-lg bg-blue-500/10 text-center">
-              <div className="text-2xl font-bold text-blue-600">{linkedCount}</div>
+              <div className="numero-r text-3xl text-blue-600">{linkedCount}</div>
               <div className="text-xs text-muted-foreground">Vinculados</div>
             </div>
             <div className="p-3 rounded-lg bg-amber-500/10 text-center">
-              <div className="text-2xl font-bold text-amber-600">{stats.pending + stats.unmatched}</div>
+              <div className="numero-r text-3xl text-amber-600">{stats.pending + stats.unmatched}</div>
               <div className="text-xs text-muted-foreground">Ignorados</div>
             </div>
           </div>

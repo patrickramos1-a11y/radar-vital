@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, X, RotateCcw, Building2, Landmark, Briefcase, MapPin, Check, UserPlus, Target, Workflow } from "lucide-react";
+import { Search, X, RotateCcw, Building2, Landmark, Briefcase, MapPin, Check, UserPlus, Target, Workflow } from "@/components/icones";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Municipality } from "@/hooks/useMunicipalities";

@@ -1,4 +1,4 @@
-import { MessageCircle, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
+import { MessageCircle, ListChecks, ShieldCheck, Sparkles } from "@/components/icones";
 import { Client, COLLABORATOR_COLORS, COLLABORATOR_NAMES } from "@/types/client";
 import type { AuditClientStatus } from "@/types/audit";
 
@@ -180,7 +180,7 @@ function CompactCard({
             />
           ) : (
             <span
-              className="text-2xl font-bold"
+              className="numero-r text-3xl"
               style={{ color: accentColor ?? "hsl(var(--primary))" }}
             >
               {client.initials}

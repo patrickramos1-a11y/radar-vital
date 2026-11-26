@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MessageSquareText } from 'lucide-react';
+import { MessageSquareText } from '@/components/icones';
 import type { ProcessComment } from '@/lib/processFollowUp';
 import { formatCommentDate } from '@/lib/processDisplay';
 import { Button } from '@/components/ui/button';

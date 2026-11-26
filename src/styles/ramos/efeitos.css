@@ -1,0 +1,253 @@
+/* =========================================================================
+   RAMOS — EFEITOS (fase 1: CSS leve, sem JavaScript)  ·  dia e noite
+   Carregar DEPOIS do ramos.css e do vidro.css (usa as variáveis do vidro).
+
+   Peças: .luz (contorno de luz)  .reflexo  .holofote  .busca-luz
+          .balao-luz  [data-dica]
+   Tons:  verde (padrão da marca), .tom-agua, .tom-terra e as cores de setor
+          do manual ([data-setor="marketing" ...]).
+
+   Refeitos do zero, sem copiar código. Referências de comportamento:
+   - Star Border ............. React Bits (MIT + Commons Clause)
+   - Border Beam ............. Magic UI (MIT)
+   - Pulsing Border .......... Paper Shaders (Apache 2.0)
+   - Glare Hover / Spotlight . React Bits (MIT + Commons Clause)
+
+   Regras do manual que esta família respeita (ver plano-efeitos.md):
+   - Cor padrão é o verde #0DD375. Outros tons só pela classe de tom.
+   - Texto nunca é tingido nem recebe sombra: o efeito fica na borda e no fundo.
+   - Texto sobre verde vivo é escuro (--verde-950).
+   - Sem JavaScript: "reduzir movimento" para tudo e deixa o contorno parado.
+
+   Atenção: .luz usa ::before; .reflexo usa ::after; .holofote usa ::before;
+   [data-dica] usa ::before e ::after. Não junte duas na mesma tag: ponha uma
+   por fora e a outra por dentro.
+   ========================================================================= */
+
+@property --luz-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+
+/* ---------- Tons: DIA (padrão) ---------- */
+:root, .cena-vidro--clara, .vidro-dia {
+  --luz-cor: var(--verde-400, #0dd375);
+  --luz-cabeca: var(--luz-cor);
+  --luz-larg: 1.5px;
+  --luz-vel: 4s;
+}
+/* ---------- Tons: NOITE (a cabeça da luz clareia) ---------- */
+[data-tema="escuro"], .cena-vidro--escura, .cena-vidro--foto, .vidro-noite {
+  --luz-cabeca: color-mix(in srgb, var(--luz-cor) 35%, #ffffff);
+}
+/* ---------- Tons alternativos (paletas já consolidadas) ---------- */
+.tom-agua  { --luz-cor: #2a86c8; }                 /* azul-rio, para tema água */
+.tom-terra { --luz-cor: #d9733a; }                 /* terracota, para solo e obra */
+/* Cores de setor do manual de uso tipográfico */
+[data-setor="marketing"]      { --luz-cor: #e85d5d; }
+[data-setor="administracao"]  { --luz-cor: #2979c9; }
+[data-setor="manutencao"]     { --luz-cor: #d99a18; }
+[data-setor="projetos"]       { --luz-cor: #2979c9; }
+[data-setor="licenciamento"]  { --luz-cor: #187c86; }
+[data-setor="gestao"]         { --luz-cor: #7656b8; }
+[data-setor="suprimentos"]    { --luz-cor: #df7a25; }
+[data-setor="pessoas"]        { --luz-cor: #c85676; }
+[data-setor="treinamentos"]   { --luz-cor: #168f9b; }
+[data-setor="ia"]             { --luz-cor: #5265c9; }
+
+/* =========================================================================
+   .luz — contorno de luz que percorre a borda (cometa)
+   Uso: <div class="vidro luz">…</div>   (a peça precisa de border-radius)
+   ========================================================================= */
+.luz { position: relative; }
+.luz::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: var(--luz-larg);
+  pointer-events: none; z-index: 2;
+  background: conic-gradient(from var(--luz-ang), transparent 0 60%,
+    color-mix(in srgb, var(--luz-cor) 28%, transparent) 78%, var(--luz-cor) 93%, var(--luz-cabeca) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--luz-cor) 70%, transparent));
+  animation: luz-girar var(--luz-vel) linear infinite;
+}
+@keyframes luz-girar { to { --luz-ang: 360deg; } }
+
+.luz--estrela { --luz-larg: 2px; }
+.luz--estrela::before {
+  background: conic-gradient(from var(--luz-ang), transparent 0 82%,
+    color-mix(in srgb, var(--luz-cor) 35%, transparent) 94%, var(--luz-cor) 99%, var(--luz-cabeca) 100%);
+  filter: drop-shadow(0 0 7px var(--luz-cor));
+}
+.luz--duplo::before {
+  background: conic-gradient(from var(--luz-ang), transparent 0 10%,
+    color-mix(in srgb, var(--luz-cor) 30%, transparent) 28%, var(--luz-cor) 44%, var(--luz-cabeca) 50%,
+    transparent 50.1% 60%, color-mix(in srgb, var(--luz-cor) 30%, transparent) 78%, var(--luz-cor) 94%, var(--luz-cabeca) 100%);
+}
+.luz--brilho::before {
+  --luz-larg: 1px;
+  background: conic-gradient(from var(--luz-ang), transparent 0 30%,
+    color-mix(in srgb, var(--luz-cor) 40%, transparent) 55%, var(--luz-cor) 78%, transparent 100%);
+  filter: none; animation-duration: 6s;
+}
+.luz--pulso::before {                      /* quatro manchas que respiram (ref.: Pulsing Border) */
+  background: conic-gradient(from var(--luz-ang),
+    var(--luz-cor) 0, transparent 14%, transparent 25%, var(--luz-cor) 25%, transparent 39%,
+    transparent 50%, var(--luz-cor) 50%, transparent 64%, transparent 75%, var(--luz-cor) 75%, transparent 89%);
+  animation: luz-girar 14s linear infinite, luz-respira 2.8s ease-in-out infinite;
+}
+@keyframes luz-respira { 50% { opacity: .45; } }
+.luz--lenta { --luz-vel: 7s; }
+.luz--rapida { --luz-vel: 2.4s; }
+.luz--suave::before { opacity: .55; transition: opacity var(--medio, .25s); }
+.luz--suave:hover::before, .luz--suave:focus-within::before { opacity: 1; }
+.luz--foco::before { opacity: 0; transition: opacity var(--lento, .45s); }   /* sistemas: só no foco */
+.luz--foco:hover::before, .luz--foco:focus-within::before { opacity: 1; }
+.luz--pausa::before { animation-play-state: paused; }                          /* o JS (fase 2) liga fora da tela */
+
+/* =========================================================================
+   .reflexo — brilho que atravessa a peça ao passar o mouse (ref.: Glare Hover)
+   ========================================================================= */
+.reflexo { position: relative; overflow: hidden; isolation: isolate; }
+.reflexo::after {
+  content: ""; position: absolute; inset: -25% -60%; z-index: 3; pointer-events: none; opacity: 0;
+  background: linear-gradient(105deg, transparent 38%, var(--v-reflexo, rgba(255,255,255,.7)) 50%, transparent 62%);
+  transform: translateX(-70%);
+}
+.reflexo:hover::after, .reflexo:focus-within::after {
+  opacity: 1; transform: translateX(70%); transition: transform .9s var(--curva, ease), opacity .2s;
+}
+
+/* =========================================================================
+   .holofote — luz que acompanha o cursor dentro da peça (ref.: Spotlight Card)
+   Sem JS, a luz fica no topo; com o JS da fase 2, segue o mouse (--mx, --my).
+   ========================================================================= */
+.holofote { --mx: 50%; --my: 0%; position: relative; overflow: hidden; isolation: isolate; }
+.holofote::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0;
+  background: radial-gradient(260px circle at var(--mx) var(--my), color-mix(in srgb, var(--luz-cor) 30%, transparent), transparent 65%);
+  transition: opacity var(--lento, .45s);
+}
+.holofote:hover::before, .holofote:focus-within::before { opacity: 1; }
+
+/* =========================================================================
+   .busca-luz — busca de vidro com fio de luz (junte com .luz)
+   Uso: <label class="busca-luz luz luz--suave"><svg class="busca-luz__icone">…</svg>
+        <input type="search" placeholder="Buscar…"><kbd>Ctrl K</kbd></label>
+   ========================================================================= */
+.busca-luz {
+  display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: 999px;
+  background: var(--v-fundo); border: 1px solid var(--v-fio); color: var(--v-texto);
+  -webkit-backdrop-filter: blur(16px) saturate(140%); backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: var(--v-sombra-pilula, 0 12px 30px rgba(6,20,14,.12));
+  transition: box-shadow var(--medio, .25s) var(--curva, ease);
+}
+.busca-luz__icone { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; opacity: .7; }
+.busca-luz input {
+  flex: 1; min-width: 0; border: 0; background: transparent; color: inherit; outline: 0;
+  font: 500 15px var(--fonte-texto, system-ui);
+}
+.busca-luz input::placeholder { color: var(--v-texto-fraco, #8e8e93); opacity: 1; }
+.busca-luz kbd {
+  font: 500 11px var(--fonte-mono, monospace); padding: 3px 8px; border-radius: 8px;
+  border: 1px solid var(--v-fio-forte, currentColor); color: var(--v-texto-suave); background: transparent;
+}
+.busca-luz:focus-within { box-shadow: var(--v-sombra-pilula, 0 12px 30px rgba(6,20,14,.12)), 0 0 0 3px color-mix(in srgb, var(--luz-cor) 24%, transparent); }
+
+/* =========================================================================
+   .balao-luz — balão de conversa de vidro (junte com .luz para o contorno)
+   Uso: <div class="balao-luz luz"><b class="balao-luz__autor">Ramos</b>Texto</div>
+        <div class="balao-luz balao-luz--eu luz luz--lenta">…</div>
+   Texto sempre em cor de leitura: o tom só aparece no fundo e na borda.
+   ========================================================================= */
+.balao-luz {
+  position: relative; display: block; width: fit-content; max-width: min(280px, 85%);
+  padding: 12px 16px; border-radius: 20px 20px 20px 6px;
+  background: var(--v-fundo-forte); border: 1px solid var(--v-fio); color: var(--v-texto);
+  -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: var(--v-sombra, 0 10px 30px rgba(6,20,14,.1));
+  font-size: 14px; line-height: 1.45;
+  animation: balao-sobe var(--lento, .45s) var(--curva, ease) both;
+}
+.balao-luz--eu {
+  margin-left: auto; border-radius: 20px 20px 6px 20px;
+  background: color-mix(in srgb, var(--luz-cor) 22%, var(--v-fundo-forte));
+  border-color: color-mix(in srgb, var(--luz-cor) 45%, transparent);
+}
+.balao-luz__autor {
+  display: block; margin-bottom: 2px; font: 600 11px var(--fonte-texto, system-ui);
+  letter-spacing: .06em; text-transform: uppercase; color: var(--v-texto-suave);
+}
+@keyframes balao-sobe { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+
+/* =========================================================================
+   [data-dica] — dica em balãozinho de vidro, com seta
+   Uso: <button data-dica="Ver o laudo">…</button>   (data-dica-pos="baixo" abre embaixo)
+   ========================================================================= */
+[data-dica] { position: relative; }
+[data-dica]::after {
+  content: attr(data-dica); position: absolute; left: 50%; bottom: calc(100% + 11px); z-index: 20;
+  transform: translate(-50%, 6px); opacity: 0; pointer-events: none; white-space: nowrap;
+  padding: 8px 12px; border-radius: 12px; font: 500 13px var(--fonte-texto, system-ui); letter-spacing: 0; text-transform: none;
+  background: var(--v-solido); color: var(--v-texto);
+  border: 1px solid color-mix(in srgb, var(--luz-cor) 40%, transparent);
+  box-shadow: var(--v-sombra, 0 10px 30px rgba(6,20,14,.1));
+  transition: opacity var(--medio, .25s), transform var(--medio, .25s) var(--curva, ease);
+}
+[data-dica]::before {
+  content: ""; position: absolute; left: 50%; bottom: calc(100% + 5px); z-index: 21; width: 10px; height: 10px;
+  transform: translate(-50%, 6px) rotate(45deg); opacity: 0; pointer-events: none;
+  background: var(--v-solido); border: solid color-mix(in srgb, var(--luz-cor) 40%, transparent); border-width: 0 1px 1px 0;
+  transition: opacity var(--medio, .25s), transform var(--medio, .25s) var(--curva, ease);
+}
+[data-dica]:hover::after, [data-dica]:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+[data-dica]:hover::before, [data-dica]:focus-visible::before { opacity: 1; transform: translate(-50%, 0) rotate(45deg); }
+[data-dica-pos="baixo"]::after { bottom: auto; top: calc(100% + 11px); transform: translate(-50%, -6px); }
+[data-dica-pos="baixo"]::before { bottom: auto; top: calc(100% + 5px); transform: translate(-50%, -6px) rotate(225deg); }
+[data-dica-pos="baixo"]:hover::after, [data-dica-pos="baixo"]:focus-visible::after { transform: translate(-50%, 0); }
+[data-dica-pos="baixo"]:hover::before, [data-dica-pos="baixo"]:focus-visible::before { transform: translate(-50%, 0) rotate(225deg); }
+
+/* =========================================================================
+   FASE 2 (precisam do efeitos.js, mas degradam bem sem ele)
+   ========================================================================= */
+/* .inclina — a peça se inclina de leve para o lado do cursor */
+.inclina {
+  --rx: 0deg; --ry: 0deg;
+  transform: perspective(800px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform var(--medio, .25s) var(--curva, ease); will-change: transform;
+}
+
+/* .busca-troca — o texto de exemplo troca sozinho; ao enviar, o texto se desfaz */
+.busca-troca--muda::placeholder { opacity: 0; transform: translateY(4px); }
+.busca-troca::placeholder { transition: opacity .2s, transform .2s; }
+.busca-troca--dissolve { filter: blur(6px); opacity: 0; letter-spacing: .12em; transition: filter .5s, opacity .5s, letter-spacing .5s; }
+
+/* .faixa-curva — texto correndo numa curva (SVG). Marcação:
+   <svg class="faixa-curva" viewBox="0 0 800 160"><path id="c1" d="M0,130 Q400,-30 800,130" fill="none"/>
+   <text><textPath href="#c1">TEXTO • TEXTO • </textPath><animate …/></text></svg> */
+.faixa-curva { display: block; width: 100%; height: auto; overflow: visible; }
+.faixa-curva text {
+  font: 700 26px var(--fonte-titulo, "Barlow Condensed", sans-serif); letter-spacing: .08em; text-transform: uppercase;
+  fill: var(--v-texto-suave, #5b5b5b);
+}
+
+/* .orbita — itens girando em círculo, sempre de pé. Marcação:
+   <div class="orbita" style="--n:6"><div class="orbita__item" style="--i:0">…</div>…</div> */
+.orbita { --raio: 120px; --vel: 36s; position: relative; width: calc(var(--raio) * 2 + 80px); aspect-ratio: 1; animation: orbita-gira var(--vel) linear infinite; }
+.orbita__item {
+  --ang: calc(var(--i, 0) * 360deg / var(--n, 6));
+  position: absolute; left: 50%; top: 50%; width: 0; height: 0;
+  transform: rotate(var(--ang)) translateX(var(--raio));
+}
+.orbita__item > * { position: absolute; left: 0; top: 0; translate: -50% -50%; animation: orbita-contra var(--vel) linear infinite; transform: rotate(calc(-1 * var(--ang))); }
+@keyframes orbita-gira { to { transform: rotate(360deg); } }
+@keyframes orbita-contra { to { transform: rotate(calc(-1 * var(--ang) - 360deg)); } }
+
+/* =========================================================================
+   MOVIMENTO REDUZIDO: o contorno de luz fica parado num trecho visível
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .luz::before { animation: none; --luz-ang: 200deg; }
+  .luz--pulso::before { opacity: .7; }
+  .balao-luz { animation: none; }
+  .reflexo::after, [data-dica]::after, [data-dica]::before { transition: none; }
+  .inclina { transform: none; transition: none; }
+  .orbita, .orbita__item > * { animation: none; }
+  .busca-troca::placeholder, .busca-troca--dissolve { transition: none; }
+}

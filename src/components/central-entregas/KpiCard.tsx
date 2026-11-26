@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon } from '@/components/icones';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -23,7 +23,7 @@ export function KpiCard({ label, value, icon: Icon, color, hint, variant = 'defa
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{label}</span>
         <Icon className="w-4 h-4 text-muted-foreground/60" style={color ? { color } : {}} />
       </div>
-      <div className={cn('text-2xl font-bold', variantClass)}>{value}</div>
+      <div className={cn('numero-r text-3xl', variantClass)}>{value}</div>
       {hint && <div className="text-[10px] text-muted-foreground mt-0.5">{hint}</div>}
     </div>
   );

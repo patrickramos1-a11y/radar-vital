@@ -4,7 +4,7 @@ import {
   ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Upload, X, 
   AlertTriangle, CheckSquare, ChevronUp, ChevronDown, RefreshCw,
   Download, FileJson, FolderUp, LoaderCircle, RotateCcw, MapPin, Search, Check
-} from "lucide-react";
+} from "@/components/icones";
 import { useClients } from "@/contexts/ClientContext";
 import { 
   Client, ClientFormData, generateInitials,
@@ -278,7 +278,7 @@ const Config = () => {
             {/* Reset to Default */}
             <button
               onClick={() => setShowResetDialog(true)}
-              className="admin-button flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-600"
+              className="admin-button-secondary flex items-center gap-2"
               title="Restaurar lista de empresas padrão"
             >
               <RotateCcw className="w-4 h-4" />
@@ -299,7 +299,7 @@ const Config = () => {
                 )}
                 <button
                   onClick={() => setShowClearAllDialog(true)}
-                  className="admin-button flex items-center gap-2 bg-orange-500 text-white hover:bg-orange-600"
+                  className="admin-button-secondary botao-r--alerta flex items-center gap-2"
                 >
                   <AlertTriangle className="w-4 h-4" />
                   Limpar Todos

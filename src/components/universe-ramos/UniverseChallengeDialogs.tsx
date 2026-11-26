@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarClock, Pencil, Trash2, Users } from "lucide-react";
+import { CalendarClock, Pencil, Trash2, Users } from "@/components/icones";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";

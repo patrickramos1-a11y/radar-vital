@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Box, User, CheckSquare } from "lucide-react";
+import { Box, User, CheckSquare } from "@/components/icones";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { VisualPanelHeader, KPICard } from "@/components/visual-panels/VisualPanelHeader";
 import { VisualGrid } from "@/components/visual-panels/VisualGrid";

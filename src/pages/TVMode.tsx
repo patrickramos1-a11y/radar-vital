@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Play, Pause, SkipForward, SkipBack, Settings, Clock, 
   Monitor, Bomb, Users, MessageSquare, Building2, X, CheckSquare
-} from "lucide-react";
+} from "@/components/icones";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -271,7 +271,7 @@ export default function TVMode() {
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xl font-bold text-foreground">{formatTime(currentTime)}</span>
+              <span className="numero-r text-2xl text-foreground">{formatTime(currentTime)}</span>
             </div>
             <span className="text-xs text-muted-foreground capitalize">{formatDate(currentTime)}</span>
           </div>

@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, ListChecks, Workflow, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check, UserX } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, ListChecks, Workflow, RotateCcw, Users, Building2, Briefcase, Search, X, Lock, LockOpen, Tv, ArrowUpDown, MessageCircle, MapPin, Check, UserX } from "@/components/icones";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import type { ReactNode } from "react";
@@ -142,7 +142,7 @@ export function FilterBar({
             )}
             Ordenar:
           </span>
-          <div className="flex items-center gap-0.5 flex-wrap">
+          <div className="grupo-r flex items-center gap-0.5 flex-wrap" role="group" aria-label="Ordenar clientes">
             <SortIconButton 
               active={sortBy === 'order'} 
               direction={sortBy === 'order' ? sortDirection : undefined}
@@ -175,7 +175,7 @@ export function FilterBar({
         </div>
 
         {/* Search Bar */}
-        <div className="relative flex-1 max-w-xs min-w-[180px]">
+        <div className="busca-r relative flex-1 max-w-xs min-w-[180px]">
           <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           <Input
             type="text"
@@ -269,7 +269,7 @@ export function FilterBar({
           {/* Client Type Filter (AC/AV) */}
           {showClientTypeFilter && (
             <>
-              <div className="flex items-center gap-0.5">
+              <div className="grupo-r flex items-center gap-0.5" role="group" aria-label="Tipo de cliente">
                 <ClientTypeButton
                   type="all"
                   active={clientTypeFilter === 'all'}
@@ -368,6 +368,7 @@ function SortIconButton({ active, direction, onClick, icon, tooltip }: SortIconB
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
+          aria-pressed={active}
           className={`p-1.5 rounded-lg transition-all flex items-center gap-0.5 border ${
             active 
               ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20' 
@@ -403,21 +404,20 @@ function ClientTypeButton({ type, active, onClick, count }: ClientTypeButtonProp
     AV: { short: 'AV', tooltip: 'Avulso', color: 'rgb(245, 158, 11)' },
   };
   
-  const { short, tooltip, color } = labels[type];
+  const { short, tooltip } = labels[type];
   
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <button
           onClick={onClick}
+          aria-pressed={active}
           className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border ${
-            active 
-              ? 'text-white border-transparent' 
+            active
+              ? 'border-transparent'
               : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50 border-transparent'
           }`}
-          style={{
-            backgroundColor: active ? color : undefined,
-          }}
+          // Design Ramos (fase 3): o tipo escolhido acende em azul-água pelo .grupo-r.
         >
           {type === 'all' ? (
             <Building2 className="w-3 h-3" />

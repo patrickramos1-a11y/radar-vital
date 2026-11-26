@@ -9,7 +9,7 @@ import {
   Sparkles,
   UserPlus,
   Users,
-} from "lucide-react";
+} from "@/components/icones";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ClientCard } from "@/components/dashboard/ClientCard";
 import {
@@ -379,9 +379,9 @@ export default function UniversoRamos() {
             <Summary label="Desafios" value={universeChallenges.length} icon={Sparkles} onClick={() => setWorkspace("challenges")} active={workspace === "challenges"} />
           </div>
 
-          <div className="mt-3 flex w-full flex-wrap gap-1 border p-1 sm:w-fit">
-            <button type="button" onClick={() => setWorkspace("units")} className={`h-8 px-3 text-xs font-medium ${workspace === "units" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Unidades internas</button>
-            <button type="button" onClick={() => setWorkspace("challenges")} className={`h-8 px-3 text-xs font-medium ${workspace === "challenges" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Desafios e oportunidades</button>
+          <div className="grupo-r mt-3 flex w-full flex-wrap gap-1 border p-1 sm:w-fit" role="group" aria-label="Área do Universo Ramos">
+            <button type="button" aria-pressed={workspace === "units"} onClick={() => setWorkspace("units")} className={`h-8 px-3 text-xs font-medium ${workspace === "units" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Unidades internas</button>
+            <button type="button" aria-pressed={workspace === "challenges"} onClick={() => setWorkspace("challenges")} className={`h-8 px-3 text-xs font-medium ${workspace === "challenges" ? "bg-cyan-700 text-white" : "hover:bg-muted"}`}>Desafios e oportunidades</button>
             <button type="button" onClick={() => navigate("/universo-ramos/plano-mestre")} className="flex h-8 items-center gap-1.5 px-3 text-xs font-medium hover:bg-muted"><Layers3 className="h-3.5 w-3.5" />Plano Mestre</button>
           </div>
         </header>
@@ -600,7 +600,7 @@ function Summary({
   return (
     <button type="button" onClick={onClick} className={`flex h-9 items-center gap-2 border px-2.5 transition-colors ${active ? "border-cyan-500 bg-cyan-50" : "bg-background hover:bg-muted/60"}`}>
       <Icon className="h-3.5 w-3.5 text-cyan-700" />
-      <span className="text-sm font-semibold">{value}</span>
+      <span className="numero-r text-base">{value}</span>
       <span className="text-[10px] text-muted-foreground">{label}</span>
     </button>
   );

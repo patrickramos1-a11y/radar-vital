@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Clock,
   Loader2
-} from 'lucide-react';
+} from '@/components/icones';
 import { usePdfImports, useDeletePdfImport } from '@/hooks/usePdfImports';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle2, Circle, Archive, AlertOctagon, Plus, Trash2, MessageSquarePlus, User, Users } from 'lucide-react';
+import { CheckCircle2, Circle, Archive, AlertOctagon, Plus, Trash2, MessageSquarePlus, User, Users } from '@/components/icones';
 import { toast } from 'sonner';
 import { ClientCell } from './ClientCell';
 import { CollaboratorAvatar } from './CollaboratorAvatar';
@@ -37,8 +37,9 @@ export function CommentsTab({ collaborator, color, isTeamView, comments, clients
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 border-b pb-2">
-        <div className="inline-flex rounded-lg border bg-card p-1">
+        <div className="grupo-r inline-flex rounded-lg border bg-card p-1" role="group" aria-label="Tipo de comentário">
           <button
+            aria-pressed={subView === 'about'}
             onClick={() => setSubView('about')}
             className={cn(
               'px-3 py-1.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 transition-colors',
@@ -49,6 +50,7 @@ export function CommentsTab({ collaborator, color, isTeamView, comments, clients
             Sobre o colaborador
           </button>
           <button
+            aria-pressed={subView === 'onClients'}
             onClick={() => setSubView('onClients')}
             className={cn(
               'px-3 py-1.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 transition-colors',
@@ -60,7 +62,7 @@ export function CommentsTab({ collaborator, color, isTeamView, comments, clients
           </button>
         </div>
         {subView === 'about' && !isTeamView && (
-          <Button size="sm" style={{ backgroundColor: color }} onClick={() => setNewOpen(true)} className="ml-auto">
+          <Button size="sm" onClick={() => setNewOpen(true)} className="ml-auto">
             <MessageSquarePlus className="w-4 h-4 mr-1" /> Nova anotação
           </Button>
         )}
@@ -125,16 +127,16 @@ function AboutCollaboratorView({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex gap-1">
+        <div className="grupo-r flex gap-1" role="group" aria-label="Situação das anotações">
           {(['pending', 'all', 'read'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
+            <button key={f} aria-pressed={filter === f} onClick={() => setFilter(f)}
               className={cn('px-3 py-1 rounded-full text-xs font-medium border',
                 filter === f ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted')}>
               {f === 'pending' ? 'Pendentes' : f === 'read' ? 'Concluídas' : 'Todas'}
             </button>
           ))}
         </div>
-        <select value={ctxFilter} onChange={e => setCtxFilter(e.target.value as any)} className="px-2 py-1 border rounded-md text-xs bg-background">
+        <select value={ctxFilter} onChange={e => setCtxFilter(e.target.value as any)} className="filtro-r px-2 py-1 border rounded-md text-xs bg-background">
           <option value="all">Todos os contextos</option>
           {(Object.keys(COLLAB_COMMENT_CONTEXT_LABELS) as CollaboratorCommentContext[]).map(k => (
             <option key={k} value={k}>{COLLAB_COMMENT_CONTEXT_LABELS[k]}</option>
@@ -234,13 +236,13 @@ function OnClientsView({ collaborator, isTeamView, comments, clients }: {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 items-center">
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as any)} className="px-2 py-1 border rounded-md text-xs bg-background">
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as any)} className="filtro-r px-2 py-1 border rounded-md text-xs bg-background">
           <option value="all">Todos os tipos</option>
           <option value="ciencia">Ciência</option>
           <option value="relevante">Relevante</option>
           <option value="informativo">Informativo</option>
         </select>
-        <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} className="px-2 py-1 border rounded-md text-xs bg-background">
+        <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} className="filtro-r px-2 py-1 border rounded-md text-xs bg-background">
           <option value="all">Todos os clientes</option>
           {linkedClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -343,7 +345,7 @@ function NewCollabCommentDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={!text.trim()} style={{ backgroundColor: color }}>Registrar</Button>
+          <Button onClick={submit} disabled={!text.trim()}>Registrar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

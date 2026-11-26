@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format, isSameWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarDays, ChevronDown, ChevronRight, Hourglass, MessageSquarePlus } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronRight, Hourglass, MessageSquarePlus } from '@/components/icones';
 import type { Client } from '@/types/client';
 import type { Task } from '@/types/task';
 import { buildProcesses, processesForAssignee, type Process } from '@/lib/processModel';
@@ -100,11 +100,11 @@ export function FollowUpView({ collaborator, isTeamView, tasks, clients, respons
 
   return <div className="space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <div className="inline-flex border bg-white" role="group" aria-label="Acompanhamento">
+      <div className="grupo-r inline-flex border bg-white" role="group" aria-label="Acompanhamento">
         <button type="button" aria-pressed={mode === 'weeks'} onClick={() => setMode('weeks')} className={cn('inline-flex h-8 items-center gap-1.5 px-3 text-xs font-medium', mode === 'weeks' ? 'bg-slate-900 text-white' : 'text-slate-600')}><CalendarDays className="h-3.5 w-3.5" />Semanas <span className="tabular-nums">{weeksCount}</span></button>
         <button type="button" aria-pressed={mode === 'stale'} onClick={() => setMode('stale')} className={cn('inline-flex h-8 items-center gap-1.5 border-l px-3 text-xs font-medium', mode === 'stale' ? 'bg-slate-900 text-white' : 'text-slate-600')}><Hourglass className="h-3.5 w-3.5" />Sem acompanhamento <span className="tabular-nums">{staleCount}</span></button>
       </div>
-      <select aria-label="Filtrar acompanhamento por responsável" value={person} onChange={event => setPerson(event.target.value)} className="h-8 max-w-full border bg-background px-2 text-xs">
+      <select aria-label="Filtrar acompanhamento por responsável" value={person} onChange={event => setPerson(event.target.value)} className="filtro-r h-8 max-w-full border bg-background px-2 text-xs">
         <option value="all">Todos os responsáveis</option>
         {responsibleList.map(item => <option key={item.name} value={item.name}>{item.name}</option>)}
       </select>

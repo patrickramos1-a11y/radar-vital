@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Check, Minus, Plus, Sparkles } from "lucide-react";
+import { Check, Minus, Plus, Sparkles } from "@/components/icones";
 import { Button } from "@/components/ui/button";
 import type { Challenge } from "@/types/challenge";
 

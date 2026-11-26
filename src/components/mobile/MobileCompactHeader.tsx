@@ -1,4 +1,4 @@
-import { Users, Bomb, UserCheck, MessageCircle, ListChecks, CheckSquare, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Users, Bomb, UserCheck, MessageCircle, ListChecks, CheckSquare, ShieldCheck, AlertTriangle } from "@/components/icones";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileCompactHeaderProps {
@@ -169,7 +169,7 @@ function StatCard({ icon, value, label, variant = 'default' }: StatCardProps) {
   return (
     <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border shrink-0 ${variantClasses[variant]}`}>
       {icon && <span className="text-muted-foreground">{icon}</span>}
-      <span className={`text-sm font-bold ${textClasses[variant]}`}>{value}</span>
+      <span className={`numero-r text-base ${textClasses[variant]}`}>{value}</span>
       <span className="text-[8px] text-muted-foreground uppercase">{label}</span>
     </div>
   );
@@ -198,7 +198,7 @@ function AlertBadge({ icon, value, label, color, active, onClick }: AlertBadgePr
       }}
     >
       {icon}
-      <span className="text-xs font-bold">{value}</span>
+      <span className="numero-r text-sm">{value}</span>
       <span className="text-[7px] uppercase opacity-80">{label}</span>
     </button>
   );
@@ -228,7 +228,7 @@ function FilterBadge({ icon, value, label, active, onClick, activeColor }: Filte
       }}
     >
       {icon}
-      <span className="text-xs font-bold">{value}</span>
+      <span className="numero-r text-sm">{value}</span>
       <span className="text-[7px] uppercase">{label}</span>
     </button>
   );

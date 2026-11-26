@@ -14,7 +14,7 @@ import {
   TrendingUp,
   Download,
   ExternalLink
-} from 'lucide-react';
+} from '@/components/icones';
 import { usePdfImportDetails } from '@/hooks/usePdfImports';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -84,25 +84,25 @@ export function PdfImportDetails({ importId, onBack }: PdfImportDetailsProps) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
           <CardContent className="py-3 text-center">
-            <div className="text-2xl font-bold">{pdfImport.total_clients_detected}</div>
+            <div className="numero-r text-3xl">{pdfImport.total_clients_detected}</div>
             <div className="text-xs text-muted-foreground">No PDF</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 text-center">
-            <div className="text-2xl font-bold text-green-600">{pdfImport.total_clients_matched}</div>
+            <div className="numero-r text-3xl text-green-600">{pdfImport.total_clients_matched}</div>
             <div className="text-xs text-muted-foreground">Importados</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 text-center">
-            <div className="text-2xl font-bold text-amber-600">{pdfImport.total_clients_pending}</div>
+            <div className="numero-r text-3xl text-amber-600">{pdfImport.total_clients_pending}</div>
             <div className="text-xs text-muted-foreground">Pendentes</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 text-center">
-            <div className="text-2xl font-bold text-red-600">{pdfImport.total_clients_unmatched}</div>
+            <div className="numero-r text-3xl text-red-600">{pdfImport.total_clients_unmatched}</div>
             <div className="text-xs text-muted-foreground">Ignorados</div>
           </CardContent>
         </Card>
