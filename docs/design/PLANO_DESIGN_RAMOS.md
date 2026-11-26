@@ -72,7 +72,7 @@ Configurações e Modo TV, com as mesmas peças.
 
 | Fase | Situação |
 |---|---|
-| 1. Base visual | Em andamento: prévia local para o Patrick ver |
+| 1. Base visual | Prévia pronta (branch `feature/design-ramos`, 26/11), esperando o Patrick ver |
 | 2. Ícones | A fazer |
 | 3. Telas de trabalho | A fazer |
 | 4. Demais telas | A fazer |
