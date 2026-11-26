@@ -10,7 +10,7 @@ import { actorName } from '@/lib/auth';
 import { format } from 'date-fns';
 import { canCompleteTask } from '@/lib/taskOperations';
 import { normalizeProcessWeight, urgencyForWeight, weightForUrgency } from '@/lib/processWeight';
-import { pendingPeriodSteps } from '@/lib/processRecurrence';
+import { buildFollowUpStep, pendingFollowUpSteps } from '@/lib/recurringFollowUp';
 
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
@@ -125,6 +125,19 @@ function recurrenceColumns(data: Pick<TaskFormData, 'recurrence' | 'recurrence_i
     : { recurrence: data.recurrence, recurrence_interval: null, recurrence_unit: null };
 }
 
+/** Colunas do acompanhamento recorrente, só quando o formulário as envia. */
+function followUpColumns(data: TaskFormData) {
+  if (data.recurrence_anchor_date === undefined) return {};
+  return {
+    recurrence_anchor_date: data.recurrence_anchor_date ?? null,
+    recurrence_anchor_label: data.recurrence_anchor_label ?? null,
+    recurrence_first: data.recurrence_first ?? null,
+    recurrence_end_date: data.recurrence_end_date ?? null,
+    recurrence_max_count: data.recurrence_max_count ?? null,
+    recurrence_lead_days: data.recurrence_lead_days ?? 0,
+  };
+}
+
 // Etapas de período: a cada carga das tarefas, cria só as que faltam. Só na
 // versão publicada: o modo de desenvolvimento usa o mesmo banco de produção.
 const RECURRING_STEPS_ENABLED = import.meta.env.PROD && !LOCAL_WORKSPACE_PREVIEW;
@@ -178,6 +191,13 @@ const dbRowToTask = (row: TaskRow): Task => ({
   recurrence_interval: row.recurrence_interval ?? null,
   recurrence_unit: (row.recurrence_unit as Task['recurrence_unit']) ?? null,
   recurrence_origin_id: row.recurrence_origin_id ?? null,
+  recurrence_anchor_date: row.recurrence_anchor_date ?? null,
+  recurrence_anchor_label: row.recurrence_anchor_label ?? null,
+  recurrence_first: (row.recurrence_first as Task['recurrence_first']) ?? null,
+  recurrence_end_date: row.recurrence_end_date ?? null,
+  recurrence_max_count: row.recurrence_max_count ?? null,
+  recurrence_lead_days: row.recurrence_lead_days ?? 0,
+  recurrence_paused_at: row.recurrence_paused_at ?? null,
   updated_at: row.updated_at ?? row.created_at,
 });
 
@@ -231,7 +251,7 @@ export function useTasks() {
       if (templateResult.error) throw templateResult.error;
       let loadedTasks = (taskResult.data || []).map(dbRowToTask);
       const missingSteps = RECURRING_STEPS_ENABLED
-        ? pendingPeriodSteps(loadedTasks, format(new Date(), 'yyyy-MM-dd'), currentUserName || null)
+        ? pendingFollowUpSteps(loadedTasks, format(new Date(), 'yyyy-MM-dd'), currentUserName || null)
         : [];
       if (missingSteps.length && !recurringStepsRunning) {
         recurringStepsRunning = true;
@@ -305,6 +325,7 @@ export function useTasks() {
         source_comment_id: data.source_comment_id || null,
         recurrence: data.recurrence || 'none',
         ...recurrenceColumns(data),
+        ...followUpColumns(data),
         sort_order: data.sort_order || 0,
         ...(data.external_url?.trim() ? { external_url: data.external_url.trim() } : {}),
       };
@@ -325,6 +346,19 @@ export function useTasks() {
       return null;
     }
   }, [currentUserName, dependencies, fetchTasks, tasks]);
+
+  /**
+   * Acompanhamento recorrente: cria o processo-mãe e, junto, as etapas das
+   * datas marcadas na projeção. As demais datas nascem sozinhas, uma por vez.
+   */
+  const createFollowUp = useCallback(async (clientId: string, data: TaskFormData, stepDates: string[], clientName?: string) => {
+    const mother = await createTask(clientId, data, clientName, false);
+    if (!mother) return false;
+    const steps = [...new Set(stepDates)].sort().map(date => buildFollowUpStep(mother, date, currentUserName || null));
+    if (steps.length) await createPeriodSteps(steps);
+    await fetchTasks();
+    return true;
+  }, [createTask, currentUserName, fetchTasks]);
 
   const addTask = useCallback(async (clientId: string, data: TaskFormData, clientName?: string) => {
     const task = await createTask(clientId, data, clientName);
@@ -689,6 +723,7 @@ export function useTasks() {
     isLoading,
     error,
     addTask,
+    createFollowUp,
     addTaskFromTemplate,
     updateTask,
     bulkUpdateTasks,
