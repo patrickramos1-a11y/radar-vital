@@ -1,7 +1,8 @@
 # Acompanhamentos recorrentes — proposta (26/11/2026)
 
 Refinamento do processo-mãe recorrente do Processos v2 (D-025), a pedido do
-Patrick. Ainda é proposta: nada foi implementado.
+Patrick. Implementado em 26/11/2026 na branch `feature/acompanhamentos-recorrentes`;
+falta aplicar a migration e publicar.
 
 ## 1. O problema hoje
 
@@ -91,7 +92,13 @@ Na página Processos, uma aba **Gestão de processos** com duas visões:
   mas fica na linha do tempo.
 - Editar a regra recalcula só as ocorrências futuras; as passadas ficam como
   estão.
-- Encerrar (ou chegar ao "até quando") conclui o processo-mãe.
+- Encerrar conclui o processo-mãe e dispensa as datas em aberto. Quando passa a
+  última data do "até quando", o cartão mostra "Sem próximas datas" para a
+  pessoa encerrar.
+- Padrão da projeção: datas passadas vêm marcadas (entram atrasadas) e, das
+  futuras, só a próxima. A próxima sempre entra: o sistema mantém uma etapa
+  aberta à frente. Data passada que ficou de fora pode ser lançada depois, na
+  linha do tempo do cartão.
 
 ## 6. Banco (uma migration pequena, aplicada pelo Patrick no Lovable)
 
