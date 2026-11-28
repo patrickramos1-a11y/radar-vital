@@ -35,7 +35,6 @@ export function AppNavigation({ onRefresh, tools }: { onRefresh: () => void; too
         <Link to="/" className="app-navigation-marca" aria-label="Ramos Engenharia: início">
           <img className="app-navigation-logo app-navigation-logo--dia" src="/ramos/marca/ramos-logo-horizontal.svg" alt="" width={91} height={28} />
           <img className="app-navigation-logo app-navigation-logo--noite" src="/ramos/marca/ramos-logo-horizontal-negativo.svg" alt="" width={91} height={28} />
-          <img className="app-navigation-simbolo" src="/ramos/marca/ramos-circulo.svg" alt="" width={28} height={28} />
         </Link>
       </div>
 
