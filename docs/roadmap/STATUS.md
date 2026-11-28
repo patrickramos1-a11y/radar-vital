@@ -485,6 +485,11 @@ Pendencias: conferir o primeiro acompanhamento real (a proxima data nasce sozinh
 Resumo: 5 fases (docs/design/PLANO_DESIGN_RAMOS.md, DESIGN.md na raiz). Letras do manual, base branca, logo em vetor, tela branca por padrao com Noite/Auto no menu do perfil, tom agua (azul-rio) como destaque, icones Ramos em todo o sistema (60 desenhos novos na biblioteca aplicar-design), vidro em tamanho de sistema (botoes, busca, filtros, abas, janelas, numeros), efeitos (reflexo, contorno de luz no foco, holofote) e transicao entre paginas. Plano Mestre inteiro fora (visual anterior, sempre claro); do Universo Ramos so o painel. So o visual mudou.
 Testes: TypeScript sem erros, 274 testes Vitest aprovados, build aprovado, nenhum erro de lint novo; navegador em dia, noite e celular.
 Resultado: publicado por pedido do usuario em 26/11/2026 (PR #8, commit `dfff719`), deploy da Vercel com sucesso e conferido em radar-vital.vercel.app.
+
+2026-11-28 - Marca sempre com a logo completa
+Resumo: regra da marca Ramos (28/11/2026): a marca e sempre a logo completa, nunca o circulo sozinho. Topo no celular passa a mostrar a logo completa menor; menu lateral troca o icone com o circulo pela logo completa (dia e noite); sai public/ramos/marca/ramos-circulo.svg.
+Testes: navegador no computador, no celular (375 px) e com o menu lateral aberto; checagens do PR aprovadas.
+Resultado: publicado por pedido do usuario em 28/11/2026 (PR #9).
 ```
 
 ## Modelo para proximos registros
