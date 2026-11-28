@@ -26,7 +26,6 @@ const configItems: NavItem[] = [
   { title: "Configurar", icon: Settings, href: "/config" },
 ];
 
-const painelAcIcon = "/ramos/marca/ramos-circulo.svg";
 
 export function AppSidebar() {
   const location = useLocation();
@@ -42,8 +41,9 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-sidebar-border bg-sidebar/95 backdrop-blur-xl">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2.5 px-2 py-2.5">
-          <img src={painelAcIcon} alt="Painel AC" className="w-8 h-8 rounded-lg object-contain shrink-0" />
+        <div className="flex flex-col items-start gap-2 px-2 py-2.5">
+          <img src="/ramos/marca/ramos-logo-horizontal.svg" alt="Ramos Engenharia" className="marca-lateral marca-lateral--dia" width={71} height={22} />
+          <img src="/ramos/marca/ramos-logo-horizontal-negativo.svg" alt="Ramos Engenharia" className="marca-lateral marca-lateral--noite" width={71} height={22} />
           {!isCollapsed && (
             <div className="overflow-hidden">
               <h1 className="text-sm font-bold text-foreground tracking-tight leading-none truncate">
